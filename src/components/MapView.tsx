@@ -50,7 +50,7 @@ const MapView = ({ facilities, onFacilitySelect }: MapViewProps) => {
         setMapError(false);
 
         const loader = new Loader({
-          apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAEC-BMj4RDe1yKpzvAFZatHS2HQhK6RUI',
+          apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
           version: 'weekly',
           libraries: ['places']
         });
