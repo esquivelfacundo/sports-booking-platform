@@ -1,0 +1,132 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Search, MapPin, Calendar, ChevronDown, Trophy, Zap, Target, Disc, Circle, Hexagon, Square, Octagon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
+
+const HeaderSearchBar = () => {
+  const [location, setLocation] = useState('');
+  const [sport, setSport] = useState('');
+  const [date, setDate] = useState('');
+  const [isSportOpen, setIsSportOpen] = useState(false);
+  const sportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sportRef.current && !sportRef.current.contains(event.target as Node)) {
+        setIsSportOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const router = useRouter();
+
+  const sports = [
+    { value: '', label: 'Todos', icon: Trophy },
+    { value: 'futbol5', label: 'Fútbol 5', icon: Circle },
+    { value: 'paddle', label: 'Paddle', icon: Square },
+    { value: 'tenis', label: 'Tenis', icon: Disc },
+    { value: 'basquet', label: 'Básquet', icon: Circle },
+    { value: 'voley', label: 'Vóley', icon: Hexagon },
+    { value: 'hockey', label: 'Hockey', icon: Zap },
+    { value: 'rugby', label: 'Rugby', icon: Octagon }
+  ];
+
+  const handleSearch = () => {
+    const searchParams = new URLSearchParams();
+    
+    if (location) searchParams.set('location', location);
+    if (sport) searchParams.set('sport', sport);
+    if (date) searchParams.set('date', date);
+
+    router.push(`/buscar?${searchParams.toString()}`);
+  };
+
+  return (
+    <div className="hidden lg:flex items-center bg-gray-800 border border-gray-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 max-w-2xl mx-auto">
+      {/* Location */}
+      <div className="flex-1 px-6 py-3">
+        <label className="block text-xs font-medium text-gray-400 mb-1">Ubicación</label>
+        <GooglePlacesAutocomplete
+          value={location}
+          onChange={(value, placeData) => {
+            setLocation(value);
+            // Store place data for filtering in search results
+            if (placeData) {
+              sessionStorage.setItem('selectedPlace', JSON.stringify(placeData));
+            }
+          }}
+          placeholder="¿A dónde vas?"
+          className="w-full text-sm text-white placeholder-gray-500 border-0 focus:ring-0 p-0 bg-transparent"
+        />
+      </div>
+      {/* Divider */}
+      <div className="w-px h-8 bg-gray-600"></div>
+
+      {/* Sport */}
+      <div className="flex-1 px-6 py-3 relative" ref={sportRef}>
+        <label className="block text-xs font-medium text-gray-400 mb-1">Deporte</label>
+        <div className="relative">
+          <button
+            onClick={() => setIsSportOpen(!isSportOpen)}
+            className="w-full text-sm text-white bg-transparent border-none outline-none appearance-none flex items-center justify-between cursor-pointer"
+          >
+            <span>{sports.find(s => s.value === sport)?.label || 'Todos'}</span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isSportOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {isSportOpen && (
+            <div className="absolute top-full left-0 w-80 mt-1 bg-gray-700 border border-gray-600 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+              {sports.map((sportOption) => {
+                const IconComponent = sportOption.icon;
+                return (
+                  <button
+                    key={sportOption.value}
+                    onClick={() => {
+                      setSport(sportOption.value);
+                      setIsSportOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-600 flex items-center space-x-3 text-white text-sm transition-colors first:rounded-t-xl last:rounded-b-xl"
+                  >
+                    <IconComponent className="w-4 h-4 text-emerald-400" />
+                    <span>{sportOption.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Divider */}
+      <div className="w-px h-8 bg-gray-600"></div>
+
+      {/* Date */}
+      <div className="flex-1 px-6 py-3">
+        <label className="block text-xs font-medium text-gray-400 mb-1">Fecha</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full text-sm text-white border-0 focus:ring-0 p-0 bg-transparent"
+          min={new Date().toISOString().split('T')[0]}
+          suppressHydrationWarning={true}
+        />
+      </div>
+      {/* Search Button */}
+      <button
+        onClick={handleSearch}
+        className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-3 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 mr-2 shadow-lg hover:shadow-xl"
+      >
+        <Search className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
+export default HeaderSearchBar;
