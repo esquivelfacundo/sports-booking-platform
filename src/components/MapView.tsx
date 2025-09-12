@@ -55,6 +55,13 @@ const MapView = ({ facilities, onFacilitySelect }: MapViewProps) => {
           libraries: ['places']
         });
 
+        if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+          console.warn('Google Maps API key not found. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.');
+          setMapError(true);
+          setIsLoading(false);
+          return;
+        }
+
         const google = await loader.load();
         
         // Initialize map
