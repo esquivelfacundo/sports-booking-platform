@@ -95,10 +95,10 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 500 }}
-            className="fixed bottom-0 left-0 right-0 bg-gray-800 rounded-t-2xl z-[10000] max-h-[90vh] overflow-y-auto mx-0 w-full"
+            className="fixed inset-0 bg-gray-900 z-[10000] overflow-y-auto"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+            <div className="flex items-center justify-between p-6 pt-12 border-b border-gray-700 bg-gray-900">
               <h2 className="text-xl font-semibold text-white">¿Qué estás buscando?</h2>
               <button
                 onClick={onClose}
@@ -109,24 +109,26 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
             </div>
 
             {/* Search Form */}
-            <div className="p-6 space-y-6">
+            <div className="flex-1 p-6 space-y-6 bg-gray-900">
               {/* Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-3">
                   <MapPin className="w-4 h-4 inline mr-2" />
                   Ubicación
                 </label>
-                <GooglePlacesAutocomplete
-                  value={location}
-                  onChange={(value, placeData) => {
-                    setLocation(value);
-                    if (placeData) {
-                      sessionStorage.setItem('selectedPlace', JSON.stringify(placeData));
-                    }
-                  }}
-                  placeholder="¿A dónde vas?"
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
+                <div className="w-full">
+                  <GooglePlacesAutocomplete
+                    value={location}
+                    onChange={(value, placeData) => {
+                      setLocation(value);
+                      if (placeData) {
+                        sessionStorage.setItem('selectedPlace', JSON.stringify(placeData));
+                      }
+                    }}
+                    placeholder="¿A dónde vas?"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
               {/* Sport */}
@@ -172,13 +174,15 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
                   <Calendar className="w-4 h-4 inline mr-2" />
                   Fecha
                 </label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  min={new Date().toISOString().split('T')[0]}
-                />
+                <div className="w-full">
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none"
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
               </div>
 
               {/* Time Range */}
@@ -216,13 +220,15 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
               </div>
 
               {/* Search Button */}
-              <button
-                onClick={handleSearch}
-                className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-4 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center justify-center space-x-2 font-semibold text-lg shadow-lg hover:shadow-xl"
-              >
-                <Search className="w-5 h-5" />
-                <span>Buscar canchas</span>
-              </button>
+              <div className="pt-6">
+                <button
+                  onClick={handleSearch}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-4 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center justify-center space-x-2 font-semibold text-lg shadow-lg hover:shadow-xl"
+                >
+                  <Search className="w-5 h-5" />
+                  <span>Buscar canchas</span>
+                </button>
+              </div>
             </div>
           </motion.div>
         </>
