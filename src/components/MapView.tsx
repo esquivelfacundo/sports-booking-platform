@@ -12,8 +12,8 @@ interface Facility {
   price: number;
   rating: number;
   reviews: number;
-  image: string;
-  coordinates: [number, number];
+  image?: string;
+  coordinates?: [number, number];
   amenities: string[];
   availability: string[];
 }
@@ -181,6 +181,7 @@ const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) =>
     const bounds = new google.maps.LatLngBounds();
 
     facilities.forEach((facility) => {
+      if (!facility.coordinates) return;
       const position = { lat: facility.coordinates[0], lng: facility.coordinates[1] };
       
       // Create custom marker with price

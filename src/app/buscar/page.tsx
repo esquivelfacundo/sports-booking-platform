@@ -34,8 +34,8 @@ interface Facility {
   price: number;
   rating: number;
   reviews: number;
-  image: string;
-  coordinates: [number, number];
+  image?: string;
+  coordinates?: [number, number];
   amenities: string[];
   availability: string[];
   timeSlots?: TimeSlot[];
@@ -48,6 +48,7 @@ const SearchContent = () => {
   const [showMap, setShowMap] = useState(true);
   // const [isLoading, setIsLoading] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -281,6 +282,7 @@ const SearchContent = () => {
     // Don't filter on initial load to show all pins by default
     if (mapBounds && mapCenter && mapZoom && mapZoom !== 13) { // 13 is initial zoom
       filtered = filtered.filter(facility => {
+        if (!facility.coordinates) return false;
         const [lat, lng] = facility.coordinates;
         return (
           lat >= mapBounds.south &&
@@ -318,6 +320,17 @@ const SearchContent = () => {
       return;
     }
     setSelectedFacility(facility);
+    setSelectedTimeSlot(null);
+    setIsModalOpen(true);
+  };
+
+  const handleTimeSlotSelect = (facility: Facility, timeSlot: TimeSlot) => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    setSelectedFacility(facility);
+    setSelectedTimeSlot(timeSlot);
     setIsModalOpen(true);
   };
 
@@ -328,6 +341,7 @@ const SearchContent = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedFacility(null);
+    setSelectedTimeSlot(null);
   };
 
   const getSportName = (sport: string) => {
@@ -562,12 +576,14 @@ const SearchContent = () => {
                     <FacilityCard 
                       facility={facility} 
                       onReserve={() => handleReserve(facility)}
+                      onTimeSlotSelect={handleTimeSlotSelect}
                       onLoginRequired={handleLoginRequired}
                     />
                   ) : (
                     <CompactFacilityCard 
                       facility={facility} 
                       onReserve={() => handleReserve(facility)}
+                      onTimeSlotSelect={handleTimeSlotSelect}
                       onLoginRequired={handleLoginRequired}
                     />
                   )}
@@ -610,7 +626,9 @@ const SearchContent = () => {
                   >
                     <FacilityCard 
                       facility={facility} 
-                      onBookingClick={() => setSelectedFacility(facility)}
+                      onReserve={() => handleReserve(facility)}
+                      onTimeSlotSelect={handleTimeSlotSelect}
+                      onLoginRequired={handleLoginRequired}
                     />
                   </motion.div>
                 ))}
@@ -635,6 +653,7 @@ const SearchContent = () => {
       {/* Booking Modal */}
       <BookingModal 
         facility={selectedFacility}
+        selectedTimeSlot={selectedTimeSlot}
         isOpen={isModalOpen}
         onClose={closeModal}
       />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Clock, Users, MapPin, Star } from 'lucide-react';
 
@@ -15,17 +15,39 @@ interface Facility {
   availability: string[];
 }
 
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  price: number;
+  duration: number;
+}
+
 interface BookingModalProps {
   facility: Facility | null;
+  selectedTimeSlot?: TimeSlot | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const BookingModal = ({ facility, isOpen, onClose }: BookingModalProps) => {
+const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingModalProps) => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedDuration, setSelectedDuration] = useState(1);
   const [bookingStep, setBookingStep] = useState(1);
+
+  // Set preselected time slot when modal opens
+  useEffect(() => {
+    if (selectedTimeSlot && isOpen) {
+      setSelectedTime(selectedTimeSlot.time);
+      // Set today's date as default when time slot is preselected
+      const today = new Date().toISOString().split('T')[0];
+      setSelectedDate(today);
+    } else if (isOpen) {
+      // Reset when opening without preselected time
+      setSelectedTime('');
+      setSelectedDate('');
+    }
+  }, [selectedTimeSlot, isOpen]);
 
   const generateDates = () => {
     const dates = [];
@@ -179,7 +201,7 @@ const BookingModal = ({ facility, isOpen, onClose }: BookingModalProps) => {
                   {/* Time Selection */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Horario
+                      Horario {selectedTimeSlot && <span className="text-emerald-400">(preseleccionado)</span>}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {facility.availability.map((time) => (

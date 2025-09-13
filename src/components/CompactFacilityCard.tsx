@@ -20,6 +20,8 @@ interface Facility {
   price: number;
   rating: number;
   reviews: number;
+  image?: string;
+  coordinates?: [number, number];
   amenities: string[];
   availability: string[];
   timeSlots?: TimeSlot[];
@@ -29,10 +31,11 @@ interface Facility {
 interface CompactFacilityCardProps {
   facility: Facility;
   onReserve: () => void;
+  onTimeSlotSelect?: (facility: Facility, timeSlot: TimeSlot) => void;
   onLoginRequired?: () => void;
 }
 
-const CompactFacilityCard = ({ facility, onReserve, onLoginRequired }: CompactFacilityCardProps) => {
+const CompactFacilityCard = ({ facility, onReserve, onTimeSlotSelect, onLoginRequired }: CompactFacilityCardProps) => {
   const { user, isAuthenticated, updateProfile } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -236,7 +239,7 @@ const CompactFacilityCard = ({ facility, onReserve, onLoginRequired }: CompactFa
                     if (!isAuthenticated) {
                       onLoginRequired?.();
                     } else {
-                      window.location.href = `/reservar/${facility.id}?time=${slot.time}`;
+                      onTimeSlotSelect?.(facility, slot);
                     }
                   }}
                   className="flex-shrink-0 bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-md border border-emerald-500/30 hover:bg-emerald-500/30 hover:border-emerald-500/50 transition-all duration-200 text-xs font-medium min-w-[50px] text-center"

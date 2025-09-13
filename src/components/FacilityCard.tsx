@@ -29,6 +29,8 @@ interface FacilityCardProps {
     price: number;
     rating: number;
     reviews: number;
+    image?: string;
+    coordinates?: [number, number];
     amenities: string[];
     availability: string[];
     courts?: Court[];
@@ -37,10 +39,11 @@ interface FacilityCardProps {
   };
   onReserve?: () => void;
   onBookingClick?: () => void;
+  onTimeSlotSelect?: (facility: any, timeSlot: TimeSlot) => void;
   onLoginRequired?: () => void;
 }
 
-const FacilityCard = ({ facility, onReserve, onBookingClick, onLoginRequired }: FacilityCardProps) => {
+const FacilityCard = ({ facility, onReserve, onBookingClick, onTimeSlotSelect, onLoginRequired }: FacilityCardProps) => {
   const { user, isAuthenticated, updateProfile } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -266,7 +269,7 @@ const FacilityCard = ({ facility, onReserve, onBookingClick, onLoginRequired }: 
                       if (!isAuthenticated) {
                         onLoginRequired?.();
                       } else {
-                        window.location.href = `/reservar/${facility.id}?time=${slot.time}`;
+                        onTimeSlotSelect?.(facility, slot);
                       }
                     }}
                     className="flex-shrink-0 bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 hover:border-emerald-500/50 transition-all duration-200 text-xs font-medium min-w-[60px] text-center"
