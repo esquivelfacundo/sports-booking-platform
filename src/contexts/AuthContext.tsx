@@ -134,21 +134,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         firstName: data.name.split(' ')[0],
         lastName: data.name.split(' ').slice(1).join(' ') || '',
         phone: data.phone,
-        role: 'player'
+        userType: 'player'
       };
 
       const response = await apiClient.register(registerData) as any;
       
-      if (response.success && response.data.token) {
+      if (response.tokens && response.tokens.accessToken) {
         // Store tokens
-        localStorage.setItem('auth_token', response.data.token);
-        if (response.data.refreshToken) {
-          localStorage.setItem('refresh_token', response.data.refreshToken);
+        localStorage.setItem('auth_token', response.tokens.accessToken);
+        if (response.tokens.refreshToken) {
+          localStorage.setItem('refresh_token', response.tokens.refreshToken);
         }
         
         // Set user state
         setAuthState({
-          user: response.data.user,
+          user: response.user,
           isAuthenticated: true,
           isLoading: false,
         });

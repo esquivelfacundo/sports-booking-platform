@@ -58,7 +58,7 @@ class ApiClient {
     firstName: string;
     lastName: string;
     phone?: string;
-    role?: string;
+    userType?: string;
   }) {
     return this.request('/api/auth/register', {
       method: 'POST',
