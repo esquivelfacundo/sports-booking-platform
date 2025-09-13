@@ -143,7 +143,7 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isTimeOpen ? 'rotate-180' : ''}`} />
             </button>
             {isTimeOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-700 border border-gray-600 rounded-xl shadow-xl z-50">
+              <div className="absolute top-full left-0 w-96 mt-1 bg-gray-700 border border-gray-600 rounded-xl shadow-xl z-50">
                 {timeRanges.map((timeOption) => (
                   <button
                     key={timeOption.value}
@@ -151,7 +151,7 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
                       setSelectedTimeRange(timeOption.value);
                       setIsTimeOpen(false);
                     }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-600 flex items-center space-x-3 text-white text-sm transition-colors first:rounded-t-xl last:rounded-b-xl"
+                    className="w-full px-4 py-3 text-left hover:bg-gray-600 flex items-center space-x-3 text-white text-sm transition-colors first:rounded-t-xl last:rounded-b-xl whitespace-nowrap"
                   >
                     <Clock className="w-4 h-4 text-emerald-400" />
                     <span>{timeOption.label}</span>
