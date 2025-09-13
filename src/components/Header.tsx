@@ -58,6 +58,7 @@ const Header = ({ onLoginClick }: HeaderProps) => {
           {/* Desktop Search Bar - Hidden on homepage hero */}
           {showSearchBar && (
             <motion.div
+              className="hidden md:block"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -97,21 +98,19 @@ const Header = ({ onLoginClick }: HeaderProps) => {
 
         </div>
 
-        {/* Mobile Search Button - Only show when not on homepage */}
-        {!isHomepage && (
-          <div className="md:hidden pb-4">
-            <button 
-              onClick={() => setShowMobileSearch(true)}
-              className="w-full flex items-center border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 hover:bg-gray-700 transition-all duration-200"
-            >
-              <Search className="w-5 h-5 text-gray-400 mr-3" />
-              <div className="text-left">
-                <div className="text-sm font-medium text-white">¿A dónde vas?</div>
-                <div className="text-xs text-gray-400">Ubicación • Deporte • Fecha</div>
-              </div>
-            </button>
-          </div>
-        )}
+        {/* Mobile Search Button - Show on all pages */}
+        <div className="md:hidden pb-4">
+          <button 
+            onClick={() => setShowMobileSearch(true)}
+            className="w-full flex items-center border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 hover:bg-gray-700 transition-all duration-200"
+          >
+            <Search className="w-5 h-5 text-gray-400 mr-3" />
+            <div className="text-left">
+              <div className="text-sm font-medium text-white">¿A dónde vas?</div>
+              <div className="text-xs text-gray-400">Ubicación • Deporte • Fecha</div>
+            </div>
+          </button>
+        </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
