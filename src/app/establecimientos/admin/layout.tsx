@@ -315,7 +315,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center space-x-3">
               <img 
-                src="/assets/logo-2.png" 
+                src="/assets/logo-3.png" 
                 alt="Mis Canchas" 
                 className="h-8 w-auto"
               />
@@ -357,7 +357,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <div className="flex flex-col flex-grow bg-gray-800 pt-5 pb-4 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-4">
             <img 
-              src="/assets/logo-2.png" 
+              src="/assets/logo-3.png" 
               alt="Mis Canchas" 
               className="h-8 w-auto"
             />
@@ -406,7 +406,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               {/* Logo - Hidden on desktop since sidebar has it */}
               <div className="lg:hidden flex items-center">
                 <img 
-                  src="/assets/logo-2.png" 
+                  src="/assets/logo-3.png" 
                   alt="Mis Canchas" 
                   className="h-8 w-auto"
                 />
