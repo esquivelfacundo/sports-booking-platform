@@ -26,7 +26,8 @@ import {
   UserPlus,
   Shield,
   ChevronDown,
-  Trash2
+  Trash2,
+  Trophy
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -118,11 +119,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     // Canchas
     { id: 'canchas', title: 'Canchas', description: 'Gestión de canchas', href: '/establecimientos/admin/canchas', icon: MapPin, category: 'Canchas', keywords: ['courts', 'campos', 'instalaciones'] },
     { id: 'nueva-cancha', title: 'Nueva Cancha', description: 'Agregar cancha', href: '/establecimientos/admin/canchas', action: 'create', icon: Plus, category: 'Canchas', keywords: ['crear cancha', 'nueva instalación'] },
-    { id: 'horarios-canchas', title: 'Horarios de Canchas', description: 'Configurar horarios', href: '/establecimientos/admin/canchas', action: 'schedules', icon: Clock, category: 'Canchas', keywords: ['horarios', 'disponibilidad', 'cambiar horarios'] },
     
     // Clientes
     { id: 'clientes', title: 'Clientes', description: 'Gestión de clientes', href: '/establecimientos/admin/clientes', icon: Users, category: 'Clientes', keywords: ['usuarios', 'customers', 'jugadores'] },
     { id: 'nuevo-cliente', title: 'Nuevo Cliente', description: 'Registrar cliente', href: '/establecimientos/admin/clientes', action: 'create', icon: UserPlus, category: 'Clientes', keywords: ['registrar cliente', 'nuevo usuario'] },
+    
+    // Torneos
+    { id: 'torneos', title: 'Torneos', description: 'Gestión de torneos', href: '/establecimientos/dashboard/torneos', icon: Trophy, category: 'Torneos', keywords: ['tournaments', 'competencias', 'campeonatos'] },
+    { id: 'nuevo-torneo', title: 'Nuevo Torneo', description: 'Crear nuevo torneo', href: '/establecimientos/dashboard/torneos', action: 'create', icon: Plus, category: 'Torneos', keywords: ['crear torneo', 'nueva competencia'] },
+    { id: 'horarios-canchas', title: 'Horarios de Canchas', description: 'Configurar horarios', href: '/establecimientos/admin/canchas', action: 'schedules', icon: Clock, category: 'Canchas', keywords: ['horarios', 'disponibilidad', 'cambiar horarios'] },
     
     // Mantenimiento
     { id: 'mantenimiento', title: 'Mantenimiento', description: 'Gestión de mantenimiento', href: '/establecimientos/admin/mantenimiento', icon: Wrench, category: 'Mantenimiento', keywords: ['reparaciones', 'maintenance', 'arreglos'] },
@@ -244,6 +249,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       icon: Calendar,
       current: pathname.startsWith('/establecimientos/admin/reservas'),
       badge: '12'
+    },
+    {
+      name: 'Torneos',
+      href: '/establecimientos/dashboard/torneos',
+      icon: Trophy,
+      current: pathname.startsWith('/establecimientos/dashboard/torneos')
     },
     {
       name: 'Análisis',
