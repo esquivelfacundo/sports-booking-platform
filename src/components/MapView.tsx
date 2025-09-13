@@ -21,9 +21,10 @@ interface Facility {
 interface MapViewProps {
   facilities: Facility[];
   onFacilitySelect?: (facility: Facility) => void;
+  onMapChange?: (bounds: any, center: {lat: number, lng: number}, zoom: number) => void;
 }
 
-const MapView = ({ facilities, onFacilitySelect }: MapViewProps) => {
+const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
@@ -127,6 +128,36 @@ const MapView = ({ facilities, onFacilitySelect }: MapViewProps) => {
         });
 
         mapInstanceRef.current = map;
+        
+        // Add map event listeners for bounds and zoom changes
+        if (onMapChange) {
+          const updateMapState = () => {
+            const bounds = map.getBounds();
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            
+            if (bounds && center && zoom) {
+              onMapChange(
+                {
+                  north: bounds.getNorthEast().lat(),
+                  south: bounds.getSouthWest().lat(),
+                  east: bounds.getNorthEast().lng(),
+                  west: bounds.getSouthWest().lng()
+                },
+                { lat: center.lat(), lng: center.lng() },
+                zoom
+              );
+            }
+          };
+          
+          // Listen for map changes
+          map.addListener('bounds_changed', updateMapState);
+          map.addListener('zoom_changed', updateMapState);
+          
+          // Initial call to set initial bounds
+          google.maps.event.addListenerOnce(map, 'idle', updateMapState);
+        }
+        
         setIsLoading(false);
 
       } catch (error) {

@@ -40,9 +40,7 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (
-            <span className="text-white font-medium text-sm">
-              {user.name.charAt(0).toUpperCase()}
-            </span>
+            <User className="w-5 h-5 text-white" />
           )}
         </div>
         <span className="hidden sm:block text-white font-medium">{user.name}</span>
@@ -71,9 +69,7 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-white font-medium text-lg">
-                      {user.name.charAt(0).toUpperCase()}
-                    </span>
+                    <User className="w-7 h-7 text-white" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

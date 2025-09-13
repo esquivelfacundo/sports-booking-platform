@@ -44,6 +44,9 @@ const SearchContent = () => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [filteredFacilities, setFilteredFacilities] = useState<Facility[]>([]);
+  const [mapBounds, setMapBounds] = useState<any>(null);
+  const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
+  const [mapZoom, setMapZoom] = useState<number>(12);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 5000]);
@@ -125,7 +128,6 @@ const SearchContent = () => {
     // Simular carga de datos
     setTimeout(() => {
       setFacilities(mockFacilities);
-      setFilteredFacilities(mockFacilities);
       setLoading(false);
     }, 1000);
 
@@ -148,7 +150,7 @@ const SearchContent = () => {
     const sport = searchParams.get('sport');
     const date = searchParams.get('date');
 
-    let filtered = facilities;
+    let filtered = [...facilities];
 
     // Filter by selected place location if available
     if (selectedPlace && selectedPlace.geometry) {
@@ -209,6 +211,82 @@ const SearchContent = () => {
 
     setFilteredFacilities(filtered);
   }, [searchParams, facilities, selectedSports, priceRange, minRating, sortBy, selectedPlace]);
+
+  // Initialize filtered facilities when facilities are loaded
+  useEffect(() => {
+    if (facilities.length > 0 && filteredFacilities.length === 0) {
+      setFilteredFacilities(facilities);
+    }
+  }, [facilities, filteredFacilities.length]);
+
+  // Filter facilities based on map bounds and zoom level
+  const handleMapChange = (bounds: any, center: {lat: number, lng: number}, zoom: number) => {
+    setMapBounds(bounds);
+    setMapCenter(center);
+    setMapZoom(zoom);
+  };
+
+  // Apply map-based filtering
+  useEffect(() => {
+    if (!mapBounds || facilities.length === 0) return;
+
+    const visibleFacilities = facilities.filter(facility => {
+      const lat = facility.coordinates[0];
+      const lng = facility.coordinates[1];
+      
+      // Check if facility is within map bounds
+      return lat >= mapBounds.south && lat <= mapBounds.north &&
+             lng >= mapBounds.west && lng <= mapBounds.east;
+    });
+
+    // Apply existing filters to visible facilities
+    const location = searchParams.get('location');
+    const sport = searchParams.get('sport');
+    
+    let filtered = [...visibleFacilities];
+
+    // Apply search filters
+    if (sport && sport !== '') {
+      filtered = filtered.filter(facility => facility.sport === sport);
+    }
+
+    if (location && location !== '') {
+      filtered = filtered.filter(facility => 
+        facility.location.toLowerCase().includes(location.toLowerCase())
+      );
+    }
+
+    // Apply additional filters
+    if (selectedSports.length > 0) {
+      filtered = filtered.filter(facility => selectedSports.includes(facility.sport));
+    }
+
+    filtered = filtered.filter(facility => 
+      facility.price >= priceRange[0] && facility.price <= priceRange[1]
+    );
+
+    filtered = filtered.filter(facility => facility.rating >= minRating);
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'price_low':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_high':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        filtered.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'reviews':
+        filtered.sort((a, b) => b.reviews - a.reviews);
+        break;
+      default:
+        break;
+    }
+
+    setFilteredFacilities(filtered);
+  }, [mapBounds, facilities, searchParams, selectedSports, priceRange, minRating, sortBy]);
 
   const handleReserve = (facility: Facility) => {
     if (!isAuthenticated) {
@@ -463,7 +541,7 @@ const SearchContent = () => {
         {/* Map - Hidden on mobile */}
         {showMap && (
           <div className="hidden md:block md:w-1/2 h-screen sticky top-0">
-            <MapView facilities={filteredFacilities} />
+            <MapView facilities={facilities} onMapChange={handleMapChange} />
           </div>
         )}
 
