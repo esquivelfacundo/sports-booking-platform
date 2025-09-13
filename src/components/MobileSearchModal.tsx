@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MapPin, Calendar, ChevronDown, Trophy, Zap, Target, Disc, Circle, Hexagon, Square, Octagon, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -16,8 +17,13 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
   const [sport, setSport] = useState('');
   const [date, setDate] = useState('');
   const [isSportOpen, setIsSportOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const sportRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,7 +60,9 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
     router.push(`/buscar?${searchParams.toString()}`);
   };
 
-  return (
+  if (!mounted) return null;
+
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <>
@@ -173,6 +181,8 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
       )}
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default MobileSearchModal;

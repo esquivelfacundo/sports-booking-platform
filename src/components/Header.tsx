@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import HeaderSearchBar from './HeaderSearchBar';
 import UserAvatar from './UserAvatar';
-import MobileSearchModal from './MobileSearchModal';
+import { useMobileSearchModal } from './MobileSearchModalProvider';
 
 interface HeaderProps {
   onLoginClick?: () => void;
@@ -15,9 +15,9 @@ interface HeaderProps {
 
 const Header = ({ onLoginClick }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const pathname = usePathname();
+  const { setShowMobileSearch } = useMobileSearchModal();
   
   // Check if we're on homepage
   const isHomepage = pathname === '/';
@@ -141,11 +141,6 @@ const Header = ({ onLoginClick }: HeaderProps) => {
         )}
       </div>
 
-      {/* Mobile Search Modal */}
-      <MobileSearchModal 
-        isOpen={showMobileSearch} 
-        onClose={() => setShowMobileSearch(false)} 
-      />
 
     </header>
   );
