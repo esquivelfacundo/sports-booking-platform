@@ -13,8 +13,10 @@ import {
   Eye,
   CheckCircle,
   AlertCircle,
-  Settings
+  Settings,
+  Trophy
 } from 'lucide-react';
+import Link from 'next/link';
 
 const EstablishmentDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('week');
@@ -120,21 +122,31 @@ const EstablishmentDashboard = () => {
             </p>
           </motion.div>
 
-          {/* Period Selector */}
-          <div className="mt-6 flex space-x-2">
-            {['day', 'week', 'month'].map((period) => (
-              <button
-                key={period}
-                onClick={() => setSelectedPeriod(period)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedPeriod === period
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {period === 'day' ? 'Hoy' : period === 'week' ? 'Semana' : 'Mes'}
-              </button>
-            ))}
+          {/* Quick Actions */}
+          <div className="mt-6 flex flex-wrap gap-4">
+            <Link
+              href="/establecimientos/dashboard/torneos"
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-3 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center space-x-2 shadow-lg"
+            >
+              <Trophy className="w-5 h-5" />
+              <span>Gestionar Torneos</span>
+            </Link>
+            
+            <div className="flex space-x-2">
+              {['day', 'week', 'month'].map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedPeriod === period
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {period === 'day' ? 'Hoy' : period === 'week' ? 'Semana' : 'Mes'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

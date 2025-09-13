@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SocialProvider } from '@/contexts/SocialContext';
+import { TournamentProvider } from '@/contexts/TournamentContext';
 import { MobileSearchModalProvider } from '@/components/MobileSearchModalProvider';
 import ClientLayout from "@/components/ClientLayout";
 
@@ -27,7 +28,9 @@ export default function RootLayout({
         <MobileSearchModalProvider>
           <AuthProvider>
             <SocialProvider>
-              <ClientLayout>{children}</ClientLayout>
+              <TournamentProvider>
+                <ClientLayout>{children}</ClientLayout>
+              </TournamentProvider>
             </SocialProvider>
           </AuthProvider>
         </MobileSearchModalProvider>
