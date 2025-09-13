@@ -51,7 +51,7 @@ const Header = ({ onLoginClick }: HeaderProps) => {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <img 
-              src="/assets/logo-1.png" 
+              src="/assets/logo-2.png" 
               alt="Mis Canchas" 
               className="h-10 w-auto"
             />
