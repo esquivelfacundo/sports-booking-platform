@@ -62,7 +62,7 @@ const BookingPage = () => {
   const { isAuthenticated } = useAuth();
   const [facility, setFacility] = useState<Facility | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [selectedDuration, setSelectedDuration] = useState(60);
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,39 +73,18 @@ const BookingPage = () => {
   const [expandedCourts, setExpandedCourts] = useState<string[]>([]);
   const [paymentOption, setPaymentOption] = useState<'full' | 'split'>('full');
 
-  // Generate mock time slots
+  // Generate mock time slots - each slot is 1 hour
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = [];
     const times = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
     
     times.forEach(time => {
-      // 60 min slots
       slots.push({
         time,
-        available: Math.random() > 0.3,
+        available: Math.random() > 0.3, // Random availability
         price: 2500,
-        duration: 60
+        duration: 60 // All slots are 1 hour
       });
-      
-      // 90 min slots (some times)
-      if (parseInt(time.split(':')[0]) < 21) {
-        slots.push({
-          time,
-          available: Math.random() > 0.4,
-          price: 3500,
-          duration: 90
-        });
-      }
-      
-      // 120 min slots (some times)
-      if (parseInt(time.split(':')[0]) < 20) {
-        slots.push({
-          time,
-          available: Math.random() > 0.5,
-          price: 4500,
-          duration: 120
-        });
-      }
     });
     
     return slots;
@@ -173,7 +152,7 @@ const BookingPage = () => {
       // Set pre-selected time from URL if available
       const timeParam = searchParams.get('time');
       if (timeParam) {
-        setSelectedTime(timeParam);
+        setSelectedTimes([timeParam]);
       }
     }, 1000);
   }, [searchParams]);
@@ -236,20 +215,19 @@ const BookingPage = () => {
     return court.timeSlots.filter(slot => slot.available);
   };
 
-  const getSlotsByDuration = (slots: TimeSlot[]) => {
-    const grouped = slots.reduce((acc, slot) => {
-      if (!acc[slot.duration]) acc[slot.duration] = [];
-      acc[slot.duration].push(slot);
-      return acc;
-    }, {} as Record<number, TimeSlot[]>);
-    
-    return Object.entries(grouped).sort(([a], [b]) => parseInt(a) - parseInt(b));
+  const handleTimeToggle = (time: string) => {
+    setSelectedTimes(prev => {
+      if (prev.includes(time)) {
+        return prev.filter(t => t !== time);
+      } else {
+        return [...prev, time].sort();
+      }
+    });
   };
 
   const calculateTotal = () => {
-    if (!selectedCourt || !selectedTime) return 0;
-    const slot = selectedCourt.timeSlots.find(s => s.time === selectedTime && s.duration === selectedDuration);
-    return slot ? slot.price : 0;
+    if (!selectedCourt || selectedTimes.length === 0) return 0;
+    return selectedTimes.length * 2500; // Each slot is $2500
   };
 
   const calculateSplitPrice = () => {
@@ -260,8 +238,8 @@ const BookingPage = () => {
 
   const handleBooking = () => {
     if (bookingStep === 1) {
-      if (!selectedDate || !selectedTime || !selectedCourt) {
-        alert('Por favor selecciona fecha, cancha y horario');
+      if (!selectedDate || selectedTimes.length === 0 || !selectedCourt) {
+        alert('Por favor selecciona fecha, cancha y al menos un horario');
         return;
       }
       setBookingStep(2);
@@ -272,8 +250,7 @@ const BookingPage = () => {
         court: selectedCourt?.name || '',
         sport: getSportName(facility?.sport || ''),
         date: selectedDate,
-        time: selectedTime,
-        duration: selectedDuration.toString(),
+        times: selectedTimes.join(','),
         paymentOption: paymentOption,
         total: calculateTotal().toString()
       });
@@ -344,8 +321,18 @@ const BookingPage = () => {
               transition={{ duration: 0.5 }}
             >
               {/* Image */}
-              <div className="w-full h-96 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-gray-700 rounded-xl mb-6 flex items-center justify-center">
-                <div className="text-6xl">⚽</div>
+              <div className="w-full h-96 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-gray-700 rounded-xl mb-6 overflow-hidden">
+                {facility.image ? (
+                  <img 
+                    src={facility.image} 
+                    alt={facility.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="text-6xl">⚽</div>
+                  </div>
+                )}
               </div>
 
               {/* Basic Info */}
@@ -470,7 +457,6 @@ const BookingPage = () => {
                       <div className="space-y-3">
                         {facility.courts.map((court) => {
                           const availableSlots = getAvailableSlots(court);
-                          const slotsByDuration = getSlotsByDuration(availableSlots);
                           const isExpanded = expandedCourts.includes(court.id);
                           
                           return (
@@ -494,40 +480,53 @@ const BookingPage = () => {
                               
                               {isExpanded && (
                                 <div className="px-4 pb-4">
-                                  {slotsByDuration.map(([duration, slots]) => (
-                                    <div key={duration} className="mb-4">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm font-medium text-white">
-                                          {duration} min
-                                        </span>
-                                        <span className="text-sm text-emerald-400">
-                                          EUR {slots[0]?.price || 0}
-                                        </span>
-                                      </div>
-                                      <div className="grid grid-cols-4 gap-2">
-                                        {slots.slice(0, 12).map((slot, index) => (
+                                  <div className="mb-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium text-white">
+                                        Horarios disponibles (1 hora cada uno)
+                                      </span>
+                                      <span className="text-sm text-emerald-400">
+                                        $2500 por hora
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-2">
+                                      {court.timeSlots.map((slot) => {
+                                        const isSelected = selectedTimes.includes(slot.time) && selectedCourt?.id === court.id;
+                                        return (
                                           <button
-                                            key={`${slot.time}-${slot.duration}`}
+                                            key={slot.time}
                                             onClick={() => {
                                               setSelectedCourt(court);
-                                              setSelectedTime(slot.time);
-                                              setSelectedDuration(slot.duration);
+                                              handleTimeToggle(slot.time);
                                             }}
-                                            disabled={!slot.available}
-                                            className={`px-2 py-1.5 text-xs rounded-md border transition-all duration-200 ${
-                                              selectedCourt?.id === court.id && selectedTime === slot.time && selectedDuration === slot.duration
+                                            className={`px-2 py-1.5 text-xs rounded-md border transition-all duration-200 relative ${
+                                              isSelected
                                                 ? 'bg-emerald-500 text-white border-emerald-500'
                                                 : slot.available
                                                 ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
                                                 : 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed opacity-50'
                                             }`}
                                           >
-                                            {slot.time}
+                                            <span className={!slot.available ? 'line-through' : ''}>
+                                              {slot.time}
+                                            </span>
+                                            {!slot.available && (
+                                              <div className="absolute inset-0 flex items-center justify-center">
+                                                <X className="w-3 h-3 text-red-400" />
+                                              </div>
+                                            )}
                                           </button>
-                                        ))}
-                                      </div>
+                                        );
+                                      })}
                                     </div>
-                                  ))}
+                                    {selectedTimes.length > 0 && selectedCourt?.id === court.id && (
+                                      <div className="mt-3 p-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
+                                        <p className="text-xs text-emerald-400">
+                                          Seleccionados: {selectedTimes.join(', ')} ({selectedTimes.length} hora{selectedTimes.length > 1 ? 's' : ''})
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -553,12 +552,12 @@ const BookingPage = () => {
                         <span className="font-medium text-white">{selectedCourt?.name}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Horario:</span>
-                        <span className="font-medium text-white">{selectedTime}</span>
+                        <span className="text-gray-400">Horarios:</span>
+                        <span className="font-medium text-white">{selectedTimes.join(', ')}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Duración:</span>
-                        <span className="font-medium text-white">{selectedDuration} min</span>
+                        <span className="text-gray-400">Total horas:</span>
+                        <span className="font-medium text-white">{selectedTimes.length}</span>
                       </div>
                     </div>
                   </div>
@@ -627,7 +626,7 @@ const BookingPage = () => {
                 </div>
                 {bookingStep === 2 && (
                   <div className="text-xs text-gray-400 mt-2">
-                    {selectedDuration} min • {selectedCourt?.name} • {facility.name}
+                    {selectedTimes.length} hora{selectedTimes.length > 1 ? 's' : ''} • {selectedCourt?.name} • {facility.name}
                   </div>
                 )}
               </div>
@@ -635,7 +634,7 @@ const BookingPage = () => {
               {/* Action Button */}
               <button
                 onClick={handleBooking}
-                disabled={!selectedDate || !selectedTime || !selectedCourt}
+                disabled={!selectedDate || selectedTimes.length === 0 || !selectedCourt}
                 className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
               >
                 {bookingStep === 1 ? 'Continuar' : `Continuar pagando $${bookingStep === 2 && paymentOption === 'split' ? calculateSplitPrice() : calculateTotal()}`}

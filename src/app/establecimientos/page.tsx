@@ -59,7 +59,7 @@ const EstablishmentPage = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&h=800&fit=crop&auto=format')"
+            backgroundImage: "url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=800&fit=crop&auto=format')"
           }}
         ></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
