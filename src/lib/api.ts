@@ -108,12 +108,12 @@ class ApiClient {
       }
     });
 
-    const response = await this.request(`/establishments?${queryParams.toString()}`) as any;
+    const response = await this.request(`/api/establishments?${queryParams.toString()}`) as any;
     return response.data || [];
   }
 
   async getEstablishmentById(id: string) {
-    const response = await this.request(`/establishments/${id}`) as any;
+    const response = await this.request(`/api/establishments/${id}`) as any;
     return response.data;
   }
 
