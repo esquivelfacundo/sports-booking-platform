@@ -314,8 +314,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-gray-800">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center space-x-3">
-              <Building2 className="h-8 w-8 text-emerald-400" />
-              <span className="text-xl font-bold text-white">SportAdmin</span>
+              <img 
+                src="/assets/logo-2.png" 
+                alt="Mis Canchas" 
+                className="h-8 w-auto"
+              />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -353,8 +356,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-gray-800 pt-5 pb-4 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-4">
-            <Building2 className="h-8 w-8 text-emerald-400" />
-            <span className="ml-3 text-xl font-bold text-white">Mis Canchas</span>
+            <img 
+              src="/assets/logo-2.png" 
+              alt="Mis Canchas" 
+              className="h-8 w-auto"
+            />
           </div>
           <nav className="mt-8 flex-1 flex flex-col divide-y divide-gray-700 overflow-y-auto">
             <div className="px-2 space-y-1">
@@ -399,9 +405,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
               {/* Logo - Hidden on desktop since sidebar has it */}
               <div className="lg:hidden flex items-center">
-                <div className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  SportAdmin
-                </div>
+                <img 
+                  src="/assets/logo-2.png" 
+                  alt="Mis Canchas" 
+                  className="h-8 w-auto"
+                />
               </div>
 
               {/* Spacer to push content to the right */}
