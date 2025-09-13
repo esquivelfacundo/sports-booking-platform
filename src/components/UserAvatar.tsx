@@ -21,7 +21,7 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
         className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 shadow-lg hover:shadow-xl"
       >
         <User className="w-4 h-4" />
-        <span className="hidden sm:block">Iniciar Sesión</span>
+        <span className="block">Acceder</span>
       </button>
     );
   }
@@ -33,15 +33,7 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
         className="flex items-center space-x-2 p-2 rounded-xl hover:bg-gray-700 transition-colors"
       >
         <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center">
-          {user.avatar ? (
-            <img 
-              src={user.avatar} 
-              alt={user.name}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <User className="w-5 h-5 text-white" />
-          )}
+          <User className="w-5 h-5 text-white" />
         </div>
         <span className="hidden sm:block text-white font-medium">{user.name}</span>
       </button>
@@ -62,15 +54,7 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
             <div className="p-4 border-b border-gray-700">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center">
-                  {user.avatar ? (
-                    <img 
-                      src={user.avatar} 
-                      alt={user.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-7 h-7 text-white" />
-                  )}
+                  <User className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-white truncate">{user.name}</p>
