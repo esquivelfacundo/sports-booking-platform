@@ -64,7 +64,7 @@ const HeaderSearchBar = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-stretch md:items-center bg-gray-800 border border-gray-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 max-w-5xl mx-auto md:divide-x divide-gray-600">
+    <div className="flex flex-col md:flex-row items-stretch md:items-center bg-gray-800 border border-gray-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 max-w-6xl mx-auto md:divide-x divide-gray-600">
       {/* Location */}
       <div className="flex-1 px-6 py-3 border-b md:border-b-0 border-gray-600">
         <label className="block text-xs font-medium text-gray-400 mb-1">Ubicación</label>
@@ -127,14 +127,14 @@ const HeaderSearchBar = () => {
         />
       </div>
       {/* Time Range */}
-      <div className="flex-[1.3] px-6 py-3 relative border-b md:border-b-0 border-gray-600" ref={timeRef}>
+      <div className="flex-[1.6] px-6 py-3 relative border-b md:border-b-0 border-gray-600" ref={timeRef}>
         <label className="block text-xs font-medium text-gray-400 mb-1">Horario</label>
         <div className="relative">
           <button
             onClick={() => setIsTimeOpen(!isTimeOpen)}
             className="w-full text-sm text-white bg-transparent border-none outline-none appearance-none flex items-center justify-between cursor-pointer"
           >
-            <span>{timeRanges.find(t => t.value === timeRange)?.label || 'Cualquier hora'}</span>
+            <span className="truncate">{timeRanges.find(t => t.value === timeRange)?.label || 'Cualquier hora'}</span>
             <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isTimeOpen ? 'rotate-180' : ''}`} />
           </button>
           {isTimeOpen && (
