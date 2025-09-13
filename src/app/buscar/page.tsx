@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Filter, Grid3X3, List, MapPin, Star, Heart } from 'lucide-react';
+import { Filter, Grid3X3, List, MapPin, Star, Heart, ArrowUp, ArrowDown } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import FacilityCard from '@/components/FacilityCard';
 import CompactFacilityCard from '@/components/CompactFacilityCard';
@@ -362,17 +362,22 @@ const SearchContent = () => {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-white">
+              <h1 className="text-xl md:text-2xl font-semibold text-white">
                 {filteredFacilities.length} canchas disponibles
               </h1>
-              <p className="text-gray-400 mt-1">
+              {(searchParams.get('date') || selectedDate) && (
+                <p className="text-sm text-gray-400 mt-1">
+                  para el {(searchParams.get('date') || selectedDate)}
+                </p>
+              )}
+              <p className="text-gray-400 mt-1 hidden md:block">
                 {searchParams.get('location') && `en ${searchParams.get('location')}`}
                 {(searchParams.get('sport') || selectedSport) && ` • ${getSportName((searchParams.get('sport') || selectedSport)!)}`}
-                {(searchParams.get('date') || selectedDate) && ` • ${(searchParams.get('date') || selectedDate)}`}
               </p>
             </div>
             
-            <div className="flex items-center space-x-4">
+            {/* Desktop Controls */}
+            <div className="hidden md:flex items-center space-x-4">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -415,6 +420,27 @@ const SearchContent = () => {
                   <List className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+
+            {/* Mobile Controls */}
+            <div className="flex md:hidden items-center space-x-3">
+              <button
+                onClick={() => setSortBy(sortBy === 'price_low' ? 'price_high' : 'price_low')}
+                className="p-2 border border-gray-600 rounded-xl hover:bg-gray-700 transition-all duration-200 bg-gray-800"
+              >
+                {sortBy === 'price_low' ? (
+                  <ArrowUp className="w-4 h-4 text-gray-300" />
+                ) : (
+                  <ArrowDown className="w-4 h-4 text-gray-300" />
+                )}
+              </button>
+              
+              <button 
+                onClick={() => setShowFilters(!showFilters)}
+                className="p-2 border border-gray-600 rounded-xl hover:bg-gray-700 transition-all duration-200 bg-gray-800"
+              >
+                <Filter className="w-4 h-4 text-gray-300" />
+              </button>
             </div>
           </div>
         </div>
