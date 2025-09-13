@@ -87,7 +87,7 @@ const mockTournaments: Tournament[] = [
       'Paletas en buen estado',
       'Ropa deportiva adecuada'
     ],
-    image: 'https://images.unsplash.com/photo-1544717440-6b6ac3b9d1b8?w=400&h=300&fit=crop&auto=format',
+    image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop&auto=format',
     createdAt: '2025-01-10T14:30:00Z',
     updatedAt: '2025-01-10T14:30:00Z'
   }

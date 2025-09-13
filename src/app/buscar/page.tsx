@@ -111,7 +111,7 @@ const SearchContent = () => {
       price: 1800,
       rating: 4.6,
       reviews: 89,
-      image: 'https://images.unsplash.com/photo-1544717440-6b6ac3b9d1b8?w=400&h=300&fit=crop&auto=format',
+      image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop&auto=format',
       coordinates: [-34.5633, -58.4583],
       amenities: ['Vestuarios', 'Alquiler de paletas', 'Cafetería'],
       availability: ['17:00', '18:00', '19:00'],
