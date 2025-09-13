@@ -10,6 +10,7 @@ import CompactFacilityCard from '@/components/CompactFacilityCard';
 import BookingModal from '@/components/BookingModal';
 import LoginModal from '@/components/auth/LoginModal';
 import RegisterModal from '@/components/auth/RegisterModal';
+import SearchFilters, { SearchFilters as SearchFiltersType } from '@/components/SearchFilters';
 import { useAuth } from '@/contexts/AuthContext';
 
 const MapView = dynamic(() => import('../../components/MapView'), {
@@ -18,6 +19,13 @@ const MapView = dynamic(() => import('../../components/MapView'), {
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
   </div>
 });
+
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  price: number;
+  duration: number;
+}
 
 interface Facility {
   id: string;
@@ -31,6 +39,8 @@ interface Facility {
   coordinates: [number, number];
   amenities: string[];
   availability: string[];
+  timeSlots?: TimeSlot[];
+  priceFrom?: number;
 }
 
 const SearchContent = () => {
@@ -54,6 +64,30 @@ const SearchContent = () => {
   const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState('relevance');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
+  const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
+    sport: '',
+    date: '',
+    timeRange: 'all',
+    priceRange: [0, 100],
+    showOnlyAvailable: true,
+  });
+
+  // Generate mock time slots for facilities
+  const generateTimeSlots = (): TimeSlot[] => {
+    const slots: TimeSlot[] = [];
+    const times = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
+    
+    times.forEach(time => {
+      slots.push({
+        time,
+        available: Math.random() > 0.3,
+        price: Math.floor(Math.random() * 3000) + 1500,
+        duration: 60
+      });
+    });
+    
+    return slots;
+  };
 
   // Mock data - in a real app, this would come from an API
   const mockFacilities: Facility[] = [
@@ -68,7 +102,9 @@ const SearchContent = () => {
       image: '/api/placeholder/400/300',
       coordinates: [-34.5875, -58.4260],
       amenities: ['Estacionamiento', 'Vestuarios', 'Parrilla', 'Buffet'],
-      availability: ['18:00', '19:00', '20:00', '21:00']
+      availability: ['18:00', '19:00', '20:00', '21:00'],
+      timeSlots: generateTimeSlots(),
+      priceFrom: 2200
     },
     {
       id: '2',
@@ -81,7 +117,9 @@ const SearchContent = () => {
       image: '/api/placeholder/400/300',
       coordinates: [-34.5633, -58.4583],
       amenities: ['Vestuarios', 'Alquiler de paletas', 'Cafetería'],
-      availability: ['17:00', '18:00', '19:00']
+      availability: ['17:00', '18:00', '19:00'],
+      timeSlots: generateTimeSlots(),
+      priceFrom: 1600
     },
     {
       id: '3',
@@ -94,7 +132,9 @@ const SearchContent = () => {
       image: '/api/placeholder/400/300',
       coordinates: [-34.5936, -58.3994],
       amenities: ['Vestuarios', 'Alquiler de raquetas', 'Instructor', 'Tienda'],
-      availability: ['16:00', '17:00', '18:00', '19:00', '20:00']
+      availability: ['16:00', '17:00', '18:00', '19:00', '20:00'],
+      timeSlots: generateTimeSlots(),
+      priceFrom: 2800
     },
     {
       id: '4',
@@ -107,7 +147,9 @@ const SearchContent = () => {
       image: '/api/placeholder/400/300',
       coordinates: [-34.5998, -58.4317],
       amenities: ['Vestuarios', 'Estacionamiento'],
-      availability: ['19:00', '20:00', '21:00']
+      availability: ['19:00', '20:00', '21:00'],
+      timeSlots: generateTimeSlots(),
+      priceFrom: 1700
     },
     {
       id: '5',
@@ -120,7 +162,9 @@ const SearchContent = () => {
       image: '/api/placeholder/400/300',
       coordinates: [-34.6118, -58.4396],
       amenities: ['Vestuarios', 'Tribuna', 'Aire acondicionado', 'Buffet'],
-      availability: ['18:00', '19:00', '20:00']
+      availability: ['18:00', '19:00', '20:00'],
+      timeSlots: generateTimeSlots(),
+      priceFrom: 2400
     }
   ];
 
@@ -144,11 +188,15 @@ const SearchContent = () => {
     }
   }, []);
 
+  const handleFiltersChange = (newFilters: SearchFiltersType) => {
+    setSearchFilters(newFilters);
+  };
+
   useEffect(() => {
     // Filtrar por parámetros de búsqueda y filtros
     const location = searchParams.get('location');
-    const sport = searchParams.get('sport');
-    const date = searchParams.get('date');
+    const sport = searchParams.get('sport') || searchFilters.sport;
+    const date = searchParams.get('date') || searchFilters.date;
 
     let filtered = [...facilities];
 
@@ -179,7 +227,51 @@ const SearchContent = () => {
       );
     }
 
-    // Filtros adicionales
+    // Apply search filters
+    if (searchFilters.timeRange !== 'all') {
+      filtered = filtered.filter(facility => {
+        if (!facility.timeSlots) return true;
+        const availableSlots = facility.timeSlots.filter(slot => slot.available);
+        
+        switch (searchFilters.timeRange) {
+          case 'morning':
+            return availableSlots.some(slot => {
+              const hour = parseInt(slot.time.split(':')[0]);
+              return hour >= 6 && hour < 12;
+            });
+          case 'afternoon':
+            return availableSlots.some(slot => {
+              const hour = parseInt(slot.time.split(':')[0]);
+              return hour >= 12 && hour < 18;
+            });
+          case 'evening':
+            return availableSlots.some(slot => {
+              const hour = parseInt(slot.time.split(':')[0]);
+              return hour >= 18;
+            });
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Price range filter (convert to match our price scale)
+    const minPrice = searchFilters.priceRange[0] * 50; // Scale up from 0-100 to 0-5000
+    const maxPrice = searchFilters.priceRange[1] * 50;
+    filtered = filtered.filter(facility => {
+      const price = facility.priceFrom || facility.price;
+      return price >= minPrice && price <= maxPrice;
+    });
+
+    // Show only available filter
+    if (searchFilters.showOnlyAvailable) {
+      filtered = filtered.filter(facility => {
+        if (!facility.timeSlots) return true;
+        return facility.timeSlots.some(slot => slot.available);
+      });
+    }
+
+    // Filtros adicionales (legacy)
     if (selectedSports.length > 0) {
       filtered = filtered.filter(facility => selectedSports.includes(facility.sport));
     }
@@ -193,10 +285,10 @@ const SearchContent = () => {
     // Ordenamiento
     switch (sortBy) {
       case 'price_low':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => (a.priceFrom || a.price) - (b.priceFrom || b.price));
         break;
       case 'price_high':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => (b.priceFrom || b.price) - (a.priceFrom || a.price));
         break;
       case 'rating':
         filtered.sort((a, b) => b.rating - a.rating);
@@ -210,7 +302,7 @@ const SearchContent = () => {
     }
 
     setFilteredFacilities(filtered);
-  }, [searchParams, facilities, selectedSports, priceRange, minRating, sortBy, selectedPlace]);
+  }, [searchParams, facilities, selectedSports, priceRange, minRating, sortBy, selectedPlace, searchFilters]);
 
   // Initialize filtered facilities when facilities are loaded
   useEffect(() => {
@@ -335,6 +427,20 @@ const SearchContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
+      {/* Search Filters */}
+      <div className="bg-gray-900 px-4 sm:px-6 lg:px-8 pt-6">
+        <SearchFilters 
+          onFiltersChange={handleFiltersChange}
+          initialFilters={{
+            sport: searchParams.get('sport') || '',
+            date: searchParams.get('date') || '',
+            timeRange: 'all',
+            priceRange: [0, 100],
+            showOnlyAvailable: true,
+          }}
+        />
+      </div>
+
       {/* Results Header */}
       <div className="bg-gray-800 border-b border-gray-700">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
@@ -345,8 +451,8 @@ const SearchContent = () => {
               </h1>
               <p className="text-gray-400 mt-1">
                 {searchParams.get('location') && `en ${searchParams.get('location')}`}
-                {searchParams.get('sport') && ` • ${getSportName(searchParams.get('sport')!)}`}
-                {searchParams.get('date') && ` • ${searchParams.get('date')}`}
+                {(searchParams.get('sport') || searchFilters.sport) && ` • ${getSportName((searchParams.get('sport') || searchFilters.sport)!)}`}
+                {(searchParams.get('date') || searchFilters.date) && ` • ${(searchParams.get('date') || searchFilters.date)}`}
               </p>
             </div>
             

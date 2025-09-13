@@ -1,9 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Star, MapPin, Clock } from 'lucide-react';
+import { Heart, Star, MapPin, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  price: number;
+  duration: number;
+}
 
 interface Facility {
   id: string;
@@ -15,6 +22,8 @@ interface Facility {
   reviews: number;
   amenities: string[];
   availability: string[];
+  timeSlots?: TimeSlot[];
+  priceFrom?: number;
 }
 
 interface CompactFacilityCardProps {
@@ -26,6 +35,29 @@ interface CompactFacilityCardProps {
 const CompactFacilityCard = ({ facility, onReserve, onLoginRequired }: CompactFacilityCardProps) => {
   const { user, isAuthenticated, updateProfile } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Generate mock time slots if not provided
+  const generateTimeSlots = (): TimeSlot[] => {
+    const slots: TimeSlot[] = [];
+    const times = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
+    
+    times.forEach(time => {
+      slots.push({
+        time,
+        available: Math.random() > 0.3,
+        price: facility.price,
+        duration: 60
+      });
+    });
+    
+    return slots;
+  };
+
+  const timeSlots = facility.timeSlots || generateTimeSlots();
+  const availableSlots = timeSlots.filter(slot => slot.available);
 
   // Check if facility is in user's favorites
   useEffect(() => {
@@ -35,6 +67,34 @@ const CompactFacilityCard = ({ facility, onReserve, onLoginRequired }: CompactFa
       setIsLiked(false);
     }
   }, [user, facility.id]);
+
+  // Check scroll position
+  const checkScrollPosition = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    const scrollElement = scrollRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', checkScrollPosition);
+      return () => scrollElement.removeEventListener('scroll', checkScrollPosition);
+    }
+  }, []);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 100;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const handleToggleFavorite = async () => {
     if (!isAuthenticated || !user) {
@@ -129,33 +189,83 @@ const CompactFacilityCard = ({ facility, onReserve, onLoginRequired }: CompactFa
           </span>
         </div>
 
-        {/* Availability */}
-        <div className="flex items-center space-x-1 mb-3">
-          <Clock className="w-3 h-3 text-gray-400" />
-          <div className="flex space-x-1 overflow-hidden">
-            {facility.availability.slice(0, 2).map((time, index) => (
-              <span
-                key={index}
-                className="text-xs bg-emerald-500/20 text-emerald-400 px-1 py-0.5 rounded-full border border-emerald-500/30"
+        {/* Time Slots Carousel */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-1">
+              <Clock className="w-3 h-3 text-gray-400" />
+              <span className="text-xs text-gray-400">Disponibles</span>
+            </div>
+            <span className="text-xs text-emerald-400">
+              desde ${facility.priceFrom || facility.price}
+            </span>
+          </div>
+          
+          <div className="relative">
+            {/* Scroll buttons */}
+            {canScrollLeft && (
+              <button
+                onClick={() => scroll('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-900/80 backdrop-blur-sm rounded-full p-0.5 hover:bg-gray-900 transition-all duration-200 border border-gray-600"
               >
-                {time}
-              </span>
-            ))}
-            {facility.availability.length > 2 && (
-              <span className="text-xs text-gray-400">
-                +{facility.availability.length - 2}
-              </span>
+                <ChevronLeft className="w-2.5 h-2.5 text-white" />
+              </button>
             )}
+            
+            {canScrollRight && (
+              <button
+                onClick={() => scroll('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-900/80 backdrop-blur-sm rounded-full p-0.5 hover:bg-gray-900 transition-all duration-200 border border-gray-600"
+              >
+                <ChevronRight className="w-2.5 h-2.5 text-white" />
+              </button>
+            )}
+            
+            {/* Time slots carousel */}
+            <div 
+              ref={scrollRef}
+              className="flex space-x-1.5 overflow-x-auto scrollbar-hide pb-1"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {availableSlots.slice(0, 6).map((slot, index) => (
+                <motion.button
+                  key={index}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      onLoginRequired?.();
+                    } else {
+                      window.location.href = `/reservar/${facility.id}?time=${slot.time}`;
+                    }
+                  }}
+                  className="flex-shrink-0 bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-md border border-emerald-500/30 hover:bg-emerald-500/30 hover:border-emerald-500/50 transition-all duration-200 text-xs font-medium min-w-[50px] text-center"
+                >
+                  {slot.time}
+                </motion.button>
+              ))}
+              
+              {availableSlots.length === 0 && (
+                <div className="text-xs text-gray-500 py-1">
+                  Sin horarios
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Price and Buttons */}
         <div className="space-y-2">
-          <div className="flex items-baseline space-x-1">
-            <span className="text-lg font-semibold text-white">
-              ${facility.price}
-            </span>
-            <span className="text-xs text-gray-400">hora</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline space-x-1">
+              <span className="text-lg font-semibold text-white">
+                ${facility.priceFrom || facility.price}
+              </span>
+              <span className="text-xs text-gray-400">desde</span>
+            </div>
+            <div className="text-xs text-gray-400">
+              {availableSlots.length} slots
+            </div>
           </div>
           <div className="space-y-2">
             <button 
