@@ -130,7 +130,7 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
         </div>
 
         {/* Time Range */}
-        <div className="flex-1 px-6 py-4 relative border-b md:border-b-0 border-gray-600" ref={timeRef}>
+        <div className="flex-[1.6] px-6 py-4 relative border-b md:border-b-0 border-gray-600" ref={timeRef}>
           <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-1">
             Horario
           </div>
@@ -139,7 +139,7 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
               onClick={() => setIsTimeOpen(!isTimeOpen)}
               className="w-full text-sm text-white bg-transparent border-none outline-none appearance-none flex items-center justify-between"
             >
-              <span>{timeRanges.find(t => t.value === selectedTimeRange)?.label || 'Cualquier hora'}</span>
+              <span className="truncate">{timeRanges.find(t => t.value === selectedTimeRange)?.label || 'Cualquier hora'}</span>
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isTimeOpen ? 'rotate-180' : ''}`} />
             </button>
             {isTimeOpen && (
