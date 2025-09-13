@@ -1,5 +1,5 @@
-const { Payment, Booking, User, SplitPayment, SplitPaymentParticipant } = require('../models');
-const mercadopagoService = require('../services/mercadopagoService');
+const { Payment, Booking, User, SplitPayment, SplitPaymentParticipant, Court, Establishment } = require('../models');
+// const mercadopagoService = require('../services/mercadopagoService');
 const crypto = require('crypto');
 
 const createPayment = async (req, res) => {
