@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Calendar, ChevronDown, Trophy, Zap, Target, Disc, Circle, Hexagon, Square, Octagon, X } from 'lucide-react';
+import { Search, MapPin, Calendar, ChevronDown, Trophy, Zap, Target, Disc, Circle, Hexagon, Square, Octagon, X, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 
@@ -16,9 +16,12 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
   const [location, setLocation] = useState('');
   const [sport, setSport] = useState('');
   const [date, setDate] = useState('');
+  const [timeRange, setTimeRange] = useState('');
   const [isSportOpen, setIsSportOpen] = useState(false);
+  const [isTimeOpen, setIsTimeOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const sportRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -29,6 +32,9 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
     const handleClickOutside = (event: MouseEvent) => {
       if (sportRef.current && !sportRef.current.contains(event.target as Node)) {
         setIsSportOpen(false);
+      }
+      if (timeRef.current && !timeRef.current.contains(event.target as Node)) {
+        setIsTimeOpen(false);
       }
     };
 
@@ -49,12 +55,20 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
     { value: 'rugby', label: 'Rugby', icon: Octagon }
   ];
 
+  const timeRanges = [
+    { value: '', label: 'Cualquier hora' },
+    { value: 'morning', label: 'Mañana (06:00 - 12:00)' },
+    { value: 'afternoon', label: 'Tarde (12:00 - 18:00)' },
+    { value: 'evening', label: 'Noche (18:00 - 24:00)' }
+  ];
+
   const handleSearch = () => {
     const searchParams = new URLSearchParams();
     
     if (location) searchParams.set('location', location);
     if (sport) searchParams.set('sport', sport);
     if (date) searchParams.set('date', date);
+    if (timeRange) searchParams.set('timeRange', timeRange);
 
     onClose();
     router.push(`/buscar?${searchParams.toString()}`);
@@ -81,7 +95,7 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 500 }}
-            className="fixed bottom-0 left-0 right-0 bg-gray-800 rounded-t-2xl z-[10000] max-h-[85vh] overflow-y-auto mx-0 w-full"
+            className="fixed bottom-0 left-0 right-0 bg-gray-800 rounded-t-2xl z-[10000] max-h-[90vh] overflow-y-auto mx-0 w-full"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
@@ -165,6 +179,40 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
                   className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   min={new Date().toISOString().split('T')[0]}
                 />
+              </div>
+
+              {/* Time Range */}
+              <div ref={timeRef}>
+                <label className="block text-sm font-medium text-gray-300 mb-3">
+                  <Clock className="w-4 h-4 inline mr-2" />
+                  Horario
+                </label>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsTimeOpen(!isTimeOpen)}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <span>{timeRanges.find(t => t.value === timeRange)?.label || 'Cualquier hora'}</span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isTimeOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isTimeOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-gray-700 border border-gray-600 rounded-xl shadow-xl z-50">
+                      {timeRanges.map((timeOption) => (
+                        <button
+                          key={timeOption.value}
+                          onClick={() => {
+                            setTimeRange(timeOption.value);
+                            setIsTimeOpen(false);
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-600 flex items-center space-x-3 text-white text-sm transition-colors first:rounded-t-xl last:rounded-b-xl"
+                        >
+                          <Clock className="w-4 h-4 text-emerald-400" />
+                          <span>{timeOption.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Search Button */}
