@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     id: '1',
     name: 'Juan Pérez',
     email: 'juan@example.com',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&auto=format&face=center',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&auto=format',
     phone: '+54 11 1234-5678',
     birthDate: '1990-05-15',
     location: 'Palermo, Buenos Aires',

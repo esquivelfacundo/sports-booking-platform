@@ -56,6 +56,12 @@ const EstablishmentPage = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 to-green-800 text-white">
         <div className="absolute inset-0 bg-black/20"></div>
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-30"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&h=800&fit=crop&auto=format')"
+          }}
+        ></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
