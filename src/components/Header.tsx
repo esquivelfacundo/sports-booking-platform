@@ -50,11 +50,9 @@ const Header = ({ onLoginClick }: HeaderProps) => {
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <img 
-              src="/assets/logo.png" 
-              alt="Mis Canchas" 
-              className="h-10 w-auto"
-            />
+            <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Mis Canchas
+            </div>
           </Link>
 
           {/* Desktop Search Bar - Hidden on homepage hero */}
