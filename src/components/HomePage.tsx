@@ -6,6 +6,7 @@ import { Search, MapPin, Calendar, Clock, Users, Star, ArrowRight, Trophy, Targe
 import SearchBar from './SearchBar';
 import SportCard from './SportCard';
 import { useSocial } from '@/contexts/SocialContext';
+import { useEstablishments } from '@/hooks/useEstablishments';
 import Link from 'next/link';
 
 // Helper function to get mock city based on coordinates
@@ -39,6 +40,34 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const { matches } = useSocial();
+  const { establishments, loading: establishmentsLoading, fetchEstablishments } = useEstablishments({
+    autoFetch: false
+  });
+
+  // Helper function to normalize establishment data for display
+  const normalizeEstablishment = (establishment: any) => {
+    if ('sport' in establishment) {
+      // Mock data format
+      return establishment;
+    } else {
+      // API data format
+      return {
+        id: establishment.id,
+        name: establishment.name,
+        location: `${establishment.address}, ${establishment.city}`,
+        rating: establishment.rating,
+        reviews: establishment.reviewCount,
+        price: 8000, // Default price for API data
+        image: establishment.sports[0] === 'futbol5' ? '⚽' : 
+               establishment.sports[0] === 'paddle' ? '🏓' : 
+               establishment.sports[0] === 'tenis' ? '🎾' : '🏟️',
+        sport: establishment.sports[0] === 'futbol5' ? 'Fútbol 5' :
+               establishment.sports[0] === 'paddle' ? 'Paddle' :
+               establishment.sports[0] === 'tenis' ? 'Tenis' : 'Deporte',
+        features: establishment.amenities.slice(0, 3)
+      };
+    }
+  };
 
   useEffect(() => {
     // Set client-side flag to prevent hydration mismatch
@@ -60,31 +89,42 @@ const HomePage = () => {
               try {
                 const mockCity = getMockCityFromCoords(latitude, longitude);
                 setCurrentCity(mockCity);
+                // Fetch establishments for detected city
+                fetchEstablishments({ city: mockCity, latitude, longitude });
               } catch (error) {
                 console.error('Error detecting city from coordinates:', error);
                 setCurrentCity('Buenos Aires');
+                fetchEstablishments({ city: 'Buenos Aires' });
               }
               setIsLoading(false);
             },
             (error) => {
               console.error('Geolocation error:', error);
               setCurrentCity('Buenos Aires');
+              fetchEstablishments({ city: 'Buenos Aires' });
               setIsLoading(false);
             }
           );
         } else {
-          setCurrentCity('Buenos Aires');
+          const detectedCity = getMockCityFromCoords(0, 0);
+          setCurrentCity(detectedCity);
           setIsLoading(false);
+        
+          // Fetch establishments for detected city
+          fetchEstablishments({ city: detectedCity });
         }
       } catch (error) {
         console.error('Error detecting location:', error);
         setCurrentCity('Buenos Aires');
         setIsLoading(false);
+        
+        // Fetch establishments for default city
+        fetchEstablishments({ city: 'Buenos Aires' });
       }
     };
 
     detectCity();
-  }, [isClient]);
+  }, [isClient, fetchEstablishments]);
 
   const popularCities = [
     { name: 'Buenos Aires', facilities: 245, image: '🏙️' },
@@ -403,7 +443,7 @@ const HomePage = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredFacilities.map((facility, index) => (
+            {(establishments.length > 0 ? establishments.slice(0, 6).map(normalizeEstablishment) : featuredFacilities).map((facility, index) => (
               <motion.div
                 key={facility.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -432,7 +472,7 @@ const HomePage = () => {
                   <div className="mb-4">
                     <span className="inline-block bg-emerald-600 text-white text-xs px-2 py-1 rounded-full mb-2">{facility.sport}</span>
                     <div className="flex flex-wrap gap-1">
-                      {facility.features.map((feature, idx) => (
+                      {facility.features.map((feature: string, idx: number) => (
                         <span key={idx} className="text-xs text-gray-400 bg-gray-600 px-2 py-1 rounded">
                           {feature}
                         </span>

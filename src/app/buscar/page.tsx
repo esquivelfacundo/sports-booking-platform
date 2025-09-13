@@ -11,6 +11,7 @@ import BookingModal from '@/components/BookingModal';
 import LoginModal from '@/components/auth/LoginModal';
 import RegisterModal from '@/components/auth/RegisterModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEstablishments } from '@/hooks/useEstablishments';
 
 const MapView = dynamic(() => import('../../components/MapView'), {
   ssr: false,
@@ -46,7 +47,6 @@ const SearchContent = () => {
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
   const [showMap, setShowMap] = useState(true);
-  // const [isLoading, setIsLoading] = useState(false);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,7 +57,6 @@ const SearchContent = () => {
   const [mapBounds, setMapBounds] = useState<any>(null);
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
   const [mapZoom, setMapZoom] = useState<number>(12);
-  const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
@@ -68,6 +67,11 @@ const SearchContent = () => {
   const [selectedSport, setSelectedSport] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [timeRange, setTimeRange] = useState('');
+
+  // Use establishments hook
+  const { establishments, loading, fetchEstablishments } = useEstablishments({
+    autoFetch: false
+  });
 
   // Generate mock time slots for facilities
   const generateTimeSlots = (): TimeSlot[] => {
@@ -86,91 +90,81 @@ const SearchContent = () => {
     return slots;
   };
 
-  // Mock data - in a real app, this would come from an API
-  const mockFacilities: Facility[] = [
-    {
-      id: '1',
-      name: 'Complejo Deportivo San Lorenzo',
-      sport: 'futbol5',
-      location: 'Palermo, Buenos Aires',
-      price: 2500,
-      rating: 4.8,
-      reviews: 124,
-      image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop&auto=format',
-      coordinates: [-34.5875, -58.4260],
-      amenities: ['Estacionamiento', 'Vestuarios', 'Parrilla', 'Buffet'],
-      availability: ['18:00', '19:00', '20:00', '21:00'],
-      timeSlots: generateTimeSlots(),
-      priceFrom: 2200
-    },
-    {
-      id: '2',
-      name: 'Paddle Club Norte',
-      sport: 'paddle',
-      location: 'Belgrano, Buenos Aires',
-      price: 1800,
-      rating: 4.6,
-      reviews: 89,
-      image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop&auto=format',
-      coordinates: [-34.5633, -58.4583],
-      amenities: ['Vestuarios', 'Alquiler de paletas', 'Cafetería'],
-      availability: ['17:00', '18:00', '19:00'],
-      timeSlots: generateTimeSlots(),
-      priceFrom: 1600
-    },
-    {
-      id: '3',
-      name: 'Tennis Center Premium',
-      sport: 'tenis',
-      location: 'Recoleta, Buenos Aires',
-      price: 3200,
-      rating: 4.9,
-      reviews: 156,
-      image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=400&h=300&fit=crop&auto=format',
-      coordinates: [-34.5936, -58.3994],
-      amenities: ['Vestuarios', 'Alquiler de raquetas', 'Instructor', 'Tienda'],
-      availability: ['16:00', '17:00', '18:00', '19:00', '20:00'],
-      timeSlots: generateTimeSlots(),
-      priceFrom: 2800
-    },
-    {
-      id: '4',
-      name: 'Cancha Municipal Villa Crespo',
-      sport: 'futbol5',
-      location: 'Villa Crespo, Buenos Aires',
-      price: 1900,
-      rating: 4.3,
-      reviews: 67,
-      image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=300&fit=crop&auto=format',
-      coordinates: [-34.5998, -58.4317],
-      amenities: ['Vestuarios', 'Estacionamiento'],
-      availability: ['19:00', '20:00', '21:00'],
-      timeSlots: generateTimeSlots(),
-      priceFrom: 1700
-    },
-    {
-      id: '5',
-      name: 'Básquet Arena Pro',
-      sport: 'basquet',
-      location: 'Caballito, Buenos Aires',
-      price: 2800,
-      rating: 4.7,
-      reviews: 93,
-      image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop&auto=format',
-      coordinates: [-34.6118, -58.4396],
-      amenities: ['Vestuarios', 'Tribuna', 'Aire acondicionado', 'Buffet'],
-      availability: ['18:00', '19:00', '20:00'],
-      timeSlots: generateTimeSlots(),
-      priceFrom: 2400
+  // Convert establishments to facilities format
+  useEffect(() => {
+    if (establishments.length > 0) {
+      const convertedFacilities = establishments.map(est => ({
+        id: est.id,
+        name: est.name,
+        sport: est.sports[0] === 'futbol5' ? 'Fútbol 5' :
+               est.sports[0] === 'paddle' ? 'Paddle' :
+               est.sports[0] === 'tenis' ? 'Tenis' : 'Deporte',
+        location: `${est.address}, ${est.city}`,
+        price: 8000, // Default price
+        rating: est.rating,
+        reviews: est.reviewCount,
+        image: est.images[0] || 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop&auto=format',
+        coordinates: [est.latitude, est.longitude] as [number, number],
+        amenities: est.amenities,
+        availability: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'],
+        timeSlots: generateTimeSlots(),
+        priceFrom: 2000
+      }));
+      setFacilities(convertedFacilities);
+    } else {
+      // Fallback to mock data if no establishments from API
+      const mockFacilities: Facility[] = [
+        {
+          id: '1',
+          name: 'Club Atlético River Plate',
+          sport: 'futbol5',
+          location: 'Núñez, Buenos Aires',
+          price: 2500,
+          rating: 4.8,
+          reviews: 124,
+          image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=300&fit=crop&auto=format',
+          coordinates: [-34.5453, -58.4497],
+          amenities: ['Vestuarios', 'Estacionamiento', 'Buffet', 'Tribuna'],
+          availability: ['18:00', '19:00', '20:00', '21:00'],
+          timeSlots: generateTimeSlots(),
+          priceFrom: 2200
+        },
+        {
+          id: '2',
+          name: 'Paddle Club Palermo',
+          sport: 'paddle',
+          location: 'Palermo, Buenos Aires',
+          price: 1800,
+          rating: 4.6,
+          reviews: 89,
+          image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop&auto=format',
+          coordinates: [-34.5875, -58.4173],
+          amenities: ['Vestuarios', 'Alquiler de paletas', 'Cafetería'],
+          availability: ['17:00', '18:00', '19:00'],
+          timeSlots: generateTimeSlots(),
+          priceFrom: 1600
+        }
+      ];
+      setFacilities(mockFacilities);
     }
-  ];
+  }, [establishments]);
 
   useEffect(() => {
-    // Simular carga de datos
-    setTimeout(() => {
-      setFacilities(mockFacilities);
-      setLoading(false);
-    }, 1000);
+    // Initialize search based on URL params
+    const location = searchParams.get('location') || '';
+    const sport = searchParams.get('sport') || '';
+    const date = searchParams.get('date') || '';
+    
+    setSearchLocation(location);
+    setSelectedSport(sport);
+    setSelectedDate(date);
+    
+    // Fetch establishments from API
+    fetchEstablishments({
+      search: location,
+      sport: sport,
+      city: location
+    });
 
     // Check for selected place from Google Places
     const storedPlace = sessionStorage.getItem('selectedPlace');
@@ -183,7 +177,7 @@ const SearchContent = () => {
         console.error('Error parsing stored place data:', error);
       }
     }
-  }, []);
+  }, [searchParams, fetchEstablishments]);
 
 
   useEffect(() => {

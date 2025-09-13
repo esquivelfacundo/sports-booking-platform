@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEstablishmentDetails } from '@/hooks/useEstablishmentDetails';
 import LoginModal from '@/components/auth/LoginModal';
 import RegisterModal from '@/components/auth/RegisterModal';
 import { 
@@ -60,12 +61,19 @@ const BookingPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
+  const establishmentId = params.id as string;
+  
+  // Use the establishment details hook
+  const { establishment, loading, error } = useEstablishmentDetails({
+    establishmentId,
+    autoFetch: true
+  });
+
   const [facility, setFacility] = useState<Facility | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [selectedDuration, setSelectedDuration] = useState(60);
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
-  const [loading, setLoading] = useState(true);
   const [bookingStep, setBookingStep] = useState(1);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -137,16 +145,45 @@ const BookingPage = () => {
     priceFrom: 2200
   };
 
+  // Convert establishment data to facility format
   useEffect(() => {
-    // Simular carga de datos
-    setTimeout(() => {
-      setFacility(mockFacility);
-      setLoading(false);
+    if (establishment) {
+      const convertedFacility: Facility = {
+        id: parseInt(establishment.id),
+        name: establishment.name,
+        sport: establishment.sports[0] || 'futbol5',
+        location: `${establishment.address}, ${establishment.city}`,
+        price: establishment.courts[0]?.pricePerHour || 2500,
+        rating: establishment.rating,
+        reviews: establishment.reviewCount,
+        image: establishment.images[0] || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=400&fit=crop&auto=format',
+        coordinates: [establishment.latitude, establishment.longitude],
+        amenities: establishment.amenities,
+        availability: ['18:00', '19:00', '20:00', '21:00', '22:00'],
+        description: establishment.description || 'Moderno complejo deportivo con instalaciones de primera calidad.',
+        rules: [
+          'Llegar 15 minutos antes del horario reservado',
+          'Usar calzado deportivo adecuado',
+          'Respetar los horarios de inicio y finalización',
+          'No se permite el ingreso de bebidas alcohólicas',
+          'Mantener las instalaciones limpias'
+        ],
+        courts: establishment.courts.map(court => ({
+          id: court.id,
+          name: court.name,
+          type: court.type,
+          surface: court.surface,
+          timeSlots: generateTimeSlots()
+        })),
+        priceFrom: Math.min(...establishment.courts.map(c => c.pricePerHour))
+      };
+      
+      setFacility(convertedFacility);
       
       // Pre-select first court
-      if (mockFacility.courts && mockFacility.courts.length > 0) {
-        setSelectedCourt(mockFacility.courts[0]);
-        setExpandedCourts([mockFacility.courts[0].id]);
+      if (convertedFacility.courts && convertedFacility.courts.length > 0) {
+        setSelectedCourt(convertedFacility.courts[0]);
+        setExpandedCourts([convertedFacility.courts[0].id]);
       }
       
       // Set pre-selected time from URL if available
@@ -154,8 +191,8 @@ const BookingPage = () => {
       if (timeParam) {
         setSelectedTimes([timeParam]);
       }
-    }, 1000);
-  }, [searchParams]);
+    }
+  }, [establishment, searchParams]);
 
   // Check authentication when component mounts
   useEffect(() => {
@@ -279,18 +316,31 @@ const BookingPage = () => {
     );
   }
 
-  if (!facility) {
+  if (error || (!loading && !establishment)) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-white mb-2">Cancha no encontrada</h2>
-          <p className="text-gray-400 mb-4">La cancha que buscás no existe o no está disponible.</p>
+          <p className="text-gray-400 mb-4">
+            {error || 'La cancha que buscás no existe o no está disponible.'}
+          </p>
           <button 
             onClick={() => router.push('/')}
             className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-2 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             Volver al inicio
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!facility) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Preparando información...</p>
         </div>
       </div>
     );

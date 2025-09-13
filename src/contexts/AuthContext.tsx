@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthState, LoginCredentials, RegisterData } from '@/types/user';
+import { apiClient } from '@/lib/api';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
@@ -72,13 +73,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Simulate checking for existing session
+    // Check for existing session
     const checkAuth = async () => {
       try {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          // Verify token with backend
+          const response = await apiClient.getProfile() as any;
           setAuthState({
-            user: JSON.parse(savedUser),
+            user: response.data,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -87,6 +90,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('Error checking auth:', error);
+        // Clear invalid token
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
         setAuthState(prev => ({ ...prev, isLoading: false }));
       }
     };
@@ -96,15 +102,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await apiClient.login(credentials) as any;
       
-      // Mock validation
-      if (credentials.email === 'juan@example.com' && credentials.password === 'password') {
-        const user = { ...mockUser, lastActive: new Date().toISOString() };
-        localStorage.setItem('user', JSON.stringify(user));
+      if (response.success && response.data.token) {
+        // Store tokens
+        localStorage.setItem('auth_token', response.data.token);
+        if (response.data.refreshToken) {
+          localStorage.setItem('refresh_token', response.data.refreshToken);
+        }
+        
+        // Set user state
         setAuthState({
-          user,
+          user: response.data.user,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -119,39 +128,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (data: RegisterData): Promise<boolean> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser: User = {
-        ...mockUser,
-        id: Date.now().toString(),
-        name: data.name,
+      const registerData = {
         email: data.email,
+        password: data.password,
+        firstName: data.name.split(' ')[0],
+        lastName: data.name.split(' ').slice(1).join(' ') || '',
         phone: data.phone,
-        location: data.location,
-        sports: [],
-        friends: [],
-        favoriteVenues: [],
-        favoriteEstablishments: [],
-        stats: {
-          totalGames: 0,
-          totalReservations: 0,
-          favoriteVenuesCount: 0,
-          friendsCount: 0,
-          rating: 0,
-          reviewsReceived: 0
-        },
-        createdAt: new Date().toISOString(),
-        lastActive: new Date().toISOString()
+        role: 'player'
       };
 
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setAuthState({
-        user: newUser,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-      return true;
+      const response = await apiClient.register(registerData) as any;
+      
+      if (response.success && response.data.token) {
+        // Store tokens
+        localStorage.setItem('auth_token', response.data.token);
+        if (response.data.refreshToken) {
+          localStorage.setItem('refresh_token', response.data.refreshToken);
+        }
+        
+        // Set user state
+        setAuthState({
+          user: response.data.user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Register error:', error);
       return false;
@@ -159,7 +162,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
     setAuthState({
       user: null,
       isAuthenticated: false,
@@ -171,11 +175,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!authState.user) return false;
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      // For now, keep local update until we implement profile update endpoint
       const updatedUser = { ...authState.user, ...updates };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
       setAuthState(prev => ({
         ...prev,
         user: updatedUser,
