@@ -50,9 +50,9 @@ const HeaderSearchBar = () => {
   };
 
   return (
-    <div className="hidden lg:flex items-center bg-gray-800 border border-gray-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 max-w-2xl mx-auto">
+    <div className="flex flex-col md:flex-row items-stretch md:items-center bg-gray-800 border border-gray-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 max-w-2xl mx-auto md:divide-x divide-gray-600">
       {/* Location */}
-      <div className="flex-1 px-6 py-3">
+      <div className="flex-1 px-6 py-3 border-b md:border-b-0 border-gray-600">
         <label className="block text-xs font-medium text-gray-400 mb-1">Ubicación</label>
         <GooglePlacesAutocomplete
           value={location}
@@ -67,11 +67,8 @@ const HeaderSearchBar = () => {
           className="w-full text-sm text-white placeholder-gray-500 border-0 focus:ring-0 p-0 bg-transparent"
         />
       </div>
-      {/* Divider */}
-      <div className="w-px h-8 bg-gray-600"></div>
-
       {/* Sport */}
-      <div className="flex-1 px-6 py-3 relative" ref={sportRef}>
+      <div className="flex-1 px-6 py-3 relative border-b md:border-b-0 border-gray-600" ref={sportRef}>
         <label className="block text-xs font-medium text-gray-400 mb-1">Deporte</label>
         <div className="relative">
           <button
@@ -103,11 +100,8 @@ const HeaderSearchBar = () => {
           )}
         </div>
       </div>
-      {/* Divider */}
-      <div className="w-px h-8 bg-gray-600"></div>
-
       {/* Date */}
-      <div className="flex-1 px-6 py-3">
+      <div className="flex-1 px-6 py-3 border-b md:border-b-0 border-gray-600">
         <label className="block text-xs font-medium text-gray-400 mb-1">Fecha</label>
         <input
           type="date"
@@ -119,12 +113,14 @@ const HeaderSearchBar = () => {
         />
       </div>
       {/* Search Button */}
-      <button
-        onClick={handleSearch}
-        className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-3 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 mr-2 shadow-lg hover:shadow-xl"
-      >
-        <Search className="w-4 h-4" />
-      </button>
+      <div className="px-6 py-3 md:px-2 md:py-3">
+        <button
+          onClick={handleSearch}
+          className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-3 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 shadow-lg hover:shadow-xl w-full md:w-auto flex items-center justify-center"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };

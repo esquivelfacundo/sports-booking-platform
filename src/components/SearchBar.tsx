@@ -28,8 +28,13 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
   }, []);
 
   const handleSearch = () => {
-    // TODO: Implement search functionality
-    console.log('Searching for:', { selectedSport, currentCity, selectedDate });
+    const searchParams = new URLSearchParams();
+    
+    if (currentCity) searchParams.set('location', currentCity);
+    if (selectedSport) searchParams.set('sport', selectedSport);
+    if (selectedDate) searchParams.set('date', selectedDate);
+
+    window.location.href = `/buscar?${searchParams.toString()}`;
   };
 
   const sports = [
@@ -45,9 +50,9 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
 
   return (
     <div className="bg-gray-800 border border-gray-600 rounded-2xl shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300">
-      <div className="flex items-center divide-x divide-gray-600">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center md:divide-x divide-gray-600">
         {/* Location */}
-        <div className="flex-1 px-6 py-4">
+        <div className="flex-1 px-6 py-4 border-b md:border-b-0 border-gray-600">
           <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-1">
             Ubicación
           </div>
@@ -61,7 +66,7 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
         </div>
 
         {/* Sport */}
-        <div className="flex-1 px-6 py-4 relative" ref={sportRef}>
+        <div className="flex-1 px-6 py-4 relative border-b md:border-b-0 border-gray-600" ref={sportRef}>
           <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-1">
             Deporte
           </div>
@@ -97,7 +102,7 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
         </div>
 
         {/* Date */}
-        <div className="flex-1 px-6 py-4">
+        <div className="flex-1 px-6 py-4 border-b md:border-b-0 border-gray-600">
           <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-1">
             Fecha
           </div>
@@ -112,12 +117,12 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
 
 
         {/* Search Button */}
-        <div className="px-2 py-2">
+        <div className="px-6 py-4 md:px-2 md:py-2">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleSearch}
-            className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-4 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+            className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-4 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl w-full md:w-auto"
           >
             <Search className="w-4 h-4" />
           </motion.button>

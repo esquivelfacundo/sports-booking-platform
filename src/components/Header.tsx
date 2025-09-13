@@ -82,8 +82,9 @@ const Header = ({ onLoginClick }: HeaderProps) => {
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* Mobile Actions */}
+          <div className="md:hidden flex items-center space-x-3">
+            <UserAvatar onLoginClick={onLoginClick || (() => {})} />
             <button
               onClick={toggleMenu}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200"
@@ -97,22 +98,13 @@ const Header = ({ onLoginClick }: HeaderProps) => {
         {/* Mobile Search Bar - Hidden on homepage hero */}
         {showSearchBar && (
           <motion.div 
-            className="lg:hidden pb-4"
+            className="md:hidden pb-4"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <button 
-              onClick={() => window.location.href = '/buscar'}
-              className="w-full flex items-center border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 hover:bg-gray-700 transition-all duration-200"
-            >
-              <Search className="w-5 h-5 text-gray-400 mr-3" />
-              <div className="text-left">
-                <div className="text-sm font-medium text-white">¿A dónde vas?</div>
-                <div className="text-xs text-gray-400">Ubicación • Deporte • Fecha</div>
-              </div>
-            </button>
+            <HeaderSearchBar />
           </motion.div>
         )}
 
@@ -132,9 +124,6 @@ const Header = ({ onLoginClick }: HeaderProps) => {
               >
                 Buscar canchas
               </button>
-              <div className="pt-2 border-t border-gray-700 mt-2">
-                <UserAvatar onLoginClick={onLoginClick || (() => {})} />
-              </div>
             </div>
           </div>
         )}
