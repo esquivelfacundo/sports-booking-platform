@@ -31,20 +31,19 @@ interface BookingModalProps {
 
 const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingModalProps) => {
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [selectedDuration, setSelectedDuration] = useState(1);
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [bookingStep, setBookingStep] = useState(1);
 
   // Set preselected time slot when modal opens
   useEffect(() => {
     if (selectedTimeSlot && isOpen) {
-      setSelectedTime(selectedTimeSlot.time);
+      setSelectedTimes([selectedTimeSlot.time]);
       // Set today's date as default when time slot is preselected
       const today = new Date().toISOString().split('T')[0];
       setSelectedDate(today);
     } else if (isOpen) {
       // Reset when opening without preselected time
-      setSelectedTime('');
+      setSelectedTimes([]);
       setSelectedDate('');
     }
   }, [selectedTimeSlot, isOpen]);
@@ -69,13 +68,23 @@ const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingMo
 
   const calculateTotal = () => {
     if (!facility) return 0;
-    return facility.price * selectedDuration;
+    return facility.price * selectedTimes.length;
+  };
+
+  const handleTimeToggle = (time: string) => {
+    setSelectedTimes(prev => {
+      if (prev.includes(time)) {
+        return prev.filter(t => t !== time);
+      } else {
+        return [...prev, time].sort();
+      }
+    });
   };
 
   const handleBooking = () => {
     if (bookingStep === 1) {
-      if (!selectedDate || !selectedTime) {
-        alert('Por favor selecciona fecha y horario');
+      if (!selectedDate || selectedTimes.length === 0) {
+        alert('Por favor selecciona fecha y al menos un horario');
         return;
       }
       setBookingStep(2);
@@ -201,15 +210,18 @@ const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingMo
                   {/* Time Selection */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Horario {selectedTimeSlot && <span className="text-emerald-400">(preseleccionado)</span>}
+                      Horarios {selectedTimeSlot && <span className="text-emerald-400">(preseleccionado)</span>}
+                      <span className="text-xs text-gray-400 block mt-1">
+                        Selecciona uno o más horarios consecutivos
+                      </span>
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {facility.availability.map((time) => (
                         <button
                           key={time}
-                          onClick={() => setSelectedTime(time)}
+                          onClick={() => handleTimeToggle(time)}
                           className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                            selectedTime === time
+                            selectedTimes.includes(time)
                               ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-emerald-500'
                               : 'bg-gray-700 text-gray-300 border-gray-600 hover:border-gray-500'
                           }`}
@@ -218,23 +230,13 @@ const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingMo
                         </button>
                       ))}
                     </div>
+                    {selectedTimes.length > 0 && (
+                      <div className="mt-2 text-xs text-emerald-400">
+                        {selectedTimes.length} horario{selectedTimes.length > 1 ? 's' : ''} seleccionado{selectedTimes.length > 1 ? 's' : ''}: {selectedTimes.join(', ')}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Duration */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Duración (horas)
-                    </label>
-                    <select
-                      value={selectedDuration}
-                      onChange={(e) => setSelectedDuration(Number(e.target.value))}
-                      className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    >
-                      <option value={1}>1 hora</option>
-                      <option value={2}>2 horas</option>
-                      <option value={3}>3 horas</option>
-                    </select>
-                  </div>
 
                 </>
               ) : (
@@ -248,12 +250,12 @@ const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingMo
                         <span className="font-medium text-white">{selectedDate}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Horario:</span>
-                        <span className="font-medium text-white">{selectedTime}</span>
+                        <span className="text-gray-400">Horarios:</span>
+                        <span className="font-medium text-white">{selectedTimes.join(', ')}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Duración:</span>
-                        <span className="font-medium text-white">{selectedDuration} hora(s)</span>
+                        <span className="font-medium text-white">{selectedTimes.length} hora{selectedTimes.length > 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </div>
@@ -274,7 +276,7 @@ const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingMo
               {/* Action Button */}
               <button
                 onClick={handleBooking}
-                disabled={!selectedDate || !selectedTime}
+                disabled={!selectedDate || selectedTimes.length === 0}
                 className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-xl mb-3"
               >
                 {bookingStep === 1 ? 'Continuar' : 'Confirmar reserva'}

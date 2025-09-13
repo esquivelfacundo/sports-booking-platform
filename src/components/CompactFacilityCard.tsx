@@ -145,17 +145,25 @@ const CompactFacilityCard = ({ facility, onReserve, onTimeSlotSelect, onLoginReq
     >
       {/* Image */}
       <div className="relative w-full h-40">
-        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center border-b border-gray-700">
-          <div className="text-3xl opacity-80">
-            {facility.sport === 'futbol5' && '⚽'}
-            {facility.sport === 'paddle' && '🏓'}
-            {facility.sport === 'tenis' && '🎾'}
-            {facility.sport === 'basquet' && '🏀'}
-            {facility.sport === 'voley' && '🏐'}
-            {facility.sport === 'hockey' && '🏒'}
-            {facility.sport === 'rugby' && '🏉'}
+        {facility.image ? (
+          <img 
+            src={facility.image} 
+            alt={facility.name}
+            className="w-full h-full object-cover border-b border-gray-700"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center border-b border-gray-700">
+            <div className="text-3xl opacity-80">
+              {facility.sport === 'futbol5' && '⚽'}
+              {facility.sport === 'paddle' && '🏓'}
+              {facility.sport === 'tenis' && '🎾'}
+              {facility.sport === 'basquet' && '🏀'}
+              {facility.sport === 'voley' && '🏐'}
+              {facility.sport === 'hockey' && '🏒'}
+              {facility.sport === 'rugby' && '🏉'}
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Like button */}
         <button

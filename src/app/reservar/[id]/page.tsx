@@ -120,7 +120,7 @@ const BookingPage = () => {
     price: 2500,
     rating: 4.8,
     reviews: 124,
-    image: '/api/placeholder/800/400',
+    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=400&fit=crop&auto=format',
     coordinates: [-34.5875, -58.4260],
     amenities: ['Estacionamiento', 'Vestuarios', 'Parrilla', 'Buffet', 'Duchas', 'Iluminación LED'],
     availability: ['18:00', '19:00', '20:00', '21:00', '22:00'],

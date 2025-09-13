@@ -55,7 +55,7 @@ const mockTournaments: Tournament[] = [
       'Seguro médico obligatorio',
       'Equipamiento completo del equipo'
     ],
-    image: '/api/placeholder/400/300',
+    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop&auto=format',
     createdAt: '2025-01-15T10:00:00Z',
     updatedAt: '2025-01-15T10:00:00Z'
   },
@@ -87,7 +87,7 @@ const mockTournaments: Tournament[] = [
       'Paletas en buen estado',
       'Ropa deportiva adecuada'
     ],
-    image: '/api/placeholder/400/300',
+    image: 'https://images.unsplash.com/photo-1544717440-6b6ac3b9d1b8?w=400&h=300&fit=crop&auto=format',
     createdAt: '2025-01-10T14:30:00Z',
     updatedAt: '2025-01-10T14:30:00Z'
   }
