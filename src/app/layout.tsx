@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SportBooking - Reservá tu cancha favorita",
+  title: "Mis Canchas - Reservá tu cancha favorita",
   description: "La plataforma más fácil para reservar canchas de fútbol 5, paddle, tenis y más. Encontrá el lugar perfecto para tu próximo partido.",
 };
 

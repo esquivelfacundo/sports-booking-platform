@@ -104,7 +104,16 @@ const Header = ({ onLoginClick }: HeaderProps) => {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <HeaderSearchBar />
+            <button 
+              onClick={() => window.location.href = '/buscar'}
+              className="w-full flex items-center border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 hover:bg-gray-700 transition-all duration-200"
+            >
+              <Search className="w-5 h-5 text-gray-400 mr-3" />
+              <div className="text-left">
+                <div className="text-sm font-medium text-white">¿A dónde vas?</div>
+                <div className="text-xs text-gray-400">Ubicación • Deporte • Fecha</div>
+              </div>
+            </button>
           </motion.div>
         )}
 
