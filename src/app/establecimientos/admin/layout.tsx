@@ -125,8 +125,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { id: 'nuevo-cliente', title: 'Nuevo Cliente', description: 'Registrar cliente', href: '/establecimientos/admin/clientes', action: 'create', icon: UserPlus, category: 'Clientes', keywords: ['registrar cliente', 'nuevo usuario'] },
     
     // Torneos
-    { id: 'torneos', title: 'Torneos', description: 'Gestión de torneos', href: '/establecimientos/dashboard/torneos', icon: Trophy, category: 'Torneos', keywords: ['tournaments', 'competencias', 'campeonatos'] },
-    { id: 'nuevo-torneo', title: 'Nuevo Torneo', description: 'Crear nuevo torneo', href: '/establecimientos/dashboard/torneos', action: 'create', icon: Plus, category: 'Torneos', keywords: ['crear torneo', 'nueva competencia'] },
+    { id: 'torneos', title: 'Torneos', description: 'Gestión de torneos', href: '/establecimientos/admin/torneos', icon: Trophy, category: 'Torneos', keywords: ['tournaments', 'competencias', 'campeonatos'] },
+    { id: 'nuevo-torneo', title: 'Nuevo Torneo', description: 'Crear nuevo torneo', href: '/establecimientos/admin/torneos', action: 'create', icon: Plus, category: 'Torneos', keywords: ['crear torneo', 'nueva competencia'] },
     { id: 'horarios-canchas', title: 'Horarios de Canchas', description: 'Configurar horarios', href: '/establecimientos/admin/canchas', action: 'schedules', icon: Clock, category: 'Canchas', keywords: ['horarios', 'disponibilidad', 'cambiar horarios'] },
     
     // Mantenimiento
@@ -252,9 +252,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     },
     {
       name: 'Torneos',
-      href: '/establecimientos/dashboard/torneos',
+      href: '/establecimientos/admin/torneos',
       icon: Trophy,
-      current: pathname.startsWith('/establecimientos/dashboard/torneos')
+      current: pathname.startsWith('/establecimientos/admin/torneos')
     },
     {
       name: 'Análisis',
