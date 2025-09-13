@@ -10,7 +10,6 @@ import CompactFacilityCard from '@/components/CompactFacilityCard';
 import BookingModal from '@/components/BookingModal';
 import LoginModal from '@/components/auth/LoginModal';
 import RegisterModal from '@/components/auth/RegisterModal';
-import SearchFilters, { SearchFilters as SearchFiltersType } from '@/components/SearchFilters';
 import { useAuth } from '@/contexts/AuthContext';
 
 const MapView = dynamic(() => import('../../components/MapView'), {
@@ -64,13 +63,10 @@ const SearchContent = () => {
   const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState('relevance');
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
-  const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
-    sport: '',
-    date: '',
-    timeRange: 'all',
-    priceRange: [0, 100],
-    showOnlyAvailable: true,
-  });
+  const [searchLocation, setSearchLocation] = useState('');
+  const [selectedSport, setSelectedSport] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [timeRange, setTimeRange] = useState('');
 
   // Generate mock time slots for facilities
   const generateTimeSlots = (): TimeSlot[] => {
@@ -188,121 +184,54 @@ const SearchContent = () => {
     }
   }, []);
 
-  const handleFiltersChange = (newFilters: SearchFiltersType) => {
-    setSearchFilters(newFilters);
-  };
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const locationParam = urlParams.get('location');
+    const sportParam = urlParams.get('sport');
+    const dateParam = urlParams.get('date');
+    const timeRangeParam = urlParams.get('timeRange');
+    
+    if (locationParam) setSearchLocation(locationParam);
+    if (sportParam) setSelectedSport(sportParam);
+    if (dateParam) setSelectedDate(dateParam);
+    if (timeRangeParam) setTimeRange(timeRangeParam);
+  }, []);
 
   useEffect(() => {
     // Filtrar por parámetros de búsqueda y filtros
-    const location = searchParams.get('location');
-    const sport = searchParams.get('sport') || searchFilters.sport;
-    const date = searchParams.get('date') || searchFilters.date;
-
-    let filtered = [...facilities];
-
-    // Filter by selected place location if available
-    if (selectedPlace && selectedPlace.geometry) {
-      const placeLocation = selectedPlace.geometry.location;
-      // Filter facilities within a reasonable distance from selected place
-      filtered = filtered.filter(facility => {
-        // Simple distance calculation - in a real app, you'd use proper geolocation
-        const facilityLat = facility.coordinates[0];
-        const facilityLng = facility.coordinates[1];
-        const distance = Math.sqrt(
-          Math.pow(facilityLat - placeLocation.lat, 2) + 
-          Math.pow(facilityLng - placeLocation.lng, 2)
-        );
-        return distance < 0.1; // Roughly 10km radius
-      });
-    }
-
-    // Filtros de búsqueda
-    if (sport && sport !== '') {
-      filtered = filtered.filter(facility => facility.sport === sport);
-    }
-
-    if (location && location !== '') {
-      filtered = filtered.filter(facility => 
-        facility.location.toLowerCase().includes(location.toLowerCase())
+    const filteredFacilities = facilities.filter(facility => {
+      const matchesLocation = !searchLocation || 
+        facility.name.toLowerCase().includes(searchLocation.toLowerCase()) ||
+        facility.location.toLowerCase().includes(searchLocation.toLowerCase());
+      
+      const matchesSport = !selectedSport || facility.sport === selectedSport;
+      
+      const matchesDate = !selectedDate || facility.timeSlots?.some(slot => 
+        slot.time === selectedDate
       );
-    }
 
-    // Apply search filters
-    if (searchFilters.timeRange !== 'all') {
-      filtered = filtered.filter(facility => {
-        if (!facility.timeSlots) return true;
-        const availableSlots = facility.timeSlots.filter(slot => slot.available);
+      const matchesTimeRange = !timeRange || facility.timeSlots?.some(slot => {
+        if (slot.time !== selectedDate && selectedDate) return false;
         
-        switch (searchFilters.timeRange) {
+        const slotHour = parseInt(slot.time.split(':')[0]);
+        switch (timeRange) {
           case 'morning':
-            return availableSlots.some(slot => {
-              const hour = parseInt(slot.time.split(':')[0]);
-              return hour >= 6 && hour < 12;
-            });
+            return slotHour >= 6 && slotHour < 12;
           case 'afternoon':
-            return availableSlots.some(slot => {
-              const hour = parseInt(slot.time.split(':')[0]);
-              return hour >= 12 && hour < 18;
-            });
+            return slotHour >= 12 && slotHour < 18;
           case 'evening':
-            return availableSlots.some(slot => {
-              const hour = parseInt(slot.time.split(':')[0]);
-              return hour >= 18;
-            });
+            return slotHour >= 18 && slotHour <= 24;
           default:
             return true;
         }
       });
-    }
 
-    // Price range filter (convert to match our price scale)
-    const minPrice = searchFilters.priceRange[0] * 50; // Scale up from 0-100 to 0-5000
-    const maxPrice = searchFilters.priceRange[1] * 50;
-    filtered = filtered.filter(facility => {
-      const price = facility.priceFrom || facility.price;
-      return price >= minPrice && price <= maxPrice;
+      return matchesLocation && matchesSport && matchesDate && matchesTimeRange;
     });
 
-    // Show only available filter
-    if (searchFilters.showOnlyAvailable) {
-      filtered = filtered.filter(facility => {
-        if (!facility.timeSlots) return true;
-        return facility.timeSlots.some(slot => slot.available);
-      });
-    }
-
-    // Filtros adicionales (legacy)
-    if (selectedSports.length > 0) {
-      filtered = filtered.filter(facility => selectedSports.includes(facility.sport));
-    }
-
-    filtered = filtered.filter(facility => 
-      facility.price >= priceRange[0] && facility.price <= priceRange[1]
-    );
-
-    filtered = filtered.filter(facility => facility.rating >= minRating);
-
-    // Ordenamiento
-    switch (sortBy) {
-      case 'price_low':
-        filtered.sort((a, b) => (a.priceFrom || a.price) - (b.priceFrom || b.price));
-        break;
-      case 'price_high':
-        filtered.sort((a, b) => (b.priceFrom || b.price) - (a.priceFrom || a.price));
-        break;
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'reviews':
-        filtered.sort((a, b) => b.reviews - a.reviews);
-        break;
-      default:
-        // relevance - mantener orden original
-        break;
-    }
-
-    setFilteredFacilities(filtered);
-  }, [searchParams, facilities, selectedSports, priceRange, minRating, sortBy, selectedPlace, searchFilters]);
+    setFilteredFacilities(filteredFacilities);
+  }, [facilities, searchLocation, selectedSport, selectedDate, timeRange]);
 
   // Initialize filtered facilities when facilities are loaded
   useEffect(() => {
@@ -427,19 +356,6 @@ const SearchContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      {/* Search Filters */}
-      <div className="bg-gray-900 px-4 sm:px-6 lg:px-8 pt-6">
-        <SearchFilters 
-          onFiltersChange={handleFiltersChange}
-          initialFilters={{
-            sport: searchParams.get('sport') || '',
-            date: searchParams.get('date') || '',
-            timeRange: 'all',
-            priceRange: [0, 100],
-            showOnlyAvailable: true,
-          }}
-        />
-      </div>
 
       {/* Results Header */}
       <div className="bg-gray-800 border-b border-gray-700">
@@ -451,8 +367,8 @@ const SearchContent = () => {
               </h1>
               <p className="text-gray-400 mt-1">
                 {searchParams.get('location') && `en ${searchParams.get('location')}`}
-                {(searchParams.get('sport') || searchFilters.sport) && ` • ${getSportName((searchParams.get('sport') || searchFilters.sport)!)}`}
-                {(searchParams.get('date') || searchFilters.date) && ` • ${(searchParams.get('date') || searchFilters.date)}`}
+                {(searchParams.get('sport') || selectedSport) && ` • ${getSportName((searchParams.get('sport') || selectedSport)!)}`}
+                {(searchParams.get('date') || selectedDate) && ` • ${(searchParams.get('date') || selectedDate)}`}
               </p>
             </div>
             

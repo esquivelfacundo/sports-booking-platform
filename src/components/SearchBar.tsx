@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Calendar, ChevronDown, Trophy, Zap, Target, Disc, Circle, Hexagon, Square, Octagon } from 'lucide-react';
+import { Search, MapPin, Calendar, ChevronDown, Trophy, Zap, Target, Disc, Circle, Hexagon, Square, Octagon, Clock } from 'lucide-react';
 
 interface SearchBarProps {
   currentCity: string;
@@ -11,13 +11,19 @@ interface SearchBarProps {
 const SearchBar = ({ currentCity }: SearchBarProps) => {
   const [selectedSport, setSelectedSport] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTimeRange, setSelectedTimeRange] = useState('');
   const [isSportOpen, setIsSportOpen] = useState(false);
+  const [isTimeOpen, setIsTimeOpen] = useState(false);
   const sportRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (sportRef.current && !sportRef.current.contains(event.target as Node)) {
         setIsSportOpen(false);
+      }
+      if (timeRef.current && !timeRef.current.contains(event.target as Node)) {
+        setIsTimeOpen(false);
       }
     };
 
@@ -33,6 +39,7 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
     if (currentCity) searchParams.set('location', currentCity);
     if (selectedSport) searchParams.set('sport', selectedSport);
     if (selectedDate) searchParams.set('date', selectedDate);
+    if (selectedTimeRange) searchParams.set('timeRange', selectedTimeRange);
 
     window.location.href = `/buscar?${searchParams.toString()}`;
   };
@@ -46,6 +53,13 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
     { value: 'voley', label: 'Vóley', icon: Hexagon },
     { value: 'hockey', label: 'Hockey', icon: Zap },
     { value: 'rugby', label: 'Rugby', icon: Octagon }
+  ];
+
+  const timeRanges = [
+    { value: '', label: 'Cualquier hora' },
+    { value: 'morning', label: 'Mañana (06:00 - 12:00)' },
+    { value: 'afternoon', label: 'Tarde (12:00 - 18:00)' },
+    { value: 'evening', label: 'Noche (18:00 - 24:00)' }
   ];
 
   return (
@@ -113,6 +127,39 @@ const SearchBar = ({ currentCity }: SearchBarProps) => {
             className="w-full text-sm text-white bg-transparent border-none outline-none"
             min={new Date().toISOString().split('T')[0]}
           />
+        </div>
+
+        {/* Time Range */}
+        <div className="flex-1 px-6 py-4 relative border-b md:border-b-0 border-gray-600" ref={timeRef}>
+          <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-1">
+            Horario
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => setIsTimeOpen(!isTimeOpen)}
+              className="w-full text-sm text-white bg-transparent border-none outline-none appearance-none flex items-center justify-between"
+            >
+              <span>{timeRanges.find(t => t.value === selectedTimeRange)?.label || 'Cualquier hora'}</span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isTimeOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isTimeOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-gray-700 border border-gray-600 rounded-xl shadow-xl z-50">
+                {timeRanges.map((timeOption) => (
+                  <button
+                    key={timeOption.value}
+                    onClick={() => {
+                      setSelectedTimeRange(timeOption.value);
+                      setIsTimeOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-600 flex items-center space-x-3 text-white text-sm transition-colors first:rounded-t-xl last:rounded-b-xl"
+                  >
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <span>{timeOption.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
 
