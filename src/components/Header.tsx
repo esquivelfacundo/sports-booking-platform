@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import HeaderSearchBar from './HeaderSearchBar';
 import UserAvatar from './UserAvatar';
+import MobileSearchModal from './MobileSearchModal';
 
 interface HeaderProps {
   onLoginClick?: () => void;
@@ -14,6 +15,7 @@ interface HeaderProps {
 
 const Header = ({ onLoginClick }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const pathname = usePathname();
   
@@ -105,7 +107,7 @@ const Header = ({ onLoginClick }: HeaderProps) => {
             transition={{ duration: 0.3 }}
           >
             <button 
-              onClick={() => window.location.href = '/buscar'}
+              onClick={() => setShowMobileSearch(true)}
               className="w-full flex items-center border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 hover:bg-gray-700 transition-all duration-200"
             >
               <Search className="w-5 h-5 text-gray-400 mr-3" />
@@ -137,6 +139,12 @@ const Header = ({ onLoginClick }: HeaderProps) => {
           </div>
         )}
       </div>
+
+      {/* Mobile Search Modal */}
+      <MobileSearchModal 
+        isOpen={showMobileSearch} 
+        onClose={() => setShowMobileSearch(false)} 
+      />
 
     </header>
   );
