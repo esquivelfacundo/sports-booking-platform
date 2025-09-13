@@ -35,12 +35,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Mock user data
   const mockUser: User = {
     id: '1',
-    name: 'Juan Pérez',
+    firstName: 'Juan',
+    lastName: 'Pérez',
     email: 'juan@example.com',
-    avatar: undefined,
     phone: '+54 11 1234-5678',
+    dateOfBirth: '1990-05-15',
+    city: 'Buenos Aires',
+    userType: 'player',
+    isEmailVerified: true,
+    isPhoneVerified: false,
+    isActive: true,
+    favoritesSports: ['futbol5', 'paddle'],
+    skillLevel: 'intermediate',
+    location: {
+      lat: -34.6037,
+      lng: -58.3816,
+      address: 'Palermo, Buenos Aires'
+    },
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: new Date().toISOString(),
+    // Compatibility fields
+    name: 'Juan Pérez',
+    avatar: undefined,
     birthDate: '1990-05-15',
-    location: 'Palermo, Buenos Aires',
     bio: 'Apasionado del fútbol 5 y el paddle. Siempre buscando nuevos desafíos deportivos.',
     sports: [
       {
@@ -68,7 +85,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       rating: 4.7,
       reviewsReceived: 8
     },
-    createdAt: '2024-01-15T10:00:00Z',
     lastActive: new Date().toISOString()
   };
 
@@ -146,9 +162,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem('refresh_token', response.tokens.refreshToken);
         }
         
+        // Transform backend user data to frontend format
+        const transformedUser = {
+          ...response.user,
+          name: `${response.user.firstName} ${response.user.lastName}`,
+          avatar: response.user.profileImage,
+          birthDate: response.user.dateOfBirth,
+          level: response.user.skillLevel,
+          lastActive: response.user.lastLoginAt || response.user.updatedAt
+        };
+        
         // Set user state
         setAuthState({
-          user: response.user,
+          user: transformedUser,
           isAuthenticated: true,
           isLoading: false,
         });

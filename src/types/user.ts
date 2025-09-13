@@ -1,21 +1,40 @@
 export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  avatar?: string;
   phone?: string;
-  birthDate?: string;
-  location: string;
+  dateOfBirth?: string;
+  profileImage?: string;
+  city?: string;
   bio?: string;
-  sports: UserSport[];
-  preferredTimes: string[];
-  level: 'beginner' | 'intermediate' | 'advanced';
-  friends: string[];
-  favoriteVenues: string[];
-  favoriteEstablishments: string[];
-  stats: UserStats;
+  favoritesSports: string[];
+  skillLevel: 'beginner' | 'intermediate' | 'advanced';
+  location?: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
+  userType: 'player' | 'establishment' | 'admin';
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  isActive: boolean;
+  lastLoginAt?: string;
   createdAt: string;
-  lastActive: string;
+  updatedAt: string;
+  
+  // Computed fields for compatibility
+  name?: string;
+  avatar?: string;
+  birthDate?: string;
+  sports?: UserSport[];
+  preferredTimes?: string[];
+  level?: 'beginner' | 'intermediate' | 'advanced';
+  friends?: string[];
+  favoriteVenues?: string[];
+  favoriteEstablishments?: string[];
+  stats?: UserStats;
+  lastActive?: string;
 }
 
 export interface UserSport {
