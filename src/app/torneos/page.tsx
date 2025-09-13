@@ -6,7 +6,6 @@ import { Trophy, Users, Calendar, MapPin, DollarSign, Clock, Filter, Search, Sta
 import { useTournament } from '@/contexts/TournamentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tournament } from '@/types/tournament';
-import Header from '@/components/Header';
 
 const TournamentsContent = () => {
   const { getAvailableTournaments, registerForTournament } = useTournament();
@@ -73,9 +72,7 @@ const TournamentsContent = () => {
   };
 
   return (
-    <>
-      <Header />
-      <div className="min-h-screen bg-gray-900 text-white pt-20">
+    <div className="min-h-screen bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Hero Section */}
           <div className="text-center mb-12">
@@ -240,7 +237,7 @@ const TournamentsContent = () => {
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 
