@@ -228,24 +228,13 @@ const SearchContent = () => {
 
   // Apply map-based filtering
   useEffect(() => {
-    if (!mapBounds || facilities.length === 0) return;
+    // Start with all facilities
+    let filtered = [...facilities];
 
-    const visibleFacilities = facilities.filter(facility => {
-      const lat = facility.coordinates[0];
-      const lng = facility.coordinates[1];
-      
-      // Check if facility is within map bounds
-      return lat >= mapBounds.south && lat <= mapBounds.north &&
-             lng >= mapBounds.west && lng <= mapBounds.east;
-    });
-
-    // Apply existing filters to visible facilities
+    // Apply search parameters first
     const location = searchParams.get('location');
     const sport = searchParams.get('sport');
-    
-    let filtered = [...visibleFacilities];
 
-    // Apply search filters
     if (sport && sport !== '') {
       filtered = filtered.filter(facility => facility.sport === sport);
     }
@@ -267,6 +256,20 @@ const SearchContent = () => {
 
     filtered = filtered.filter(facility => facility.rating >= minRating);
 
+    // Apply map bounds filtering only if user has interacted with the map
+    // Don't filter on initial load to show all pins by default
+    if (mapBounds && mapCenter && mapZoom && mapZoom !== 13) { // 13 is initial zoom
+      filtered = filtered.filter(facility => {
+        const [lat, lng] = facility.coordinates;
+        return (
+          lat >= mapBounds.south &&
+          lat <= mapBounds.north &&
+          lng >= mapBounds.west &&
+          lng <= mapBounds.east
+        );
+      });
+    }
+
     // Apply sorting
     switch (sortBy) {
       case 'price_low':
@@ -286,7 +289,7 @@ const SearchContent = () => {
     }
 
     setFilteredFacilities(filtered);
-  }, [mapBounds, facilities, searchParams, selectedSports, priceRange, minRating, sortBy]);
+  }, [mapBounds, facilities, searchParams, selectedSports, priceRange, minRating, sortBy, mapCenter, mapZoom]);
 
   const handleReserve = (facility: Facility) => {
     if (!isAuthenticated) {

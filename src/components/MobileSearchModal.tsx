@@ -73,7 +73,7 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 500 }}
-            className="fixed bottom-0 left-0 right-0 bg-gray-800 rounded-t-2xl z-50 max-h-[80vh] overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 bg-gray-800 rounded-t-2xl z-[60] max-h-[85vh] overflow-y-auto mx-0 w-full"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-700">

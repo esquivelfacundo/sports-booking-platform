@@ -97,15 +97,9 @@ const Header = ({ onLoginClick }: HeaderProps) => {
 
         </div>
 
-        {/* Mobile Search Bar - Hidden on homepage hero */}
-        {showSearchBar && (
-          <motion.div 
-            className="md:hidden pb-4"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
+        {/* Mobile Search Button - Only show when not on homepage */}
+        {!isHomepage && (
+          <div className="md:hidden pb-4">
             <button 
               onClick={() => setShowMobileSearch(true)}
               className="w-full flex items-center border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 hover:bg-gray-700 transition-all duration-200"
@@ -116,7 +110,7 @@ const Header = ({ onLoginClick }: HeaderProps) => {
                 <div className="text-xs text-gray-400">Ubicación • Deporte • Fecha</div>
               </div>
             </button>
-          </motion.div>
+          </div>
         )}
 
         {/* Mobile Navigation */}
