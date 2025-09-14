@@ -263,7 +263,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
           // If still no establishment ID, try to load from localStorage registration data
           if (!establishmentId) {
             console.log('EstablishmentContext: No establishmentId found, checking localStorage registration');
-            const registrationData = localStorage.getItem('establishment_registration');
+            const registrationData = localStorage.getItem('establishmentRegistrationData') || localStorage.getItem('establishment_registration');
             if (registrationData) {
               const establishment = JSON.parse(registrationData);
               console.log('EstablishmentContext: Found registration data:', {
@@ -377,7 +377,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
             } catch (apiError) {
               console.error('Error fetching establishment from API:', apiError);
               // Fallback a localStorage si falla el API
-              const registrationData = localStorage.getItem('establishment_registration');
+              const registrationData = localStorage.getItem('establishmentRegistrationData') || localStorage.getItem('establishment_registration');
               if (registrationData) {
                 console.log('Using localStorage establishment data as fallback');
                 const establishment = JSON.parse(registrationData);
@@ -444,7 +444,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
     } catch (error) {
       console.error('Error loading establishment data:', error);
       // En caso de error, intentar cargar desde localStorage primero
-      const registrationData = localStorage.getItem('establishment_registration');
+      const registrationData = localStorage.getItem('establishmentRegistrationData') || localStorage.getItem('establishment_registration');
       if (registrationData) {
         console.log('Loading establishment from localStorage after error');
         try {
