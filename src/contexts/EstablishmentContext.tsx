@@ -321,8 +321,8 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
           
           if (establishmentId) {
             try {
-              // Llamada al backend para obtener datos del establecimiento
-              const response = await fetch(`http://localhost:3001/api/establishments/${establishmentId}`, {
+              // Llamada al backend para obtener datos del establecimiento autenticado
+              const response = await fetch(`http://localhost:3001/api/establishments/my-establishment`, {
                 headers: {
                   'Authorization': `Bearer ${userToken}`,
                   'Content-Type': 'application/json'
