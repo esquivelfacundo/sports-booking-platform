@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SocialProvider } from '@/contexts/SocialContext';
+import { EstablishmentProvider } from '@/contexts/EstablishmentContext';
 import { TournamentProvider } from '@/contexts/TournamentContext';
 import { MobileSearchModalProvider } from '@/components/MobileSearchModalProvider';
 import ClientLayout from "@/components/ClientLayout";
@@ -30,15 +31,19 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} antialiased`}>
-        <MobileSearchModalProvider>
-          <AuthProvider>
-            <SocialProvider>
+        <AuthProvider>
+          <SocialProvider>
+            <EstablishmentProvider>
               <TournamentProvider>
-                <ClientLayout>{children}</ClientLayout>
+                <MobileSearchModalProvider>
+                  <ClientLayout>
+                    {children}
+                  </ClientLayout>
+                </MobileSearchModalProvider>
               </TournamentProvider>
-            </SocialProvider>
-          </AuthProvider>
-        </MobileSearchModalProvider>
+            </EstablishmentProvider>
+          </SocialProvider>
+        </AuthProvider>
       </body>
     </html>
   );

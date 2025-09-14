@@ -54,7 +54,7 @@ const CourtsStep: React.FC<CourtsStepProps> = ({ data, onUpdate, onValidation })
   useEffect(() => {
     onValidation(true);
     onUpdate({ courts });
-  }, [courts, onUpdate, onValidation]);
+  }, [courts]);
 
   const resetForm = () => {
     setFormData({

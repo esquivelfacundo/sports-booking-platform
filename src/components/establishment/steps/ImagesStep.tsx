@@ -28,17 +28,12 @@ const ImagesStep: React.FC<ImagesStepProps> = ({ data, onUpdate, onValidation })
     setMounted(true);
   }, []);
 
-  // Validation - always valid since images are optional
+  // Validation and update effects
   useEffect(() => {
     if (!mounted) return;
     onValidation(true);
-  }, [mounted, onValidation]);
-
-  // Update parent data
-  useEffect(() => {
-    if (!mounted) return;
     onUpdate(formData);
-  }, [formData, mounted, onUpdate]);
+  }, [mounted, formData.images]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

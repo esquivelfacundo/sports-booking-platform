@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, 
-  ArrowLeft, 
-  Check, 
   Building2,
   MapPin,
-  Users,
-  ChevronRight,
   Clock,
   Star,
+  Users,
+  User,
+  FileText,
+  ArrowLeft,
+  ArrowRight,
+  ChevronRight,
+  Check,
   Camera
 } from 'lucide-react';
 import { EstablishmentRegistration, REGISTRATION_STEPS, RegistrationStep } from '@/types/establishment';
@@ -22,6 +24,8 @@ import AmenitiesStep from './steps/AmenitiesStep';
 import ImagesStep from './steps/ImagesStep';
 import CourtsStep from './steps/CourtsStep';
 import StaffStep from './steps/StaffStep';
+import RepresentativeStep from './steps/RepresentativeStep';
+import TermsStep from './steps/TermsStep';
 
 interface EstablishmentRegistrationWizardProps {
   onComplete: (data: EstablishmentRegistration) => void;
@@ -62,6 +66,23 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
     },
     courts: [],
     staff: [],
+    representative: {
+      fullName: '',
+      email: '',
+      whatsapp: '',
+      documentType: 'dni' as const,
+      documentNumber: '',
+      position: '',
+      businessName: '',
+      taxId: '',
+      address: ''
+    },
+    termsAcceptance: {
+      accepted: false,
+      acceptedAt: undefined,
+      ipAddress: undefined,
+      version: '1.0'
+    },
     registrationStatus: {
       basicInfo: false,
       location: false,
@@ -69,7 +90,9 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
       amenities: false,
       images: false,
       courts: false,
-      staff: false
+      staff: false,
+      representative: false,
+      terms: false
     }
   });
 
@@ -80,18 +103,18 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
     }
   }, [registrationData, onSaveProgress]);
 
-  const updateRegistrationData = (stepData: Partial<EstablishmentRegistration>) => {
+  const updateRegistrationData = useCallback((stepData: Partial<EstablishmentRegistration>) => {
     setRegistrationData(prev => ({
       ...prev,
       ...stepData
     }));
-  };
+  }, []);
 
-  const markStepCompleted = (stepIndex: number, completed: boolean) => {
+  const markStepCompleted = useCallback((stepIndex: number, completed: boolean) => {
     setSteps(prev => prev.map((step, index) => 
       index === stepIndex ? { ...step, completed } : step
     ));
-  };
+  }, []);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -125,6 +148,8 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
         images: steps[4].completed,
         courts: steps[5].completed,
         staff: steps[6].completed,
+        representative: steps[7].completed,
+        terms: steps[8].completed,
         completedAt: new Date()
       }
     } as EstablishmentRegistration;
@@ -141,6 +166,8 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
       case 'images': return Camera;
       case 'courts': return MapPin;
       case 'staff': return Users;
+      case 'representative': return User;
+      case 'terms': return FileText;
       default: return Building2;
     }
   };
@@ -200,6 +227,22 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
       case 'staff':
         return (
           <StaffStep
+            data={registrationData}
+            onUpdate={updateRegistrationData}
+            onValidation={(isValid: boolean) => markStepCompleted(currentStep, isValid)}
+          />
+        );
+      case 'representative':
+        return (
+          <RepresentativeStep
+            data={registrationData}
+            onUpdate={updateRegistrationData}
+            onValidation={(isValid: boolean) => markStepCompleted(currentStep, isValid)}
+          />
+        );
+      case 'terms':
+        return (
+          <TermsStep
             data={registrationData}
             onUpdate={updateRegistrationData}
             onValidation={(isValid: boolean) => markStepCompleted(currentStep, isValid)}
@@ -270,11 +313,6 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
                       }`}>
                         {step.title}
                       </div>
-                      {step.required && (
-                        <div className="text-xs text-orange-400 mt-1">
-                          Obligatorio
-                        </div>
-                      )}
                     </div>
                   </motion.div>
                   

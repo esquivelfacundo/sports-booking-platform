@@ -1,25 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
   UserPlus, 
   Edit, 
   Trash2, 
-  X,
-  Save,
-  Shield,
-  User,
-  Mail,
-  Phone,
+  X, 
+  Shield, 
+  User, 
+  Crown, 
+  Settings,
   Calendar,
   Clock,
+  AlertCircle,
+  Mail,
+  Phone,
   Key,
   CheckCircle,
-  AlertCircle
+  Save
 } from 'lucide-react';
 import { EstablishmentRegistration, Employee, EMPLOYEE_ROLES } from '@/types/establishment';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 interface StaffStepProps {
   data: Partial<EstablishmentRegistration>;
@@ -74,7 +77,7 @@ const StaffStep: React.FC<StaffStepProps> = ({ data, onUpdate, onValidation }) =
   useEffect(() => {
     onValidation(true);
     onUpdate({ staff });
-  }, [staff, onUpdate, onValidation]);
+  }, [staff]);
 
   const resetForm = () => {
     setFormData({
@@ -357,12 +360,11 @@ const StaffStep: React.FC<StaffStepProps> = ({ data, onUpdate, onValidation }) =
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Teléfono
                     </label>
-                    <input
-                      type="tel"
+                    <PhoneInput
                       value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
+                      placeholder="Número de teléfono"
                       className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="+54 11 1234-5678"
                     />
                   </div>
 
@@ -391,13 +393,13 @@ const StaffStep: React.FC<StaffStepProps> = ({ data, onUpdate, onValidation }) =
                     <span className="text-sm font-medium text-white">Permisos del Rol</span>
                   </div>
                   <p className="text-sm text-gray-400 mb-3">
-                    {EMPLOYEE_ROLES.find(r => r.value === formData.role)?.description}
+                    {EMPLOYEE_ROLES.find((r: any) => r.value === formData.role)?.description}
                   </p>
                   <div className="space-y-1">
-                    {permissionsByRole[formData.role].map(permission => (
+                    {(permissionsByRole as any)[formData.role]?.map((permission: string) => (
                       <div key={permission} className="flex items-center space-x-2 text-sm">
                         <CheckCircle className="w-3 h-3 text-emerald-400" />
-                        <span className="text-gray-300">{permissionLabels[permission]}</span>
+                        <span className="text-gray-300">{(permissionLabels as any)[permission]}</span>
                       </div>
                     ))}
                   </div>

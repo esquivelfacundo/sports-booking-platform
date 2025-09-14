@@ -33,17 +33,12 @@ const AmenitiesStep: React.FC<AmenitiesStepProps> = ({ data, onUpdate, onValidat
     setMounted(true);
   }, []);
 
-  // Validation - always valid since amenities are optional
+  // Validation and update effects
   useEffect(() => {
     if (!mounted) return;
     onValidation(true);
-  }, [mounted, onValidation]);
-
-  // Update parent data
-  useEffect(() => {
-    if (!mounted) return;
     onUpdate(formData);
-  }, [formData, mounted, onUpdate]);
+  }, [mounted, formData.amenities]);
 
   const toggleAmenity = (amenity: string) => {
     setFormData(prev => ({

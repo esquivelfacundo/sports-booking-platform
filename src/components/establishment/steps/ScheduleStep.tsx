@@ -44,17 +44,12 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onValidatio
     setMounted(true);
   }, []);
 
-  // Validation - always valid since schedule has defaults
+  // Validation and update effects
   useEffect(() => {
     if (!mounted) return;
     onValidation(true);
-  }, [mounted, onValidation]);
-
-  // Update parent data
-  useEffect(() => {
-    if (!mounted) return;
     onUpdate(formData);
-  }, [formData, mounted, onUpdate]);
+  }, [mounted, formData.schedule]);
 
   const updateSchedule = (day: string, field: 'open' | 'close' | 'closed', value: string | boolean) => {
     if (sameScheduleAllDays && (field === 'open' || field === 'close')) {

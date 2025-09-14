@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Phone, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import PhoneInput from '@/components/ui/PhoneInput';
 import ProvinceSelect from '@/components/ProvinceSelect';
 
 interface AuthScreenProps {
@@ -433,7 +434,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ defaultMode = 'login' }) => {
                   ))}
                 </div>
 
-{/* Step Content */}
+                {/* Step Content */}
                 {step === 1 && (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-white mb-4">Información Básica</h3>
@@ -532,13 +533,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ defaultMode = 'login' }) => {
                       </label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                          type="tel"
+                        <PhoneInput
                           value={registerData.phone}
-                          onChange={(e) => setRegisterData(prev => ({ ...prev, phone: e.target.value }))}
+                          onChange={(value) => setRegisterData(prev => ({ ...prev, phone: value }))}
                           className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                          placeholder="+54 9 11 1234-5678"
-                          required
+                          placeholder="Teléfono"
                         />
                       </div>
                       <p className="text-xs text-gray-400 mt-1">

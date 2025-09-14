@@ -3,43 +3,42 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Settings,
-  Save,
-  RefreshCw,
-  Bell,
-  Shield,
-  Globe,
-  Clock,
-  DollarSign,
-  Mail,
-  Phone,
-  MapPin,
-  Camera,
-  Palette,
-  Database,
-  Key,
+  Settings, 
+  Save, 
+  Building2, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  Clock, 
   Users,
+  Star,
+  Camera,
+  Upload,
+  X,
+  Edit3,
+  Trash2,
+  Plus,
   Calendar,
   CreditCard,
   Smartphone,
-  Monitor,
-  Sun,
+  Bell,
+  DollarSign,
+  Database,
   Moon,
-  Volume2,
-  Lock,
-  Eye,
-  EyeOff,
   Check,
-  X,
-  AlertTriangle,
-  Info
+  Eye,
+  AlertTriangle
 } from 'lucide-react';
+import PhoneInput from '@/components/ui/PhoneInput';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 
 const ConfigurationPage = () => {
+  const { establishment, loading, updateEstablishment } = useEstablishment();
   const [activeTab, setActiveTab] = useState('general');
   const [showPassword, setShowPassword] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Load saved configuration from localStorage
   const loadSavedConfig = () => {
@@ -56,15 +55,15 @@ const ConfigurationPage = () => {
     return null;
   };
 
-  // Configuration state
+  // Configuration state - initialize with establishment data
   const [config, setConfig] = useState({
     // General Settings
-    establishmentName: 'Club Deportivo Central',
-    description: 'Centro deportivo con canchas de fútbol, tenis y paddle',
-    address: 'Av. Libertador 1234, Buenos Aires',
-    phone: '+54 11 4567-8900',
-    email: 'info@clubcentral.com',
-    website: 'www.clubcentral.com',
+    establishmentName: establishment?.name || '',
+    description: establishment?.description || '',
+    address: establishment?.address || '',
+    phone: establishment?.phone || '',
+    email: establishment?.email || '',
+    website: '',
     timezone: 'America/Argentina/Buenos_Aires',
     language: 'es',
     currency: 'ARS',
@@ -156,15 +155,26 @@ const ConfigurationPage = () => {
     }
   };
 
-  // Load saved configuration on component mount
+  // Load establishment data and saved configuration on component mount
   useEffect(() => {
+    if (establishment) {
+      setConfig((prev: any) => ({
+        ...prev,
+        establishmentName: establishment.name || '',
+        description: establishment.description || '',
+        address: establishment.address || '',
+        phone: establishment.phone || '',
+        email: establishment.email || ''
+      }));
+    }
+    
     const savedConfig = loadSavedConfig();
     if (savedConfig) {
-      setConfig(prev => ({ ...prev, ...savedConfig }));
+      setConfig((prev: any) => ({ ...prev, ...savedConfig }));
       // Apply saved theme immediately
       applyThemePreview(savedConfig.primaryColor || 'emerald', savedConfig.accentColor || 'cyan');
     }
-  }, []);
+  }, [establishment]);
 
   // Apply theme preview when colors change
   useEffect(() => {
@@ -177,14 +187,14 @@ const ConfigurationPage = () => {
     { id: 'general', name: 'General', icon: Settings },
     { id: 'business', name: 'Horarios', icon: Clock },
     { id: 'booking', name: 'Reservas', icon: Calendar },
-    { id: 'notifications', name: 'Notificaciones', icon: Bell },
+    { id: 'notifications', name: 'Notificaciones', icon: Mail },
     { id: 'payments', name: 'Pagos', icon: CreditCard },
-    { id: 'security', name: 'Seguridad', icon: Shield },
-    { id: 'appearance', name: 'Apariencia', icon: Palette }
+    { id: 'security', name: 'Seguridad', icon: Users },
+    { id: 'appearance', name: 'Apariencia', icon: Star }
   ];
 
   const handleConfigChange = (section: string, field: string, value: any) => {
-    setConfig(prev => ({
+    setConfig((prev: any) => ({
       ...prev,
       [section]: typeof prev[section as keyof typeof prev] === 'object' 
         ? { ...prev[section as keyof typeof prev] as any, [field]: value }
@@ -193,24 +203,42 @@ const ConfigurationPage = () => {
     setUnsavedChanges(true);
   };
 
-  const handleSave = () => {
-    // Save configuration to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dashboardThemeConfig', JSON.stringify({
-        darkMode: config.darkMode,
-        primaryColor: config.primaryColor,
-        accentColor: config.accentColor
-      }));
-    }
+  const handleSave = async () => {
+    setSaving(true);
     
-    // Apply theme permanently
-    applyThemePreview(config.primaryColor, config.accentColor);
-    
-    // Simulate save
-    setTimeout(() => {
+    try {
+      // Update establishment data in context
+      const updatedEstablishment = {
+        ...establishment,
+        name: config.establishmentName,
+        description: config.description,
+        address: config.address,
+        phone: config.phone,
+        email: config.email
+      };
+      
+      await updateEstablishment(updatedEstablishment);
+      
+      // Save theme configuration to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dashboardThemeConfig', JSON.stringify({
+          darkMode: config.darkMode,
+          primaryColor: config.primaryColor,
+          accentColor: config.accentColor
+        }));
+      }
+      
+      // Apply theme permanently
+      applyThemePreview(config.primaryColor, config.accentColor);
+      
       setUnsavedChanges(false);
       alert('Configuración guardada exitosamente');
-    }, 1000);
+    } catch (error) {
+      console.error('Error saving configuration:', error);
+      alert('Error al guardar la configuración');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const renderGeneralTab = () => (
@@ -233,15 +261,14 @@ const ConfigurationPage = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Teléfono</label>
-            <input
-              type="tel"
+            <PhoneInput
               value={config.phone}
-              onChange={(e) => {
-                setConfig(prev => ({ ...prev, phone: e.target.value }));
+              onChange={(value) => {
+                setConfig(prev => ({ ...prev, phone: value }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
-              suppressHydrationWarning={true}
+              placeholder="Número de teléfono"
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
           <div>
@@ -357,53 +384,56 @@ const ConfigurationPage = () => {
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
         <h3 className="text-lg font-semibold text-white mb-4">Horarios de Funcionamiento</h3>
         <div className="space-y-4">
-          {Object.entries(config.businessHours).map(([day, hours]) => (
-            <div key={day} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div className="w-20">
-                  <span className="text-white font-medium capitalize">
-                    {day === 'monday' ? 'Lunes' :
-                     day === 'tuesday' ? 'Martes' :
-                     day === 'wednesday' ? 'Miércoles' :
-                     day === 'thursday' ? 'Jueves' :
-                     day === 'friday' ? 'Viernes' :
-                     day === 'saturday' ? 'Sábado' : 'Domingo'}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={!hours.closed}
-                    onChange={(e) => handleConfigChange('businessHours', day, { ...hours, closed: !e.target.checked })}
-                    className="rounded border-gray-600 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-gray-300">Abierto</span>
-                </div>
-              </div>
-              {!hours.closed && (
+          {Object.entries(config.businessHours).map(([day, hours]) => {
+            const dayHours = hours as { open: string; close: string; closed: boolean };
+            return (
+              <div key={day} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-400">Desde:</span>
-                    <input
-                      type="time"
-                      value={hours.open}
-                      onChange={(e) => handleConfigChange('businessHours', day, { ...hours, open: e.target.value })}
-                      className="px-3 py-1 bg-gray-600 border border-gray-500 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                    />
+                  <div className="w-20">
+                    <span className="text-white font-medium capitalize">
+                      {day === 'monday' ? 'Lunes' :
+                       day === 'tuesday' ? 'Martes' :
+                       day === 'wednesday' ? 'Miércoles' :
+                       day === 'thursday' ? 'Jueves' :
+                       day === 'friday' ? 'Viernes' :
+                       day === 'saturday' ? 'Sábado' : 'Domingo'}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-gray-400">Hasta:</span>
                     <input
-                      type="time"
-                      value={hours.close}
-                      onChange={(e) => handleConfigChange('businessHours', day, { ...hours, close: e.target.value })}
-                      className="px-3 py-1 bg-gray-600 border border-gray-500 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                      type="checkbox"
+                      checked={!dayHours.closed}
+                      onChange={(e) => handleConfigChange('businessHours', day, { ...dayHours, closed: !e.target.checked })}
+                      className="rounded border-gray-600 text-emerald-600 focus:ring-emerald-500"
                     />
+                    <span className="text-gray-300">Abierto</span>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+                {!dayHours.closed && (
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-400">Desde:</span>
+                      <input
+                        type="time"
+                        value={dayHours.open}
+                        onChange={(e) => handleConfigChange('businessHours', day, { ...dayHours, open: e.target.value })}
+                        className="px-3 py-1 bg-gray-600 border border-gray-500 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-400">Hasta:</span>
+                      <input
+                        type="time"
+                        value={dayHours.close}
+                        onChange={(e) => handleConfigChange('businessHours', day, { ...dayHours, close: e.target.value })}
+                        className="px-3 py-1 bg-gray-600 border border-gray-500 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -960,15 +990,15 @@ const ConfigurationPage = () => {
           )}
           <button 
             onClick={handleSave}
-            disabled={!unsavedChanges}
+            disabled={!unsavedChanges || saving || loading}
             className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors ${
-              unsavedChanges 
+              unsavedChanges && !saving && !loading
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
                 : 'bg-gray-700 text-gray-400 cursor-not-allowed'
             }`}
           >
             <Save className="h-4 w-4" />
-            <span>Guardar Cambios</span>
+            <span>{saving ? 'Guardando...' : 'Guardar Cambios'}</span>
           </button>
         </div>
       </div>

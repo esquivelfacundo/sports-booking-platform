@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Building2, 
@@ -25,6 +25,7 @@ import {
   Heart
 } from 'lucide-react';
 import { EstablishmentRegistration, AMENITIES_OPTIONS } from '@/types/establishment';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 interface BasicInfoStepProps {
   data: Partial<EstablishmentRegistration>;
@@ -83,30 +84,22 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, onUpdate, onValidat
     setMounted(true);
   }, []);
 
-  // Validation - only validate touched fields or when form is complete
+  // Validation and update effects
   useEffect(() => {
     if (!mounted) return;
 
     const newErrors: Record<string, string> = {};
     
-    // Only validate fields that have been touched or if trying to submit
     if (touched.name && !formData.basicInfo.name.trim()) newErrors.name = 'El nombre es obligatorio';
     if (touched.description && !formData.basicInfo.description.trim()) newErrors.description = 'La descripción es obligatoria';
     if (touched.phone && !formData.basicInfo.phone.trim()) newErrors.phone = 'El teléfono es obligatorio';
-    if (touched.email) {
-      if (!formData.basicInfo.email.trim()) {
-        newErrors.email = 'El email es obligatorio';
-      } else if (!/\S+@\S+\.\S+/.test(formData.basicInfo.email)) {
-        newErrors.email = 'Email inválido';
-      }
+    if (touched.email && !formData.basicInfo.email.trim()) newErrors.email = 'El email es obligatorio';
+    if (touched.email && formData.basicInfo.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.basicInfo.email)) {
+      newErrors.email = 'Email inválido';
     }
-    if (touched.address && !formData.location.address.trim()) newErrors.address = 'La dirección es obligatoria';
-    if (touched.city && !formData.location.city.trim()) newErrors.city = 'La ciudad es obligatoria';
-    if (touched.state && !formData.location.state.trim()) newErrors.state = 'La provincia es obligatoria';
 
     setErrors(newErrors);
     
-    // Check if all required fields are filled (for step completion)
     const allRequiredFilled = 
       formData.basicInfo.name.trim() &&
       formData.basicInfo.description.trim() &&
@@ -235,18 +228,13 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ data, onUpdate, onValidat
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Teléfono *
             </label>
-            <input
-              type="tel"
+            <PhoneInput
               value={formData.basicInfo.phone}
-              onChange={(e) => updateBasicInfo('phone', e.target.value)}
-              className={`w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
-                errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-emerald-500'
-              }`}
-              placeholder="Ej: +54 11 1234-5678"
-              spellCheck="false"
-              autoComplete="tel"
+              onChange={(value) => updateBasicInfo('phone', value)}
+              placeholder="Número de teléfono"
+              className="w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors border-gray-600 focus:ring-emerald-500"
+              error={errors.phone}
             />
-            {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
           </div>
         </div>
 

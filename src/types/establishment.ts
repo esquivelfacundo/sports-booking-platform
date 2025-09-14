@@ -35,7 +35,28 @@ export interface EstablishmentRegistration {
   
   // Personal (Opcional)
   staff: Employee[];
-  
+
+  // Representante Legal (Obligatorio)
+  representative: {
+    fullName: string;
+    email: string;
+    whatsapp: string;
+    documentType: 'dni' | 'cuit' | 'cuil' | 'passport';
+    documentNumber: string;
+    position: string;
+    businessName?: string;
+    taxId?: string;
+    address: string;
+  };
+
+  // Términos y Condiciones (Obligatorio)
+  termsAcceptance: {
+    accepted: boolean;
+    acceptedAt?: Date;
+    ipAddress?: string;
+    version: string;
+  };
+
   // Meta
   registrationStatus: {
     basicInfo: boolean;
@@ -45,6 +66,8 @@ export interface EstablishmentRegistration {
     images: boolean;
     courts: boolean;
     staff: boolean;
+    representative: boolean;
+    terms: boolean;
     completedAt?: Date;
   };
 }
@@ -79,6 +102,7 @@ export interface Employee {
   avatar?: string;
 }
 
+
 export interface RegistrationStep {
   id: string;
   title: string;
@@ -90,7 +114,7 @@ export interface RegistrationStep {
 export const REGISTRATION_STEPS: RegistrationStep[] = [
   {
     id: 'basic',
-    title: 'Información Básica',
+    title: 'Establecimiento',
     description: 'Nombre y datos de contacto',
     required: true,
     completed: false
@@ -135,6 +159,20 @@ export const REGISTRATION_STEPS: RegistrationStep[] = [
     title: 'Personal',
     description: 'Empleados y permisos (opcional)',
     required: false,
+    completed: false
+  },
+  {
+    id: 'representative',
+    title: 'Representante',
+    description: 'Datos del responsable legal',
+    required: true,
+    completed: false
+  },
+  {
+    id: 'terms',
+    title: 'Acuerdo',
+    description: 'Aceptación del contrato',
+    required: true,
     completed: false
   }
 ];
