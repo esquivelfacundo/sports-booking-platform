@@ -18,11 +18,16 @@ import {
   LogOut, 
   X,
   ChevronDown,
-  Trophy
+  Trophy,
+  Clock,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { useAuth } from '@/contexts/AuthContext';
+import HeaderSearchBar from '@/components/HeaderSearchBar';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -30,8 +35,10 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { establishment, isDemo } = useEstablishment();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const pathname = usePathname();
 
   const navigation = [
@@ -95,14 +102,41 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       href: '/establecimientos/admin/marketing',
       icon: Target,
       current: pathname.startsWith('/establecimientos/admin/marketing')
-    },
-    {
-      name: 'Configuración',
-      href: '/establecimientos/admin/configuracion',
-      icon: Settings,
-      current: pathname.startsWith('/establecimientos/admin/configuracion')
     }
   ];
+
+  // Mock notifications data
+  const notifications = [
+    {
+      id: 1,
+      type: 'booking',
+      title: 'Nueva reserva',
+      message: 'Juan Pérez reservó la Cancha 1 para mañana a las 18:00',
+      time: '5 min',
+      read: false,
+      icon: Calendar
+    },
+    {
+      id: 2,
+      type: 'maintenance',
+      title: 'Mantenimiento pendiente',
+      message: 'La Cancha 2 necesita mantenimiento programado',
+      time: '1 hora',
+      read: false,
+      icon: AlertCircle
+    },
+    {
+      id: 3,
+      type: 'payment',
+      title: 'Pago recibido',
+      message: 'Se recibió el pago de $15.000 por reserva de María García',
+      time: '2 horas',
+      read: true,
+      icon: CheckCircle
+    }
+  ];
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -210,27 +244,96 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 />
               </div>
 
-              {/* Search Bar */}
-              <div className="flex-1 max-w-lg mx-4">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400 ml-3" />
-                  <input
-                    className="block h-10 w-full border border-gray-600 bg-gray-800 py-0 pl-10 pr-4 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-xl"
-                    placeholder="Buscar en el dashboard..."
-                    type="search"
-                  />
-                </div>
-              </div>
+              {/* Spacer for layout balance */}
+              <div className="flex-1"></div>
 
               {/* Right side actions */}
               <div className="flex items-center space-x-4">
                 {/* Notifications */}
-                <button className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200">
-                  <Bell className="h-6 w-6" />
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 rounded-full flex items-center justify-center text-xs text-white">
-                    3
-                  </span>
-                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200"
+                  >
+                    <Bell className="h-6 w-6" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 rounded-full flex items-center justify-center text-xs text-white">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-96 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50"
+                    >
+                      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-white">Notificaciones</h3>
+                        <button
+                          onClick={() => setShowNotifications(false)}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.map((notification) => {
+                          const IconComponent = notification.icon;
+                          return (
+                            <div
+                              key={notification.id}
+                              className={`p-4 border-b border-gray-700 hover:bg-gray-700 transition-colors ${
+                                !notification.read ? 'bg-gray-750' : ''
+                              }`}
+                            >
+                              <div className="flex items-start space-x-3">
+                                <div className={`p-2 rounded-lg ${
+                                  notification.type === 'booking' ? 'bg-emerald-500/20 text-emerald-400' :
+                                  notification.type === 'maintenance' ? 'bg-yellow-500/20 text-yellow-400' :
+                                  'bg-green-500/20 text-green-400'
+                                }`}>
+                                  <IconComponent className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <p className={`text-sm font-medium ${
+                                      !notification.read ? 'text-white' : 'text-gray-300'
+                                    }`}>
+                                      {notification.title}
+                                    </p>
+                                    <span className="text-xs text-gray-400 flex items-center">
+                                      <Clock className="w-3 h-3 mr-1" />
+                                      {notification.time}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-400 mt-1">
+                                    {notification.message}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Configuration */}
+                <Link
+                  href="/establecimientos/admin/configuracion"
+                  className={`p-2 rounded-xl transition-all duration-200 ${
+                    pathname.startsWith('/establecimientos/admin/configuracion')
+                      ? 'text-emerald-400 bg-emerald-500/20'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  <Settings className="h-6 w-6" />
+                </Link>
 
                 {/* User menu */}
                 <div className="relative">
@@ -240,13 +343,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   >
                     <div className="h-6 w-6 rounded-full bg-emerald-600 flex items-center justify-center">
                       <span className="text-xs font-medium text-white">
-                        {establishment?.name ? establishment.name.charAt(0).toUpperCase() : 'U'}
+                        {user?.name ? user.name.charAt(0).toUpperCase() : establishment?.name ? establishment.name.charAt(0).toUpperCase() : 'U'}
                       </span>
                     </div>
                     <div className="hidden sm:block text-left">
                       <div className="text-white font-medium text-sm">
-                        {establishment?.name || 'Usuario'}
+                        {user?.name || establishment?.representative?.fullName || establishment?.name || 'Usuario'}
                       </div>
+                      {user?.userType === 'establishment' && (
+                        <div className="text-xs text-emerald-400">Administrador</div>
+                      )}
                       {isDemo && (
                         <div className="text-xs text-yellow-400">Cuenta Demo</div>
                       )}

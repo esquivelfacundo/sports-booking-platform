@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, FileText, Building, MapPin } from 'lucide-react';
+import { User, Mail, Phone, FileText, Building, MapPin, Lock } from 'lucide-react';
 import { EstablishmentRegistration } from '@/types/establishment';
 import { POSITION_OPTIONS } from '@/constants/argentina';
 import PhoneInput from '@/components/ui/PhoneInput';
@@ -31,7 +31,9 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
     position: '',
     businessName: '',
     taxId: '',
-    address: ''
+    address: '',
+    username: '',
+    password: ''
   };
 
   useEffect(() => {
@@ -52,13 +54,17 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
         return value.trim().length >= 2;
       case 'address':
         return value.trim().length >= 10;
+      case 'username':
+        return value.trim().length >= 3;
+      case 'password':
+        return value.length >= 6;
       default:
         return true;
     }
   };
 
   const isFormValid = () => {
-    const requiredFields = ['fullName', 'email', 'whatsapp', 'documentNumber', 'position', 'address'];
+    const requiredFields = ['fullName', 'email', 'whatsapp', 'documentNumber', 'position', 'address', 'username', 'password'];
     return requiredFields.every(field => 
       validateField(field, representative[field as keyof typeof representative] as string)
     );
@@ -66,7 +72,7 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
 
   useEffect(() => {
     onValidation(isFormValid());
-  }, [representative.fullName, representative.email, representative.whatsapp, representative.documentType, representative.documentNumber, representative.position, representative.businessName, representative.taxId, representative.address]);
+  }, [representative.fullName, representative.email, representative.whatsapp, representative.documentType, representative.documentNumber, representative.position, representative.businessName, representative.taxId, representative.address, representative.username, representative.password]);
 
   const handleInputChange = (field: string, value: string) => {
     const updatedRepresentative = {
@@ -102,6 +108,10 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
         return !validateField(field, value) ? 'Ingresa el cargo o posición' : '';
       case 'address':
         return !validateField(field, value) ? 'Ingresa una dirección completa' : '';
+      case 'username':
+        return !validateField(field, value) ? 'Ingresa un nombre de usuario (mínimo 3 caracteres)' : '';
+      case 'password':
+        return !validateField(field, value) ? 'Ingresa una contraseña (mínimo 6 caracteres)' : '';
       default:
         return '';
     }
@@ -331,6 +341,69 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
               error={getFieldError('address')}
               types={['address']}
             />
+          </div>
+        </div>
+
+        {/* Datos de Acceso */}
+        <div className="col-span-1 md:col-span-2">
+          <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-xl p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Lock className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-lg font-semibold text-emerald-300">Datos de Acceso al Sistema</h3>
+            </div>
+            <p className="text-emerald-200 text-sm mb-6">
+              Estos datos serán utilizados para acceder al panel de administración del establecimiento.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Nombre de Usuario */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">
+                  Nombre de Usuario *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={representative.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    onBlur={() => handleBlur('username')}
+                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                      getFieldError('username') ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-emerald-500'
+                    }`}
+                    placeholder="usuario123"
+                    autoComplete="username"
+                  />
+                </div>
+                {getFieldError('username') && (
+                  <p className="text-red-400 text-sm">{getFieldError('username')}</p>
+                )}
+              </div>
+
+              {/* Contraseña */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">
+                  Contraseña *
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={representative.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    onBlur={() => handleBlur('password')}
+                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                      getFieldError('password') ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-emerald-500'
+                    }`}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                  />
+                </div>
+                {getFieldError('password') && (
+                  <p className="text-red-400 text-sm">{getFieldError('password')}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

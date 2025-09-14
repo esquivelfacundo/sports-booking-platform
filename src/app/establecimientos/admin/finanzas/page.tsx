@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -48,6 +49,7 @@ interface FinancialSummary {
 }
 
 const FinancePage = () => {
+  const { establishment, isDemo, loading } = useEstablishment();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -55,49 +57,54 @@ const FinancePage = () => {
   const [showTransactionDetails, setShowTransactionDetails] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // Mock data
-  const financialSummary: FinancialSummary = {
-    totalRevenue: 125000,
-    totalExpenses: 45000,
-    netProfit: 80000,
-    pendingPayments: 12500,
-    monthlyGrowth: 15.8
-  };
+  // Initialize financial data based on demo or real data
+  useEffect(() => {
+    if (isDemo) {
+      // Demo data
+      setFinancialSummary({
+        totalRevenue: 125000,
+        totalExpenses: 45000,
+        netProfit: 80000,
+        pendingPayments: 12500,
+        monthlyGrowth: 15.8
+      });
 
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    {
-      id: '1',
-      type: 'income',
-      category: 'Reservas',
-      description: 'Reserva Cancha 1 - Juan Pérez',
-      amount: 8000,
-      date: '2024-01-15',
-      status: 'completed',
-      paymentMethod: 'Tarjeta de Crédito',
-      reference: 'RES-001'
-    },
-    {
-      id: '2',
-      type: 'expense',
-      category: 'Mantenimiento',
-      description: 'Reparación iluminación Cancha 2',
-      amount: 15000,
-      date: '2024-01-14',
-      status: 'completed',
-      paymentMethod: 'Transferencia',
-      reference: 'EXP-001'
-    },
-    {
-      id: '3',
-      type: 'income',
-      category: 'Reservas',
-      description: 'Reserva Cancha 3 - María González',
-      amount: 6000,
-      date: '2024-01-14',
-      status: 'pending',
-      paymentMethod: 'Efectivo'
-    },
+      setTransactions([
+        {
+          id: '1',
+          type: 'income',
+          category: 'Reservas',
+          description: 'Reserva Cancha 1 - Juan Pérez',
+          amount: 8000,
+          date: '2024-01-15',
+          status: 'completed',
+          paymentMethod: 'Tarjeta de Crédito',
+          reference: 'RES-001'
+        },
+        {
+          id: '2',
+          type: 'expense',
+          category: 'Mantenimiento',
+          description: 'Reparación iluminación Cancha 2',
+          amount: 15000,
+          date: '2024-01-14',
+          status: 'completed',
+          paymentMethod: 'Transferencia',
+          reference: 'EXP-001'
+        },
+        {
+          id: '3',
+          type: 'income',
+          category: 'Reservas',
+          description: 'Reserva Cancha 3 - María González',
+          amount: 6000,
+          date: '2024-01-14',
+          status: 'pending',
+          paymentMethod: 'Efectivo'
+        },
     {
       id: '4',
       type: 'expense',
@@ -118,19 +125,31 @@ const FinancePage = () => {
       status: 'completed',
       paymentMethod: 'Tarjeta de Débito'
     }
-  ]);
+      ]);
+    } else {
+      // Real establishment - no financial data yet
+      setFinancialSummary({
+        totalRevenue: 0,
+        totalExpenses: 0,
+        netProfit: 0,
+        pendingPayments: 0,
+        monthlyGrowth: 0
+      });
+      setTransactions([]);
+    }
+  }, [establishment, isDemo]);
 
-  const expenseCategories = [
+  const expenseCategories = isDemo ? [
     { name: 'Mantenimiento', amount: 35000, percentage: 45 },
     { name: 'Servicios', amount: 28000, percentage: 36 },
     { name: 'Personal', amount: 15000, percentage: 19 }
-  ];
+  ] : [];
 
-  const revenueCategories = [
+  const revenueCategories = isDemo ? [
     { name: 'Reservas', amount: 95000, percentage: 76 },
     { name: 'Membresías', amount: 20000, percentage: 16 },
     { name: 'Eventos', amount: 10000, percentage: 8 }
-  ];
+  ] : [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -157,6 +176,14 @@ const FinancePage = () => {
       minimumFractionDigits: 0
     }).format(amount);
   };
+
+  if (loading || !financialSummary) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-white text-xl">Cargando finanzas...</div>
+      </div>
+    );
+  }
 
   // Transaction handlers
   const handleCreateTransaction = (transactionData: Partial<Transaction>) => {

@@ -80,6 +80,15 @@ const EstablishmentRegistrationPage = () => {
           timestamp: new Date().toISOString()
         }));
         
+        // Also update the registration data with the establishment ID
+        const updatedData = {
+          ...data,
+          id: response.establishment?.id,
+          establishmentId: response.establishment?.id,
+          status: response.status
+        };
+        localStorage.setItem('establishmentRegistrationData', JSON.stringify(updatedData));
+        
         // Redirect to establishment dashboard
         router.push('/establecimientos/admin?registered=true');
       } else {

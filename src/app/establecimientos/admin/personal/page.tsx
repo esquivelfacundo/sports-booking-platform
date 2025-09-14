@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   Users, 
   UserPlus, 
@@ -58,6 +59,7 @@ interface Role {
 }
 
 const StaffPage = () => {
+  const { establishment, isDemo, loading } = useEstablishment();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -69,6 +71,7 @@ const StaffPage = () => {
   const [editingPermissions, setEditingPermissions] = useState<string[]>([]);
   const [showPermissions, setShowPermissions] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const roles: Role[] = [
     {
@@ -101,21 +104,48 @@ const StaffPage = () => {
     }
   ];
 
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: '1',
-      name: 'Carlos Rodríguez',
-      email: 'carlos.rodriguez@complejo.com',
-      phone: '+54 11 1234-5678',
-      role: 'admin',
-      status: 'active',
-      hireDate: '2023-01-15',
-      salary: 150000,
-      schedule: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
-      permissions: ['dashboard', 'reservations', 'analytics', 'finance', 'staff', 'courts', 'clients', 'maintenance', 'marketing', 'settings'],
-      performance: 95,
-      lastLogin: '2024-01-15T10:30:00Z'
-    },
+  // Helper function to get permissions by role
+  const getPermissionsByRole = (role: string): string[] => {
+    const roleObj = roles.find(r => r.id === role);
+    return roleObj ? roleObj.permissions : ['dashboard'];
+  };
+
+  // Initialize employees data based on demo or real data
+  useEffect(() => {
+    if (establishment?.staff && establishment.staff.length > 0) {
+      // Convert establishment staff to Employee format
+      const convertedEmployees: Employee[] = establishment.staff.map((staff, index) => ({
+        id: staff.id || (index + 1).toString(),
+        name: staff.name,
+        email: staff.email,
+        phone: staff.phone,
+        role: staff.role,
+        status: 'active' as Employee['status'],
+        hireDate: new Date().toISOString().split('T')[0],
+        salary: 80000, // Default salary
+        schedule: staff.schedule || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+        permissions: staff.permissions || getPermissionsByRole(staff.role),
+        performance: 85,
+        lastLogin: new Date().toISOString()
+      }));
+      setEmployees(convertedEmployees);
+    } else if (isDemo) {
+      // Demo data
+      setEmployees([
+        {
+          id: '1',
+          name: 'Carlos Rodríguez',
+          email: 'carlos.rodriguez@complejo.com',
+          phone: '+54 11 1234-5678',
+          role: 'admin',
+          status: 'active',
+          hireDate: '2023-01-15',
+          salary: 150000,
+          schedule: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+          permissions: ['dashboard', 'reservations', 'analytics', 'finance', 'staff', 'courts', 'clients', 'maintenance', 'marketing', 'settings'],
+          performance: 95,
+          lastLogin: '2024-01-15T10:30:00Z'
+        },
     {
       id: '2',
       name: 'María González',
@@ -170,9 +200,22 @@ const StaffPage = () => {
       schedule: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
       permissions: ['dashboard', 'courts', 'maintenance'],
       performance: 90,
-      lastLogin: '2024-01-15T07:30:00Z'
+          lastLogin: '2024-01-15T07:30:00Z'
+        }
+      ]);
+    } else {
+      // No staff data available
+      setEmployees([]);
     }
-  ]);
+  }, [establishment, isDemo]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
 
   // Handlers for CRUD operations
   const handleCreateEmployee = () => {

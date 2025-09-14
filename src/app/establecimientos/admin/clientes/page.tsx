@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   Users, 
   UserPlus,
@@ -34,214 +35,194 @@ interface Client {
   name: string;
   email: string;
   phone: string;
-  address: string;
-  registrationDate: string;
-  lastVisit: string;
-  totalReservations: number;
-  totalSpent: number;
   status: 'active' | 'inactive' | 'blocked';
+  joinDate: string;
+  lastVisit: string;
+  totalSpent: number;
+  totalReservations: number;
   rating: number;
   preferredSports: string[];
   notes?: string;
   birthDate?: string;
+  address?: string;
   membershipType: 'basic' | 'premium' | 'vip';
+  registrationDate?: string;
 }
 
 const ClientsPage = () => {
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedMembership, setSelectedMembership] = useState<string>('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const { establishment, isDemo, loading } = useEstablishment();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'blocked'>('all')
+  const [membershipFilter, setMembershipFilter] = useState<'all' | 'basic' | 'premium' | 'vip'>('all')
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [clients, setClients] = useState<Client[]>([
-    {
-      id: '1',
-      name: 'Juan Carlos Pérez',
-      email: 'juan.perez@email.com',
-      phone: '+54 11 1234-5678',
-      address: 'Av. Corrientes 1234, CABA',
-      registrationDate: '2023-01-15',
-      lastVisit: '2024-01-14',
-      totalReservations: 45,
-      totalSpent: 360000,
-      status: 'active',
-      rating: 4.8,
-      preferredSports: ['futbol', 'tenis'],
-      membershipType: 'premium',
-      birthDate: '1985-03-20',
-      notes: 'Cliente frecuente, prefiere horarios nocturnos'
-    },
-    {
-      id: '2',
-      name: 'María González',
-      email: 'maria.gonzalez@email.com',
-      phone: '+54 11 9876-5432',
-      address: 'Belgrano 567, CABA',
-      registrationDate: '2023-03-10',
-      lastVisit: '2024-01-15',
-      totalReservations: 32,
-      totalSpent: 256000,
-      status: 'active',
-      rating: 4.6,
-      preferredSports: ['paddle', 'tenis'],
-      membershipType: 'vip',
-      birthDate: '1990-07-12',
-      notes: 'Excelente jugadora, organiza torneos'
-    },
-    {
-      id: '3',
-      name: 'Carlos Rodríguez',
-      email: 'carlos.rodriguez@email.com',
-      phone: '+54 11 5555-1234',
-      address: 'San Martín 890, CABA',
-      registrationDate: '2023-06-05',
-      lastVisit: '2024-01-10',
-      totalReservations: 28,
-      totalSpent: 168000,
-      status: 'active',
-      rating: 4.4,
-      preferredSports: ['basquet', 'voley'],
-      membershipType: 'basic',
-      birthDate: '1988-11-30'
-    },
-    {
-      id: '4',
-      name: 'Ana Martínez',
-      email: 'ana.martinez@email.com',
-      phone: '+54 11 7777-8888',
-      address: 'Rivadavia 456, CABA',
-      registrationDate: '2023-08-20',
-      lastVisit: '2023-12-15',
-      totalReservations: 15,
-      totalSpent: 90000,
-      status: 'inactive',
-      rating: 4.2,
-      preferredSports: ['tenis'],
-      membershipType: 'basic',
-      birthDate: '1992-05-18',
-      notes: 'No ha visitado en el último mes'
-    },
-    {
-      id: '5',
-      name: 'Diego López',
-      email: 'diego.lopez@email.com',
-      phone: '+54 11 3333-4444',
-      address: 'Libertador 789, CABA',
-      registrationDate: '2023-04-12',
-      lastVisit: '2024-01-12',
-      totalReservations: 52,
-      totalSpent: 520000,
-      status: 'active',
-      rating: 4.9,
-      preferredSports: ['futbol', 'paddle', 'tenis'],
-      membershipType: 'vip',
-      birthDate: '1983-09-25',
-      notes: 'Cliente VIP, muy activo'
-    },
-    {
-      id: '6',
-      name: 'Laura Fernández',
-      email: 'laura.fernandez@email.com',
-      phone: '+54 11 2222-3333',
-      address: 'Santa Fe 321, CABA',
-      registrationDate: '2023-09-08',
-      lastVisit: '2024-01-13',
-      totalReservations: 8,
-      totalSpent: 32000,
-      status: 'blocked',
-      rating: 3.5,
-      preferredSports: ['voley'],
-      membershipType: 'basic',
-      birthDate: '1995-12-03',
-      notes: 'Bloqueada por incumplimiento de pagos'
-    }
-  ]);
-
-  // Form state for creating/editing clients
-  const [formData, setFormData] = useState<Partial<Client>>({
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
+    membership: 'basic' as 'basic' | 'premium' | 'vip',
+    status: 'active' as 'active' | 'inactive' | 'blocked',
+    birthDate: '',
     address: '',
-    status: 'active',
-    membershipType: 'basic',
-    preferredSports: [],
-    notes: '',
-    birthDate: ''
+    notes: ''
+  })
+  const [clients, setClients] = useState<Client[]>([]);
+
+  // Initialize clients data based on demo or real data
+  useEffect(() => {
+    if (isDemo) {
+      // Demo data
+      setClients([
+        {
+          id: '1',
+          name: 'Juan Carlos Pérez',
+          email: 'juan.perez@email.com',
+          phone: '+54 11 1234-5678',
+          address: 'Av. Corrientes 1234, CABA',
+          joinDate: '2024-01-15',
+          registrationDate: '2024-01-15',
+          lastVisit: '2024-09-10',
+          totalReservations: 45,
+          totalSpent: 67500,
+          status: 'active' as const,
+          rating: 4.8,
+          preferredSports: ['futbol', 'tenis'],
+          membershipType: 'premium' as const,
+          birthDate: '1985-03-20',
+          notes: 'Cliente frecuente, prefiere horarios de tarde'
+        },
+        {
+          id: '2',
+          name: 'María González',
+          email: 'maria.gonzalez@email.com',
+          phone: '+54 11 2345-6789',
+          address: 'Av. Santa Fe 2345, CABA',
+          joinDate: '2024-02-20',
+          registrationDate: '2024-02-20',
+          lastVisit: '2024-09-12',
+          totalReservations: 32,
+          totalSpent: 48000,
+          status: 'active' as const,
+          rating: 4.9,
+          preferredSports: ['paddle', 'tenis'],
+          membershipType: 'vip' as const,
+          birthDate: '1990-07-15',
+          notes: 'Excelente jugadora, siempre puntual'
+        },
+        {
+          id: '3',
+          name: 'Carlos Rodriguez',
+          email: 'carlos.rodriguez@email.com',
+          phone: '+54 11 3456-7890',
+          address: 'Av. Rivadavia 3456, CABA',
+          joinDate: '2024-03-10',
+          registrationDate: '2024-03-10',
+          lastVisit: '2024-09-08',
+          totalReservations: 18,
+          totalSpent: 27000,
+          status: 'active' as const,
+          rating: 4.5,
+          preferredSports: ['futbol'],
+          membershipType: 'basic' as const,
+          birthDate: '1992-11-08'
+        },
+        {
+          id: '4',
+          name: 'Ana Martínez',
+          email: 'ana.martinez@email.com',
+          phone: '+54 11 4567-8901',
+          address: 'Av. Cabildo 4567, CABA',
+          joinDate: '2024-01-25',
+          registrationDate: '2024-01-25',
+          lastVisit: '2024-08-20',
+          totalReservations: 12,
+          totalSpent: 18000,
+          status: 'inactive' as const,
+          rating: 4.2,
+          preferredSports: ['tenis'],
+          membershipType: 'basic' as const,
+          birthDate: '1988-05-12',
+          notes: 'No ha visitado en el último mes'
+        },
+        {
+          id: '5',
+          name: 'Roberto Silva',
+          email: 'roberto.silva@email.com',
+          phone: '+54 11 5678-9012',
+          address: 'Av. Las Heras 5678, CABA',
+          joinDate: '2024-04-05',
+          registrationDate: '2024-04-05',
+          lastVisit: '2024-09-11',
+          totalReservations: 28,
+          totalSpent: 42000,
+          status: 'active' as const,
+          rating: 4.7,
+          preferredSports: ['paddle', 'futbol'],
+          membershipType: 'vip' as const,
+          birthDate: '1987-09-30',
+          notes: 'Organiza torneos internos'
+        },
+        {
+          id: '6',
+          name: 'Laura Fernández',
+          email: 'laura.fernandez@email.com',
+          phone: '+54 11 6789-0123',
+          address: 'Av. Belgrano 6789, CABA',
+          joinDate: '2024-02-14',
+          registrationDate: '2024-02-14',
+          lastVisit: '2024-07-15',
+          totalReservations: 8,
+          totalSpent: 12000,
+          status: 'blocked' as const,
+          rating: 3.8,
+          preferredSports: ['tenis'],
+          membershipType: 'basic' as const,
+          birthDate: '1995-12-03',
+          notes: 'Bloqueado por pagos pendientes'
+        }
+      ]);
+    } else {
+      // Real establishment - no clients data yet
+      setClients([]);
+    }
+  }, [establishment, isDemo]);
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-white text-xl">Cargando clientes...</div>
+      </div>
+    );
+  }
+
+  // Filter clients based on search and status
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = !searchTerm || 
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone.includes(searchTerm);
+    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+    const matchesMembership = membershipFilter === 'all' || client.membershipType === membershipFilter;
+    return matchesSearch && matchesStatus && matchesMembership;
   });
 
-  // Handler functions
-  const handleCreateClient = () => {
-    const newClient: Client = {
-      id: Date.now().toString(),
-      name: formData.name || '',
-      email: formData.email || '',
-      phone: formData.phone || '',
-      address: formData.address || '',
-      registrationDate: new Date().toISOString().split('T')[0],
-      lastVisit: new Date().toISOString().split('T')[0],
-      totalReservations: 0,
-      totalSpent: 0,
-      status: formData.status as Client['status'] || 'active',
-      rating: 0,
-      preferredSports: formData.preferredSports || [],
-      membershipType: formData.membershipType as Client['membershipType'] || 'basic',
-      notes: formData.notes || '',
-      birthDate: formData.birthDate || ''
-    };
-
-    setClients(prev => [...prev, newClient]);
-    setShowCreateModal(false);
-    resetForm();
-    alert('Cliente creado exitosamente');
-  };
-
-  const handleEditClient = () => {
-    if (!selectedClient) return;
-
-    setClients(prev => prev.map(client => 
-      client.id === selectedClient.id 
-        ? { ...client, ...formData }
-        : client
-    ));
-    setShowEditModal(false);
-    setSelectedClient(null);
-    resetForm();
-    alert('Cliente actualizado exitosamente');
-  };
-
-  const handleDeleteClient = (clientId: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
-      setClients(prev => prev.filter(client => client.id !== clientId));
-      alert('Cliente eliminado exitosamente');
-    }
-  };
-
-  const openEditModal = (client: Client) => {
-    setSelectedClient(client);
-    setFormData(client);
-    setShowEditModal(true);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      status: 'active',
-      membershipType: 'basic',
-      preferredSports: [],
-      notes: '',
-      birthDate: ''
-    });
+  // Calculate stats
+  const stats = {
+    total: clients.length,
+    active: clients.filter(c => c.status === 'active').length,
+    inactive: clients.filter(c => c.status === 'inactive').length,
+    blocked: clients.filter(c => c.status === 'blocked').length,
+    totalRevenue: clients.reduce((sum, c) => sum + c.totalSpent, 0),
+    avgSpent: clients.reduce((sum, c) => sum + c.totalSpent, 0) / clients.length || 0,
+    totalReservations: clients.reduce((sum, c) => sum + c.totalReservations, 0)
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'text-emerald-400 bg-emerald-400/10';
-      case 'inactive': return 'text-gray-400 bg-gray-400/10';
+      case 'inactive': return 'text-yellow-400 bg-yellow-400/10';
       case 'blocked': return 'text-red-400 bg-red-400/10';
       default: return 'text-gray-400 bg-gray-400/10';
     }
@@ -256,11 +237,11 @@ const ClientsPage = () => {
     }
   };
 
-  const getMembershipColor = (membership: string) => {
-    switch (membership) {
-      case 'basic': return 'text-gray-400 bg-gray-400/10';
-      case 'premium': return 'text-blue-400 bg-blue-400/10';
+  const getMembershipColor = (type: string) => {
+    switch (type) {
       case 'vip': return 'text-purple-400 bg-purple-400/10';
+      case 'premium': return 'text-yellow-400 bg-yellow-400/10';
+      case 'basic': return 'text-gray-400 bg-gray-400/10';
       default: return 'text-gray-400 bg-gray-400/10';
     }
   };
@@ -273,30 +254,48 @@ const ClientsPage = () => {
     }).format(amount);
   };
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = !searchTerm || 
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm);
-    const matchesStatus = selectedStatus === 'all' || client.status === selectedStatus;
-    const matchesMembership = selectedMembership === 'all' || client.membershipType === selectedMembership;
-    
-    return matchesSearch && matchesStatus && matchesMembership;
-  });
-
-  const stats = {
-    total: clients.length,
-    active: clients.filter(c => c.status === 'active').length,
-    inactive: clients.filter(c => c.status === 'inactive').length,
-    blocked: clients.filter(c => c.status === 'blocked').length,
-    totalRevenue: clients.reduce((sum, c) => sum + c.totalSpent, 0),
-    avgSpending: clients.reduce((sum, c) => sum + c.totalSpent, 0) / clients.length,
-    totalReservations: clients.reduce((sum, c) => sum + c.totalReservations, 0)
-  };
-
-  const openClientModal = (client: Client) => {
+  const handleEditClient = (client: Client) => {
     setSelectedClient(client);
     setShowEditModal(true);
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    if (confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
+      setClients(clients.filter(c => c.id !== clientId));
+    }
+  };
+
+  const handleAddClient = () => {
+    const newClient: Client = {
+      id: Date.now().toString(),
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      status: formData.status,
+      joinDate: new Date().toISOString().split('T')[0],
+      lastVisit: new Date().toISOString().split('T')[0],
+      totalSpent: 0,
+      totalReservations: 0,
+      rating: 5,
+      preferredSports: ['futbol'],
+      notes: formData.notes,
+      birthDate: formData.birthDate,
+      membershipType: formData.membership
+    };
+
+    setClients([...clients, newClient]);
+    setShowAddModal(false);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      membership: 'basic',
+      status: 'active',
+      birthDate: '',
+      address: '',
+      notes: ''
+    });
+    alert('Cliente creado exitosamente');
   };
 
   return (
@@ -313,7 +312,7 @@ const ClientsPage = () => {
             <span>Exportar</span>
           </button>
           <button 
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => setShowAddModal(true)}
             className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-colors"
           >
             <UserPlus className="h-4 w-4" />
@@ -327,14 +326,21 @@ const ClientsPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Total Clientes</p>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
+              <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
             </div>
-            <Users className="h-8 w-8 text-blue-400" />
+            <div className="bg-emerald-500/10 p-3 rounded-lg">
+              <Users className="h-6 w-6 text-emerald-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <TrendingUp className="h-4 w-4 text-emerald-400 mr-1" />
+            <span className="text-emerald-400">+12%</span>
+            <span className="text-gray-400 ml-1">vs mes anterior</span>
           </div>
         </motion.div>
 
@@ -342,14 +348,20 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Clientes Activos</p>
-              <p className="text-2xl font-bold text-emerald-400">{stats.active}</p>
+              <p className="text-2xl font-bold text-white mt-1">{stats.active}</p>
             </div>
-            <CheckCircle className="h-8 w-8 text-emerald-400" />
+            <div className="bg-emerald-500/10 p-3 rounded-lg">
+              <CheckCircle className="h-6 w-6 text-emerald-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <span className="text-emerald-400">{stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : 0}%</span>
+            <span className="text-gray-400 ml-1">del total</span>
           </div>
         </motion.div>
 
@@ -357,14 +369,21 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Ingresos Totales</p>
-              <p className="text-2xl font-bold text-emerald-400">{formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(stats.totalRevenue)}</p>
             </div>
-            <DollarSign className="h-8 w-8 text-emerald-400" />
+            <div className="bg-emerald-500/10 p-3 rounded-lg">
+              <DollarSign className="h-6 w-6 text-emerald-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <TrendingUp className="h-4 w-4 text-emerald-400 mr-1" />
+            <span className="text-emerald-400">+8.2%</span>
+            <span className="text-gray-400 ml-1">vs mes anterior</span>
           </div>
         </motion.div>
 
@@ -372,14 +391,19 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Gasto Promedio</p>
-              <p className="text-2xl font-bold text-blue-400">{formatCurrency(stats.avgSpending)}</p>
+              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(stats.avgSpent)}</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-blue-400" />
+            <div className="bg-emerald-500/10 p-3 rounded-lg">
+              <Activity className="h-6 w-6 text-emerald-400" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <span className="text-gray-400">Por cliente</span>
           </div>
         </motion.div>
       </div>
@@ -491,8 +515,8 @@ const ClientsPage = () => {
 
             {/* Status Filter */}
             <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive' | 'blocked')}
               className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             >
               <option value="all">Todos los estados</option>
@@ -503,12 +527,12 @@ const ClientsPage = () => {
 
             {/* Membership Filter */}
             <select
-              value={selectedMembership}
-              onChange={(e) => setSelectedMembership(e.target.value)}
-              className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              value={membershipFilter}
+              onChange={(e) => setMembershipFilter(e.target.value as 'all' | 'basic' | 'premium' | 'vip')}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="all">Todas las membresías</option>
-              <option value="basic">Básico</option>
+              <option value="all">Todas</option>
+              <option value="basic">Básica</option>
               <option value="premium">Premium</option>
               <option value="vip">VIP</option>
             </select>
@@ -743,7 +767,7 @@ const ClientsPage = () => {
                   <div className="mt-4 space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Registro</span>
-                      <span className="text-white">{new Date(selectedClient.registrationDate).toLocaleDateString('es-AR')}</span>
+                      <span className="text-white">{selectedClient.registrationDate ? new Date(selectedClient.registrationDate).toLocaleDateString('es-AR') : selectedClient.joinDate ? new Date(selectedClient.joinDate).toLocaleDateString('es-AR') : 'N/A'}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Última Visita</span>
@@ -813,7 +837,7 @@ const ClientsPage = () => {
       )}
 
       {/* Create Client Modal */}
-      {showCreateModal && (
+      {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -823,7 +847,7 @@ const ClientsPage = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Nuevo Cliente</h2>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => setShowAddModal(false)}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <XCircle className="h-6 w-6" />
@@ -839,7 +863,7 @@ const ClientsPage = () => {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     placeholder="Ej: Juan Carlos Pérez"
                   />
@@ -852,7 +876,7 @@ const ClientsPage = () => {
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, email: e.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     placeholder="cliente@email.com"
                   />
@@ -865,7 +889,7 @@ const ClientsPage = () => {
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, phone: e.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     placeholder="+54 11 1234-5678"
                   />
@@ -878,7 +902,7 @@ const ClientsPage = () => {
                   <input
                     type="date"
                     value={formData.birthDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, birthDate: e.target.value }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, birthDate: e.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
@@ -889,7 +913,7 @@ const ClientsPage = () => {
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as Client['status'] }))}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, status: e.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   >
                     <option value="active">Activo</option>
@@ -900,11 +924,11 @@ const ClientsPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Tipo de Membresía
+                    Membresía
                   </label>
                   <select
-                    value={formData.membershipType}
-                    onChange={(e) => setFormData(prev => ({ ...prev, membershipType: e.target.value as Client['membershipType'] }))}
+                    value={formData.membership}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, membership: e.target.value }))}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   >
                     <option value="basic">Básica</option>
@@ -921,7 +945,7 @@ const ClientsPage = () => {
                 <input
                   type="text"
                   value={formData.address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, address: e.target.value }))}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="Av. Corrientes 1234, CABA"
                 />
@@ -933,7 +957,7 @@ const ClientsPage = () => {
                 </label>
                 <textarea
                   value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  onChange={(e) => setFormData((prev: any) => ({ ...prev, notes: e.target.value }))}
                   rows={3}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="Notas adicionales sobre el cliente..."
@@ -943,13 +967,13 @@ const ClientsPage = () => {
 
             <div className="flex justify-end space-x-3 mt-6">
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => setShowAddModal(false)}
                 className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleCreateClient}
+                onClick={() => console.log(formData)}
                 className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
               >
                 Crear Cliente

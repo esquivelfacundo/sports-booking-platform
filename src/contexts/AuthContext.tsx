@@ -138,6 +138,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
+      // First, check if there's a registered establishment with these credentials
+      const establishmentData = localStorage.getItem('establishment_registration');
+      if (establishmentData) {
+        try {
+          const establishment = JSON.parse(establishmentData);
+          const representative = establishment.representative;
+          
+          if (representative && 
+              representative.username === credentials.email && 
+              representative.password === credentials.password) {
+            
+            // Create user object from representative data
+            const representativeUser = {
+              id: `rep_${Date.now()}`,
+              firstName: representative.fullName.split(' ')[0],
+              lastName: representative.fullName.split(' ').slice(1).join(' '),
+              name: representative.fullName,
+              email: representative.email,
+              phone: representative.whatsapp,
+              userType: 'establishment' as const,
+              isAuthenticated: true,
+              establishmentId: establishment.id || establishment.establishmentId || 'temp_establishment',
+              position: representative.position,
+              avatar: undefined,
+              isEmailVerified: true,
+              isPhoneVerified: true,
+              isActive: true,
+              favoritesSports: [],
+              skillLevel: 'intermediate' as const,
+              dateOfBirth: undefined,
+              city: establishment.location?.city || '',
+              province: establishment.location?.state || '',
+              postalCode: establishment.location?.zipCode || '',
+              location: establishment.location?.coordinates ? {
+                lat: establishment.location.coordinates.lat,
+                lng: establishment.location.coordinates.lng,
+                address: establishment.location.address
+              } : undefined,
+              birthDate: undefined,
+              bio: `Representante legal de ${establishment.basicInfo?.name || 'establecimiento'}`,
+              sports: [],
+              preferredTimes: [],
+              level: 'intermediate' as const,
+              friends: [],
+              favoriteVenues: [],
+              favoriteEstablishments: [],
+              stats: {
+                totalGames: 0,
+                totalReservations: 0,
+                favoriteVenuesCount: 0,
+                friendsCount: 0,
+                rating: 0,
+                reviewsReceived: 0
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              lastActive: new Date().toISOString()
+            };
+            
+            // Store auth token and user data
+            localStorage.setItem('auth_token', `establishment_${Date.now()}`);
+            localStorage.setItem('user_data', JSON.stringify(representativeUser));
+            
+            setAuthState({
+              user: representativeUser,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+            return true;
+          }
+        } catch (parseError) {
+          console.error('Error parsing establishment data:', parseError);
+        }
+      }
+
+      // If not a representative login, try regular API login
       const response = await apiClient.login(credentials) as any;
       
       if (response.tokens && response.tokens.accessToken) {

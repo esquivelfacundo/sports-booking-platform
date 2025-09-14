@@ -47,6 +47,8 @@ export interface EstablishmentRegistration {
     businessName?: string;
     taxId?: string;
     address: string;
+    username: string;
+    password: string;
   };
 
   // Términos y Condiciones (Obligatorio)

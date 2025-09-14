@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   Wrench, 
   Plus,
@@ -50,31 +51,38 @@ interface MaintenanceTask {
 }
 
 const MaintenancePage = () => {
+  const { establishment, isDemo, loading } = useEstablishment();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
-  const [tasks, setTasks] = useState<MaintenanceTask[]>([
-    {
-      id: '1',
-      title: 'Reparación de iluminación LED',
-      description: 'Reemplazar 4 luminarias LED defectuosas en la cancha de fútbol',
-      courtId: '1',
-      courtName: 'Cancha de Fútbol 1',
-      type: 'corrective',
-      priority: 'high',
-      status: 'in_progress',
-      assignedTo: 'Diego López',
-      createdDate: '2024-01-10',
-      scheduledDate: '2024-01-15',
-      estimatedCost: 25000,
-      estimatedDuration: 4,
-      actualDuration: 3,
-      notes: 'Se necesitan luminarias de 150W específicas para exteriores'
-    },
+
+  // Initialize maintenance tasks data based on demo or real data
+  useEffect(() => {
+    if (isDemo) {
+      // Demo data
+      setMaintenanceTasks([
+        {
+          id: '1',
+          title: 'Reparación de iluminación LED',
+          description: 'Reemplazar 4 luminarias LED defectuosas en la cancha de fútbol',
+          courtId: '1',
+          courtName: 'Cancha de Fútbol 1',
+          type: 'corrective',
+          priority: 'high',
+          status: 'in_progress',
+          assignedTo: 'Diego López',
+          createdDate: '2024-01-10',
+          scheduledDate: '2024-01-15',
+          estimatedCost: 25000,
+          estimatedDuration: 4,
+          actualDuration: 3,
+          notes: 'Se necesitan luminarias de 150W específicas para exteriores'
+        },
     {
       id: '2',
       title: 'Mantenimiento preventivo césped sintético',

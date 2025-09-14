@@ -216,53 +216,110 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
   const loadEstablishmentData = async () => {
     setLoading(true);
     try {
-      // Verificar si hay datos de registro en localStorage
-      const registrationData = localStorage.getItem('establishmentRegistrationData');
       const userToken = localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('user');
       
-      if (registrationData) {
-        // Usar datos reales del registro
-        const data = JSON.parse(registrationData);
-        const establishmentData: EstablishmentData = {
-          id: data.id || `est_${Date.now()}`,
-          name: data.basicInfo?.name || '',
-          description: data.basicInfo?.description || '',
-          phone: data.basicInfo?.phone || '',
-          email: data.basicInfo?.email || '',
-          address: data.location?.address || '',
-          city: data.location?.city || '',
-          province: data.location?.province || '',
-          postalCode: data.location?.postalCode || '',
-          coordinates: data.location?.coordinates,
-          schedule: data.schedule || {},
-          amenities: data.amenities || [],
-          images: data.images || [],
-          courts: data.courts || [],
-          staff: data.staff || [],
-          representative: data.representative || {
-            fullName: '',
-            email: '',
-            phone: '',
-            documentType: '',
-            documentNumber: '',
-            position: '',
-            businessName: '',
-            taxId: '',
-            address: ''
-          },
-          status: data.status || 'pending',
-          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-          updatedAt: new Date()
-        };
-        
-        setEstablishment(establishmentData);
-        setIsDemo(false);
-      } else if (!userToken || userToken === 'demo-token') {
+      if (!userToken || userToken === 'demo-token') {
         // Usuario demo - usar datos de demostración
         setEstablishment(getDemoEstablishmentData());
         setIsDemo(true);
+      } else if (userData) {
+        // Usuario autenticado - obtener datos del backend
+        const user = JSON.parse(userData);
+        
+        if (user.userType === 'establishment') {
+          // First try to get establishment ID from user data, then from registration data
+          let establishmentId = user.establishmentId;
+          
+          if (!establishmentId) {
+            // Try to get from registration success data
+            const registrationSuccess = localStorage.getItem('registrationSuccess');
+            if (registrationSuccess) {
+              const regData = JSON.parse(registrationSuccess);
+              establishmentId = regData.establishment?.id;
+            }
+          }
+          
+          if (establishmentId) {
+            try {
+              // Llamada al backend para obtener datos del establecimiento
+              const response = await fetch(`http://localhost:3001/api/establishments/${establishmentId}`, {
+                headers: {
+                  'Authorization': `Bearer ${userToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              if (response.ok) {
+                const result = await response.json();
+                const establishmentData = result.establishment;
+                
+                // Convertir datos del backend al formato del contexto
+                const formattedData: EstablishmentData = {
+                  id: establishmentData.id,
+                  name: establishmentData.name,
+                  description: establishmentData.description,
+                  phone: establishmentData.phone,
+                  email: establishmentData.email,
+                  address: establishmentData.address,
+                  city: establishmentData.city,
+                  province: establishmentData.province || '',
+                  postalCode: establishmentData.postalCode || '',
+                  coordinates: establishmentData.latitude && establishmentData.longitude ? {
+                    lat: parseFloat(establishmentData.latitude),
+                    lng: parseFloat(establishmentData.longitude)
+                  } : undefined,
+                  schedule: establishmentData.openingHours || {},
+                  amenities: establishmentData.amenities || [],
+                  images: establishmentData.images?.photos || [],
+                  courts: establishmentData.courts || [],
+                  staff: establishmentData.staff || [],
+                  representative: {
+                    fullName: establishmentData.representativeName || '',
+                    email: establishmentData.representativeEmail || '',
+                    phone: establishmentData.representativeWhatsapp || '',
+                    documentType: establishmentData.representativeDocumentType || '',
+                    documentNumber: establishmentData.representativeDocumentNumber || '',
+                    position: establishmentData.representativePosition || '',
+                    businessName: establishmentData.representativeBusinessName || '',
+                    taxId: establishmentData.representativeTaxId || '',
+                    address: establishmentData.representativeAddress || ''
+                  },
+                  status: establishmentData.registrationStatus || 'pending',
+                  createdAt: establishmentData.createdAt ? new Date(establishmentData.createdAt) : new Date(),
+                  updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date()
+                };
+                
+                setEstablishment(formattedData);
+                setIsDemo(false);
+              } else {
+                throw new Error('Failed to fetch establishment data');
+              }
+            } catch (apiError) {
+              console.error('Error fetching establishment from API:', apiError);
+              // Fallback a localStorage si falla el API
+              const registrationData = localStorage.getItem('establishmentRegistrationData');
+              if (registrationData) {
+                const data = JSON.parse(registrationData);
+                setEstablishment(data);
+                setIsDemo(false);
+              } else {
+                setEstablishment(null);
+                setIsDemo(false);
+              }
+            }
+          } else {
+            // No establishment ID found
+            setEstablishment(null);
+            setIsDemo(false);
+          }
+        } else {
+          // Usuario no es de establecimiento
+          setEstablishment(null);
+          setIsDemo(false);
+        }
       } else {
-        // Usuario real sin datos - establecimiento vacío
+        // Sin datos de usuario
         setEstablishment(null);
         setIsDemo(false);
       }

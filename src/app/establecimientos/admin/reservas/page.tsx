@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   Calendar, 
   Clock, 
@@ -26,7 +27,6 @@ import {
   Download,
   Phone
 } from 'lucide-react';
-import { useDashboardActions } from '@/hooks/useDashboardActions';
 
 interface Reservation {
   id: string;
@@ -45,6 +45,7 @@ interface Reservation {
 }
 
 const ReservationsPage = () => {
+  const { establishment, isDemo, loading } = useEstablishment();
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -55,9 +56,13 @@ const ReservationsPage = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
-  // Mock data - en producción vendría de una API
-  const [reservations, setReservations] = useState<Reservation[]>([
+  // Initialize reservations based on demo or real data
+  useEffect(() => {
+    if (isDemo) {
+      // Demo data
+      setReservations([
     {
       id: '1',
       clientName: 'Juan Pérez',
@@ -130,7 +135,12 @@ const ReservationsPage = () => {
       paymentStatus: 'paid',
       createdAt: '2024-01-08T11:10:00Z'
     }
-  ]);
+      ]);
+    } else {
+      // Real establishment - no reservations yet
+      setReservations([]);
+    }
+  }, [establishment, isDemo]);
 
   // Handlers for reservation management
   const handleConfirmReservation = (reservationId: string) => {
@@ -174,11 +184,7 @@ const ReservationsPage = () => {
     }
   };
 
-  // Dashboard actions integration
-  useDashboardActions({
-    create: () => setShowCreateModal(true),
-    calendar: () => setViewMode('calendar')
-  });
+  // Dashboard actions would be implemented here in a real application
 
   const handleSaveReservation = (reservationData: Partial<Reservation>) => {
     if (selectedReservation) {
@@ -264,19 +270,22 @@ const ReservationsPage = () => {
     confirmed: reservations.filter(r => r.status === 'confirmed').length,
     pending: reservations.filter(r => r.status === 'pending').length,
     cancelled: reservations.filter(r => r.status === 'cancelled').length,
-    completed: reservations.filter(r => r.status === 'completed').length,
-    revenue: reservations.filter(r => r.paymentStatus === 'paid').reduce((sum, r) => sum + r.price, 0)
+    totalRevenue: reservations.filter(r => r.paymentStatus === 'paid').reduce((sum, r) => sum + r.price, 0),
+    pendingPayments: reservations.filter(r => r.paymentStatus === 'pending').reduce((sum, r) => sum + r.price, 0)
   };
 
-  const handleStatusChange = (reservationId: string, newStatus: string) => {
-    // En producción, esto haría una llamada a la API
-    console.log(`Changing reservation ${reservationId} status to ${newStatus}`);
-  };
-
-  const openDetailsModal = (reservation: Reservation) => {
+  const handleViewReservation = (reservation: Reservation) => {
     setSelectedReservation(reservation);
     setShowDetailsModal(true);
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-white text-xl">Cargando reservas...</div>
+      </div>
+    );
+  }
 
   // Calendar navigation functions
   const navigateCalendar = (direction: 'prev' | 'next') => {
@@ -425,7 +434,7 @@ const ReservationsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Total</p>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
+              <p className="text-2xl font-bold text-white">{reservations.filter(r => r.status === 'completed').length}</p>
             </div>
             <Calendar className="h-8 w-8 text-gray-400" />
           </div>
@@ -485,7 +494,7 @@ const ReservationsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Completadas</p>
-              <p className="text-2xl font-bold text-blue-400">{stats.completed}</p>
+              <span className="text-2xl font-bold text-white">{stats.total}</span>
             </div>
             <CheckCircle className="h-8 w-8 text-blue-400" />
           </div>
@@ -500,7 +509,7 @@ const ReservationsPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Ingresos</p>
-              <p className="text-2xl font-bold text-emerald-400">${stats.revenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-emerald-400">${stats.totalRevenue.toLocaleString()}</p>
             </div>
             <DollarSign className="h-8 w-8 text-emerald-400" />
           </div>
@@ -671,7 +680,7 @@ const ReservationsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => openDetailsModal(reservation)}
+                          onClick={() => handleViewReservation(reservation)}
                           className="text-emerald-400 hover:text-emerald-300 transition-colors"
                           title="Ver detalles"
                         >
@@ -772,7 +781,7 @@ const ReservationsPage = () => {
                         {dayReservations.slice(0, 3).map((reservation) => (
                           <div
                             key={reservation.id}
-                            onClick={() => openDetailsModal(reservation)}
+                            onClick={() => handleViewReservation(reservation)}
                             className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(reservation.status)}`}
                           >
                             <div className="font-medium truncate">{reservation.clientName}</div>
@@ -829,7 +838,7 @@ const ReservationsPage = () => {
                           {dayReservations.map((reservation) => (
                             <div
                               key={reservation.id}
-                              onClick={() => openDetailsModal(reservation)}
+                              onClick={() => handleViewReservation(reservation)}
                               className={`text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-opacity mb-1 ${getStatusColor(reservation.status)}`}
                             >
                               <div className="font-medium truncate">{reservation.clientName}</div>
@@ -876,7 +885,7 @@ const ReservationsPage = () => {
                           {hourReservations.map((reservation) => (
                             <div
                               key={reservation.id}
-                              onClick={() => openDetailsModal(reservation)}
+                              onClick={() => handleViewReservation(reservation)}
                               className={`p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity mb-2 ${getStatusColor(reservation.status)}`}
                             >
                               <div className="flex items-center justify-between">

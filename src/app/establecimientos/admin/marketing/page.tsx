@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   Target, 
   TrendingUp, 
@@ -57,21 +57,28 @@ interface Campaign {
 }
 
 const MarketingPage = () => {
+  const { establishment, isDemo, loading } = useEstablishment();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    {
-      id: '1',
-      name: 'Promoción Verano 2024',
-      description: 'Descuento del 20% en reservas de canchas de fútbol durante enero',
-      type: 'promotion',
-      status: 'active',
-      startDate: '2024-01-01',
+
+  // Initialize campaigns data based on demo or real data
+  useEffect(() => {
+    if (isDemo) {
+      // Demo data
+      setCampaigns([
+        {
+          id: '1',
+          name: 'Promoción Verano 2024',
+          description: 'Descuento del 20% en reservas de canchas de fútbol durante enero',
+          type: 'promotion',
+          status: 'active',
+          startDate: '2024-01-01',
       endDate: '2024-01-31',
       budget: 50000,
       spent: 32000,
@@ -155,11 +162,24 @@ const MarketingPage = () => {
       conversions: 0,
       revenue: 0,
       createdBy: 'Laura Fernández',
-      createdDate: '2024-01-12',
-      discount: 50,
-      promoCode: 'BIENVENIDO50'
+          createdDate: '2024-01-12',
+          discount: 50,
+          promoCode: 'BIENVENIDO50'
+        }
+      ]);
+    } else {
+      // Real establishment - no marketing campaigns yet
+      setCampaigns([]);
     }
-  ]);
+  }, [establishment, isDemo]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
 
   // Form state for creating/editing campaigns
   const [formData, setFormData] = useState<Partial<Campaign>>({

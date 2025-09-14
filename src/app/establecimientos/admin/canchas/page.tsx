@@ -62,7 +62,30 @@ const CourtsPage = () => {
 
   // Initialize courts from establishment data or demo data
   useEffect(() => {
-    if (isDemo) {
+    if (establishment?.courts && establishment.courts.length > 0) {
+      // Convert establishment courts to Court format
+      const convertedCourts: Court[] = establishment.courts.map((court, index) => ({
+        id: (index + 1).toString(),
+        name: court.name,
+        type: court.type as Court['type'],
+        status: 'available' as Court['status'],
+        surface: court.surface || 'No especificado',
+        capacity: court.capacity || 0,
+        pricePerHour: court.pricePerHour || 0,
+        openTime: '08:00',
+        closeTime: '22:00',
+        lighting: court.lighting || false,
+        covered: court.covered || false,
+        images: [],
+        lastMaintenance: new Date().toISOString().split('T')[0],
+        nextMaintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        totalReservations: 0,
+        monthlyRevenue: 0,
+        rating: 0,
+        description: court.description || `Cancha de ${court.type} profesional`
+      }));
+      setCourts(convertedCourts);
+    } else if (isDemo) {
       // Demo data
       setCourts([
         {
@@ -166,29 +189,9 @@ const CourtsPage = () => {
           description: 'Cancha de vóley playa con arena importada'
         }
       ]);
-    } else if (establishment?.courts) {
-      // Convert establishment courts to Court format
-      const convertedCourts: Court[] = establishment.courts.map((court, index) => ({
-        id: (index + 1).toString(),
-        name: court.name,
-        type: court.type as Court['type'],
-        status: 'available' as Court['status'],
-        surface: court.surface || 'No especificado',
-        capacity: court.capacity || 0,
-        pricePerHour: court.pricePerHour || 0,
-        openTime: '08:00',
-        closeTime: '22:00',
-        lighting: court.lighting || false,
-        covered: court.covered || false,
-        images: [],
-        lastMaintenance: new Date().toISOString().split('T')[0],
-        nextMaintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        totalReservations: 0,
-        monthlyRevenue: 0,
-        rating: 0,
-        description: court.description || `Cancha de ${court.type} profesional`
-      }));
-      setCourts(convertedCourts);
+    } else {
+      // No courts available
+      setCourts([]);
     }
   }, [establishment, isDemo]);
 

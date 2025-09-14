@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -81,11 +82,16 @@ interface CustomerInsight {
 }
 
 const AnalyticsPage = () => {
+  const { establishment, isDemo, loading } = useEstablishment();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'reservations' | 'customers'>('revenue');
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
-  // Mock data - en producción vendría de una API
-  const analyticsData: AnalyticsData = {
+  // Initialize analytics data based on demo or real data
+  useEffect(() => {
+    if (isDemo) {
+      // Demo data
+      setAnalyticsData({
     revenue: {
       current: 125000,
       previous: 98000,
@@ -110,9 +116,39 @@ const AnalyticsPage = () => {
       trend: 'up',
       percentage: 10.3
     }
-  };
+      });
+    } else {
+      // Real establishment - basic analytics with no data yet
+      setAnalyticsData({
+        revenue: {
+          current: 0,
+          previous: 0,
+          trend: 'stable',
+          percentage: 0
+        },
+        reservations: {
+          current: 0,
+          previous: 0,
+          trend: 'stable',
+          percentage: 0
+        },
+        customers: {
+          current: 0,
+          previous: 0,
+          trend: 'stable',
+          percentage: 0
+        },
+        occupancy: {
+          current: 0,
+          previous: 0,
+          trend: 'stable',
+          percentage: 0
+        }
+      });
+    }
+  }, [establishment, isDemo]);
 
-  const revenueChartData: RevenueData[] = [
+  const revenueChartData: RevenueData[] = isDemo ? [
     { date: '2024-01-01', revenue: 8500, reservations: 25 },
     { date: '2024-01-02', revenue: 12300, reservations: 32 },
     { date: '2024-01-03', revenue: 9800, reservations: 28 },
@@ -127,7 +163,7 @@ const AnalyticsPage = () => {
     { date: '2024-01-12', revenue: 21500, reservations: 58 },
     { date: '2024-01-13', revenue: 18600, reservations: 49 },
     { date: '2024-01-14', revenue: 16900, reservations: 44 }
-  ];
+  ] : [];
 
   const courtUtilizationData: CourtUtilization[] = [
     { court: 'Cancha 1 - Fútbol 5', utilization: 85.2, revenue: 45600, reservations: 128 },
@@ -269,6 +305,14 @@ const AnalyticsPage = () => {
       </div>
     );
   };
+
+  if (loading || !analyticsData) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-white text-xl">Cargando analytics...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
