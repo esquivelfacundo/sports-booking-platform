@@ -213,6 +213,22 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
     loadEstablishmentData();
   }, []);
 
+  // Debug effect to log establishment data changes
+  useEffect(() => {
+    console.log('EstablishmentContext: Establishment data changed:', {
+      establishment: establishment ? {
+        id: establishment.id,
+        name: establishment.name,
+        email: establishment.email,
+        courtsCount: establishment.courts?.length || 0,
+        staffCount: establishment.staff?.length || 0,
+        status: establishment.status
+      } : null,
+      isDemo,
+      loading
+    });
+  }, [establishment, isDemo, loading]);
+
   const loadEstablishmentData = async () => {
     setLoading(true);
     try {
@@ -250,7 +266,15 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
             const registrationData = localStorage.getItem('establishment_registration');
             if (registrationData) {
               const establishment = JSON.parse(registrationData);
-              console.log('EstablishmentContext: Found registration data, loading establishment');
+              console.log('EstablishmentContext: Found registration data:', {
+                hasBasicInfo: !!establishment.basicInfo,
+                hasLocation: !!establishment.location,
+                hasCourts: !!establishment.courts,
+                courtsCount: establishment.courts?.length || 0,
+                hasStaff: !!establishment.staff,
+                staffCount: establishment.staff?.length || 0,
+                hasRepresentative: !!establishment.representative
+              });
               
               // Convert registration data to EstablishmentData format
               const formattedData: EstablishmentData = {
