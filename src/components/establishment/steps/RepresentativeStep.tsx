@@ -32,7 +32,6 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
     businessName: data.representative?.businessName || '',
     taxId: data.representative?.taxId || '',
     address: data.representative?.address || '',
-    username: data.representative?.username || '',
     password: data.representative?.password || ''
   };
 
@@ -54,8 +53,6 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
         return value.trim().length >= 2;
       case 'address':
         return value.trim().length >= 10;
-      case 'username':
-        return value.trim().length >= 3;
       case 'password':
         return value.length >= 6;
       default:
@@ -64,7 +61,7 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
   };
 
   const isFormValid = () => {
-    const requiredFields = ['fullName', 'email', 'whatsapp', 'documentNumber', 'position', 'address', 'username', 'password'];
+    const requiredFields = ['fullName', 'email', 'whatsapp', 'documentNumber', 'position', 'address', 'password'];
     return requiredFields.every(field => {
       const value = representative[field as keyof typeof representative] as string;
       return value && validateField(field, value);
@@ -73,7 +70,7 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
 
   useEffect(() => {
     onValidation(isFormValid());
-  }, [representative.fullName, representative.email, representative.whatsapp, representative.documentType, representative.documentNumber, representative.position, representative.businessName, representative.taxId, representative.address, representative.username, representative.password]);
+  }, [representative.fullName, representative.email, representative.whatsapp, representative.documentType, representative.documentNumber, representative.position, representative.businessName, representative.taxId, representative.address, representative.password]);
 
   const handleInputChange = (field: string, value: string) => {
     const updatedRepresentative = {
@@ -109,8 +106,6 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
         return !validateField(field, value) ? 'Ingresa el cargo o posición' : '';
       case 'address':
         return !validateField(field, value) ? 'Ingresa una dirección completa' : '';
-      case 'username':
-        return !validateField(field, value) ? 'Ingresa un nombre de usuario (mínimo 3 caracteres)' : '';
       case 'password':
         return !validateField(field, value) ? 'Ingresa una contraseña (mínimo 6 caracteres)' : '';
       default:
@@ -356,35 +351,12 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
               Estos datos serán utilizados para acceder al panel de administración del establecimiento.
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Nombre de Usuario */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
-                  Nombre de Usuario *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={representative.username}
-                    onChange={(e) => handleInputChange('username', e.target.value)}
-                    onBlur={() => handleBlur('username')}
-                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                      getFieldError('username') ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-emerald-500'
-                    }`}
-                    placeholder="usuario123"
-                    autoComplete="username"
-                  />
-                </div>
-                {getFieldError('username') && (
-                  <p className="text-red-400 text-sm">{getFieldError('username')}</p>
-                )}
-              </div>
+            <div className="grid grid-cols-1 gap-6">
 
               {/* Contraseña */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">
-                  Contraseña *
+                  Contraseña de Acceso *
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -403,6 +375,9 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
                 {getFieldError('password') && (
                   <p className="text-red-400 text-sm">{getFieldError('password')}</p>
                 )}
+                <p className="text-gray-400 text-xs">
+                  Usarás tu email ({representative.email || 'email@ejemplo.com'}) y esta contraseña para acceder al sistema.
+                </p>
               </div>
             </div>
           </div>

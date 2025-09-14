@@ -1,6 +1,6 @@
 import { EstablishmentRegistration } from '@/types/establishment';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = 'http://localhost:3001';
 
 export interface EstablishmentRegistrationResponse {
   success: boolean;
@@ -30,21 +30,29 @@ class EstablishmentAPI {
 
   async registerEstablishment(data: EstablishmentRegistration): Promise<EstablishmentRegistrationResponse> {
     try {
+      console.log('EstablishmentAPI: Registering establishment with data:', data);
+      
       const response = await fetch(`${API_BASE_URL}/api/establishments/register`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(data)
       });
 
+      console.log('EstablishmentAPI: Response status:', response.status);
+      console.log('EstablishmentAPI: Response headers:', Object.fromEntries(response.headers.entries()));
+
       const result = await response.json();
+      console.log('EstablishmentAPI: Response data:', result);
 
       if (!response.ok) {
+        console.error('EstablishmentAPI: Registration failed with status:', response.status, 'Message:', result.message);
         throw new Error(result.message || 'Failed to register establishment');
       }
 
+      console.log('EstablishmentAPI: Registration successful');
       return result;
     } catch (error) {
-      console.error('Register establishment error:', error);
+      console.error('EstablishmentAPI: Register establishment error:', error);
       throw error;
     }
   }

@@ -30,15 +30,17 @@ import TermsStep from './steps/TermsStep';
 interface EstablishmentRegistrationWizardProps {
   onComplete: (data: EstablishmentRegistration) => void;
   onSaveProgress?: (data: Partial<EstablishmentRegistration>) => void;
+  initialData?: Partial<EstablishmentRegistration> | null;
 }
 
 const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardProps> = ({
   onComplete,
-  onSaveProgress
+  onSaveProgress,
+  initialData
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<RegistrationStep[]>(REGISTRATION_STEPS);
-  const [registrationData, setRegistrationData] = useState<Partial<EstablishmentRegistration>>({
+  const defaultData = {
     basicInfo: {
       name: '',
       description: '',
@@ -75,7 +77,9 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
       position: '',
       businessName: '',
       taxId: '',
-      address: ''
+      address: '',
+      username: '',
+      password: ''
     },
     termsAcceptance: {
       accepted: false,
@@ -94,7 +98,11 @@ const EstablishmentRegistrationWizard: React.FC<EstablishmentRegistrationWizardP
       representative: false,
       terms: false
     }
-  });
+  };
+
+  const [registrationData, setRegistrationData] = useState<Partial<EstablishmentRegistration>>(
+    initialData ? { ...defaultData, ...initialData } : defaultData
+  );
 
   // Auto-save progress
   useEffect(() => {

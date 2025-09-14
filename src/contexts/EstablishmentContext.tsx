@@ -300,10 +300,12 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
               // Fallback a localStorage si falla el API
               const registrationData = localStorage.getItem('establishmentRegistrationData');
               if (registrationData) {
+                console.log('Using localStorage establishment data as fallback');
                 const data = JSON.parse(registrationData);
                 setEstablishment(data);
                 setIsDemo(false);
               } else {
+                console.log('No establishment data found, setting to null');
                 setEstablishment(null);
                 setIsDemo(false);
               }
@@ -325,9 +327,19 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
       }
     } catch (error) {
       console.error('Error loading establishment data:', error);
-      // En caso de error, usar datos demo
-      setEstablishment(getDemoEstablishmentData());
-      setIsDemo(true);
+      // En caso de error, no usar datos demo automáticamente
+      // Intentar cargar desde localStorage primero
+      const registrationData = localStorage.getItem('establishmentRegistrationData');
+      if (registrationData) {
+        console.log('Loading establishment from localStorage after error');
+        const data = JSON.parse(registrationData);
+        setEstablishment(data);
+        setIsDemo(false);
+      } else {
+        console.log('No establishment data available, setting to null');
+        setEstablishment(null);
+        setIsDemo(false);
+      }
     } finally {
       setLoading(false);
     }

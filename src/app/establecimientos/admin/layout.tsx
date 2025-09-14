@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -35,11 +36,20 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { establishment, isDemo } = useEstablishment();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Authentication guard
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      console.log('AdminLayout: User not authenticated, redirecting to login');
+      router.push('/establecimientos/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const handleLogout = () => {
     logout();
@@ -142,6 +152,20 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   ];
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Verificando autenticación...</div>
+      </div>
+    );
+  }
+
+  // Don't render admin layout if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900">

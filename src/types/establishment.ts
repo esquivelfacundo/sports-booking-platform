@@ -47,7 +47,6 @@ export interface EstablishmentRegistration {
     businessName?: string;
     taxId?: string;
     address: string;
-    username: string;
     password: string;
   };
 

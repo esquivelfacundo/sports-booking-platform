@@ -37,42 +37,24 @@ const EstablishmentRegistrationPage = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [registrationData, setRegistrationData] = useState<Partial<EstablishmentRegistration> | null>(null);
 
   const handleRegistrationComplete = async (data: EstablishmentRegistration) => {
+    console.log('RegistrationPage: Starting registration with data:', data);
     setIsSubmitting(true);
+    setError(null);
     
     try {
-      // For new establishments, we need to create a user account first
-      const token = localStorage.getItem('auth_token');
-      
-      if (!token) {
-        // Create user account first, then register establishment
-        const { apiClient } = await import('@/lib/api');
-        
-        // Create account with establishment owner data
-        const registerResponse = await apiClient.register({
-          email: data.representative?.email || data.basicInfo?.email || '',
-          password: 'temp_password_123', // This should be collected in the wizard
-          firstName: data.representative?.fullName?.split(' ')[0] || 'Propietario',
-          lastName: data.representative?.fullName?.split(' ').slice(1).join(' ') || 'Establecimiento',
-          phone: data.basicInfo?.phone || '',
-          userType: 'establishment'
-        }) as any;
-        
-        if (!registerResponse.tokens?.accessToken) {
-          throw new Error('Error al crear la cuenta de usuario');
-        }
-        
-        // Store the new token
-        localStorage.setItem('auth_token', registerResponse.tokens.accessToken);
-      }
-      
       // Import API dynamically to avoid SSR issues
       const { establishmentAPI } = await import('@/lib/api/establishments');
       
+      console.log('RegistrationPage: Calling API registerEstablishment');
       const response = await establishmentAPI.registerEstablishment(data);
+      console.log('RegistrationPage: API response received:', response);
       
       if (response.success) {
+        console.log('RegistrationPage: Registration successful, storing data');
         // Store registration success in localStorage for dashboard
         localStorage.setItem('registrationSuccess', JSON.stringify({
           establishment: response.establishment,
@@ -89,16 +71,18 @@ const EstablishmentRegistrationPage = () => {
         };
         localStorage.setItem('establishmentRegistrationData', JSON.stringify(updatedData));
         
-        // Redirect to establishment dashboard
-        router.push('/establecimientos/admin?registered=true');
+        console.log('RegistrationPage: Redirecting to login page');
+        // Redirect to login page so user can authenticate properly
+        router.push('/establecimientos/login?registered=true');
       } else {
+        console.error('RegistrationPage: Registration failed - success is false');
         throw new Error(response.message || 'Registration failed');
       }
       
     } catch (error) {
-      console.error('Error registering establishment:', error);
-      // TODO: Show proper error message to user
-      alert(`Error al registrar establecimiento: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      console.error('RegistrationPage: Error registering establishment:', error);
+      setRegistrationData(data); // Save data to allow editing
+      setError(error instanceof Error ? error.message : 'Error desconocido al registrar el establecimiento');
     } finally {
       setIsSubmitting(false);
     }
@@ -120,6 +104,49 @@ const EstablishmentRegistrationPage = () => {
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <h2 className="text-2xl font-bold text-white mb-2">Registrando Establecimiento</h2>
           <p className="text-gray-400">Configurando tu cuenta y espacios deportivos...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (error && registrationData) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center max-w-md mx-auto p-8"
+        >
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-4">Error en el Registro</h2>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <div className="flex flex-col space-y-3">
+            <button
+              onClick={() => {
+                setError(null);
+                setShowWizard(true);
+              }}
+              className="bg-emerald-500 text-white px-6 py-3 rounded-xl hover:bg-emerald-600 transition-colors duration-200"
+            >
+              Editar y Corregir Datos
+            </button>
+            <button
+              onClick={() => {
+                setError(null);
+                setRegistrationData(null);
+                setShowWizard(false);
+              }}
+              className="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200"
+            >
+              Empezar de Nuevo
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="bg-gray-700 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition-colors duration-200"
+            >
+              Volver al Inicio
+            </button>
+          </div>
         </motion.div>
       </div>
     );
@@ -149,6 +176,7 @@ const EstablishmentRegistrationPage = () => {
       <EstablishmentRegistrationWizard
         onComplete={handleRegistrationComplete}
         onSaveProgress={handleSaveProgress}
+        initialData={registrationData}
       />
     </Suspense>
   );

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Eye, 
   EyeOff, 
@@ -17,21 +18,24 @@ import {
 
 const EstablishmentLoginPage = () => {
   const router = useRouter();
+  const { login, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: 'facundo@miscanchas.com',
+    password: 'Lidius@2001'
   });
 
-  // Mock credentials for demo
-  const mockCredentials = {
-    email: 'admin@clubcentral.com',
-    password: 'admin123'
-  };
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      console.log('EstablishmentLogin: User already authenticated, redirecting to admin');
+      router.push('/establecimientos/admin');
+    }
+  }, [isAuthenticated, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,6 +51,9 @@ const EstablishmentLoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccess('');
+
+    console.log('EstablishmentLogin: Starting login with credentials:', { email: formData.email, password: '***' });
 
     // Basic validation
     if (!formData.email || !formData.password) {
@@ -55,33 +62,36 @@ const EstablishmentLoginPage = () => {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      if (formData.email === mockCredentials.email && formData.password === mockCredentials.password) {
+    try {
+      console.log('EstablishmentLogin: Calling AuthContext login');
+      const success = await login(formData);
+      console.log('EstablishmentLogin: Login result:', success);
+      
+      if (success) {
         setSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
+        console.log('EstablishmentLogin: Login successful, redirecting to dashboard');
         
-        // Simulate storing auth token
-        localStorage.setItem('establishment_auth', 'true');
-        localStorage.setItem('establishment_data', JSON.stringify({
-          id: '1',
-          name: 'Club Deportivo Central',
-          email: formData.email,
-          role: 'admin'
-        }));
-
-        // Redirect to dashboard after short delay
+        // Redirect to establishment admin dashboard after short delay
         setTimeout(() => {
           router.push('/establecimientos/admin');
         }, 1500);
       } else {
-        setError('Credenciales incorrectas. Intenta nuevamente.');
+        console.log('EstablishmentLogin: Login failed');
+        setError('Credenciales incorrectas. Verifica tu email y contraseña.');
       }
+    } catch (error) {
+      console.error('EstablishmentLogin: Login error:', error);
+      setError('Error al iniciar sesión. Intenta nuevamente.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const fillDemoCredentials = () => {
-    setFormData(mockCredentials);
+    setFormData({
+      email: 'facundo@miscanchas.com',
+      password: 'Lidius@2001'
+    });
   };
 
   return (
@@ -212,8 +222,8 @@ const EstablishmentLoginPage = () => {
                 <span>Usar credenciales de prueba</span>
               </button>
               <div className="mt-2 text-xs text-gray-500">
-                <p>Email: admin@clubcentral.com</p>
-                <p>Contraseña: admin123</p>
+                <p>Email: facundo@miscanchas.com</p>
+                <p>Contraseña: Lidius@2001</p>
               </div>
             </div>
           </div>

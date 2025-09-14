@@ -1,8 +1,5 @@
-// API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'https://sports-booking-backend-liql.onrender.com'
-    : 'http://localhost:3001');
+// API Configuration - Forced to localhost for development
+const API_BASE_URL = 'http://localhost:3001';
 
 // API Client class
 class ApiClient {
@@ -40,7 +37,11 @@ class ApiClient {
     }
 
     try {
+      console.log('ApiClient: Making request to:', url);
+      console.log('ApiClient: Request config:', config);
+      
       const response = await fetch(url, config);
+      console.log('ApiClient: Response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -48,7 +49,9 @@ class ApiClient {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const responseData = await response.json();
+      console.log('ApiClient: Response data:', responseData);
+      return responseData;
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
@@ -79,10 +82,16 @@ class ApiClient {
   }
 
   async login(credentials: { email: string; password: string }) {
-    return this.request('/api/auth/login', {
+    console.log('ApiClient: Making login request to:', `${this.baseURL}/api/auth/login`);
+    console.log('ApiClient: Login credentials:', { email: credentials.email, password: '***' });
+    
+    const response = await this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+    
+    console.log('ApiClient: Login response:', response);
+    return response;
   }
 
   async logout() {

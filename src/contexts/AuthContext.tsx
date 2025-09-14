@@ -138,16 +138,90 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
-      // First, check if there's a registered establishment with these credentials
+      console.log('AuthContext: Attempting login with credentials:', { email: credentials.email, password: '***' });
+      
+      // FIRST: Try the API client login
+      try {
+        const loginResponse = await apiClient.login(credentials) as any;
+        console.log('AuthContext: API response:', loginResponse);
+        
+        if (loginResponse.success && loginResponse.user && loginResponse.token) {
+          console.log('AuthContext: API login successful, storing token');
+          // Store the token
+          localStorage.setItem('auth_token', loginResponse.token);
+          localStorage.setItem('user_data', JSON.stringify(loginResponse.user));
+          
+          // Update auth state
+          setAuthState({
+            user: loginResponse.user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          
+          return true;
+        }
+        
+        // Check if API returned tokens in different format
+        if (loginResponse.tokens && loginResponse.tokens.accessToken) {
+          console.log('AuthContext: API login successful with tokens format');
+          // Store tokens
+          localStorage.setItem('auth_token', loginResponse.tokens.accessToken);
+          if (loginResponse.tokens.refreshToken) {
+            localStorage.setItem('refresh_token', loginResponse.tokens.refreshToken);
+          }
+          
+          // Transform backend user data to frontend format
+          const transformedUser = {
+            ...loginResponse.user,
+            name: `${loginResponse.user.firstName} ${loginResponse.user.lastName}`,
+            avatar: loginResponse.user.profileImage,
+            birthDate: loginResponse.user.dateOfBirth,
+            level: loginResponse.user.skillLevel,
+            lastActive: loginResponse.user.lastLoginAt || loginResponse.user.updatedAt,
+            friends: loginResponse.user.friends || [],
+            favoriteVenues: loginResponse.user.favoriteVenues || [],
+            favoriteEstablishments: loginResponse.user.favoriteEstablishments || [],
+            sports: loginResponse.user.sports || [],
+            stats: loginResponse.user.stats || {
+              totalGames: 0,
+              totalReservations: 0,
+              favoriteVenuesCount: 0,
+              friendsCount: 0,
+              rating: 0,
+              reviewsReceived: 0
+            }
+          };
+          
+          // Store user data in localStorage for persistence
+          localStorage.setItem('user_data', JSON.stringify(transformedUser));
+          
+          // Set user state
+          setAuthState({
+            user: transformedUser,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return true;
+        }
+      } catch (apiError) {
+        console.log('AuthContext: API login failed:', apiError);
+      }
+      
+      console.log('AuthContext: API login failed, checking localStorage fallback');
+      
+      // FALLBACK: check if there's a registered establishment with these credentials
       const establishmentData = localStorage.getItem('establishment_registration');
+      console.log('AuthContext: Checking localStorage fallback, data exists:', !!establishmentData);
       if (establishmentData) {
         try {
           const establishment = JSON.parse(establishmentData);
           const representative = establishment.representative;
+          console.log('AuthContext: Representative data:', { email: representative?.email, hasPassword: !!representative?.password });
           
           if (representative && 
-              representative.username === credentials.email && 
+              representative.email === credentials.email && 
               representative.password === credentials.password) {
+            console.log('AuthContext: localStorage credentials match!');
             
             // Create user object from representative data
             const representativeUser = {
@@ -213,49 +287,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
 
-      // If not a representative login, try regular API login
-      const response = await apiClient.login(credentials) as any;
-      
-      if (response.tokens && response.tokens.accessToken) {
-        // Store tokens
-        localStorage.setItem('auth_token', response.tokens.accessToken);
-        if (response.tokens.refreshToken) {
-          localStorage.setItem('refresh_token', response.tokens.refreshToken);
-        }
-        
-        // Transform backend user data to frontend format
-        const transformedUser = {
-          ...response.user,
-          name: `${response.user.firstName} ${response.user.lastName}`,
-          avatar: response.user.profileImage,
-          birthDate: response.user.dateOfBirth,
-          level: response.user.skillLevel,
-          lastActive: response.user.lastLoginAt || response.user.updatedAt,
-          friends: response.user.friends || [],
-          favoriteVenues: response.user.favoriteVenues || [],
-          favoriteEstablishments: response.user.favoriteEstablishments || [],
-          sports: response.user.sports || [],
-          stats: response.user.stats || {
-            totalGames: 0,
-            totalReservations: 0,
-            favoriteVenuesCount: 0,
-            friendsCount: 0,
-            rating: 0,
-            reviewsReceived: 0
-          }
-        };
-        
-        // Store user data in localStorage for persistence
-        localStorage.setItem('user_data', JSON.stringify(transformedUser));
-        
-        // Set user state
-        setAuthState({
-          user: transformedUser,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        return true;
-      }
+      console.log('AuthContext: No valid credentials found');
       return false;
     } catch (error) {
       console.error('Login error:', error);
