@@ -248,191 +248,131 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
         console.log('EstablishmentContext: User data:', { userType: user.userType, establishmentId: user.establishmentId });
         
         if (user.userType === 'establishment') {
-          // First try to get establishment ID from user data, then from registration data
-          let establishmentId = user.establishmentId;
-          
-          if (!establishmentId) {
-            // Try to get from registration success data
-            const registrationSuccess = localStorage.getItem('registrationSuccess');
-            if (registrationSuccess) {
-              const regData = JSON.parse(registrationSuccess);
-              establishmentId = regData.establishment?.id;
-            }
-          }
-          
-          // If still no establishment ID, try to load from localStorage registration data
-          if (!establishmentId) {
-            console.log('EstablishmentContext: No establishmentId found, checking localStorage registration');
-            const registrationData = localStorage.getItem('establishmentRegistrationData') || localStorage.getItem('establishment_registration');
-            if (registrationData) {
-              const establishment = JSON.parse(registrationData);
-              console.log('EstablishmentContext: Found registration data:', {
-                hasBasicInfo: !!establishment.basicInfo,
-                hasLocation: !!establishment.location,
-                hasCourts: !!establishment.courts,
-                courtsCount: establishment.courts?.length || 0,
-                hasStaff: !!establishment.staff,
-                staffCount: establishment.staff?.length || 0,
-                hasRepresentative: !!establishment.representative
-              });
+          // For establishment users, ALWAYS try to load their real data first from API
+          try {
+            console.log('EstablishmentContext: Attempting to load establishment data from API');
+            const response = await fetch(`http://localhost:3001/api/establishments/my-establishment`, {
+              headers: {
+                'Authorization': `Bearer ${userToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              const establishmentData = result.establishment;
+              console.log('EstablishmentContext: API data loaded successfully, status:', establishmentData.registrationStatus);
               
-              // Convert registration data to EstablishmentData format
+              // Convert backend data to context format - REGARDLESS of approval status
               const formattedData: EstablishmentData = {
-                id: establishment.id || establishment.establishmentId || 'temp_establishment',
-                name: establishment.basicInfo?.name || 'Mi Establecimiento',
-                description: establishment.basicInfo?.description || '',
-                phone: establishment.basicInfo?.phone || '',
-                email: establishment.basicInfo?.email || user.email,
-                address: establishment.location?.address || '',
-                city: establishment.location?.city || '',
-                province: establishment.location?.state || '',
-                postalCode: establishment.location?.zipCode || '',
-                coordinates: establishment.location?.coordinates ? {
-                  lat: establishment.location.coordinates.lat,
-                  lng: establishment.location.coordinates.lng
+                id: establishmentData.id,
+                name: establishmentData.name,
+                description: establishmentData.description,
+                phone: establishmentData.phone,
+                email: establishmentData.email,
+                address: establishmentData.address,
+                city: establishmentData.city,
+                province: establishmentData.province || '',
+                postalCode: establishmentData.postalCode || '',
+                coordinates: establishmentData.latitude && establishmentData.longitude ? {
+                  lat: parseFloat(establishmentData.latitude),
+                  lng: parseFloat(establishmentData.longitude)
                 } : undefined,
-                schedule: establishment.schedule || {},
-                amenities: establishment.amenities || [],
-                images: establishment.images || [],
-                courts: establishment.courts || [],
-                staff: establishment.staff || [],
-                representative: establishment.representative || {
-                  fullName: user.name || '',
-                  email: user.email || '',
-                  phone: user.phone || '',
-                  documentType: '',
-                  documentNumber: '',
-                  position: user.position || '',
-                  businessName: '',
-                  taxId: '',
-                  address: ''
+                schedule: establishmentData.openingHours || {},
+                amenities: establishmentData.amenities || [],
+                images: establishmentData.images?.photos || [],
+                courts: establishmentData.courts || [],
+                staff: establishmentData.staff || [],
+                representative: {
+                  fullName: establishmentData.representativeName || '',
+                  email: establishmentData.representativeEmail || '',
+                  phone: establishmentData.representativeWhatsapp || '',
+                  documentType: establishmentData.representativeDocumentType || '',
+                  documentNumber: establishmentData.representativeDocumentNumber || '',
+                  position: establishmentData.representativePosition || '',
+                  businessName: establishmentData.representativeBusinessName || '',
+                  taxId: establishmentData.representativeTaxId || '',
+                  address: establishmentData.representativeAddress || ''
                 },
-                status: 'approved', // Set as approved for localStorage data
-                createdAt: new Date(),
-                updatedAt: new Date()
+                status: establishmentData.registrationStatus || 'pending',
+                createdAt: establishmentData.createdAt ? new Date(establishmentData.createdAt) : new Date(),
+                updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date()
               };
               
               setEstablishment(formattedData);
               setIsDemo(false);
               setLoading(false);
               return;
+            } else {
+              console.log('EstablishmentContext: API call failed, trying localStorage fallback');
             }
+          } catch (apiError) {
+            console.error('EstablishmentContext: API error, trying localStorage fallback:', apiError);
           }
-          
-          if (establishmentId) {
-            try {
-              // Llamada al backend para obtener datos del establecimiento autenticado
-              const response = await fetch(`http://localhost:3001/api/establishments/my-establishment`, {
-                headers: {
-                  'Authorization': `Bearer ${userToken}`,
-                  'Content-Type': 'application/json'
-                }
-              });
 
-              if (response.ok) {
-                const result = await response.json();
-                const establishmentData = result.establishment;
-                
-                // Convertir datos del backend al formato del contexto
-                const formattedData: EstablishmentData = {
-                  id: establishmentData.id,
-                  name: establishmentData.name,
-                  description: establishmentData.description,
-                  phone: establishmentData.phone,
-                  email: establishmentData.email,
-                  address: establishmentData.address,
-                  city: establishmentData.city,
-                  province: establishmentData.province || '',
-                  postalCode: establishmentData.postalCode || '',
-                  coordinates: establishmentData.latitude && establishmentData.longitude ? {
-                    lat: parseFloat(establishmentData.latitude),
-                    lng: parseFloat(establishmentData.longitude)
-                  } : undefined,
-                  schedule: establishmentData.openingHours || {},
-                  amenities: establishmentData.amenities || [],
-                  images: establishmentData.images?.photos || [],
-                  courts: establishmentData.courts || [],
-                  staff: establishmentData.staff || [],
-                  representative: {
-                    fullName: establishmentData.representativeName || '',
-                    email: establishmentData.representativeEmail || '',
-                    phone: establishmentData.representativeWhatsapp || '',
-                    documentType: establishmentData.representativeDocumentType || '',
-                    documentNumber: establishmentData.representativeDocumentNumber || '',
-                    position: establishmentData.representativePosition || '',
-                    businessName: establishmentData.representativeBusinessName || '',
-                    taxId: establishmentData.representativeTaxId || '',
-                    address: establishmentData.representativeAddress || ''
-                  },
-                  status: establishmentData.registrationStatus || 'pending',
-                  createdAt: establishmentData.createdAt ? new Date(establishmentData.createdAt) : new Date(),
-                  updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date()
-                };
-                
-                setEstablishment(formattedData);
-                setIsDemo(false);
-              } else {
-                throw new Error('Failed to fetch establishment data');
-              }
-            } catch (apiError) {
-              console.error('Error fetching establishment from API:', apiError);
-              // Fallback a localStorage si falla el API
-              const registrationData = localStorage.getItem('establishmentRegistrationData') || localStorage.getItem('establishment_registration');
-              if (registrationData) {
-                console.log('Using localStorage establishment data as fallback');
-                const establishment = JSON.parse(registrationData);
-                
-                // Convert registration data to EstablishmentData format
-                const formattedData: EstablishmentData = {
-                  id: establishment.id || establishment.establishmentId || 'temp_establishment',
-                  name: establishment.basicInfo?.name || 'Mi Establecimiento',
-                  description: establishment.basicInfo?.description || '',
-                  phone: establishment.basicInfo?.phone || '',
-                  email: establishment.basicInfo?.email || user.email,
-                  address: establishment.location?.address || '',
-                  city: establishment.location?.city || '',
-                  province: establishment.location?.state || '',
-                  postalCode: establishment.location?.zipCode || '',
-                  coordinates: establishment.location?.coordinates ? {
-                    lat: establishment.location.coordinates.lat,
-                    lng: establishment.location.coordinates.lng
-                  } : undefined,
-                  schedule: establishment.schedule || {},
-                  amenities: establishment.amenities || [],
-                  images: establishment.images || [],
-                  courts: establishment.courts || [],
-                  staff: establishment.staff || [],
-                  representative: establishment.representative || {
-                    fullName: user.name || '',
-                    email: user.email || '',
-                    phone: user.phone || '',
-                    documentType: '',
-                    documentNumber: '',
-                    position: user.position || '',
-                    businessName: '',
-                    taxId: '',
-                    address: ''
-                  },
-                  status: 'approved',
-                  createdAt: new Date(),
-                  updatedAt: new Date()
-                };
-                
-                setEstablishment(formattedData);
-                setIsDemo(false);
-              } else {
-                console.log('No establishment data found, setting to null');
-                setEstablishment(null);
-                setIsDemo(false);
-              }
-            }
-          } else {
-            // No establishment ID found
-            setEstablishment(null);
+          // Fallback to localStorage data if API fails
+          console.log('EstablishmentContext: Loading from localStorage as fallback');
+          const registrationData = localStorage.getItem('establishmentRegistrationData') || localStorage.getItem('establishment_registration');
+          if (registrationData) {
+            const establishment = JSON.parse(registrationData);
+            console.log('EstablishmentContext: Found localStorage registration data:', {
+              hasBasicInfo: !!establishment.basicInfo,
+              hasLocation: !!establishment.location,
+              hasCourts: !!establishment.courts,
+              courtsCount: establishment.courts?.length || 0,
+              hasStaff: !!establishment.staff,
+              staffCount: establishment.staff?.length || 0,
+              hasRepresentative: !!establishment.representative
+            });
+            
+            // Convert registration data to EstablishmentData format
+            const formattedData: EstablishmentData = {
+              id: establishment.id || establishment.establishmentId || 'temp_establishment',
+              name: establishment.basicInfo?.name || 'Mi Establecimiento',
+              description: establishment.basicInfo?.description || '',
+              phone: establishment.basicInfo?.phone || '',
+              email: establishment.basicInfo?.email || user.email,
+              address: establishment.location?.address || '',
+              city: establishment.location?.city || '',
+              province: establishment.location?.state || '',
+              postalCode: establishment.location?.zipCode || '',
+              coordinates: establishment.location?.coordinates ? {
+                lat: establishment.location.coordinates.lat,
+                lng: establishment.location.coordinates.lng
+              } : undefined,
+              schedule: establishment.schedule || {},
+              amenities: establishment.amenities || [],
+              images: establishment.images || [],
+              courts: establishment.courts || [],
+              staff: establishment.staff || [],
+              representative: establishment.representative || {
+                fullName: user.firstName + ' ' + user.lastName,
+                email: user.email,
+                phone: '',
+                documentType: '',
+                documentNumber: '',
+                position: '',
+                businessName: '',
+                taxId: '',
+                address: ''
+              },
+              status: 'pending', // Keep real status for localStorage data
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            
+            setEstablishment(formattedData);
             setIsDemo(false);
+            setLoading(false);
+            return;
           }
+
+          // If no data found anywhere, set null (no demo data for authenticated users)
+          console.log('EstablishmentContext: No establishment data found for authenticated user');
+          setEstablishment(null);
+          setIsDemo(false);
         } else {
-          // Usuario no es de establecimiento
+          // Usuario no es de tipo establishment
           setEstablishment(null);
           setIsDemo(false);
         }
