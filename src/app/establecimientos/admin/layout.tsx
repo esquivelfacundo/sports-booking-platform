@@ -35,11 +35,16 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { establishment, isDemo } = useEstablishment();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const pathname = usePathname();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/';
+  };
 
   const navigation = [
     {
@@ -375,7 +380,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                         Configuración
                       </Link>
                       <hr className="my-2 border-gray-700" />
-                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                      <button 
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                      >
                         <LogOut className="inline h-4 w-4 mr-2" />
                         Cerrar Sesión
                       </button>
