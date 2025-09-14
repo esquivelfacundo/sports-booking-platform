@@ -210,7 +210,12 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
   const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
-    loadEstablishmentData();
+    // Wait a bit for AuthContext to initialize before loading establishment data
+    const timer = setTimeout(() => {
+      loadEstablishmentData();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // Debug effect to log establishment data changes
@@ -239,7 +244,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
       
       if (!userToken || userToken === 'demo-token') {
         // Usuario demo - usar datos de demostración
-        console.log('EstablishmentContext: Using demo data');
+        console.log('EstablishmentContext: Using demo data - no token or demo token');
         setEstablishment(getDemoEstablishmentData());
         setIsDemo(true);
       } else if (userData) {
@@ -377,9 +382,20 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
           setIsDemo(false);
         }
       } else {
-        // Sin datos de usuario
-        setEstablishment(null);
-        setIsDemo(false);
+        // Sin datos de usuario - retry after a delay in case AuthContext is still loading
+        console.log('EstablishmentContext: No user data found, retrying in 500ms');
+        setTimeout(() => {
+          const retryToken = localStorage.getItem('auth_token');
+          const retryUserData = localStorage.getItem('user_data');
+          if (retryToken && retryUserData) {
+            console.log('EstablishmentContext: Retry found data, reloading');
+            loadEstablishmentData();
+            return;
+          }
+          // If still no data after retry, set as null
+          setEstablishment(null);
+          setIsDemo(false);
+        }, 500);
       }
     } catch (error) {
       console.error('Error loading establishment data:', error);
