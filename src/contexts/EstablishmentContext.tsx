@@ -217,15 +217,19 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
     setLoading(true);
     try {
       const userToken = localStorage.getItem('auth_token');
-      const userData = localStorage.getItem('user');
+      const userData = localStorage.getItem('user_data'); // Fixed: was 'user', now 'user_data'
+      
+      console.log('EstablishmentContext: Loading data with token:', !!userToken, 'userData:', !!userData);
       
       if (!userToken || userToken === 'demo-token') {
         // Usuario demo - usar datos de demostración
+        console.log('EstablishmentContext: Using demo data');
         setEstablishment(getDemoEstablishmentData());
         setIsDemo(true);
       } else if (userData) {
         // Usuario autenticado - obtener datos del backend
         const user = JSON.parse(userData);
+        console.log('EstablishmentContext: User data:', { userType: user.userType, establishmentId: user.establishmentId });
         
         if (user.userType === 'establishment') {
           // First try to get establishment ID from user data, then from registration data
@@ -237,6 +241,57 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
             if (registrationSuccess) {
               const regData = JSON.parse(registrationSuccess);
               establishmentId = regData.establishment?.id;
+            }
+          }
+          
+          // If still no establishment ID, try to load from localStorage registration data
+          if (!establishmentId) {
+            console.log('EstablishmentContext: No establishmentId found, checking localStorage registration');
+            const registrationData = localStorage.getItem('establishment_registration');
+            if (registrationData) {
+              const establishment = JSON.parse(registrationData);
+              console.log('EstablishmentContext: Found registration data, loading establishment');
+              
+              // Convert registration data to EstablishmentData format
+              const formattedData: EstablishmentData = {
+                id: establishment.id || establishment.establishmentId || 'temp_establishment',
+                name: establishment.basicInfo?.name || 'Mi Establecimiento',
+                description: establishment.basicInfo?.description || '',
+                phone: establishment.basicInfo?.phone || '',
+                email: establishment.basicInfo?.email || user.email,
+                address: establishment.location?.address || '',
+                city: establishment.location?.city || '',
+                province: establishment.location?.state || '',
+                postalCode: establishment.location?.zipCode || '',
+                coordinates: establishment.location?.coordinates ? {
+                  lat: establishment.location.coordinates.lat,
+                  lng: establishment.location.coordinates.lng
+                } : undefined,
+                schedule: establishment.schedule || {},
+                amenities: establishment.amenities || [],
+                images: establishment.images || [],
+                courts: establishment.courts || [],
+                staff: establishment.staff || [],
+                representative: establishment.representative || {
+                  fullName: user.name || '',
+                  email: user.email || '',
+                  phone: user.phone || '',
+                  documentType: '',
+                  documentNumber: '',
+                  position: user.position || '',
+                  businessName: '',
+                  taxId: '',
+                  address: ''
+                },
+                status: 'approved', // Set as approved for localStorage data
+                createdAt: new Date(),
+                updatedAt: new Date()
+              };
+              
+              setEstablishment(formattedData);
+              setIsDemo(false);
+              setLoading(false);
+              return;
             }
           }
           
@@ -298,11 +353,48 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
             } catch (apiError) {
               console.error('Error fetching establishment from API:', apiError);
               // Fallback a localStorage si falla el API
-              const registrationData = localStorage.getItem('establishmentRegistrationData');
+              const registrationData = localStorage.getItem('establishment_registration');
               if (registrationData) {
                 console.log('Using localStorage establishment data as fallback');
-                const data = JSON.parse(registrationData);
-                setEstablishment(data);
+                const establishment = JSON.parse(registrationData);
+                
+                // Convert registration data to EstablishmentData format
+                const formattedData: EstablishmentData = {
+                  id: establishment.id || establishment.establishmentId || 'temp_establishment',
+                  name: establishment.basicInfo?.name || 'Mi Establecimiento',
+                  description: establishment.basicInfo?.description || '',
+                  phone: establishment.basicInfo?.phone || '',
+                  email: establishment.basicInfo?.email || user.email,
+                  address: establishment.location?.address || '',
+                  city: establishment.location?.city || '',
+                  province: establishment.location?.state || '',
+                  postalCode: establishment.location?.zipCode || '',
+                  coordinates: establishment.location?.coordinates ? {
+                    lat: establishment.location.coordinates.lat,
+                    lng: establishment.location.coordinates.lng
+                  } : undefined,
+                  schedule: establishment.schedule || {},
+                  amenities: establishment.amenities || [],
+                  images: establishment.images || [],
+                  courts: establishment.courts || [],
+                  staff: establishment.staff || [],
+                  representative: establishment.representative || {
+                    fullName: user.name || '',
+                    email: user.email || '',
+                    phone: user.phone || '',
+                    documentType: '',
+                    documentNumber: '',
+                    position: user.position || '',
+                    businessName: '',
+                    taxId: '',
+                    address: ''
+                  },
+                  status: 'approved',
+                  createdAt: new Date(),
+                  updatedAt: new Date()
+                };
+                
+                setEstablishment(formattedData);
                 setIsDemo(false);
               } else {
                 console.log('No establishment data found, setting to null');
@@ -327,14 +419,58 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
       }
     } catch (error) {
       console.error('Error loading establishment data:', error);
-      // En caso de error, no usar datos demo automáticamente
-      // Intentar cargar desde localStorage primero
-      const registrationData = localStorage.getItem('establishmentRegistrationData');
+      // En caso de error, intentar cargar desde localStorage primero
+      const registrationData = localStorage.getItem('establishment_registration');
       if (registrationData) {
         console.log('Loading establishment from localStorage after error');
-        const data = JSON.parse(registrationData);
-        setEstablishment(data);
-        setIsDemo(false);
+        try {
+          const establishment = JSON.parse(registrationData);
+          const userData = localStorage.getItem('user_data');
+          const user = userData ? JSON.parse(userData) : {};
+          
+          // Convert registration data to EstablishmentData format
+          const formattedData: EstablishmentData = {
+            id: establishment.id || establishment.establishmentId || 'temp_establishment',
+            name: establishment.basicInfo?.name || 'Mi Establecimiento',
+            description: establishment.basicInfo?.description || '',
+            phone: establishment.basicInfo?.phone || '',
+            email: establishment.basicInfo?.email || user.email || '',
+            address: establishment.location?.address || '',
+            city: establishment.location?.city || '',
+            province: establishment.location?.state || '',
+            postalCode: establishment.location?.zipCode || '',
+            coordinates: establishment.location?.coordinates ? {
+              lat: establishment.location.coordinates.lat,
+              lng: establishment.location.coordinates.lng
+            } : undefined,
+            schedule: establishment.schedule || {},
+            amenities: establishment.amenities || [],
+            images: establishment.images || [],
+            courts: establishment.courts || [],
+            staff: establishment.staff || [],
+            representative: establishment.representative || {
+              fullName: user.name || '',
+              email: user.email || '',
+              phone: user.phone || '',
+              documentType: '',
+              documentNumber: '',
+              position: user.position || '',
+              businessName: '',
+              taxId: '',
+              address: ''
+            },
+            status: 'approved',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          setEstablishment(formattedData);
+          setIsDemo(false);
+        } catch (parseError) {
+          console.error('Error parsing establishment data:', parseError);
+          setEstablishment(null);
+          setIsDemo(false);
+        }
       } else {
         console.log('No establishment data available, setting to null');
         setEstablishment(null);

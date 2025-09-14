@@ -377,9 +377,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     </div>
                     <div className="hidden sm:block text-left">
                       <div className="text-white font-medium text-sm">
-                        {user?.name || establishment?.representative?.fullName || establishment?.name || 'Usuario'}
+                        {user?.name || user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : establishment?.representative?.fullName || establishment?.name || 'Usuario'}
                       </div>
-                      {user?.userType === 'establishment' && (
+                      <div className="text-xs text-gray-400">
+                        {user?.email || establishment?.representative?.email || establishment?.email || ''}
+                      </div>
+                      {user?.userType === 'establishment' && !isDemo && (
                         <div className="text-xs text-emerald-400">Administrador</div>
                       )}
                       {isDemo && (
