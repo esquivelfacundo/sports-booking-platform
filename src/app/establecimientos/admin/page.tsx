@@ -50,114 +50,191 @@ const AdminDashboard = () => {
     }
   }, [searchParams]);
 
-  const stats = [
-    {
-      name: 'Ingresos Hoy',
-      value: '$45,250',
-      change: '+12%',
-      trend: 'up',
-      icon: DollarSign,
-      color: 'emerald'
-    },
-    {
-      name: 'Reservas Hoy',
-      value: '28',
-      change: '+8%',
-      trend: 'up',
-      icon: Calendar,
-      color: 'blue'
-    },
-    {
-      name: 'Ocupación Actual',
-      value: '75%',
-      change: '+5%',
-      trend: 'up',
-      icon: Activity,
-      color: 'purple'
-    },
-    {
-      name: 'Clientes Activos',
-      value: '342',
-      change: '-2%',
-      trend: 'down',
-      icon: Users,
-      color: 'orange'
+  // Generate stats based on real establishment data or demo data
+  const generateStats = () => {
+    if (isDemo) {
+      return [
+        {
+          name: 'Ingresos Hoy',
+          value: '$45,250',
+          change: '+12%',
+          trend: 'up',
+          icon: DollarSign,
+          color: 'emerald'
+        },
+        {
+          name: 'Reservas Hoy',
+          value: '28',
+          change: '+8%',
+          trend: 'up',
+          icon: Calendar,
+          color: 'blue'
+        },
+        {
+          name: 'Ocupación Actual',
+          value: '75%',
+          change: '+5%',
+          trend: 'up',
+          icon: Activity,
+          color: 'purple'
+        },
+        {
+          name: 'Clientes Activos',
+          value: '342',
+          change: '-2%',
+          trend: 'down',
+          icon: Users,
+          color: 'orange'
+        }
+      ];
+    } else {
+      // Real establishment stats - start with basic values
+      const courtsCount = establishment?.courts?.length || 0;
+      return [
+        {
+          name: 'Ingresos Hoy',
+          value: '$0',
+          change: '0%',
+          trend: 'up',
+          icon: DollarSign,
+          color: 'emerald'
+        },
+        {
+          name: 'Reservas Hoy',
+          value: '0',
+          change: '0%',
+          trend: 'up',
+          icon: Calendar,
+          color: 'blue'
+        },
+        {
+          name: 'Canchas Disponibles',
+          value: courtsCount.toString(),
+          change: '100%',
+          trend: 'up',
+          icon: Activity,
+          color: 'purple'
+        },
+        {
+          name: 'Clientes Registrados',
+          value: '0',
+          change: '0%',
+          trend: 'up',
+          icon: Users,
+          color: 'orange'
+        }
+      ];
     }
-  ];
+  };
 
-  const todayReservations = [
-    {
-      id: 1,
-      time: '09:00',
-      court: 'Cancha 1',
-      sport: 'Fútbol 5',
-      client: 'Juan Pérez',
-      duration: '2h',
-      status: 'confirmed',
-      price: 5000
-    },
-    {
-      id: 2,
-      time: '11:00',
-      court: 'Cancha 2',
-      sport: 'Paddle',
-      client: 'María García',
-      duration: '1.5h',
-      status: 'pending',
-      price: 3500
-    },
-    {
-      id: 3,
-      time: '14:00',
-      court: 'Cancha 1',
-      sport: 'Fútbol 5',
-      client: 'Carlos López',
-      duration: '2h',
-      status: 'confirmed',
-      price: 5000
-    },
-    {
-      id: 4,
-      time: '16:30',
-      court: 'Cancha 3',
-      sport: 'Tenis',
-      client: 'Ana Martín',
-      duration: '1h',
-      status: 'confirmed',
-      price: 2500
-    },
-    {
-      id: 5,
-      time: '19:00',
-      court: 'Cancha 2',
-      sport: 'Paddle',
-      client: 'Roberto Silva',
-      duration: '1.5h',
-      status: 'pending',
-      price: 3500
-    }
-  ];
+  const stats = generateStats();
 
-  const alerts = [
-    {
-      id: 1,
-      type: 'warning',
-      message: 'Cancha 3 necesita mantenimiento de césped',
-      time: '2 horas'
-    },
-    {
-      id: 2,
-      type: 'info',
-      message: 'Nueva reserva pendiente de confirmación',
-      time: '30 min'
-    },
-    {
-      id: 3,
-      type: 'success',
-      message: 'Pago de $15,000 procesado correctamente',
-      time: '1 hora'
+  // Generate today's reservations based on demo or real data
+  const generateTodayReservations = () => {
+    if (isDemo) {
+      return [
+        {
+          id: 1,
+          time: '09:00',
+          court: 'Cancha 1',
+          sport: 'Fútbol 5',
+          client: 'Juan Pérez',
+          duration: '2h',
+          status: 'confirmed',
+          price: 5000
+        },
+        {
+          id: 2,
+          time: '11:00',
+          court: 'Cancha 2',
+          sport: 'Paddle',
+          client: 'María García',
+          duration: '1.5h',
+          status: 'pending',
+          price: 3500
+        },
+        {
+          id: 3,
+          time: '14:00',
+          court: 'Cancha 1',
+          sport: 'Fútbol 5',
+          client: 'Carlos López',
+          duration: '2h',
+          status: 'confirmed',
+          price: 5000
+        },
+        {
+          id: 4,
+          time: '16:30',
+          court: 'Cancha 3',
+          sport: 'Tenis',
+          client: 'Ana Martín',
+          duration: '1h',
+          status: 'confirmed',
+          price: 2500
+        },
+        {
+          id: 5,
+          time: '19:00',
+          court: 'Cancha 2',
+          sport: 'Paddle',
+          client: 'Roberto Silva',
+          duration: '1.5h',
+          status: 'pending',
+          price: 3500
+        }
+      ];
+    } else {
+      // Real establishment - no reservations yet
+      return [];
     }
-  ];
+  };
+
+  const todayReservations = generateTodayReservations();
+
+  // Generate alerts based on demo or real data
+  const generateAlerts = () => {
+    if (isDemo) {
+      return [
+        {
+          id: 1,
+          type: 'warning',
+          message: 'Cancha 3 necesita mantenimiento de césped',
+          time: '2 horas'
+        },
+        {
+          id: 2,
+          type: 'info',
+          message: 'Nueva reserva pendiente de confirmación',
+          time: '30 min'
+        },
+        {
+          id: 3,
+          type: 'success',
+          message: 'Pago de $15,000 procesado correctamente',
+          time: '1 hora'
+        }
+      ];
+    } else {
+      // Real establishment - welcome message for new establishments
+      return [
+        {
+          id: 1,
+          type: 'info',
+          message: `¡Bienvenido a ${establishment?.name || 'tu establecimiento'}! Completa tu configuración para empezar a recibir reservas.`,
+          time: 'ahora'
+        },
+        {
+          id: 2,
+          type: 'success',
+          message: 'Tu establecimiento ha sido registrado exitosamente',
+          time: 'hace 1 min'
+        }
+      ];
+    }
+  };
+
+  const alerts = generateAlerts();
 
   // Generar estado de canchas basado en datos reales o demo
   const courtStatus = establishment?.courts?.map((court, index) => {
@@ -340,30 +417,40 @@ const AdminDashboard = () => {
             </button>
           </div>
           <div className="space-y-4">
-            {todayReservations.map((reservation) => (
-              <div key={reservation.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="text-center">
-                    <div className="text-emerald-400 font-bold">{reservation.time}</div>
-                    <div className="text-gray-400 text-xs">{reservation.duration}</div>
+            {todayReservations.length > 0 ? (
+              todayReservations.map((reservation) => (
+                <div key={reservation.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="text-center">
+                      <div className="text-emerald-400 font-bold">{reservation.time}</div>
+                      <div className="text-gray-400 text-xs">{reservation.duration}</div>
+                    </div>
+                    <div>
+                      <div className="text-white font-medium">{reservation.client}</div>
+                      <div className="text-gray-400 text-sm">{reservation.court} • {reservation.sport}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-white font-medium">{reservation.client}</div>
-                    <div className="text-gray-400 text-sm">{reservation.court} • {reservation.sport}</div>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-white font-bold">${reservation.price.toLocaleString()}</div>
+                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      reservation.status === 'confirmed' 
+                        ? 'bg-emerald-500/20 text-emerald-400' 
+                        : 'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      {reservation.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <div className="text-white font-bold">${reservation.price.toLocaleString()}</div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    reservation.status === 'confirmed' 
-                      ? 'bg-emerald-500/20 text-emerald-400' 
-                      : 'bg-yellow-500/20 text-yellow-400'
-                  }`}>
-                    {reservation.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}
-                  </div>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">No hay reservas para hoy</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Las reservas aparecerán aquí una vez que los clientes empiecen a reservar
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
 

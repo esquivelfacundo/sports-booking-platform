@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { 
   MapPin, 
   Plus,
@@ -49,6 +50,7 @@ interface Court {
 }
 
 const CourtsPage = () => {
+  const { establishment, isDemo, loading } = useEstablishment();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -56,108 +58,139 @@ const CourtsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
-  const [courts, setCourts] = useState<Court[]>([
-    {
-      id: '1',
-      name: 'Cancha de Fútbol 1',
-      type: 'futbol',
-      status: 'available',
-      surface: 'Césped sintético',
-      capacity: 22,
-      pricePerHour: 8000,
-      openTime: '08:00',
-      closeTime: '23:00',
-      lighting: true,
-      covered: false,
-      images: ['/court1.jpg', '/court1-2.jpg'],
-      lastMaintenance: '2024-01-01',
-      nextMaintenance: '2024-02-01',
-      totalReservations: 156,
-      monthlyRevenue: 124800,
-      rating: 4.8,
-      description: 'Cancha de fútbol 11 con césped sintético de última generación'
-    },
-    {
-      id: '2',
-      name: 'Cancha de Tenis 1',
-      type: 'tenis',
-      status: 'available',
-      surface: 'Polvo de ladrillo',
-      capacity: 4,
-      pricePerHour: 6000,
-      openTime: '07:00',
-      closeTime: '22:00',
-      lighting: true,
-      covered: false,
-      images: ['/tennis1.jpg'],
-      lastMaintenance: '2024-01-10',
-      nextMaintenance: '2024-02-10',
-      totalReservations: 89,
-      monthlyRevenue: 53400,
-      rating: 4.6,
-      description: 'Cancha de tenis profesional con superficie de polvo de ladrillo'
-    },
-    {
-      id: '3',
-      name: 'Cancha de Paddle 1',
-      type: 'paddle',
-      status: 'maintenance',
-      surface: 'Césped sintético',
-      capacity: 4,
-      pricePerHour: 5000,
-      openTime: '08:00',
-      closeTime: '23:00',
-      lighting: true,
-      covered: true,
-      images: ['/paddle1.jpg'],
-      lastMaintenance: '2024-01-15',
-      nextMaintenance: '2024-01-20',
-      totalReservations: 134,
-      monthlyRevenue: 67000,
-      rating: 4.7,
-      description: 'Cancha de paddle cubierta con iluminación LED'
-    },
-    {
-      id: '4',
-      name: 'Cancha de Básquet',
-      type: 'basquet',
-      status: 'available',
-      surface: 'Parquet',
-      capacity: 10,
-      pricePerHour: 7000,
-      openTime: '09:00',
-      closeTime: '22:00',
-      lighting: true,
-      covered: true,
-      images: ['/basket1.jpg'],
-      lastMaintenance: '2024-01-05',
-      nextMaintenance: '2024-02-05',
-      totalReservations: 78,
-      monthlyRevenue: 54600,
-      rating: 4.5,
-      description: 'Cancha de básquet cubierta con piso de parquet profesional'
-    },
-    {
-      id: '5',
-      name: 'Cancha de Vóley',
-      type: 'voley',
-      status: 'out_of_service',
-      surface: 'Arena',
-      capacity: 12,
-      pricePerHour: 4500,
-      openTime: '10:00',
-      closeTime: '20:00',
-      lighting: false,
-      covered: false,
-      images: ['/voley1.jpg'],
-      lastMaintenance: '2023-12-20',
-      nextMaintenance: '2024-01-25',
-      totalReservations: 45,
-      monthlyRevenue: 20250,
-      rating: 4.2,
-      description: 'Cancha de vóley playa con arena importada'
+  const [courts, setCourts] = useState<Court[]>([]);
+
+  // Initialize courts from establishment data or demo data
+  useEffect(() => {
+    if (isDemo) {
+      // Demo data
+      setCourts([
+        {
+          id: '1',
+          name: 'Cancha de Fútbol 1',
+          type: 'futbol',
+          status: 'available',
+          surface: 'Césped sintético',
+          capacity: 22,
+          pricePerHour: 8000,
+          openTime: '08:00',
+          closeTime: '23:00',
+          lighting: true,
+          covered: false,
+          images: ['/court1.jpg', '/court1-2.jpg'],
+          lastMaintenance: '2024-01-01',
+          nextMaintenance: '2024-02-01',
+          totalReservations: 156,
+          monthlyRevenue: 124800,
+          rating: 4.8,
+          description: 'Cancha de fútbol 11 con césped sintético de última generación'
+        },
+        {
+          id: '2',
+          name: 'Cancha de Tenis 1',
+          type: 'tenis',
+          status: 'available',
+          surface: 'Polvo de ladrillo',
+          capacity: 4,
+          pricePerHour: 6000,
+          openTime: '07:00',
+          closeTime: '22:00',
+          lighting: true,
+          covered: false,
+          images: ['/tennis1.jpg'],
+          lastMaintenance: '2024-01-10',
+          nextMaintenance: '2024-02-10',
+          totalReservations: 89,
+          monthlyRevenue: 53400,
+          rating: 4.6,
+          description: 'Cancha de tenis profesional con superficie de polvo de ladrillo'
+        },
+        {
+          id: '3',
+          name: 'Cancha de Paddle 1',
+          type: 'paddle',
+          status: 'maintenance',
+          surface: 'Césped sintético',
+          capacity: 4,
+          pricePerHour: 5000,
+          openTime: '08:00',
+          closeTime: '23:00',
+          lighting: true,
+          covered: true,
+          images: ['/paddle1.jpg'],
+          lastMaintenance: '2024-01-15',
+          nextMaintenance: '2024-01-20',
+          totalReservations: 134,
+          monthlyRevenue: 67000,
+          rating: 4.7,
+          description: 'Cancha de paddle cubierta con iluminación LED'
+        },
+        {
+          id: '4',
+          name: 'Cancha de Básquet',
+          type: 'basquet',
+          status: 'available',
+          surface: 'Parquet',
+          capacity: 10,
+          pricePerHour: 7000,
+          openTime: '09:00',
+          closeTime: '22:00',
+          lighting: true,
+          covered: true,
+          images: ['/basket1.jpg'],
+          lastMaintenance: '2024-01-05',
+          nextMaintenance: '2024-02-05',
+          totalReservations: 78,
+          monthlyRevenue: 54600,
+          rating: 4.5,
+          description: 'Cancha de básquet cubierta con piso de parquet profesional'
+        },
+        {
+          id: '5',
+          name: 'Cancha de Vóley',
+          type: 'voley',
+          status: 'out_of_service',
+          surface: 'Arena',
+          capacity: 12,
+          pricePerHour: 4500,
+          openTime: '10:00',
+          closeTime: '20:00',
+          lighting: false,
+          covered: false,
+          images: ['/voley1.jpg'],
+          lastMaintenance: '2023-12-20',
+          nextMaintenance: '2024-01-25',
+          totalReservations: 45,
+          monthlyRevenue: 20250,
+          rating: 4.2,
+          description: 'Cancha de vóley playa con arena importada'
+        }
+      ]);
+    } else if (establishment?.courts) {
+      // Convert establishment courts to Court format
+      const convertedCourts: Court[] = establishment.courts.map((court, index) => ({
+        id: (index + 1).toString(),
+        name: court.name,
+        type: court.type as Court['type'],
+        status: 'available' as Court['status'],
+        surface: court.surface || 'No especificado',
+        capacity: court.capacity || 0,
+        pricePerHour: court.pricePerHour || 0,
+        openTime: '08:00',
+        closeTime: '22:00',
+        lighting: court.lighting || false,
+        covered: court.covered || false,
+        images: [],
+        lastMaintenance: new Date().toISOString().split('T')[0],
+        nextMaintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        totalReservations: 0,
+        monthlyRevenue: 0,
+        rating: 0,
+        description: court.description || `Cancha de ${court.type} profesional`
+      }));
+      setCourts(convertedCourts);
     }
-  ]);
+  }, [establishment, isDemo]);
 
   // Form state for creating/editing courts
   const [formData, setFormData] = useState<Partial<Court>>({
@@ -310,6 +343,14 @@ const CourtsPage = () => {
     totalRevenue: courts.reduce((sum, c) => sum + c.monthlyRevenue, 0),
     avgRating: courts.reduce((sum, c) => sum + c.rating, 0) / courts.length
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-white text-xl">Cargando canchas...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -711,10 +752,23 @@ const CourtsPage = () => {
           {filteredCourts.length === 0 && (
             <div className="text-center py-12">
               <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-white">No hay canchas</h3>
+              <h3 className="mt-2 text-sm font-medium text-white">
+                {courts.length === 0 ? 'No hay canchas registradas' : 'No hay canchas'}
+              </h3>
               <p className="mt-1 text-sm text-gray-400">
-                No se encontraron canchas que coincidan con los filtros seleccionados.
+                {courts.length === 0 
+                  ? 'Agrega canchas desde la configuración del establecimiento para empezar a gestionar tus instalaciones.'
+                  : 'No se encontraron canchas que coincidan con los filtros seleccionados.'
+                }
               </p>
+              {courts.length === 0 && (
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-colors"
+                >
+                  Agregar Primera Cancha
+                </button>
+              )}
             </div>
           )}
         </div>
