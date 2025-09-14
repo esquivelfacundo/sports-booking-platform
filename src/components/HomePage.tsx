@@ -75,56 +75,22 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    // Only run geolocation detection on client-side
+    // Skip geolocation and use default city
     if (!isClient) return;
 
-    const detectCity = async () => {
+    const initializeCity = async () => {
       try {
-        if (typeof window !== 'undefined' && navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              const { latitude, longitude } = position.coords;
-              
-              // Use mock city detection based on coordinates (avoiding external API issues)
-              try {
-                const mockCity = getMockCityFromCoords(latitude, longitude);
-                setCurrentCity(mockCity);
-                // Fetch establishments for detected city
-                fetchEstablishments({ city: mockCity, latitude, longitude });
-              } catch (error) {
-                console.error('Error detecting city from coordinates:', error);
-                setCurrentCity('Buenos Aires');
-                fetchEstablishments({ city: 'Buenos Aires' });
-              }
-              setIsLoading(false);
-            },
-            (error) => {
-              console.error('Geolocation error:', error);
-              setCurrentCity('Buenos Aires');
-              fetchEstablishments({ city: 'Buenos Aires' });
-              setIsLoading(false);
-            }
-          );
-        } else {
-          const detectedCity = getMockCityFromCoords(0, 0);
-          setCurrentCity(detectedCity);
-          setIsLoading(false);
-        
-          // Fetch establishments for detected city
-          fetchEstablishments({ city: detectedCity });
-        }
-      } catch (error) {
-        console.error('Error detecting location:', error);
         setCurrentCity('Buenos Aires');
+        await fetchEstablishments({ city: 'Buenos Aires' });
         setIsLoading(false);
-        
-        // Fetch establishments for default city
-        fetchEstablishments({ city: 'Buenos Aires' });
+      } catch (error) {
+        console.error('Error fetching establishments:', error);
+        setIsLoading(false);
       }
     };
 
-    detectCity();
-  }, [isClient, fetchEstablishments]);
+    initializeCity();
+  }, [isClient]);
 
   const popularCities = [
     { name: 'Buenos Aires', facilities: 245, image: '🏙️' },

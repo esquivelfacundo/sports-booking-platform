@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import ProvinceSelect from '@/components/ProvinceSelect';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -169,19 +170,15 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }: RegisterModalProps)
                 {/* Location */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Ubicación
+                    Provincia
                   </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                      placeholder="Palermo, Buenos Aires"
-                      required
-                    />
-                  </div>
+                  <ProvinceSelect
+                    value={formData.location}
+                    onChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+                    placeholder="Selecciona tu provincia"
+                    className="rounded-xl"
+                    required
+                  />
                 </div>
 
                 {/* Password */}

@@ -87,7 +87,7 @@ export const useEstablishments = (
     if (initialParams?.autoFetch !== false) {
       fetchEstablishments(initialParams);
     }
-  }, []);
+  }, [initialParams?.autoFetch]);
 
   return {
     establishments,

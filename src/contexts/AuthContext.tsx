@@ -8,7 +8,8 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
   logout: () => void;
-  updateProfile: (updates: Partial<User>) => Promise<boolean>;
+  updateProfile: (updates: Partial<User>) => Promise<User>;
+  incrementSportGames: (sportId: string) => Promise<User | undefined>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,9 +42,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     phone: '+54 11 1234-5678',
     dateOfBirth: '1990-05-15',
     city: 'Buenos Aires',
+    province: 'Buenos Aires',
+    postalCode: '1425',
     userType: 'player',
     isEmailVerified: true,
-    isPhoneVerified: false,
+    isPhoneVerified: true,
     isActive: true,
     favoritesSports: ['futbol5', 'paddle'],
     skillLevel: 'intermediate',
@@ -64,12 +67,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         sport: 'futbol5',
         level: 'intermediate',
         yearsPlaying: 8,
-        position: 'Mediocampista'
+        position: 'Mediocampista',
+        gamesPlayed: 127
       },
       {
         sport: 'paddle',
         level: 'beginner',
-        yearsPlaying: 2
+        yearsPlaying: 2,
+        gamesPlayed: 34
       }
     ],
     preferredTimes: ['18:00', '19:00', '20:00'],
@@ -89,47 +94,87 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Check for existing session
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          // Verify token with backend
-          const response = await apiClient.getProfile() as any;
+    const initAuth = () => {
+      const token = localStorage.getItem('auth_token');
+      
+      if (token) {
+        // Get stored user data if available
+        const storedUser = localStorage.getItem('user_data');
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            setAuthState({
+              user: userData,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } catch (error) {
+            // If stored user data is corrupted, clear it
+            localStorage.removeItem('user_data');
+            setAuthState({
+              user: null,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          }
+        } else {
           setAuthState({
-            user: response.data,
+            user: null,
             isAuthenticated: true,
             isLoading: false,
           });
-        } else {
-          setAuthState(prev => ({ ...prev, isLoading: false }));
         }
-      } catch (error) {
-        console.error('Error checking auth:', error);
-        // Clear invalid token
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('refresh_token');
-        setAuthState(prev => ({ ...prev, isLoading: false }));
+      } else {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+        });
       }
     };
 
-    checkAuth();
+    initAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
       const response = await apiClient.login(credentials) as any;
       
-      if (response.success && response.data.token) {
+      if (response.tokens && response.tokens.accessToken) {
         // Store tokens
-        localStorage.setItem('auth_token', response.data.token);
-        if (response.data.refreshToken) {
-          localStorage.setItem('refresh_token', response.data.refreshToken);
+        localStorage.setItem('auth_token', response.tokens.accessToken);
+        if (response.tokens.refreshToken) {
+          localStorage.setItem('refresh_token', response.tokens.refreshToken);
         }
+        
+        // Transform backend user data to frontend format
+        const transformedUser = {
+          ...response.user,
+          name: `${response.user.firstName} ${response.user.lastName}`,
+          avatar: response.user.profileImage,
+          birthDate: response.user.dateOfBirth,
+          level: response.user.skillLevel,
+          lastActive: response.user.lastLoginAt || response.user.updatedAt,
+          friends: response.user.friends || [],
+          favoriteVenues: response.user.favoriteVenues || [],
+          favoriteEstablishments: response.user.favoriteEstablishments || [],
+          sports: response.user.sports || [],
+          stats: response.user.stats || {
+            totalGames: 0,
+            totalReservations: 0,
+            favoriteVenuesCount: 0,
+            friendsCount: 0,
+            rating: 0,
+            reviewsReceived: 0
+          }
+        };
+        
+        // Store user data in localStorage for persistence
+        localStorage.setItem('user_data', JSON.stringify(transformedUser));
         
         // Set user state
         setAuthState({
-          user: response.data.user,
+          user: transformedUser,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -147,12 +192,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const registerData = {
         email: data.email,
         password: data.password,
-        firstName: data.name.split(' ')[0],
-        lastName: data.name.split(' ').slice(1).join(' ') || '',
+        firstName: data.firstName,
+        lastName: data.lastName || '',
         phone: data.phone,
+        country: data.country,
+        province: data.province,
+        city: data.city,
+        postalCode: data.postalCode,
+        sports: data.sports,
+        preferredTimes: data.preferredTimes,
+        birthDate: data.birthDate,
+        bio: data.bio,
         userType: 'player'
       };
 
+      console.log('Sending registration data:', registerData);
       const response = await apiClient.register(registerData) as any;
       
       if (response.tokens && response.tokens.accessToken) {
@@ -162,15 +216,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem('refresh_token', response.tokens.refreshToken);
         }
         
-        // Transform backend user data to frontend format
+        // Transform backend user data to frontend format with registration data fallback
         const transformedUser = {
           ...response.user,
-          name: `${response.user.firstName} ${response.user.lastName}`,
-          avatar: response.user.profileImage,
-          birthDate: response.user.dateOfBirth,
-          level: response.user.skillLevel,
-          lastActive: response.user.lastLoginAt || response.user.updatedAt
+          name: `${response.user.firstName} ${response.user.lastName}`.trim(),
+          avatar: response.user.profileImage || null,
+          birthDate: response.user.dateOfBirth || data.birthDate || null,
+          bio: response.user.bio || data.bio || null,
+          country: response.user.country || data.country || null,
+          province: response.user.province || data.province || null,
+          city: response.user.city || data.city || null,
+          postalCode: response.user.postalCode || data.postalCode || null,
+          preferredTimes: response.user.preferredTimes || data.preferredTimes || [],
+          level: response.user.skillLevel || 'beginner',
+          lastActive: response.user.lastLoginAt || response.user.updatedAt,
+          friends: response.user.friends || [],
+          favoriteVenues: response.user.favoriteVenues || [],
+          favoriteEstablishments: response.user.favoriteEstablishments || [],
+          sports: response.user.sports || data.sports || response.user.favoritesSports || [],
+          location: response.user.location || (data.city && data.province ? {
+            lat: 0,
+            lng: 0,
+            address: `${data.city}, ${data.province}`
+          } : null),
+          stats: response.user.stats || {
+            totalGames: 0,
+            totalReservations: 0,
+            favoriteVenuesCount: 0,
+            friendsCount: 0,
+            rating: 0,
+            reviewsReceived: 0
+          }
         };
+        
+        // Store user data in localStorage for persistence
+        localStorage.setItem('user_data', JSON.stringify(transformedUser));
         
         // Set user state
         setAuthState({
@@ -190,6 +270,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_data');
     setAuthState({
       user: null,
       isAuthenticated: false,
@@ -197,20 +278,64 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
-  const updateProfile = async (updates: Partial<User>): Promise<boolean> => {
+  const updateProfile = async (profileData: Partial<User>) => {
+    setAuthState(prev => ({ ...prev, isLoading: true }));
+    
     try {
-      if (!authState.user) return false;
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // For now, keep local update until we implement profile update endpoint
-      const updatedUser = { ...authState.user, ...updates };
-      setAuthState(prev => ({
-        ...prev,
+      const updatedUser = { ...authState.user!, ...profileData };
+      
+      // Update localStorage
+      localStorage.setItem('user_data', JSON.stringify(updatedUser));
+      
+      setAuthState({
         user: updatedUser,
-      }));
-      return true;
+        isAuthenticated: true,
+        isLoading: false
+      });
+      
+      return updatedUser;
     } catch (error) {
-      console.error('Update profile error:', error);
-      return false;
+      const errorMessage = error instanceof Error ? error.message : 'Error updating profile';
+      console.error(errorMessage);
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+      throw error;
+    }
+  };
+
+  const incrementSportGames = async (sportId: string) => {
+    if (!authState.user) return;
+    
+    try {
+      const updatedSports = authState.user.sports?.map((sport: any) => {
+        const currentSportId = sport.sportId || sport.sport;
+        if (currentSportId === sportId) {
+          return {
+            ...sport,
+            gamesPlayed: (sport.gamesPlayed || 0) + 1
+          };
+        }
+        return sport;
+      }) || [];
+
+      const updatedUser = {
+        ...authState.user,
+        sports: updatedSports
+      };
+
+      setAuthState({
+        user: updatedUser,
+        isAuthenticated: true,
+        isLoading: false
+      });
+      
+      localStorage.setItem('user_data', JSON.stringify(updatedUser));
+      
+      return updatedUser;
+    } catch (error) {
+      console.error('Error incrementing sport games:', error);
     }
   };
 
@@ -220,6 +345,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     updateProfile,
+    incrementSportGames,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

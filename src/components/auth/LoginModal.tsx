@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSwitchToRegister: () => void;
+  onSwitchToRegister?: () => void;
 }
 
 const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) => {
@@ -191,12 +191,12 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
               <div className="mt-6 text-center">
                 <p className="text-gray-400">
                   ¿No tienes cuenta?{' '}
-                  <button
-                    onClick={onSwitchToRegister}
+                  <a
+                    href="/dashboard"
                     className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
                   >
                     Regístrate
-                  </button>
+                  </a>
                 </p>
               </div>
             </div>

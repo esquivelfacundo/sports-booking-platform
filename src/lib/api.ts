@@ -23,17 +23,20 @@ class ApiClient {
         'Content-Type': 'application/json',
         ...options.headers,
       },
+      mode: 'cors',
       credentials: 'include',
       ...options,
     };
 
-    // Add auth token if available
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
+    // Add auth token if available (only in browser environment)
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+      }
     }
 
     try {
@@ -41,6 +44,7 @@ class ApiClient {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('API error response:', errorData);
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
@@ -58,6 +62,14 @@ class ApiClient {
     firstName: string;
     lastName: string;
     phone?: string;
+    country?: string;
+    province?: string;
+    city?: string;
+    postalCode?: string;
+    sports?: any[];
+    preferredTimes?: string[];
+    birthDate?: string;
+    bio?: string;
     userType?: string;
   }) {
     return this.request('/api/auth/register', {
@@ -91,25 +103,25 @@ class ApiClient {
 
   // Establishments endpoints
   async getEstablishments(params: {
-    search?: string;
-    sport?: string;
     city?: string;
-    latitude?: number;
-    longitude?: number;
-    radius?: number;
+    sport?: string;
+    minRating?: number;
+    maxPrice?: number;
+    amenities?: string[];
     page?: number;
     limit?: number;
   } = {}) {
     const queryParams = new URLSearchParams();
     
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== '' && 
+          key !== 'latitude' && key !== 'longitude' && key !== 'radius') {
         queryParams.append(key, value.toString());
       }
     });
 
     const response = await this.request(`/api/establishments?${queryParams.toString()}`) as any;
-    return response.data || [];
+    return response.data || response || [];
   }
 
   async getEstablishmentById(id: string) {

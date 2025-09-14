@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User, UserSport } from '@/types/user';
 import { motion } from 'framer-motion';
 import { 
@@ -18,10 +18,10 @@ import {
   Camera,
   Mail,
   Phone,
-  Shield,
-  CheckCircle
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 
 const ProfilePage = () => {
   const { user, isAuthenticated, updateProfile } = useAuth();
@@ -43,18 +43,26 @@ const ProfilePage = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    country: user?.country || 'AR',
-    province: user?.province || '',
-    city: user?.city || '',
-    postalCode: user?.postalCode || '',
-    location: user?.location?.address || '',
+    location: user?.location || '',
     bio: user?.bio || '',
     sports: user?.sports || [],
-    preferredTimes: user?.preferredTimes || [],
-    birthDate: user?.birthDate || '',
     avatar: user?.avatar || ''
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        location: user.location || '',
+        bio: user.bio || '',
+        sports: user.sports || [],
+        avatar: user.avatar || ''
+      });
+    }
+  }, [user]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -68,13 +76,7 @@ const ProfilePage = () => {
   }
 
   const handleSaveProfile = async () => {
-    const profileData = {
-      ...editForm,
-      location: typeof editForm.location === 'string' 
-        ? { lat: 0, lng: 0, address: editForm.location }
-        : editForm.location
-    };
-    const success = await updateProfile(profileData);
+    const success = await updateProfile(editForm);
     if (success) {
       // Update localStorage with new avatar
       if (editForm.avatar) {
@@ -92,15 +94,9 @@ const ProfilePage = () => {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      country: user?.country || 'AR',
-      province: user?.province || '',
-      city: user?.city || '',
-      postalCode: user?.postalCode || '',
-      location: user?.location?.address || '',
+      location: user?.location || '',
       bio: user?.bio || '',
       sports: user?.sports || [],
-      preferredTimes: user?.preferredTimes || [],
-      birthDate: user?.birthDate || '',
       avatar: user?.avatar || ''
     });
     setIsEditing(false);
@@ -108,8 +104,8 @@ const ProfilePage = () => {
 
   const addSport = () => {
     const newSport: UserSport = {
-      sportId: 'futbol5',
-      skillLevel: 'intermediate',
+      sport: 'futbol5',
+      level: 'beginner',
       yearsPlaying: 1
     };
     setEditForm(prev => ({
@@ -121,26 +117,9 @@ const ProfilePage = () => {
   const updateSport = (index: number, field: string, value: string | number) => {
     setEditForm(prev => ({
       ...prev,
-      sports: prev.sports.map((sport, i) => {
-        if (i === index) {
-          const updatedSport = { ...sport };
-          if (field === 'yearsPlaying') {
-            updatedSport.yearsPlaying = parseInt(value as string) || 1;
-          } else if (field === 'sportId') {
-            updatedSport.sportId = value as string;
-            // Remove old 'sport' field if it exists
-            delete (updatedSport as any).sport;
-          } else if (field === 'skillLevel') {
-            updatedSport.skillLevel = value as string;
-            // Remove old 'level' field if it exists
-            delete (updatedSport as any).level;
-          } else {
-            (updatedSport as any)[field] = value;
-          }
-          return updatedSport;
-        }
-        return sport;
-      })
+      sports: prev.sports.map((sport, i) => 
+        i === index ? { ...sport, [field]: field === 'yearsPlaying' ? parseInt(value as string) || 1 : value } : sport
+      )
     }));
   };
 
@@ -152,38 +131,38 @@ const ProfilePage = () => {
   };
 
   const getSportName = (sport: string) => {
-    const sportNames: { [key: string]: string } = {
-      'futbol5': 'Fútbol 5',
-      'futbol11': 'Fútbol 11',
-      'paddle': 'Pádel',
-      'tenis': 'Tenis',
-      'basquet': 'Básquet',
-      'voley': 'Vóley',
-      'hockey': 'Hockey',
-      'rugby': 'Rugby',
-      'natacion': 'Natación',
-      'running': 'Running'
+    const names: { [key: string]: string } = {
+      futbol5: 'Fútbol 5',
+      paddle: 'Paddle',
+      tenis: 'Tenis',
+      basquet: 'Básquet'
     };
-    return sportNames[sport] || sport;
+    return names[sport] || sport;
   };
 
   const getLevelName = (level: string) => {
-    const levelNames: { [key: string]: string } = {
-      'principiante': 'Principiante',
-      'intermedio': 'Intermedio',
-      'avanzado': 'Avanzado',
-      'profesional': 'Profesional',
-      'beginner': 'Principiante',
-      'intermediate': 'Intermedio',
-      'advanced': 'Avanzado',
-      'professional': 'Profesional'
+    const levels: { [key: string]: string } = {
+      beginner: 'Principiante',
+      intermediate: 'Intermedio',
+      advanced: 'Avanzado'
     };
-    return levelNames[level] || level;
+    return levels[level] || level;
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link 
+            href="/dashboard"
+            className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Volver al Dashboard</span>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
@@ -197,15 +176,9 @@ const ProfilePage = () => {
                   name: user?.name || '',
                   email: user?.email || '',
                   phone: user?.phone || '',
-                  country: user?.country || 'AR',
-                  province: user?.province || '',
-                  city: user?.city || '',
-                  postalCode: user?.postalCode || '',
-                  location: user?.location?.address || '',
+                  location: user?.location || '',
                   bio: user?.bio || '',
                   sports: user?.sports || [],
-                  preferredTimes: user?.preferredTimes || [],
-                  birthDate: user?.birthDate || '',
                   avatar: user?.avatar || ''
                 });
                 setIsEditing(true);
@@ -226,7 +199,7 @@ const ProfilePage = () => {
               </button>
               <button
                 onClick={handleCancelEdit}
-                className="flex items-center space-x-2 bg-gray-700 text-white px-4 py-2 rounded-xl hover:bg-gray-600 transition-all duration-200"
+                className="flex items-center space-x-2 bg-gray-700 text-gray-300 px-4 py-2 rounded-xl hover:bg-gray-600 transition-all duration-200"
               >
                 <X className="w-4 h-4" />
                 <span>Cancelar</span>
@@ -281,15 +254,7 @@ const ProfilePage = () => {
                 <div className="flex-1">
                   {!isEditing ? (
                     <>
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h2 className="text-2xl font-bold text-white">{user.name || 'Usuario'}</h2>
-                        {user.isPhoneVerified && (
-                          <div className="flex items-center space-x-1 bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-sm border border-emerald-500/30">
-                            <Shield className="w-3 h-3" />
-                            <span className="text-xs font-medium">Verificado</span>
-                          </div>
-                        )}
-                      </div>
+                      <h2 className="text-2xl font-bold text-white mb-2">{user.name || 'Usuario'}</h2>
                       <div className="flex items-center space-x-4 text-gray-400 mb-3">
                         <div className="flex items-center space-x-1">
                           <Star className="w-4 h-4 text-emerald-400" />
@@ -320,22 +285,13 @@ const ProfilePage = () => {
                         className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2 text-white"
                         placeholder="Email"
                       />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input
-                          type="tel"
-                          value={editForm.phone}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2 text-white"
-                          placeholder="Teléfono"
-                        />
-                        <input
-                          type="date"
-                          value={editForm.birthDate}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, birthDate: e.target.value }))}
-                          className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2 text-white"
-                          placeholder="Fecha de nacimiento"
-                        />
-                      </div>
+                      <input
+                        type="tel"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2 text-white"
+                        placeholder="Teléfono"
+                      />
                       <textarea
                         value={editForm.bio}
                         onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
@@ -376,118 +332,19 @@ const ProfilePage = () => {
                   <div className="flex items-center space-x-3 md:col-span-2">
                     <MapPin className="w-4 h-4 text-emerald-400" />
                     {!isEditing ? (
-                      <div className="flex flex-col space-y-1">
-                        <span className="text-gray-300">
-                          {user.city && user.province ? `${user.city}, ${user.province}` : 
-                           typeof user.location === 'string' ? user.location : 
-                           user.location?.address || 'No especificada'}
-                        </span>
-                        {user.postalCode && (
-                          <span className="text-sm text-gray-400">CP: {user.postalCode}</span>
-                        )}
-                      </div>
+                      <span className="text-gray-300">{typeof user.location === 'string' ? user.location : user.location?.address || 'No especificada'}</span>
                     ) : (
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <input
-                          type="text"
-                          value={editForm.province}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, province: e.target.value }))}
-                          className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
-                          placeholder="Provincia"
-                        />
-                        <input
-                          type="text"
-                          value={editForm.city}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, city: e.target.value }))}
-                          className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
-                          placeholder="Ciudad"
-                        />
-                        <input
-                          type="text"
-                          value={editForm.postalCode}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, postalCode: e.target.value }))}
-                          className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
-                          placeholder="Código Postal"
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        value={typeof editForm.location === 'string' ? editForm.location : editForm.location?.address || ''}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                        className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm flex-1"
+                        placeholder="Ubicación"
+                      />
                     )}
                   </div>
                 </div>
               </div>
-
-              {/* Preferred Times */}
-              {(user.preferredTimes && user.preferredTimes.length > 0) || isEditing ? (
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold text-white mb-4">Horarios Preferidos</h3>
-                  {!isEditing ? (
-                    <div className="flex flex-wrap gap-2">
-                      {(user.preferredTimes || []).map((time, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm border border-emerald-500/30"
-                        >
-                          {time}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-4 gap-2">
-                      {['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'].map((time) => (
-                        <button
-                          key={time}
-                          type="button"
-                          onClick={() => {
-                            const isSelected = editForm.preferredTimes.includes(time);
-                            if (isSelected) {
-                              setEditForm(prev => ({
-                                ...prev,
-                                preferredTimes: prev.preferredTimes.filter(t => t !== time)
-                              }));
-                            } else {
-                              setEditForm(prev => ({
-                                ...prev,
-                                preferredTimes: [...prev.preferredTimes, time]
-                              }));
-                            }
-                          }}
-                          className={`p-2 rounded-lg border transition-all duration-300 text-sm ${
-                            editForm.preferredTimes.includes(time)
-                              ? 'bg-emerald-500 border-emerald-500 text-white'
-                              : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              {/* Birth Date - Private Info */}
-              {(user.birthDate || isEditing) && (
-                <div className="mt-8">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <h3 className="text-lg font-semibold text-white">Fecha de Nacimiento</h3>
-                    <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded-full">Privado</span>
-                  </div>
-                  {!isEditing ? (
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="w-4 h-4 text-emerald-400" />
-                      <span className="text-gray-300">
-                        {user.birthDate ? new Date(user.birthDate).toLocaleDateString('es-AR') : 'No especificada'}
-                      </span>
-                    </div>
-                  ) : (
-                    <input
-                      type="date"
-                      value={editForm.birthDate}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, birthDate: e.target.value }))}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2 text-white"
-                    />
-                  )}
-                </div>
-              )}
 
               {/* Sports */}
               <div className="mt-8">
@@ -504,88 +361,74 @@ const ProfilePage = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  {(isEditing ? editForm.sports : user.sports || []).map((sport, index) => {
-                    // Handle both old format (sport, level, yearsPlaying) and new format (sportId, skillLevel)
-                    const sportId = sport.sportId || sport.sport;
-                    const skillLevel = sport.skillLevel || sport.level;
-                    const yearsPlaying = sport.yearsPlaying || 1;
-                    
-                    return (
-                      <div key={index} className="bg-gray-700 rounded-xl p-4">
-                        {!isEditing ? (
+                  {(isEditing ? editForm.sports : user.sports || []).map((sport, index) => (
+                    <div key={index} className="bg-gray-700 rounded-xl p-4">
+                      {!isEditing ? (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-white">{getSportName(sport.sport)}</h4>
+                            <div className="flex items-center space-x-4 text-sm text-gray-400">
+                              <span>Nivel: {getLevelName(sport.level)}</span>
+                              <span>Experiencia: {sport.yearsPlaying} años</span>
+                              {sport.position && <span>Posición: {sport.position}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium text-white">{getSportName(sportId)}</h4>
-                              <div className="flex items-center space-x-4 text-sm text-gray-400">
-                                <span>Nivel: {getLevelName(skillLevel)}</span>
-                                <span>Experiencia: {yearsPlaying} años</span>
-                                {sport.position && <span>Posición: {sport.position}</span>}
-                              </div>
-                            </div>
+                            <select
+                              value={sport.sport}
+                              onChange={(e) => updateSport(index, 'sport', e.target.value)}
+                              className="bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
+                            >
+                              <option value="futbol5">Fútbol 5</option>
+                              <option value="paddle">Paddle</option>
+                              <option value="tenis">Tenis</option>
+                              <option value="basquet">Básquet</option>
+                            </select>
+                            <button
+                              onClick={() => removeSport(index)}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <select
-                                value={sportId}
-                                onChange={(e) => updateSport(index, 'sportId', e.target.value)}
-                                className="bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
-                              >
-                                <option value="futbol5">Fútbol 5</option>
-                                <option value="futbol11">Fútbol 11</option>
-                                <option value="paddle">Pádel</option>
-                                <option value="tenis">Tenis</option>
-                                <option value="basquet">Básquet</option>
-                                <option value="voley">Vóley</option>
-                                <option value="hockey">Hockey</option>
-                                <option value="rugby">Rugby</option>
-                                <option value="natacion">Natación</option>
-                                <option value="running">Running</option>
-                              </select>
-                              <button
-                                onClick={() => removeSport(index)}
-                                className="text-red-400 hover:text-red-300"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <select
-                                value={skillLevel}
-                                onChange={(e) => updateSport(index, 'skillLevel', e.target.value)}
-                                className="bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
-                              >
-                                <option value="beginner">Principiante</option>
-                                <option value="intermediate">Intermedio</option>
-                                <option value="advanced">Avanzado</option>
-                                <option value="professional">Profesional</option>
-                              </select>
-                              
-                              <input
-                                type="number"
-                                min="0"
-                                max="50"
-                                value={yearsPlaying}
-                                onChange={(e) => updateSport(index, 'yearsPlaying', e.target.value)}
-                                className="bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
-                                placeholder="Años"
-                              />
-                            </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <select
+                              value={sport.level}
+                              onChange={(e) => updateSport(index, 'level', e.target.value)}
+                              className="bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
+                            >
+                              <option value="beginner">Principiante</option>
+                              <option value="intermediate">Intermedio</option>
+                              <option value="advanced">Avanzado</option>
+                            </select>
                             
-                            {sportId === 'futbol5' && (
-                              <input
-                                type="text"
-                                value={sport.position || ''}
-                                onChange={(e) => updateSport(index, 'position', e.target.value)}
-                                className="w-full bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
-                                placeholder="Posición (ej: Mediocampista)"
-                              />
-                            )}
+                            <input
+                              type="number"
+                              min="0"
+                              max="50"
+                              value={sport.yearsPlaying}
+                              onChange={(e) => updateSport(index, 'yearsPlaying', e.target.value)}
+                              className="bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
+                              placeholder="Años"
+                            />
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          
+                          {sport.sport === 'futbol5' && (
+                            <input
+                              type="text"
+                              value={sport.position || ''}
+                              onChange={(e) => updateSport(index, 'position', e.target.value)}
+                              className="w-full bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
+                              placeholder="Posición (ej: Mediocampista)"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                   
                   {(user.sports || []).length === 0 && !isEditing && (
                     <p className="text-gray-400 text-center py-4">
@@ -599,7 +442,7 @@ const ProfilePage = () => {
 
           {/* Stats Sidebar */}
           <div className="space-y-6">
-            {/* Quick Stats */}
+            {/* Stats */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -673,7 +516,15 @@ const ProfilePage = () => {
                   <Heart className="w-6 h-6 text-emerald-400" />
                   <div>
                     <p className="text-white font-medium">Explorador</p>
-                    <p className="text-gray-400 text-sm">3+ canchas favoritas</p>
+                    <p className="text-gray-400 text-sm">5+ canchas favoritas</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-xl">
+                  <Users className="w-6 h-6 text-emerald-400" />
+                  <div>
+                    <p className="text-white font-medium">Social</p>
+                    <p className="text-gray-400 text-sm">10+ amigos conectados</p>
                   </div>
                 </div>
               </div>

@@ -33,7 +33,17 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
         className="flex items-center space-x-2 p-2 rounded-xl hover:bg-gray-700 transition-colors"
       >
         <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center">
-          <User className="w-5 h-5 text-white" />
+          {user.avatar ? (
+            <img 
+              src={user.avatar} 
+              alt={user.name}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <span className="text-white font-bold text-sm">
+              {user.name?.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
         <span className="hidden sm:block text-white font-medium">{user.name}</span>
       </button>
@@ -54,7 +64,17 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
             <div className="p-4 border-b border-gray-700">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center">
-                  <User className="w-7 h-7 text-white" />
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-lg">
+                      {user.name?.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-white truncate">{user.name}</p>
@@ -64,7 +84,7 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
                       {user.level}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {user.stats.totalGames} partidos
+                      {user.stats?.totalGames || 0} partidos
                     </span>
                   </div>
                 </div>
@@ -74,63 +94,56 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
             {/* Menu Items */}
             <div className="p-2">
               <Link
-                href="/perfil"
+                href="/dashboard?section=profile"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <User className="w-5 h-5" />
                 <span>Mi Perfil</span>
               </Link>
               <Link
-                href="/mis-reservas"
+                href="/dashboard?section=reservations"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <Calendar className="w-5 h-5" />
                 <span>Mis Reservas</span>
               </Link>
               <Link
-                href="/favoritos"
+                href="/dashboard?section=favorites"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <Heart className="w-5 h-5" />
                 <span>Mis Favoritos</span>
               </Link>
               <Link
-                href="/amigos"
+                href="/dashboard?section=friends"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <Users className="w-5 h-5" />
                 <span>Mis Amigos</span>
               </Link>
               <Link
-                href="/buscar-jugadores"
+                href="/dashboard?section=matches"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <Search className="w-5 h-5" />
                 <span>Buscar Jugadores</span>
               </Link>
               <Link
-                href="/equipos"
+                href="/dashboard?section=teams"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <Users className="w-5 h-5" />
                 <span>Mis Equipos</span>
               </Link>
               <Link
-                href="/recomendaciones"
-                className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
-              >
-                <span className="text-lg">✨</span>
-                <span>Recomendaciones</span>
-              </Link>
-              <Link
-                href="/actividad"
+                href="/dashboard?section=activity"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <span className="text-lg">📱</span>
                 <span>Actividad Social</span>
               </Link>
               <Link
-                href="/calificaciones"
+                href="/dashboard?section=ratings"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <Star className="w-5 h-5" />

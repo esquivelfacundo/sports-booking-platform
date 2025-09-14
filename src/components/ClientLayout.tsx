@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SocialProvider } from "@/contexts/SocialContext";
 import { BookingProvider } from "@/contexts/BookingContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";

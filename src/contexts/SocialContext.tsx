@@ -184,7 +184,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (isAuthenticated && user) {
       // Load user's friends based on their friend IDs
       const userFriends = mockPlayers.filter(player => 
-        user.friends.includes(player.id)
+        user.friends && user.friends.includes(player.id)
       );
       
       setSocialState(prev => ({

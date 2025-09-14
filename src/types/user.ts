@@ -6,7 +6,10 @@ export interface User {
   phone?: string;
   dateOfBirth?: string;
   profileImage?: string;
+  country?: string;
+  province?: string;
   city?: string;
+  postalCode?: string;
   bio?: string;
   favoritesSports: string[];
   skillLevel: 'beginner' | 'intermediate' | 'advanced';
@@ -33,24 +36,25 @@ export interface User {
   friends?: string[];
   favoriteVenues?: string[];
   favoriteEstablishments?: string[];
-  stats?: UserStats;
   lastActive?: string;
+  stats?: {
+    rating: number;
+    totalGames: number;
+    totalReservations: number;
+    favoriteVenuesCount: number;
+    friendsCount: number;
+    reviewsReceived?: number;
+  };
 }
 
 export interface UserSport {
-  sport: 'futbol5' | 'paddle' | 'tenis' | 'basquet';
-  level: 'beginner' | 'intermediate' | 'advanced';
+  sport?: string;
+  sportId?: string;
+  level?: 'principiante' | 'intermedio' | 'avanzado' | 'profesional' | 'beginner' | 'intermediate' | 'advanced';
+  skillLevel?: string;
   yearsPlaying: number;
-  position?: string; // Para deportes como fútbol
-}
-
-export interface UserStats {
-  totalGames: number;
-  totalReservations: number;
-  favoriteVenuesCount: number;
-  friendsCount: number;
-  rating: number;
-  reviewsReceived: number;
+  position?: string;
+  gamesPlayed?: number;
 }
 
 export interface AuthState {
@@ -65,9 +69,17 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
-  phone?: string;
-  location: string;
+  country: string;
+  phone: string;
+  province: string;
+  city: string;
+  postalCode: string;
+  sports: { sportId: string; skillLevel: string }[];
+  preferredTimes: string[];
+  birthDate: string;
+  bio: string;
 }
