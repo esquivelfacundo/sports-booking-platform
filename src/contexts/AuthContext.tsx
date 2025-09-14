@@ -376,9 +376,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear all auth-related localStorage items
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_data');
+    localStorage.removeItem('registrationSuccess');
+    localStorage.removeItem('establishmentRegistrationData');
+    localStorage.removeItem('establishment_registration');
+    localStorage.removeItem('establishmentRegistrationProgress');
+    
     setAuthState({
       user: null,
       isAuthenticated: false,

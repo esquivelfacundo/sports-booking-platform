@@ -53,7 +53,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/';
+    // Force reload establishment context after logout
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   const navigation = [

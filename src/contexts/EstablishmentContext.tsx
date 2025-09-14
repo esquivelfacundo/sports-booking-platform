@@ -486,6 +486,10 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
   };
 
   const refreshEstablishment = async () => {
+    // Reset state before reloading
+    setEstablishment(null);
+    setIsDemo(false);
+    setLoading(true);
     await loadEstablishmentData();
   };
 
