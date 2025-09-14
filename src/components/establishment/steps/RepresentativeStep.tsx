@@ -22,18 +22,18 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
   const [isMounted, setIsMounted] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const representative = data.representative || {
-    fullName: '',
-    email: '',
-    whatsapp: '',
-    documentType: 'dni' as const,
-    documentNumber: '',
-    position: '',
-    businessName: '',
-    taxId: '',
-    address: '',
-    username: '',
-    password: ''
+  const representative = {
+    fullName: data.representative?.fullName || '',
+    email: data.representative?.email || '',
+    whatsapp: data.representative?.whatsapp || '',
+    documentType: data.representative?.documentType || 'dni' as const,
+    documentNumber: data.representative?.documentNumber || '',
+    position: data.representative?.position || '',
+    businessName: data.representative?.businessName || '',
+    taxId: data.representative?.taxId || '',
+    address: data.representative?.address || '',
+    username: data.representative?.username || '',
+    password: data.representative?.password || ''
   };
 
   useEffect(() => {
