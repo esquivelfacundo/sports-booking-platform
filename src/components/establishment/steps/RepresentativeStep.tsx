@@ -65,9 +65,10 @@ const RepresentativeStep: React.FC<RepresentativeStepProps> = ({
 
   const isFormValid = () => {
     const requiredFields = ['fullName', 'email', 'whatsapp', 'documentNumber', 'position', 'address', 'username', 'password'];
-    return requiredFields.every(field => 
-      validateField(field, representative[field as keyof typeof representative] as string)
-    );
+    return requiredFields.every(field => {
+      const value = representative[field as keyof typeof representative] as string;
+      return value && validateField(field, value);
+    });
   };
 
   useEffect(() => {

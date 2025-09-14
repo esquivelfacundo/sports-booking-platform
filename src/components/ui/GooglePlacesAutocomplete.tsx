@@ -33,16 +33,26 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         initializeAutocomplete();
         setIsLoaded(true);
       } else {
-        // Load Google Maps script if not already loaded
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          initializeAutocomplete();
-          setIsLoaded(true);
-        };
-        document.head.appendChild(script);
+        // Check if script is already being loaded
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+        if (existingScript) {
+          // Script already exists, wait for it to load
+          existingScript.addEventListener('load', () => {
+            initializeAutocomplete();
+            setIsLoaded(true);
+          });
+        } else {
+          // Load Google Maps script if not already loaded
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+          script.async = true;
+          script.defer = true;
+          script.onload = () => {
+            initializeAutocomplete();
+            setIsLoaded(true);
+          };
+          document.head.appendChild(script);
+        }
       }
     };
 

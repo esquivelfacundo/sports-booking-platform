@@ -5,7 +5,7 @@ export const ARGENTINA_PROVINCES = [
   { code: 'CHA', name: 'Chaco' },
   { code: 'CHU', name: 'Chubut' },
   { code: 'COR', name: 'Córdoba' },
-  { code: 'COR', name: 'Corrientes' },
+  { code: 'CTE', name: 'Corrientes' },
   { code: 'ER', name: 'Entre Ríos' },
   { code: 'FOR', name: 'Formosa' },
   { code: 'JUJ', name: 'Jujuy' },
