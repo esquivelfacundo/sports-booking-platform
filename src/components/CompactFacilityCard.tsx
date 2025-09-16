@@ -64,7 +64,7 @@ const CompactFacilityCard = ({ facility, onReserve, onTimeSlotSelect, onLoginReq
 
   // Check if facility is in user's favorites
   useEffect(() => {
-    if (user && user.favoriteVenues.includes(facility.id)) {
+    if (user && user.favoriteVenues && user.favoriteVenues.includes(facility.id)) {
       setIsLiked(true);
     } else {
       setIsLiked(false);
