@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { SocialProvider } from '@/contexts/SocialContext';
+import { SuperAdminProvider } from '@/contexts/SuperAdminContext';
 import { EstablishmentProvider } from '@/contexts/EstablishmentContext';
 import { TournamentProvider } from '@/contexts/TournamentContext';
 import { MobileSearchModalProvider } from '@/components/MobileSearchModalProvider';
@@ -32,7 +32,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.variable} antialiased`}>
         <AuthProvider>
-          <SocialProvider>
+          <SuperAdminProvider>
             <EstablishmentProvider>
               <TournamentProvider>
                 <MobileSearchModalProvider>
@@ -42,7 +42,7 @@ export default function RootLayout({
                 </MobileSearchModalProvider>
               </TournamentProvider>
             </EstablishmentProvider>
-          </SocialProvider>
+          </SuperAdminProvider>
         </AuthProvider>
       </body>
     </html>

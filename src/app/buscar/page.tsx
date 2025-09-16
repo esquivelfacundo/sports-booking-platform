@@ -13,7 +13,7 @@ import RegisterModal from '@/components/auth/RegisterModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEstablishments } from '@/hooks/useEstablishments';
 
-const MapView = dynamic(() => import('../../components/MapView'), {
+const MapView = dynamic(() => import('@/components/MapView'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
@@ -103,8 +103,12 @@ const SearchContent = () => {
         price: 8000, // Default price
         rating: est.rating,
         reviews: est.reviewCount,
-        image: est.images[0] || 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop&auto=format',
-        coordinates: [-34.6037, -58.3816] as [number, number], // Default Buenos Aires coordinates
+        image: (est.images?.photos && est.images.photos.length > 0) ? est.images.photos[0] : 
+               (est.images && Array.isArray(est.images) && est.images.length > 0) ? est.images[0] : 
+               '/assets/default-card.png',
+        coordinates: (est.latitude && est.longitude) ? 
+          [Number(est.latitude), Number(est.longitude)] as [number, number] : 
+          undefined, // Use real coordinates from establishment or undefined if not available
         amenities: est.amenities,
         availability: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'],
         timeSlots: generateTimeSlots(),
@@ -122,7 +126,7 @@ const SearchContent = () => {
           price: 2500,
           rating: 4.8,
           reviews: 124,
-          image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=300&fit=crop&auto=format',
+          image: '/assets/default-card.png',
           coordinates: [-34.5453, -58.4497],
           amenities: ['Vestuarios', 'Estacionamiento', 'Buffet', 'Tribuna'],
           availability: ['18:00', '19:00', '20:00', '21:00'],
@@ -137,7 +141,7 @@ const SearchContent = () => {
           price: 1800,
           rating: 4.6,
           reviews: 89,
-          image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop&auto=format',
+          image: '/assets/default-card.png',
           coordinates: [-34.5875, -58.4173],
           amenities: ['Vestuarios', 'Alquiler de paletas', 'Cafetería'],
           availability: ['17:00', '18:00', '19:00'],
@@ -177,63 +181,14 @@ const SearchContent = () => {
         console.error('Error parsing stored place data:', error);
       }
     }
-  }, [searchParams, fetchEstablishments]);
+  }, [searchParams]); // Remove fetchEstablishments from dependencies
 
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const locationParam = urlParams.get('location');
-    const sportParam = urlParams.get('sport');
-    const dateParam = urlParams.get('date');
-    const timeRangeParam = urlParams.get('timeRange');
-    
-    if (locationParam) setSearchLocation(locationParam);
-    if (sportParam) setSelectedSport(sportParam);
-    if (dateParam) setSelectedDate(dateParam);
-    if (timeRangeParam) setTimeRange(timeRangeParam);
-  }, []);
+  // Remove this duplicate useEffect as it's redundant with the one above
 
-  useEffect(() => {
-    // Filtrar por parámetros de búsqueda y filtros
-    const filteredFacilities = facilities.filter(facility => {
-      const matchesLocation = !searchLocation || 
-        facility.name.toLowerCase().includes(searchLocation.toLowerCase()) ||
-        facility.location.toLowerCase().includes(searchLocation.toLowerCase());
-      
-      const matchesSport = !selectedSport || facility.sport === selectedSport;
-      
-      const matchesDate = !selectedDate || facility.timeSlots?.some(slot => 
-        slot.time === selectedDate
-      );
+  // Remove this useEffect as it's causing conflicts with the main filtering logic below
 
-      const matchesTimeRange = !timeRange || facility.timeSlots?.some(slot => {
-        if (slot.time !== selectedDate && selectedDate) return false;
-        
-        const slotHour = parseInt(slot.time.split(':')[0]);
-        switch (timeRange) {
-          case 'morning':
-            return slotHour >= 6 && slotHour < 12;
-          case 'afternoon':
-            return slotHour >= 12 && slotHour < 18;
-          case 'evening':
-            return slotHour >= 18 && slotHour <= 24;
-          default:
-            return true;
-        }
-      });
-
-      return matchesLocation && matchesSport && matchesDate && matchesTimeRange;
-    });
-
-    setFilteredFacilities(filteredFacilities);
-  }, [facilities, searchLocation, selectedSport, selectedDate, timeRange]);
-
-  // Initialize filtered facilities when facilities are loaded
-  useEffect(() => {
-    if (facilities.length > 0 && filteredFacilities.length === 0) {
-      setFilteredFacilities(facilities);
-    }
-  }, [facilities, filteredFacilities.length]);
+  // Remove this useEffect as it conflicts with the main filtering logic
 
   // Filter facilities based on map bounds and zoom level
   const handleMapChange = (bounds: any, center: {lat: number, lng: number}, zoom: number) => {
@@ -242,71 +197,16 @@ const SearchContent = () => {
     setMapZoom(zoom);
   };
 
-  // Apply map-based filtering
+  // Simplified filtering - show all facilities for now
   useEffect(() => {
-    // Start with all facilities
-    let filtered = [...facilities];
-
-    // Apply search parameters first
-    const location = searchParams.get('location');
-    const sport = searchParams.get('sport');
-
-    if (sport && sport !== '') {
-      filtered = filtered.filter(facility => facility.sport === sport);
+    if (facilities.length === 0) {
+      setFilteredFacilities([]);
+      return;
     }
 
-    if (location && location !== '') {
-      filtered = filtered.filter(facility => 
-        facility.location.toLowerCase().includes(location.toLowerCase())
-      );
-    }
-
-    // Apply additional filters
-    if (selectedSports.length > 0) {
-      filtered = filtered.filter(facility => selectedSports.includes(facility.sport));
-    }
-
-    filtered = filtered.filter(facility => 
-      facility.price >= priceRange[0] && facility.price <= priceRange[1]
-    );
-
-    filtered = filtered.filter(facility => facility.rating >= minRating);
-
-    // Apply map bounds filtering only if user has interacted with the map
-    // Don't filter on initial load to show all pins by default
-    if (mapBounds && mapCenter && mapZoom && mapZoom !== 13) { // 13 is initial zoom
-      filtered = filtered.filter(facility => {
-        if (!facility.coordinates) return false;
-        const [lat, lng] = facility.coordinates;
-        return (
-          lat >= mapBounds.south &&
-          lat <= mapBounds.north &&
-          lng >= mapBounds.west &&
-          lng <= mapBounds.east
-        );
-      });
-    }
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'price_low':
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case 'price_high':
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'reviews':
-        filtered.sort((a, b) => b.reviews - a.reviews);
-        break;
-      default:
-        break;
-    }
-
-    setFilteredFacilities(filtered);
-  }, [mapBounds, facilities, searchParams, selectedSports, priceRange, minRating, sortBy, mapCenter, mapZoom]);
+    // For now, show all facilities without any filtering
+    setFilteredFacilities([...facilities]);
+  }, [facilities]);
 
   const handleReserve = (facility: Facility) => {
     if (!isAuthenticated) {
@@ -602,7 +502,11 @@ const SearchContent = () => {
         {/* Map - Hidden on mobile */}
         {showMap && (
           <div className="hidden md:block md:w-1/2 h-screen sticky top-0">
-            <MapView facilities={facilities} onMapChange={handleMapChange} />
+            <MapView 
+              facilities={filteredFacilities} 
+              onMapChange={handleMapChange}
+              searchLocation={searchLocation}
+            />
           </div>
         )}
 

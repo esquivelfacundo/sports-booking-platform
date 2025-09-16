@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { useEstablishment } from '../../../../contexts/EstablishmentContext';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -49,7 +49,7 @@ interface FinancialSummary {
 }
 
 const FinancePage = () => {
-  const { establishment, isDemo, loading } = useEstablishment();
+  const { establishment, loading } = useEstablishment();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -62,7 +62,7 @@ const FinancePage = () => {
 
   // Initialize financial data based on demo or real data
   useEffect(() => {
-    if (isDemo) {
+    // Use real financial data from establishment
       // Demo data
       setFinancialSummary({
         totalRevenue: 125000,
@@ -126,7 +126,7 @@ const FinancePage = () => {
       paymentMethod: 'Tarjeta de Débito'
     }
       ]);
-    } else {
+    // Real data from API
       // Real establishment - no financial data yet
       setFinancialSummary({
         totalRevenue: 0,
@@ -136,20 +136,11 @@ const FinancePage = () => {
         monthlyGrowth: 0
       });
       setTransactions([]);
-    }
-  }, [establishment, isDemo]);
+  }, [establishment]);
 
-  const expenseCategories = isDemo ? [
-    { name: 'Mantenimiento', amount: 35000, percentage: 45 },
-    { name: 'Servicios', amount: 28000, percentage: 36 },
-    { name: 'Personal', amount: 15000, percentage: 19 }
-  ] : [];
+  const expenseCategories: Array<{name: string, amount: number, percentage: number}> = [];
 
-  const revenueCategories = isDemo ? [
-    { name: 'Reservas', amount: 95000, percentage: 76 },
-    { name: 'Membresías', amount: 20000, percentage: 16 },
-    { name: 'Eventos', amount: 10000, percentage: 8 }
-  ] : [];
+  const revenueCategories: Array<{name: string, amount: number, percentage: number}> = [];
 
   const getStatusColor = (status: string) => {
     switch (status) {

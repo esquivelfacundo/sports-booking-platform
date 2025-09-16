@@ -107,7 +107,7 @@ const BookingPage = () => {
     price: 2500,
     rating: 4.8,
     reviews: 124,
-    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=400&fit=crop&auto=format',
+    image: '/assets/default-card.png',
     coordinates: [-34.5875, -58.4260],
     amenities: ['Estacionamiento', 'Vestuarios', 'Parrilla', 'Buffet', 'Duchas', 'Iluminación LED'],
     availability: ['18:00', '19:00', '20:00', '21:00', '22:00'],
@@ -156,7 +156,9 @@ const BookingPage = () => {
         price: establishment.courts[0]?.pricePerHour || 2500,
         rating: establishment.rating,
         reviews: establishment.reviewCount,
-        image: establishment.images[0] || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=400&fit=crop&auto=format',
+        image: (establishment.images?.photos && establishment.images.photos.length > 0) ? establishment.images.photos[0] : 
+               (establishment.images && Array.isArray(establishment.images) && establishment.images.length > 0) ? establishment.images[0] : 
+               '/assets/default-card.png',
         coordinates: [establishment.latitude, establishment.longitude],
         amenities: establishment.amenities,
         availability: ['18:00', '19:00', '20:00', '21:00', '22:00'],

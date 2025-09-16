@@ -58,13 +58,13 @@ const HomePage = () => {
         rating: establishment.rating,
         reviews: establishment.reviewCount,
         price: 8000, // Default price for API data
-        image: establishment.sports[0] === 'futbol5' ? '⚽' : 
-               establishment.sports[0] === 'paddle' ? '🏓' : 
-               establishment.sports[0] === 'tenis' ? '🎾' : '🏟️',
+        image: (establishment.images?.photos && establishment.images.photos.length > 0) ? establishment.images.photos[0] : 
+               (establishment.images && Array.isArray(establishment.images) && establishment.images.length > 0) ? establishment.images[0] : 
+               '/assets/default-card.png',
         sport: establishment.sports[0] === 'futbol5' ? 'Fútbol 5' :
                establishment.sports[0] === 'paddle' ? 'Paddle' :
                establishment.sports[0] === 'tenis' ? 'Tenis' : 'Deporte',
-        features: establishment.amenities.slice(0, 3)
+        features: establishment.amenities ? establishment.amenities.slice(0, 3) : []
       };
     }
   };
@@ -73,6 +73,13 @@ const HomePage = () => {
     // Set client-side flag to prevent hydration mismatch
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    // Fetch establishments when component mounts
+    if (isClient) {
+      fetchEstablishments();
+    }
+  }, [isClient]);
 
   useEffect(() => {
     // Skip geolocation and use default city
@@ -421,7 +428,13 @@ const HomePage = () => {
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="text-4xl">{facility.image}</div>
+                    <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center">
+                      <span className="text-2xl">
+                        {facility.sport === 'Fútbol 5' ? '⚽' : 
+                         facility.sport === 'Paddle' ? '🏓' : 
+                         facility.sport === 'Tenis' ? '🎾' : '🏟️'}
+                      </span>
+                    </div>
                     <div className="flex items-center space-x-1">
                       <Star className="h-4 w-4 text-yellow-400 fill-current" />
                       <span className="text-white font-medium">{facility.rating}</span>
@@ -438,7 +451,7 @@ const HomePage = () => {
                   <div className="mb-4">
                     <span className="inline-block bg-emerald-600 text-white text-xs px-2 py-1 rounded-full mb-2">{facility.sport}</span>
                     <div className="flex flex-wrap gap-1">
-                      {facility.features.map((feature: string, idx: number) => (
+                      {(facility.features || []).map((feature: string, idx: number) => (
                         <span key={idx} className="text-xs text-gray-400 bg-gray-600 px-2 py-1 rounded">
                           {feature}
                         </span>

@@ -23,7 +23,7 @@ import {
 
 const AdminDashboard = () => {
   const searchParams = useSearchParams();
-  const { establishment, isDemo, loading } = useEstablishment();
+  const { establishment, loading } = useEstablishment();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [registrationData, setRegistrationData] = useState<any>(null);
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
@@ -50,196 +50,85 @@ const AdminDashboard = () => {
     }
   }, [searchParams]);
 
-  // Generate stats based on real establishment data or demo data
+  // Generate stats based on real establishment data
   const generateStats = () => {
-    if (isDemo) {
-      return [
-        {
-          name: 'Ingresos Hoy',
-          value: '$45,250',
-          change: '+12%',
-          trend: 'up',
-          icon: DollarSign,
-          color: 'emerald'
-        },
-        {
-          name: 'Reservas Hoy',
-          value: '28',
-          change: '+8%',
-          trend: 'up',
-          icon: Calendar,
-          color: 'blue'
-        },
-        {
-          name: 'Ocupación Actual',
-          value: '75%',
-          change: '+5%',
-          trend: 'up',
-          icon: Activity,
-          color: 'purple'
-        },
-        {
-          name: 'Clientes Activos',
-          value: '342',
-          change: '-2%',
-          trend: 'down',
-          icon: Users,
-          color: 'orange'
-        }
-      ];
-    } else {
-      // Real establishment stats - start with basic values
-      const courtsCount = establishment?.courts?.length || 0;
-      return [
-        {
-          name: 'Ingresos Hoy',
-          value: '$0',
-          change: '0%',
-          trend: 'up',
-          icon: DollarSign,
-          color: 'emerald'
-        },
-        {
-          name: 'Reservas Hoy',
-          value: '0',
-          change: '0%',
-          trend: 'up',
-          icon: Calendar,
-          color: 'blue'
-        },
-        {
-          name: 'Canchas Disponibles',
-          value: courtsCount.toString(),
-          change: '100%',
-          trend: 'up',
-          icon: Activity,
-          color: 'purple'
-        },
-        {
-          name: 'Clientes Registrados',
-          value: '0',
-          change: '0%',
-          trend: 'up',
-          icon: Users,
-          color: 'orange'
-        }
-      ];
-    }
+    // Real data based on establishment
+    const todayBookings = 0; // TODO: Get from API
+    const todayRevenue = 0; // TODO: Get from API
+    const activeClients = 0; // TODO: Get from API
+    const occupancyRate = 0; // TODO: Calculate from bookings
+    
+    return [
+      {
+        name: 'Ingresos Hoy',
+        value: `$${todayRevenue.toLocaleString()}`,
+        change: '0%',
+        trend: 'neutral',
+        icon: DollarSign,
+        color: 'text-green-400'
+      },
+      {
+        name: 'Reservas Hoy',
+        value: todayBookings.toString(),
+        change: '0',
+        trend: 'neutral',
+        icon: Calendar,
+        color: 'text-blue-400'
+      },
+      {
+        name: 'Clientes Activos',
+        value: activeClients.toString(),
+        change: '0%',
+        trend: 'neutral',
+        icon: Users,
+        color: 'text-purple-400'
+      },
+      {
+        name: 'Ocupación',
+        value: `${occupancyRate}%`,
+        change: '0%',
+        trend: 'neutral',
+        icon: TrendingUp,
+        color: 'text-orange-400'
+      }
+    ];
   };
 
   const stats = generateStats();
 
-  // Generate today's reservations based on demo or real data
-  const generateTodayReservations = () => {
-    if (isDemo) {
-      return [
-        {
-          id: 1,
-          time: '09:00',
-          court: 'Cancha 1',
-          sport: 'Fútbol 5',
-          client: 'Juan Pérez',
-          duration: '2h',
-          status: 'confirmed',
-          price: 5000
-        },
-        {
-          id: 2,
-          time: '11:00',
-          court: 'Cancha 2',
-          sport: 'Paddle',
-          client: 'María García',
-          duration: '1.5h',
-          status: 'pending',
-          price: 3500
-        },
-        {
-          id: 3,
-          time: '14:00',
-          court: 'Cancha 1',
-          sport: 'Fútbol 5',
-          client: 'Carlos López',
-          duration: '2h',
-          status: 'confirmed',
-          price: 5000
-        },
-        {
-          id: 4,
-          time: '16:30',
-          court: 'Cancha 3',
-          sport: 'Tenis',
-          client: 'Ana Martín',
-          duration: '1h',
-          status: 'confirmed',
-          price: 2500
-        },
-        {
-          id: 5,
-          time: '19:00',
-          court: 'Cancha 2',
-          sport: 'Paddle',
-          client: 'Roberto Silva',
-          duration: '1.5h',
-          status: 'pending',
-          price: 3500
-        }
-      ];
-    } else {
-      // Real establishment - no reservations yet
-      return [];
-    }
+  // Generate today's reservations based on real data
+  const generateTodayReservations = (): Array<{
+    id: number;
+    time: string;
+    court: string;
+    client: string;
+    sport: string;
+    status: string;
+    duration?: string;
+    price?: number;
+  }> => {
+    // Real reservations from API
+    return []; // TODO: Get from API
   };
 
   const todayReservations = generateTodayReservations();
 
-  // Generate alerts based on demo or real data
-  const generateAlerts = () => {
-    if (isDemo) {
-      return [
-        {
-          id: 1,
-          type: 'warning',
-          message: 'Cancha 3 necesita mantenimiento de césped',
-          time: '2 horas'
-        },
-        {
-          id: 2,
-          type: 'info',
-          message: 'Nueva reserva pendiente de confirmación',
-          time: '30 min'
-        },
-        {
-          id: 3,
-          type: 'success',
-          message: 'Pago de $15,000 procesado correctamente',
-          time: '1 hora'
-        }
-      ];
-    } else {
-      // Real establishment - welcome message for new establishments
-      return [
-        {
-          id: 1,
-          type: 'info',
-          message: `¡Bienvenido a ${establishment?.name || 'tu establecimiento'}! Completa tu configuración para empezar a recibir reservas.`,
-          time: 'ahora'
-        },
-        {
-          id: 2,
-          type: 'success',
-          message: 'Tu establecimiento ha sido registrado exitosamente',
-          time: 'hace 1 min'
-        }
-      ];
-    }
+  // Generate alerts based on real data
+  const generateAlerts = (): Array<{
+    id: number;
+    type: string;
+    message: string;
+    time: string;
+  }> => {
+    // Real alerts from API
+    return []; // TODO: Get from API
   };
 
   const alerts = generateAlerts();
 
-  // Generar estado de canchas basado en datos reales o demo
-  const courtStatus = establishment?.courts?.map((court, index) => {
-    const statuses = ['occupied', 'available', 'maintenance'];
-    const randomStatus = isDemo ? statuses[index % 3] : 'available';
+  // Generar estado de canchas basado en datos reales
+  const courtStatus = establishment?.courts?.map((court: any, index: number) => {
+    const randomStatus = 'available'; // TODO: Get real status from API
     const sportNames: Record<string, string> = {
       'futbol': 'Fútbol 5',
       'paddle': 'Paddle',
@@ -253,7 +142,7 @@ const AdminDashboard = () => {
       name: court.name,
       status: randomStatus,
       sport: sportNames[court.type] || court.type,
-      until: randomStatus === 'occupied' ? '11:00' : randomStatus === 'maintenance' ? '15:00' : null
+      until: null // TODO: Get real booking end time from API
     };
   }) || [
     { name: 'Sin canchas', status: 'available', sport: 'N/A', until: null }
@@ -357,12 +246,6 @@ const AdminDashboard = () => {
                 minute: '2-digit' 
               })}
             </p>
-            {isDemo && (
-              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
-                <Award className="w-3 h-3 mr-1" />
-                Cuenta Demo
-              </div>
-            )}
           </div>
           <button className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center space-x-2">
             <Plus className="w-5 h-5" />
@@ -423,7 +306,7 @@ const AdminDashboard = () => {
                   <div className="flex items-center space-x-4">
                     <div className="text-center">
                       <div className="text-emerald-400 font-bold">{reservation.time}</div>
-                      <div className="text-gray-400 text-xs">{reservation.duration}</div>
+                      <span className="text-gray-400">${reservation.price || 0}</span>
                     </div>
                     <div>
                       <div className="text-white font-medium">{reservation.client}</div>
@@ -431,7 +314,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="text-white font-bold">${reservation.price.toLocaleString()}</div>
+                    <div className="text-white font-bold">${(reservation.price || 0).toLocaleString()}</div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                       reservation.status === 'confirmed' 
                         ? 'bg-emerald-500/20 text-emerald-400' 

@@ -44,6 +44,7 @@ const CourtsStep: React.FC<CourtsStepProps> = ({ data, onUpdate, onValidation })
     openTime: '08:00',
     closeTime: '22:00',
     lighting: true,
+    lightingPrice: 0,
     covered: false,
     images: [],
     description: '',
@@ -221,6 +222,12 @@ const CourtsStep: React.FC<CourtsStepProps> = ({ data, onUpdate, onValidation })
                       <span className="text-gray-400">Precio/hora:</span>
                       <span className="text-emerald-400 font-semibold">${court.pricePerHour.toLocaleString()}</span>
                     </div>
+                    {court.lighting && court.lightingPrice && court.lightingPrice > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">+ Iluminación:</span>
+                        <span className="text-yellow-400 font-semibold">+${court.lightingPrice.toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-400">Horario:</span>
                       <span className="text-white">{court.openTime} - {court.closeTime}</span>
@@ -460,12 +467,38 @@ const CourtsStep: React.FC<CourtsStepProps> = ({ data, onUpdate, onValidation })
                       <input
                         type="checkbox"
                         checked={formData.lighting}
-                        onChange={(e) => setFormData(prev => ({ ...prev, lighting: e.target.checked }))}
+                        onChange={(e) => setFormData(prev => ({ 
+                          ...prev, 
+                          lighting: e.target.checked,
+                          lightingPrice: e.target.checked ? prev.lightingPrice : 0
+                        }))}
                         className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500"
                       />
                       <Lightbulb className="w-5 h-5 text-yellow-400" />
                       <span className="text-gray-300">Iluminación artificial</span>
                     </label>
+
+                    {formData.lighting && (
+                      <div className="ml-7">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Precio extra por iluminación ($)
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.lightingPrice || 0}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            lightingPrice: parseInt(e.target.value) || 0 
+                          }))}
+                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          min="0"
+                          placeholder="0"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">
+                          Monto adicional que se suma al precio base por hora cuando se usa iluminación
+                        </p>
+                      </div>
+                    )}
 
                     <label className="flex items-center space-x-3 cursor-pointer">
                       <input

@@ -22,9 +22,10 @@ interface MapViewProps {
   facilities: Facility[];
   onFacilitySelect?: (facility: Facility) => void;
   onMapChange?: (bounds: any, center: {lat: number, lng: number}, zoom: number) => void;
+  searchLocation?: string;
 }
 
-const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) => {
+const MapView = ({ facilities, onFacilitySelect, onMapChange, searchLocation }: MapViewProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
@@ -47,6 +48,8 @@ const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) =>
       if (!mapRef.current) return;
 
       try {
+        console.log('MapView: Starting map initialization...');
+        console.log('MapView: Google Maps API Key:', process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing');
         setIsLoading(true);
         setMapError(false);
 
@@ -63,12 +66,15 @@ const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) =>
           return;
         }
 
+        console.log('MapView: Loading Google Maps API...');
         const google = await loader.load();
+        console.log('MapView: Google Maps API loaded successfully');
         
-        // Initialize map
+        // Initialize map with dynamic center
+        console.log('MapView: Creating map instance...');
         const map = new google.maps.Map(mapRef.current, {
-          center: { lat: -34.6037, lng: -58.3816 }, // Buenos Aires
-          zoom: 12,
+          center: { lat: -34.6118, lng: -64.4964 }, // Argentina center as fallback
+          zoom: 6, // Wider zoom to show all of Argentina initially
           disableDefaultUI: true, // Disable all default UI controls
           zoomControl: false, // Disable zoom controls
           mapTypeControl: false, // Disable map type control
@@ -79,110 +85,122 @@ const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) =>
           gestureHandling: 'cooperative', // Require ctrl+scroll to zoom
           styles: [
             {
-              "elementType": "geometry",
-              "stylers": [{"color": "#212121"}]
+              featureType: 'poi',
+              elementType: 'all',
+              stylers: [{ visibility: 'off' }]
             },
             {
-              "elementType": "labels.icon",
-              "stylers": [{"visibility": "off"}]
+              featureType: 'poi.business',
+              elementType: 'all',
+              stylers: [{ visibility: 'off' }]
             },
             {
-              "elementType": "labels.text.fill",
-              "stylers": [{"color": "#757575"}]
+              featureType: 'transit',
+              elementType: 'all',
+              stylers: [{ visibility: 'off' }]
             },
             {
-              "elementType": "labels.text.stroke",
-              "stylers": [{"color": "#212121"}]
+              featureType: 'all',
+              elementType: 'geometry.fill',
+              stylers: [{ color: '#1f2937' }]
             },
             {
-              "featureType": "administrative",
-              "elementType": "geometry",
-              "stylers": [{"color": "#757575"}]
+              featureType: 'all',
+              elementType: 'labels.text.fill',
+              stylers: [{ color: '#ffffff' }]
             },
             {
-              "featureType": "administrative.country",
-              "elementType": "labels.text.fill",
-              "stylers": [{"color": "#9ca5b3"}]
+              featureType: 'all',
+              elementType: 'labels.text.stroke',
+              stylers: [{ color: '#1f2937' }]
             },
             {
-              "featureType": "road",
-              "elementType": "geometry.fill",
-              "stylers": [{"color": "#2c2c2c"}]
+              featureType: 'road',
+              elementType: 'geometry',
+              stylers: [{ color: '#374151' }]
             },
             {
-              "featureType": "road",
-              "elementType": "labels.text.fill",
-              "stylers": [{"color": "#8a8a8a"}]
-            },
-            {
-              "featureType": "water",
-              "elementType": "geometry",
-              "stylers": [{"color": "#000000"}]
-            },
-            {
-              "featureType": "water",
-              "elementType": "labels.text.fill",
-              "stylers": [{"color": "#3d3d3d"}]
+              featureType: 'water',
+              elementType: 'geometry',
+              stylers: [{ color: '#0f172a' }]
             }
           ]
         });
 
         mapInstanceRef.current = map;
-        
-        // Add map event listeners for bounds and zoom changes
-        if (onMapChange) {
-          const updateMapState = () => {
-            const bounds = map.getBounds();
-            const center = map.getCenter();
-            const zoom = map.getZoom();
-            
-            if (bounds && center && zoom) {
-              onMapChange(
-                {
-                  north: bounds.getNorthEast().lat(),
-                  south: bounds.getSouthWest().lat(),
-                  east: bounds.getNorthEast().lng(),
-                  west: bounds.getSouthWest().lng()
-                },
-                { lat: center.lat(), lng: center.lng() },
-                zoom
-              );
-            }
-          };
-          
-          // Listen for map changes
-          map.addListener('bounds_changed', updateMapState);
-          map.addListener('zoom_changed', updateMapState);
-          
-          // Initial call to set initial bounds
-          google.maps.event.addListenerOnce(map, 'idle', updateMapState);
-        }
-        
+        console.log('MapView: Map instance created successfully');
         setIsLoading(false);
 
       } catch (error) {
-        console.error('Error loading Google Maps:', error);
+        console.error('MapView: Error loading Google Maps:', error);
         setMapError(true);
         setIsLoading(false);
       }
     };
 
-    initMap();
+    if (mapRef.current) {
+      initMap();
+    } else {
+      console.log('MapView: Map ref not ready, waiting...');
+    }
   }, []);
 
-  // Add markers when facilities change
+  // Update markers when facilities change
   useEffect(() => {
-    if (!mapInstanceRef.current || !facilities.length) return;
+    console.log('MapView useEffect triggered:', {
+      mapInstance: !!mapInstanceRef.current,
+      facilitiesLength: facilities.length,
+      facilities: facilities.map(f => ({ name: f.name, coordinates: f.coordinates, lat: (f as any).latitude, lng: (f as any).longitude }))
+    });
+    
+    if (!mapInstanceRef.current) {
+      console.log('MapView: Map instance not ready yet');
+      return;
+    }
+    
+    if (!facilities.length) {
+      console.log('MapView: No facilities to display');
+      return;
+    }
 
     // Clear existing markers
+    console.log('MapView: Clearing', markersRef.current.length, 'existing markers');
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
     const bounds = new google.maps.LatLngBounds();
+    let markersCreated = 0;
 
-    facilities.forEach((facility) => {
-      if (!facility.coordinates) return;
-      const position = { lat: facility.coordinates[0], lng: facility.coordinates[1] };
+    facilities.forEach((facility, index) => {
+      console.log(`MapView: Processing facility ${index + 1}/${facilities.length}:`, {
+        name: facility.name,
+        coordinates: facility.coordinates,
+        latitude: (facility as any).latitude,
+        longitude: (facility as any).longitude,
+        fullFacility: facility
+      });
+      
+      let lat, lng;
+      
+      // Try to get coordinates from different possible properties
+      if (facility.coordinates && Array.isArray(facility.coordinates)) {
+        [lat, lng] = facility.coordinates;
+      } else if ((facility as any).latitude && (facility as any).longitude) {
+        lat = parseFloat((facility as any).latitude);
+        lng = parseFloat((facility as any).longitude);
+      } else {
+        console.log('MapView: No valid coordinates for facility:', facility.name);
+        return;
+      }
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        console.log('MapView: Invalid coordinates for facility:', facility.name);
+        return;
+      }
+      
+      const position = { lat, lng };
+      console.log('MapView: Creating marker at position:', position);
+      markersCreated++;
       
       // Create custom marker with price
       const marker = new google.maps.Marker({
@@ -190,16 +208,19 @@ const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) =>
         map: mapInstanceRef.current,
         title: facility.name,
         icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-            <svg width="60" height="40" xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="5" width="50" height="30" rx="15" fill="#1f2937" stroke="#10b981" stroke-width="2"/>
-              <text x="30" y="24" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">$${facility.price}</text>
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="40" height="50" viewBox="0 0 40 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 0C8.954 0 0 8.954 0 20c0 20 20 30 20 30s20-10 20-30c0-11.046-8.954-20-20-20z" fill="#ef4444"/>
+              <circle cx="20" cy="20" r="12" fill="white"/>
+              <circle cx="20" cy="20" r="6" fill="#ef4444"/>
             </svg>
-          `)}`,
-          scaledSize: new google.maps.Size(60, 40),
-          anchor: new google.maps.Point(30, 20)
+          `),
+          scaledSize: new google.maps.Size(40, 50),
+          anchor: new google.maps.Point(20, 50)
         }
       });
+      
+      console.log('MapView: Marker created successfully for:', facility.name, 'at position:', position);
 
       // Create info window
       const infoWindow = new google.maps.InfoWindow({
@@ -243,9 +264,30 @@ const MapView = ({ facilities, onFacilitySelect, onMapChange }: MapViewProps) =>
       bounds.extend(position);
     });
 
-    // Fit map to show all markers
-    if (facilities.length > 0) {
+    // Fit map to show all markers with valid coordinates
+    if (markersRef.current.length > 0) {
+      console.log('MapView: Fitting bounds for', markersRef.current.length, 'markers');
       mapInstanceRef.current.fitBounds(bounds);
+      
+      // Add some padding and ensure minimum zoom
+      setTimeout(() => {
+        if (!mapInstanceRef.current) return;
+        
+        const currentZoom = mapInstanceRef.current.getZoom();
+        console.log('MapView: Current zoom after fitBounds:', currentZoom);
+        
+        if (markersRef.current.length === 1) {
+          mapInstanceRef.current.setZoom(14);
+        } else if (currentZoom && currentZoom > 15) {
+          // If too zoomed in, zoom out a bit to see multiple markers
+          mapInstanceRef.current.setZoom(12);
+        }
+      }, 100);
+    } else {
+      // No facilities with coordinates, keep default view of Argentina
+      console.log('MapView: No markers created, using default Argentina view');
+      mapInstanceRef.current.setCenter({ lat: -34.6118, lng: -64.4964 });
+      mapInstanceRef.current.setZoom(6);
     }
   }, [facilities, onFacilitySelect]);
 

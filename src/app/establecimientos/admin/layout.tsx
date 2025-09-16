@@ -35,7 +35,7 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const { establishment, isDemo } = useEstablishment();
+  const { establishment } = useEstablishment();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -385,11 +385,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       <div className="text-xs text-gray-400">
                         {user?.email || establishment?.representative?.email || establishment?.email || ''}
                       </div>
-                      {user?.userType === 'establishment' && !isDemo && (
+                      {user?.userType === 'establishment' && (
                         <div className="text-xs text-emerald-400">Administrador</div>
-                      )}
-                      {isDemo && (
-                        <div className="text-xs text-yellow-400">Cuenta Demo</div>
                       )}
                     </div>
                     <ChevronDown className="h-4 w-4 text-gray-400" />

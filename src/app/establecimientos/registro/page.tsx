@@ -71,9 +71,9 @@ const EstablishmentRegistrationPage = () => {
         };
         localStorage.setItem('establishmentRegistrationData', JSON.stringify(updatedData));
         
-        console.log('RegistrationPage: Redirecting to login page');
-        // Redirect to login page so user can authenticate properly
-        router.push('/establecimientos/login?registered=true');
+        console.log('RegistrationPage: Showing success screen immediately');
+        // Immediately redirect to success screen without any delay
+        router.replace('/establecimientos/registro/exito');
       } else {
         console.error('RegistrationPage: Registration failed - success is false');
         throw new Error(response.message || 'Registration failed');
@@ -83,7 +83,6 @@ const EstablishmentRegistrationPage = () => {
       console.error('RegistrationPage: Error registering establishment:', error);
       setRegistrationData(data); // Save data to allow editing
       setError(error instanceof Error ? error.message : 'Error desconocido al registrar el establecimiento');
-    } finally {
       setIsSubmitting(false);
     }
   };

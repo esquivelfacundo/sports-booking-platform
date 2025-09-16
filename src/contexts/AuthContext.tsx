@@ -390,6 +390,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isAuthenticated: false,
       isLoading: false,
     });
+
+    // Redirect to establishment login if user was an establishment owner
+    const currentUser = authState.user;
+    if (currentUser?.userType === 'establishment') {
+      window.location.href = '/establecimientos/login';
+    } else {
+      window.location.href = '/';
+    }
   };
 
   const updateProfile = async (profileData: Partial<User>) => {

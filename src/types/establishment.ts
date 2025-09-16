@@ -83,6 +83,7 @@ export interface Court {
   openTime: string;
   closeTime: string;
   lighting: boolean;
+  lightingPrice?: number;
   covered: boolean;
   images: string[];
   description?: string;

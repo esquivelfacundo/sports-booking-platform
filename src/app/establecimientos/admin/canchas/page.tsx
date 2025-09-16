@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
+import CourtModal from '@/components/dashboard/CourtModal';
 import { 
   MapPin, 
   Plus,
@@ -50,7 +51,7 @@ interface Court {
 }
 
 const CourtsPage = () => {
-  const { establishment, isDemo, loading } = useEstablishment();
+  const { establishment, loading } = useEstablishment();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -64,7 +65,7 @@ const CourtsPage = () => {
   useEffect(() => {
     if (establishment?.courts && establishment.courts.length > 0) {
       // Convert establishment courts to Court format
-      const convertedCourts: Court[] = establishment.courts.map((court, index) => ({
+      const convertedCourts: Court[] = establishment.courts.map((court: any, index: number) => ({
         id: (index + 1).toString(),
         name: court.name,
         type: court.type as Court['type'],
@@ -85,115 +86,11 @@ const CourtsPage = () => {
         description: court.description || `Cancha de ${court.type} profesional`
       }));
       setCourts(convertedCourts);
-    } else if (isDemo) {
-      // Demo data
-      setCourts([
-        {
-          id: '1',
-          name: 'Cancha de Fútbol 1',
-          type: 'futbol',
-          status: 'available',
-          surface: 'Césped sintético',
-          capacity: 22,
-          pricePerHour: 8000,
-          openTime: '08:00',
-          closeTime: '23:00',
-          lighting: true,
-          covered: false,
-          images: ['/court1.jpg', '/court1-2.jpg'],
-          lastMaintenance: '2024-01-01',
-          nextMaintenance: '2024-02-01',
-          totalReservations: 156,
-          monthlyRevenue: 124800,
-          rating: 4.8,
-          description: 'Cancha de fútbol 11 con césped sintético de última generación'
-        },
-        {
-          id: '2',
-          name: 'Cancha de Tenis 1',
-          type: 'tenis',
-          status: 'available',
-          surface: 'Polvo de ladrillo',
-          capacity: 4,
-          pricePerHour: 6000,
-          openTime: '07:00',
-          closeTime: '22:00',
-          lighting: true,
-          covered: false,
-          images: ['/tennis1.jpg'],
-          lastMaintenance: '2024-01-10',
-          nextMaintenance: '2024-02-10',
-          totalReservations: 89,
-          monthlyRevenue: 53400,
-          rating: 4.6,
-          description: 'Cancha de tenis profesional con superficie de polvo de ladrillo'
-        },
-        {
-          id: '3',
-          name: 'Cancha de Paddle 1',
-          type: 'paddle',
-          status: 'maintenance',
-          surface: 'Césped sintético',
-          capacity: 4,
-          pricePerHour: 5000,
-          openTime: '08:00',
-          closeTime: '23:00',
-          lighting: true,
-          covered: true,
-          images: ['/paddle1.jpg'],
-          lastMaintenance: '2024-01-15',
-          nextMaintenance: '2024-01-20',
-          totalReservations: 134,
-          monthlyRevenue: 67000,
-          rating: 4.7,
-          description: 'Cancha de paddle cubierta con iluminación LED'
-        },
-        {
-          id: '4',
-          name: 'Cancha de Básquet',
-          type: 'basquet',
-          status: 'available',
-          surface: 'Parquet',
-          capacity: 10,
-          pricePerHour: 7000,
-          openTime: '09:00',
-          closeTime: '22:00',
-          lighting: true,
-          covered: true,
-          images: ['/basket1.jpg'],
-          lastMaintenance: '2024-01-05',
-          nextMaintenance: '2024-02-05',
-          totalReservations: 78,
-          monthlyRevenue: 54600,
-          rating: 4.5,
-          description: 'Cancha de básquet cubierta con piso de parquet profesional'
-        },
-        {
-          id: '5',
-          name: 'Cancha de Vóley',
-          type: 'voley',
-          status: 'out_of_service',
-          surface: 'Arena',
-          capacity: 12,
-          pricePerHour: 4500,
-          openTime: '10:00',
-          closeTime: '20:00',
-          lighting: false,
-          covered: false,
-          images: ['/voley1.jpg'],
-          lastMaintenance: '2023-12-20',
-          nextMaintenance: '2024-01-25',
-          totalReservations: 45,
-          monthlyRevenue: 20250,
-          rating: 4.2,
-          description: 'Cancha de vóley playa con arena importada'
-        }
-      ]);
     } else {
       // No courts available
       setCourts([]);
     }
-  }, [establishment, isDemo]);
+  }, [establishment]);
 
   // Form state for creating/editing courts
   const [formData, setFormData] = useState<Partial<Court>>({
@@ -778,185 +675,14 @@ const CourtsPage = () => {
       )}
 
       {/* Create Court Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Nueva Cancha</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <XCircle className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Nombre de la Cancha
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    placeholder="Ej: Cancha de Fútbol 1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Tipo de Deporte
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as Court['type'] }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  >
-                    {courtTypes.map(type => (
-                      <option key={type.id} value={type.id}>{type.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Superficie
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.surface}
-                    onChange={(e) => setFormData(prev => ({ ...prev, surface: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    placeholder="Ej: Césped sintético"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Capacidad (jugadores)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    placeholder="22"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Precio por Hora ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.pricePerHour}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pricePerHour: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    placeholder="8000"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Estado
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as Court['status'] }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  >
-                    <option value="available">Disponible</option>
-                    <option value="maintenance">En Mantenimiento</option>
-                    <option value="out_of_service">Fuera de Servicio</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Horario de Apertura
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.openTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, openTime: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Horario de Cierre
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.closeTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, closeTime: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  placeholder="Descripción de la cancha..."
-                />
-              </div>
-
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.lighting}
-                    onChange={(e) => setFormData(prev => ({ ...prev, lighting: e.target.checked }))}
-                    className="rounded border-gray-600 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-gray-800"
-                  />
-                  <span className="ml-2 text-sm text-gray-300">Iluminación</span>
-                </label>
-
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.covered}
-                    onChange={(e) => setFormData(prev => ({ ...prev, covered: e.target.checked }))}
-                    className="rounded border-gray-600 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-gray-800"
-                  />
-                  <span className="ml-2 text-sm text-gray-300">Techada</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateCourt}
-                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
-              >
-                Crear Cancha
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <CourtModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          window.location.reload();
+        }}
+      />
 
       {/* Edit Court Modal */}
       {showEditModal && selectedCourt && (
@@ -975,147 +701,6 @@ const CourtsPage = () => {
                 <XCircle className="h-6 w-6" />
               </button>
             </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Nombre de la Cancha
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Tipo de Deporte
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as Court['type'] }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  >
-                    {courtTypes.map(type => (
-                      <option key={type.id} value={type.id}>{type.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Superficie
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.surface}
-                    onChange={(e) => setFormData(prev => ({ ...prev, surface: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Capacidad (jugadores)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Precio por Hora ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.pricePerHour}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pricePerHour: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Estado
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as Court['status'] }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  >
-                    <option value="available">Disponible</option>
-                    <option value="maintenance">En Mantenimiento</option>
-                    <option value="out_of_service">Fuera de Servicio</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Horario de Apertura
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.openTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, openTime: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Horario de Cierre
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.closeTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, closeTime: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.lighting}
-                    onChange={(e) => setFormData(prev => ({ ...prev, lighting: e.target.checked }))}
-                    className="rounded border-gray-600 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-gray-800"
-                  />
-                  <span className="ml-2 text-sm text-gray-300">Iluminación</span>
-                </label>
-
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.covered}
-                    onChange={(e) => setFormData(prev => ({ ...prev, covered: e.target.checked }))}
-                    className="rounded border-gray-600 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-gray-800"
-                  />
-                  <span className="ml-2 text-sm text-gray-300">Techada</span>
-                </label>
-              </div>
-            </div>
-
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowEditModal(false)}
@@ -1124,7 +709,6 @@ const CourtsPage = () => {
                 Cancelar
               </button>
               <button
-                onClick={handleEditCourt}
                 className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
               >
                 Guardar Cambios
