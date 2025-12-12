@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Player, FriendRequest, Match, Team, Activity } from '@/types/social';
 import { useAuth } from './AuthContext';
+import { apiClient } from '@/lib/api';
 
 interface SocialContextType {
   friends: Player[];
@@ -180,6 +181,79 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     isLoading: false
   });
 
+  // Load matches from API
+  const loadMatches = useCallback(async () => {
+    try {
+      const response = await apiClient.getMatches({ status: 'open' }) as any;
+      const matchesData = response.data || response || [];
+      
+      // Transform backend matches to frontend format
+      const transformedMatches: Match[] = Array.isArray(matchesData) 
+        ? matchesData.map((m: any) => ({
+            id: m.id,
+            title: m.description || `${m.sport} - ${m.date}`,
+            sport: m.sport || 'futbol5',
+            venue: m.court?.establishment ? {
+              id: m.court.establishment.id,
+              name: m.court.establishment.name,
+              location: m.court.establishment.city || m.court.establishment.address
+            } : { id: '', name: 'Por definir', location: 'Por definir' },
+            date: m.date,
+            time: m.startTime,
+            duration: 90,
+            organizer: m.organizer ? {
+              id: m.organizer.id,
+              name: `${m.organizer.firstName} ${m.organizer.lastName}`,
+              avatar: m.organizer.profileImage || '/api/placeholder/150/150',
+              location: '',
+              sports: [],
+              level: m.organizer.skillLevel || 'intermediate',
+              rating: 4.5,
+              gamesPlayed: 0,
+              isOnline: false,
+              lastActive: new Date().toISOString(),
+              bio: '',
+              preferredTimes: []
+            } : mockPlayers[0],
+            players: m.participants?.map((p: any) => ({
+              id: p.user?.id || p.userId,
+              name: p.user ? `${p.user.firstName} ${p.user.lastName}` : 'Jugador',
+              avatar: p.user?.profileImage || '/api/placeholder/150/150',
+              location: '',
+              sports: [],
+              level: 'intermediate' as const,
+              rating: 4.5,
+              gamesPlayed: 0,
+              isOnline: false,
+              lastActive: new Date().toISOString(),
+              bio: '',
+              preferredTimes: []
+            })) || [],
+            maxPlayers: m.maxPlayers || 10,
+            minPlayers: m.minPlayers || 6,
+            level: m.skillLevel || 'intermediate',
+            price: m.pricePerPlayer,
+            description: m.description,
+            status: m.status || 'open',
+            isPrivate: m.isPrivate || false,
+            createdAt: m.createdAt
+          }))
+        : [];
+      
+      setSocialState(prev => ({
+        ...prev,
+        matches: transformedMatches.length > 0 ? transformedMatches : mockMatches
+      }));
+    } catch (error) {
+      console.error('Error loading matches:', error);
+      // Fallback to mock data
+      setSocialState(prev => ({
+        ...prev,
+        matches: mockMatches
+      }));
+    }
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated && user) {
       // Load user's friends based on their friend IDs
@@ -191,8 +265,11 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
         ...prev,
         friends: userFriends
       }));
+
+      // Load matches from API
+      loadMatches();
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, loadMatches]);
 
   const sendFriendRequest = async (userId: string, message?: string): Promise<boolean> => {
     try {
@@ -326,8 +403,23 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     try {
       if (!user) return null;
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call real API
+      const response = await apiClient.createMatch({
+        sport: matchData.sport || 'futbol5',
+        date: matchData.date || new Date().toISOString().split('T')[0],
+        startTime: matchData.time || '20:00',
+        maxPlayers: matchData.maxPlayers,
+        pricePerPlayer: matchData.price,
+        skillLevel: matchData.level,
+        description: matchData.description || matchData.title
+      }) as any;
+
+      if (response.success && response.data) {
+        await loadMatches(); // Refresh matches list
+        return response.data.id;
+      }
+      
+      // Fallback to local creation if API fails
       
       const newMatch: Match = {
         id: Date.now().toString(),
@@ -391,8 +483,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     try {
       if (!user) return false;
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Call real API
+      try {
+        await apiClient.joinMatch(matchId);
+        await loadMatches(); // Refresh matches list
+        return true;
+      } catch (apiError) {
+        console.error('API joinMatch failed, using local fallback:', apiError);
+      }
+      
+      // Fallback to local update
       
       const userPlayer: Player = {
         id: user.id,
@@ -440,8 +540,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     try {
       if (!user) return false;
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Call real API
+      try {
+        await apiClient.leaveMatch(matchId);
+        await loadMatches(); // Refresh matches list
+        return true;
+      } catch (apiError) {
+        console.error('API leaveMatch failed, using local fallback:', apiError);
+      }
+      
+      // Fallback to local update
       
       setSocialState(prev => ({
         ...prev,

@@ -1,5 +1,5 @@
-// API Configuration - Forced to localhost for development
-const API_BASE_URL = 'http://localhost:3001';
+// API Configuration - Uses environment variable with fallback to localhost
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // API Client class
 class ApiClient {
@@ -244,6 +244,323 @@ class ApiClient {
   // Health check
   async healthCheck() {
     return this.request('/health');
+  }
+
+  // ==================== USERS ====================
+  async getUser(id: string) {
+    return this.request(`/api/users/${id}`);
+  }
+
+  async updateUser(id: string, data: any) {
+    return this.request(`/api/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getUserBookings(userId: string) {
+    return this.request(`/api/users/${userId}/bookings`);
+  }
+
+  async getUserFavorites(userId: string) {
+    return this.request(`/api/users/${userId}/favorites`);
+  }
+
+  async getUserReviews(userId: string) {
+    return this.request(`/api/users/${userId}/reviews`);
+  }
+
+  // ==================== REVIEWS ====================
+  async getEstablishmentReviews(establishmentId: string, params?: { page?: number; limit?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/reviews/establishment/${establishmentId}${query}`);
+  }
+
+  async createReview(data: {
+    establishmentId: string;
+    rating: number;
+    comment?: string;
+    courtId?: string;
+    bookingId?: string;
+  }) {
+    return this.request('/api/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateReview(id: string, data: { rating?: number; comment?: string }) {
+    return this.request(`/api/reviews/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteReview(id: string) {
+    return this.request(`/api/reviews/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== FAVORITES ====================
+  async getFavorites() {
+    return this.request('/api/favorites');
+  }
+
+  async addFavorite(establishmentId: string) {
+    return this.request('/api/favorites', {
+      method: 'POST',
+      body: JSON.stringify({ establishmentId }),
+    });
+  }
+
+  async removeFavorite(establishmentId: string) {
+    return this.request(`/api/favorites/${establishmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async checkFavorite(establishmentId: string) {
+    return this.request(`/api/favorites/check/${establishmentId}`);
+  }
+
+  async toggleFavorite(establishmentId: string) {
+    return this.request(`/api/favorites/toggle/${establishmentId}`, {
+      method: 'POST',
+    });
+  }
+
+  // ==================== NOTIFICATIONS ====================
+  async getNotifications(params?: { page?: number; limit?: number; unreadOnly?: boolean }) {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.unreadOnly) queryParams.append('unreadOnly', 'true');
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/notifications${query}`);
+  }
+
+  async getUnreadNotificationCount() {
+    return this.request('/api/notifications/unread-count');
+  }
+
+  async markNotificationAsRead(id: string) {
+    return this.request(`/api/notifications/${id}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async markAllNotificationsAsRead() {
+    return this.request('/api/notifications/read-all', {
+      method: 'PUT',
+    });
+  }
+
+  async deleteNotification(id: string) {
+    return this.request(`/api/notifications/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== MATCHES (Public Games) ====================
+  async getMatches(params?: {
+    sport?: string;
+    city?: string;
+    date?: string;
+    status?: string;
+    skillLevel?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/matches${query}`);
+  }
+
+  async getMatch(id: string) {
+    return this.request(`/api/matches/${id}`);
+  }
+
+  async createMatch(data: {
+    courtId?: string;
+    establishmentId?: string;
+    sport: string;
+    date: string;
+    startTime: string;
+    endTime?: string;
+    maxPlayers?: number;
+    pricePerPlayer?: number;
+    skillLevel?: string;
+    description?: string;
+  }) {
+    return this.request('/api/matches', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async joinMatch(id: string) {
+    return this.request(`/api/matches/${id}/join`, {
+      method: 'POST',
+    });
+  }
+
+  async leaveMatch(id: string) {
+    return this.request(`/api/matches/${id}/leave`, {
+      method: 'POST',
+    });
+  }
+
+  async updateMatch(id: string, data: any) {
+    return this.request(`/api/matches/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cancelMatch(id: string) {
+    return this.request(`/api/matches/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getMyMatches(type?: 'organized' | 'joined' | 'all') {
+    const query = type ? `?type=${type}` : '';
+    return this.request(`/api/matches/my/matches${query}`);
+  }
+
+  // ==================== TOURNAMENTS ====================
+  async getTournaments(params?: {
+    sport?: string;
+    city?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/tournaments${query}`);
+  }
+
+  async getTournament(id: string) {
+    return this.request(`/api/tournaments/${id}`);
+  }
+
+  async createTournament(data: {
+    establishmentId: string;
+    name: string;
+    sport: string;
+    startDate: string;
+    endDate: string;
+    maxTeams?: number;
+    entryFee?: number;
+    description?: string;
+  }) {
+    return this.request('/api/tournaments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async registerForTournament(id: string, data?: { teamName?: string; players?: string[] }) {
+    return this.request(`/api/tournaments/${id}/register`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  async getTournamentParticipants(id: string) {
+    return this.request(`/api/tournaments/${id}/participants`);
+  }
+
+  async getTournamentBrackets(id: string) {
+    return this.request(`/api/tournaments/${id}/brackets`);
+  }
+
+  // ==================== ADMIN ====================
+  async adminGetEstablishments(params?: { page?: number; limit?: number; status?: string; search?: string }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/admin/establishments${query}`);
+  }
+
+  async adminApproveEstablishment(id: string) {
+    return this.request(`/api/admin/establishments/${id}/approve`, {
+      method: 'PUT',
+    });
+  }
+
+  async adminRejectEstablishment(id: string, reason?: string) {
+    return this.request(`/api/admin/establishments/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async adminDeleteEstablishment(id: string) {
+    return this.request(`/api/admin/establishments/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async adminGetUsers(params?: { page?: number; limit?: number; role?: string; search?: string }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/admin/users${query}`);
+  }
+
+  async adminSuspendUser(id: string, reason?: string) {
+    return this.request(`/api/admin/users/${id}/suspend`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async adminActivateUser(id: string) {
+    return this.request(`/api/admin/users/${id}/activate`, {
+      method: 'PUT',
+    });
+  }
+
+  async adminDeleteUser(id: string) {
+    return this.request(`/api/admin/users/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async adminGetStats() {
+    return this.request('/api/admin/stats');
   }
 }
 

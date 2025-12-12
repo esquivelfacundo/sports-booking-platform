@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Tournament, TournamentRegistration, CreateTournamentData } from '@/types/tournament';
+import { apiClient } from '@/lib/api';
 
 interface TournamentContextType {
   tournaments: Tournament[];
@@ -116,9 +117,78 @@ export const TournamentProvider = ({ children }: TournamentProviderProps) => {
   const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>(mockRegistrations);
 
+  // Transform backend tournament to frontend format
+  const transformTournament = (t: any): Tournament => ({
+    id: t.id,
+    name: t.name,
+    description: t.description || '',
+    sport: t.sport || 'futbol5',
+    establishmentId: t.establishmentId,
+    establishmentName: t.establishment?.name || 'Establecimiento',
+    startDate: t.startDate,
+    endDate: t.endDate,
+    registrationDeadline: t.registrationDeadline,
+    maxParticipants: t.maxTeams || 16,
+    currentParticipants: t.currentTeams || 0,
+    entryFee: t.entryFee || 0,
+    prizePool: t.prizePool || 0,
+    format: t.format || 'single-elimination',
+    status: t.status === 'registration_open' ? 'registration-open' : t.status || 'upcoming',
+    location: t.establishment?.city || t.establishment?.address || '',
+    rules: t.rules ? (Array.isArray(t.rules) ? t.rules : [t.rules]) : [],
+    requirements: [],
+    image: t.establishment?.images?.[0] || '/api/placeholder/400/300',
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt || t.createdAt
+  });
+
+  // Load tournaments from API
+  const loadTournaments = useCallback(async () => {
+    try {
+      const response = await apiClient.getTournaments() as any;
+      const tournamentsData = response.data || response || [];
+      
+      const transformedTournaments = Array.isArray(tournamentsData)
+        ? tournamentsData.map(transformTournament)
+        : [];
+      
+      if (transformedTournaments.length > 0) {
+        setTournaments(transformedTournaments);
+      }
+    } catch (error) {
+      console.error('Error loading tournaments:', error);
+      // Keep mock data as fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTournaments();
+  }, [loadTournaments]);
+
   const createTournament = async (data: CreateTournamentData): Promise<Tournament> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Try real API first
+    try {
+      const response = await apiClient.createTournament({
+        establishmentId: (data as any).establishmentId || 'current_establishment',
+        name: data.name,
+        sport: data.sport,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        maxTeams: data.maxParticipants,
+        entryFee: data.entryFee,
+        description: data.description
+      }) as any;
+
+      if (response.success && response.data) {
+        const newTournament = transformTournament(response.data);
+        setTournaments(prev => [...prev, newTournament]);
+        return newTournament;
+      }
+    } catch (error) {
+      console.error('API createTournament failed, using local fallback:', error);
+    }
+
+    // Fallback to local creation
     
     const newTournament: Tournament = {
       id: `tournament_${Date.now()}`,
@@ -137,8 +207,18 @@ export const TournamentProvider = ({ children }: TournamentProviderProps) => {
   };
 
   const registerForTournament = async (tournamentId: string, playerData: any): Promise<TournamentRegistration> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Try real API first
+    try {
+      await apiClient.registerForTournament(tournamentId, {
+        teamName: playerData.teamName,
+        players: playerData.players
+      });
+      await loadTournaments(); // Refresh tournaments list
+    } catch (error) {
+      console.error('API registerForTournament failed:', error);
+    }
+
+    // Create local registration record
     
     const newRegistration: TournamentRegistration = {
       id: `reg_${Date.now()}`,

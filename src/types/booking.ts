@@ -1,24 +1,28 @@
 export interface Booking {
   id: string;
-  userId: string;
-  facilityId: string;
+  odId?: string;
+  userId?: string;
+  facilityId?: string;
   facilityName: string;
-  facilityImage: string;
-  facilityAddress: string;
+  facilityImage?: string;
+  facilityAddress?: string;
   sport: string;
   date: string;
   startTime: string;
   endTime: string;
-  duration: number; // in hours
+  duration: number; // in minutes
   price: number;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
-  paymentStatus: 'paid' | 'pending' | 'failed';
-  paymentMethod: string;
+  status: 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show';
+  paymentStatus: 'paid' | 'pending' | 'failed' | 'refunded';
+  paymentMethod?: string;
   createdAt: string;
   updatedAt: string;
   notes?: string;
   participants?: string[];
   maxParticipants?: number;
+  courtId?: string;
+  courtName?: string;
+  establishmentId?: string;
 }
 
 export interface BookingStats {

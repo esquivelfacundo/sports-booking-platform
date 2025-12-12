@@ -119,7 +119,8 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
           console.log('EstablishmentContext: User data:', user);
           console.log('EstablishmentContext: Token:', userToken ? 'Present' : 'Missing');
           
-          const response = await fetch(`http://localhost:3001/api/establishments/my-establishment`, {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiUrl}/api/establishments/my/establishments`, {
             headers: {
               'Authorization': `Bearer ${userToken}`,
               'Content-Type': 'application/json'

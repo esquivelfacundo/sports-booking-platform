@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Notification, ActivityFeedItem, NotificationPreferences } from '@/types/notifications';
 import { useAuth } from './AuthContext';
+import { apiClient } from '@/lib/api';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -192,18 +193,63 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  // Transform backend notification to frontend format
+  const transformNotification = (backendNotif: any): Notification => ({
+    id: backendNotif.id,
+    type: backendNotif.type || 'system',
+    title: backendNotif.title || 'Notificación',
+    message: backendNotif.message || '',
+    userId: backendNotif.userId,
+    isRead: backendNotif.isRead || false,
+    createdAt: backendNotif.createdAt,
+    priority: backendNotif.data?.priority || 'medium',
+    actionUrl: backendNotif.data?.actionUrl,
+    fromUserId: backendNotif.data?.fromUserId,
+    fromUser: backendNotif.data?.fromUser
+  });
+
+  const loadNotifications = useCallback(async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token) {
+      setNotifications([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiClient.getNotifications({ limit: 50 }) as any;
+      const notificationsData = response.data || response || [];
+      
+      const transformedNotifications = Array.isArray(notificationsData)
+        ? notificationsData.map(transformNotification)
+        : [];
+      
+      setNotifications(transformedNotifications);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+      // Fallback to mock data if API fails
+      if (user) {
+        setNotifications(mockNotifications.filter(n => n.userId === user.id));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Load user notifications and activity feed
-      setNotifications(mockNotifications.filter(n => n.userId === user.id));
+      loadNotifications();
+      // Activity feed remains mock for now (no backend endpoint)
       setActivityFeed(mockActivityFeed);
+    } else {
+      setNotifications([]);
+      setActivityFeed([]);
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, loadNotifications]);
 
   const markAsRead = async (notificationId: string): Promise<boolean> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await apiClient.markNotificationAsRead(notificationId);
       
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
@@ -218,8 +264,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const markAllAsRead = async (): Promise<boolean> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await apiClient.markAllNotificationsAsRead();
       
       setNotifications(prev => 
         prev.map(n => ({ ...n, isRead: true }))
@@ -234,8 +279,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const deleteNotification = async (notificationId: string): Promise<boolean> => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await apiClient.deleteNotification(notificationId);
       
       setNotifications(prev => 
         prev.filter(n => n.id !== notificationId)
@@ -366,19 +410,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   };
 
   const refreshNotifications = async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (user) {
-        setNotifications(mockNotifications.filter(n => n.userId === user.id));
-      }
-    } catch (error) {
-      console.error('Error refreshing notifications:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    await loadNotifications();
   };
 
   const refreshActivityFeed = async (): Promise<void> => {
