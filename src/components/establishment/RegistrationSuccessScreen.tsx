@@ -52,7 +52,21 @@ const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps> = ({
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [showFinalMessage, setShowFinalMessage] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setIsMounted(true);
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const messageInterval = setInterval(() => {
@@ -243,28 +257,30 @@ const RegistrationSuccessScreen: React.FC<RegistrationSuccessScreenProps> = ({
         </AnimatePresence>
 
         {/* Floating particles effect */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-red-400/30 rounded-full"
-              initial={{
-                x: Math.random() * window.innerWidth,
-                y: window.innerHeight + 10,
-              }}
-              animate={{
-                y: -10,
-                x: Math.random() * window.innerWidth,
-              }}
-              transition={{
-                duration: Math.random() * 3 + 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-                ease: "linear",
-              }}
-            />
-          ))}
-        </div>
+        {isMounted && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-red-400/30 rounded-full"
+                initial={{
+                  x: Math.random() * windowSize.width,
+                  y: windowSize.height + 10,
+                }}
+                animate={{
+                  y: -10,
+                  x: Math.random() * windowSize.width,
+                }}
+                transition={{
+                  duration: Math.random() * 3 + 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                  ease: "linear",
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Sparkles effect */}
         <motion.div
