@@ -94,15 +94,13 @@ export const useEstablishments = (
         }));
         setEstablishments(transformedData);
       } else {
-        setError('Error al cargar establecimientos');
-        setEstablishments(getMockEstablishments());
+        setError('No se encontraron establecimientos');
+        setEstablishments([]);
       }
     } catch (err) {
       console.error('Error fetching establishments:', err);
-      setError('Error de conexión. Usando datos de ejemplo.');
-      
-      // Fallback to mock data if API fails
-      setEstablishments(getMockEstablishments().filter((_, index) => index < 2)); // Limit mock data
+      setError('Error de conexión. Por favor, verifica que el servidor esté corriendo.');
+      setEstablishments([]);
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { useEstablishmentAdmin } from '@/hooks/useEstablishmentAdmin';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -82,123 +83,123 @@ interface CustomerInsight {
 }
 
 const AnalyticsPage = () => {
-  const { establishment, isDemo, loading } = useEstablishment();
+  const { establishment, loading: establishmentLoading } = useEstablishment();
+  const { stats, reservations, courts, statsLoading, refreshAll } = useEstablishmentAdmin();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'reservations' | 'customers'>('revenue');
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
-  // Initialize analytics data based on demo or real data
-  useEffect(() => {
-    if (isDemo) {
-      // Demo data
-      setAnalyticsData({
-    revenue: {
-      current: 125000,
-      previous: 98000,
-      trend: 'up',
-      percentage: 27.6
-    },
-    reservations: {
-      current: 342,
-      previous: 298,
-      trend: 'up',
-      percentage: 14.8
-    },
-    customers: {
-      current: 156,
-      previous: 142,
-      trend: 'up',
-      percentage: 9.9
-    },
-    occupancy: {
-      current: 78.5,
-      previous: 71.2,
-      trend: 'up',
-      percentage: 10.3
+  const loading = establishmentLoading || statsLoading;
+
+  // Calculate analytics from real API data
+  const analyticsData: AnalyticsData = useMemo(() => {
+    const totalRevenue = stats.monthlyRevenue;
+    const totalReservations = stats.confirmedBookings + stats.pendingBookings + stats.cancelledBookings;
+    const totalCustomers = stats.totalClients;
+    
+    // Calculate occupancy based on courts and reservations
+    const totalCourts = courts.length;
+    const occupancyRate = totalCourts > 0 ? Math.min(100, (totalReservations / (totalCourts * 30)) * 100) : 0;
+
+    return {
+      revenue: {
+        current: totalRevenue,
+        previous: 0, // TODO: Get previous period from API
+        trend: totalRevenue > 0 ? 'up' : 'stable',
+        percentage: 0
+      },
+      reservations: {
+        current: totalReservations,
+        previous: 0,
+        trend: totalReservations > 0 ? 'up' : 'stable',
+        percentage: 0
+      },
+      customers: {
+        current: totalCustomers,
+        previous: 0,
+        trend: totalCustomers > 0 ? 'up' : 'stable',
+        percentage: 0
+      },
+      occupancy: {
+        current: Math.round(occupancyRate * 10) / 10,
+        previous: 0,
+        trend: occupancyRate > 0 ? 'up' : 'stable',
+        percentage: 0
+      }
+    };
+  }, [stats, reservations, courts]);
+
+  // Generate revenue chart data from reservations
+  const revenueChartData: RevenueData[] = useMemo(() => {
+    if (reservations.length === 0) return [];
+    
+    // Group reservations by date
+    const groupedByDate = reservations.reduce((acc, r) => {
+      const date = r.date;
+      if (!acc[date]) {
+        acc[date] = { revenue: 0, reservations: 0 };
+      }
+      acc[date].revenue += r.price;
+      acc[date].reservations += 1;
+      return acc;
+    }, {} as Record<string, { revenue: number; reservations: number }>);
+    
+    return Object.entries(groupedByDate)
+      .map(([date, data]) => ({ date, ...data }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-14); // Last 14 days
+  }, [reservations]);
+
+  // Generate court utilization from real data
+  const courtUtilizationData: CourtUtilization[] = useMemo(() => {
+    return courts.map(court => {
+      const courtReservations = reservations.filter(r => r.courtId === court.id);
+      const revenue = courtReservations.reduce((sum, r) => sum + r.price, 0);
+      const utilization = courtReservations.length > 0 ? Math.min(100, (courtReservations.length / 30) * 100) : 0;
+      
+      return {
+        court: court.name,
+        utilization: Math.round(utilization * 10) / 10,
+        revenue,
+        reservations: courtReservations.length
+      };
+    });
+  }, [courts, reservations]);
+
+  // Customer segments - calculated from reservations
+  const customerSegments: CustomerInsight[] = useMemo(() => {
+    if (reservations.length === 0) {
+      return [
+        { segment: 'Sin datos', count: 0, revenue: 0, percentage: 100 }
+      ];
     }
-      });
-    } else {
-      // Real establishment - basic analytics with no data yet
-      setAnalyticsData({
-        revenue: {
-          current: 0,
-          previous: 0,
-          trend: 'stable',
-          percentage: 0
-        },
-        reservations: {
-          current: 0,
-          previous: 0,
-          trend: 'stable',
-          percentage: 0
-        },
-        customers: {
-          current: 0,
-          previous: 0,
-          trend: 'stable',
-          percentage: 0
-        },
-        occupancy: {
-          current: 0,
-          previous: 0,
-          trend: 'stable',
-          percentage: 0
-        }
-      });
+    
+    // For now, show basic segment
+    const totalRevenue = reservations.reduce((sum, r) => sum + r.price, 0);
+    return [
+      { segment: 'Todos los clientes', count: stats.totalClients, revenue: totalRevenue, percentage: 100 }
+    ];
+  }, [reservations, stats.totalClients]);
+
+  // Peak hours from reservations
+  const peakHoursData: ChartData[] = useMemo(() => {
+    const hourCounts: Record<string, number> = {};
+    
+    // Initialize all hours
+    for (let i = 6; i <= 23; i++) {
+      const hour = `${i.toString().padStart(2, '0')}:00`;
+      hourCounts[hour] = 0;
     }
-  }, [establishment, isDemo]);
-
-  const revenueChartData: RevenueData[] = isDemo ? [
-    { date: '2024-01-01', revenue: 8500, reservations: 25 },
-    { date: '2024-01-02', revenue: 12300, reservations: 32 },
-    { date: '2024-01-03', revenue: 9800, reservations: 28 },
-    { date: '2024-01-04', revenue: 15600, reservations: 42 },
-    { date: '2024-01-05', revenue: 11200, reservations: 35 },
-    { date: '2024-01-06', revenue: 18900, reservations: 48 },
-    { date: '2024-01-07', revenue: 16700, reservations: 45 },
-    { date: '2024-01-08', revenue: 13400, reservations: 38 },
-    { date: '2024-01-09', revenue: 19200, reservations: 52 },
-    { date: '2024-01-10', revenue: 14800, reservations: 41 },
-    { date: '2024-01-11', revenue: 17300, reservations: 46 },
-    { date: '2024-01-12', revenue: 21500, reservations: 58 },
-    { date: '2024-01-13', revenue: 18600, reservations: 49 },
-    { date: '2024-01-14', revenue: 16900, reservations: 44 }
-  ] : [];
-
-  const courtUtilizationData: CourtUtilization[] = [
-    { court: 'Cancha 1 - Fútbol 5', utilization: 85.2, revenue: 45600, reservations: 128 },
-    { court: 'Cancha 2 - Paddle', utilization: 78.9, revenue: 38900, reservations: 95 },
-    { court: 'Cancha 3 - Tenis', utilization: 72.1, revenue: 32100, reservations: 76 },
-    { court: 'Cancha 4 - Fútbol 5', utilization: 81.3, revenue: 41200, reservations: 115 },
-    { court: 'Cancha 5 - Paddle', utilization: 69.7, revenue: 28800, reservations: 68 }
-  ];
-
-  const customerSegments: CustomerInsight[] = [
-    { segment: 'Clientes Frecuentes', count: 45, revenue: 67800, percentage: 54.2 },
-    { segment: 'Clientes Regulares', count: 72, revenue: 38900, percentage: 31.1 },
-    { segment: 'Clientes Nuevos', count: 39, revenue: 18300, percentage: 14.7 }
-  ];
-
-  const peakHoursData: ChartData[] = [
-    { label: '06:00', value: 5 },
-    { label: '07:00', value: 12 },
-    { label: '08:00', value: 18 },
-    { label: '09:00', value: 25 },
-    { label: '10:00', value: 32 },
-    { label: '11:00', value: 28 },
-    { label: '12:00', value: 22 },
-    { label: '13:00', value: 19 },
-    { label: '14:00', value: 24 },
-    { label: '15:00', value: 31 },
-    { label: '16:00', value: 38 },
-    { label: '17:00', value: 45 },
-    { label: '18:00', value: 52 },
-    { label: '19:00', value: 48 },
-    { label: '20:00', value: 41 },
-    { label: '21:00', value: 35 },
-    { label: '22:00', value: 28 },
-    { label: '23:00', value: 15 }
-  ];
+    
+    // Count reservations by hour
+    reservations.forEach(r => {
+      const hour = r.time?.substring(0, 5) || '00:00';
+      if (hourCounts[hour] !== undefined) {
+        hourCounts[hour]++;
+      }
+    });
+    
+    return Object.entries(hourCounts).map(([label, value]) => ({ label, value }));
+  }, [reservations]);
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {

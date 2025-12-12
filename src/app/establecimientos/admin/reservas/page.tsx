@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { useEstablishmentAdmin, AdminReservation } from '@/hooks/useEstablishmentAdmin';
 import { 
   Calendar, 
   Clock, 
@@ -34,6 +35,7 @@ interface Reservation {
   clientEmail: string;
   clientPhone: string;
   court: string;
+  courtId?: string;
   date: string;
   time: string;
   duration: number;
@@ -45,7 +47,17 @@ interface Reservation {
 }
 
 const ReservationsPage = () => {
-  const { establishment, isDemo, loading } = useEstablishment();
+  const { establishment, loading: establishmentLoading } = useEstablishment();
+  const { 
+    reservations: apiReservations, 
+    reservationsLoading,
+    loadReservations,
+    confirmReservation: apiConfirmReservation,
+    cancelReservation: apiCancelReservation,
+    completeReservation: apiCompleteReservation,
+    refreshAll
+  } = useEstablishmentAdmin();
+  
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -56,120 +68,63 @@ const ReservationsPage = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [reservations, setReservations] = useState<Reservation[]>([]);
 
-  // Initialize reservations based on demo or real data
+  const loading = establishmentLoading || reservationsLoading;
+
+  // Transform API reservations to local format
+  const reservations: Reservation[] = apiReservations.map(r => ({
+    id: r.id,
+    clientName: r.clientName,
+    clientEmail: r.clientEmail,
+    clientPhone: r.clientPhone,
+    court: r.court,
+    courtId: r.courtId,
+    date: r.date,
+    time: r.time,
+    duration: r.duration,
+    price: r.price,
+    status: r.status,
+    paymentStatus: r.paymentStatus === 'refunded' ? 'failed' : r.paymentStatus,
+    createdAt: r.createdAt,
+    notes: r.notes
+  }));
+
+  // Reload reservations when filters change
   useEffect(() => {
-    if (isDemo) {
-      // Demo data
-      setReservations([
-    {
-      id: '1',
-      clientName: 'Juan Pérez',
-      clientEmail: 'juan.perez@email.com',
-      clientPhone: '+54 11 1234-5678',
-      court: 'Cancha 1 - Fútbol 5',
-      date: '2024-01-15',
-      time: '18:00',
-      duration: 90,
-      price: 8000,
-      status: 'confirmed',
-      paymentStatus: 'paid',
-      createdAt: '2024-01-10T10:30:00Z',
-      notes: 'Cumpleaños de empresa'
-    },
-    {
-      id: '2',
-      clientName: 'María González',
-      clientEmail: 'maria.gonzalez@email.com',
-      clientPhone: '+54 11 9876-5432',
-      court: 'Cancha 2 - Paddle',
-      date: '2024-01-15',
-      time: '20:00',
-      duration: 60,
-      price: 6000,
-      status: 'pending',
-      paymentStatus: 'pending',
-      createdAt: '2024-01-12T14:15:00Z'
-    },
-    {
-      id: '3',
-      clientName: 'Carlos Rodríguez',
-      clientEmail: 'carlos.rodriguez@email.com',
-      clientPhone: '+54 11 5555-1234',
-      court: 'Cancha 3 - Tenis',
-      date: '2024-01-16',
-      time: '16:00',
-      duration: 120,
-      price: 10000,
-      status: 'confirmed',
-      paymentStatus: 'paid',
-      createdAt: '2024-01-11T09:45:00Z'
-    },
-    {
-      id: '4',
-      clientName: 'Ana Martínez',
-      clientEmail: 'ana.martinez@email.com',
-      clientPhone: '+54 11 7777-8888',
-      court: 'Cancha 1 - Fútbol 5',
-      date: '2024-01-14',
-      time: '19:00',
-      duration: 90,
-      price: 8000,
-      status: 'cancelled',
-      paymentStatus: 'failed',
-      createdAt: '2024-01-09T16:20:00Z',
-      notes: 'Cancelado por lluvia'
-    },
-    {
-      id: '5',
-      clientName: 'Diego López',
-      clientEmail: 'diego.lopez@email.com',
-      clientPhone: '+54 11 3333-4444',
-      court: 'Cancha 2 - Paddle',
-      date: '2024-01-13',
-      time: '21:00',
-      duration: 60,
-      price: 6000,
-      status: 'completed',
-      paymentStatus: 'paid',
-      createdAt: '2024-01-08T11:10:00Z'
-    }
-      ]);
+    const filters: { status?: string; date?: string } = {};
+    if (selectedStatus !== 'all') filters.status = selectedStatus;
+    if (selectedDate) filters.date = selectedDate;
+    loadReservations(filters);
+  }, [selectedStatus, selectedDate, loadReservations]);
+
+  // Handlers for reservation management - using API
+  const handleConfirmReservation = async (reservationId: string) => {
+    const success = await apiConfirmReservation(reservationId);
+    if (success) {
+      alert('Reserva confirmada exitosamente');
     } else {
-      // Real establishment - no reservations yet
-      setReservations([]);
+      alert('Error al confirmar la reserva');
     }
-  }, [establishment, isDemo]);
-
-  // Handlers for reservation management
-  const handleConfirmReservation = (reservationId: string) => {
-    setReservations(reservations.map(reservation => 
-      reservation.id === reservationId 
-        ? { ...reservation, status: 'confirmed' as const }
-        : reservation
-    ));
-    alert('Reserva confirmada exitosamente');
   };
 
-  const handleCancelReservation = (reservationId: string) => {
+  const handleCancelReservation = async (reservationId: string) => {
     if (confirm('¿Estás seguro de que deseas cancelar esta reserva?')) {
-      setReservations(reservations.map(reservation => 
-        reservation.id === reservationId 
-          ? { ...reservation, status: 'cancelled' as const }
-          : reservation
-      ));
-      alert('Reserva cancelada exitosamente');
+      const success = await apiCancelReservation(reservationId);
+      if (success) {
+        alert('Reserva cancelada exitosamente');
+      } else {
+        alert('Error al cancelar la reserva');
+      }
     }
   };
 
-  const handleCompleteReservation = (reservationId: string) => {
-    setReservations(reservations.map(reservation => 
-      reservation.id === reservationId 
-        ? { ...reservation, status: 'completed' as const }
-          : reservation
-    ));
-    alert('Reserva marcada como completada');
+  const handleCompleteReservation = async (reservationId: string) => {
+    const success = await apiCompleteReservation(reservationId);
+    if (success) {
+      alert('Reserva marcada como completada');
+    } else {
+      alert('Error al completar la reserva');
+    }
   };
 
   const handleEditReservation = (reservation: Reservation) => {
@@ -177,52 +132,33 @@ const ReservationsPage = () => {
     setShowEditModal(true);
   };
 
-  const handleDeleteReservation = (id: string) => {
+  const handleDeleteReservation = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar esta reserva?')) {
-      setReservations(reservations.filter(r => r.id !== id));
-      alert('Reserva eliminada exitosamente');
+      // For now, cancel the reservation as delete
+      const success = await apiCancelReservation(id);
+      if (success) {
+        alert('Reserva eliminada exitosamente');
+      } else {
+        alert('Error al eliminar la reserva');
+      }
     }
   };
 
-  // Dashboard actions would be implemented here in a real application
-
-  const handleSaveReservation = (reservationData: Partial<Reservation>) => {
-    if (selectedReservation) {
-      // Edit existing reservation
-      setReservations(reservations.map(reservation => 
-        reservation.id === selectedReservation.id 
-          ? { ...reservation, ...reservationData }
-          : reservation
-      ));
-      alert('Reserva actualizada exitosamente');
-      setShowEditModal(false);
-      setSelectedReservation(null);
-    } else {
-      // Create new reservation
-      const newReservation: Reservation = {
-        id: Date.now().toString(),
-        clientName: reservationData.clientName || '',
-        clientEmail: reservationData.clientEmail || '',
-        clientPhone: reservationData.clientPhone || '',
-        court: reservationData.court || '',
-        date: reservationData.date || '',
-        time: reservationData.time || '',
-        duration: reservationData.duration || 60,
-        price: reservationData.price || 0,
-        status: reservationData.status || 'pending',
-        paymentStatus: reservationData.paymentStatus || 'pending',
-        createdAt: new Date().toISOString(),
-        notes: reservationData.notes || ''
-      };
-      setReservations([...reservations, newReservation]);
-      alert('Reserva creada exitosamente');
-      setShowCreateModal(false);
-    }
+  const handleSaveReservation = async (reservationData: Partial<Reservation>) => {
+    // TODO: Implement create/update reservation via API
+    alert('Funcionalidad de edición en desarrollo');
+    setShowEditModal(false);
+    setShowCreateModal(false);
+    setSelectedReservation(null);
   };
 
   const handleCreateReservation = () => {
     setSelectedReservation(null);
     setShowCreateModal(true);
+  };
+
+  const handleRefresh = () => {
+    refreshAll();
   };
 
   const getStatusColor = (status: string) => {

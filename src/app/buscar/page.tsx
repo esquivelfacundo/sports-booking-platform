@@ -103,8 +103,7 @@ const SearchContent = () => {
         price: 8000, // Default price
         rating: est.rating,
         reviews: est.reviewCount,
-        image: (est.images?.photos && est.images.photos.length > 0) ? est.images.photos[0] : 
-               (est.images && Array.isArray(est.images) && est.images.length > 0) ? est.images[0] : 
+        image: (est.images && Array.isArray(est.images) && est.images.length > 0) ? est.images[0] : 
                '/assets/default-card.png',
         coordinates: (est.latitude && est.longitude) ? 
           [Number(est.latitude), Number(est.longitude)] as [number, number] : 
@@ -116,40 +115,8 @@ const SearchContent = () => {
       }));
       setFacilities(convertedFacilities);
     } else {
-      // Fallback to mock data if no establishments from API
-      const mockFacilities: Facility[] = [
-        {
-          id: '1',
-          name: 'Club Atlético River Plate',
-          sport: 'futbol5',
-          location: 'Núñez, Buenos Aires',
-          price: 2500,
-          rating: 4.8,
-          reviews: 124,
-          image: '/assets/default-card.png',
-          coordinates: [-34.5453, -58.4497],
-          amenities: ['Vestuarios', 'Estacionamiento', 'Buffet', 'Tribuna'],
-          availability: ['18:00', '19:00', '20:00', '21:00'],
-          timeSlots: generateTimeSlots(),
-          priceFrom: 2200
-        },
-        {
-          id: '2',
-          name: 'Paddle Club Palermo',
-          sport: 'paddle',
-          location: 'Palermo, Buenos Aires',
-          price: 1800,
-          rating: 4.6,
-          reviews: 89,
-          image: '/assets/default-card.png',
-          coordinates: [-34.5875, -58.4173],
-          amenities: ['Vestuarios', 'Alquiler de paletas', 'Cafetería'],
-          availability: ['17:00', '18:00', '19:00'],
-          timeSlots: generateTimeSlots(),
-          priceFrom: 1600
-        }
-      ];
-      setFacilities(mockFacilities);
+      // No mock data - show empty state
+      setFacilities([]);
     }
   }, [establishments]);
 

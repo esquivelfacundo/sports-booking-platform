@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { useEstablishmentAdmin } from '@/hooks/useEstablishmentAdmin';
 import { 
   Calendar, 
   DollarSign, 
@@ -18,15 +19,28 @@ import {
   Eye,
   Plus,
   Building2,
-  Award
+  Award,
+  RefreshCw
 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const searchParams = useSearchParams();
-  const { establishment, loading } = useEstablishment();
+  const { establishment, loading: establishmentLoading } = useEstablishment();
+  const { 
+    reservations, 
+    courts, 
+    stats: adminStats, 
+    notifications,
+    loading: adminLoading,
+    statsLoading,
+    refreshAll 
+  } = useEstablishmentAdmin();
+  
   const [currentTime, setCurrentTime] = useState(new Date());
   const [registrationData, setRegistrationData] = useState<any>(null);
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+
+  const loading = establishmentLoading || adminLoading;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -50,103 +64,97 @@ const AdminDashboard = () => {
     }
   }, [searchParams]);
 
-  // Generate stats based on real establishment data
-  const generateStats = () => {
-    // Real data based on establishment
-    const todayBookings = 0; // TODO: Get from API
-    const todayRevenue = 0; // TODO: Get from API
-    const activeClients = 0; // TODO: Get from API
-    const occupancyRate = 0; // TODO: Calculate from bookings
-    
-    return [
-      {
-        name: 'Ingresos Hoy',
-        value: `$${todayRevenue.toLocaleString()}`,
-        change: '0%',
-        trend: 'neutral',
-        icon: DollarSign,
-        color: 'text-green-400'
-      },
-      {
-        name: 'Reservas Hoy',
-        value: todayBookings.toString(),
-        change: '0',
-        trend: 'neutral',
-        icon: Calendar,
-        color: 'text-blue-400'
-      },
-      {
-        name: 'Clientes Activos',
-        value: activeClients.toString(),
-        change: '0%',
-        trend: 'neutral',
-        icon: Users,
-        color: 'text-purple-400'
-      },
-      {
-        name: 'Ocupación',
-        value: `${occupancyRate}%`,
-        change: '0%',
-        trend: 'neutral',
-        icon: TrendingUp,
-        color: 'text-orange-400'
-      }
-    ];
-  };
-
-  const stats = generateStats();
-
-  // Generate today's reservations based on real data
-  const generateTodayReservations = (): Array<{
-    id: number;
-    time: string;
-    court: string;
-    client: string;
-    sport: string;
-    status: string;
-    duration?: string;
-    price?: number;
-  }> => {
-    // Real reservations from API
-    return []; // TODO: Get from API
-  };
-
-  const todayReservations = generateTodayReservations();
-
-  // Generate alerts based on real data
-  const generateAlerts = (): Array<{
-    id: number;
-    type: string;
-    message: string;
-    time: string;
-  }> => {
-    // Real alerts from API
-    return []; // TODO: Get from API
-  };
-
-  const alerts = generateAlerts();
-
-  // Generar estado de canchas basado en datos reales
-  const courtStatus = establishment?.courts?.map((court: any, index: number) => {
-    const randomStatus = 'available'; // TODO: Get real status from API
-    const sportNames: Record<string, string> = {
-      'futbol': 'Fútbol 5',
-      'paddle': 'Paddle',
-      'tenis': 'Tenis',
-      'basquet': 'Básquet',
-      'voley': 'Vóley',
-      'futbol11': 'Fútbol 11'
-    };
-    
-    return {
-      name: court.name,
-      status: randomStatus,
-      sport: sportNames[court.type] || court.type,
-      until: null // TODO: Get real booking end time from API
-    };
-  }) || [
-    { name: 'Sin canchas', status: 'available', sport: 'N/A', until: null }
+  // Generate stats from real API data
+  const stats = [
+    {
+      name: 'Ingresos Hoy',
+      value: `$${adminStats.todayRevenue.toLocaleString()}`,
+      change: '+0%',
+      trend: adminStats.todayRevenue > 0 ? 'up' : 'neutral',
+      icon: DollarSign,
+      color: 'green'
+    },
+    {
+      name: 'Reservas Hoy',
+      value: adminStats.todayBookings.toString(),
+      change: `${adminStats.pendingBookings} pendientes`,
+      trend: adminStats.todayBookings > 0 ? 'up' : 'neutral',
+      icon: Calendar,
+      color: 'blue'
+    },
+    {
+      name: 'Clientes Totales',
+      value: adminStats.totalClients.toString(),
+      change: '+0%',
+      trend: 'neutral',
+      icon: Users,
+      color: 'purple'
+    },
+    {
+      name: 'Ingresos Mes',
+      value: `$${adminStats.monthlyRevenue.toLocaleString()}`,
+      change: `${adminStats.confirmedBookings} confirmadas`,
+      trend: adminStats.monthlyRevenue > 0 ? 'up' : 'neutral',
+      icon: TrendingUp,
+      color: 'orange'
+    }
   ];
+
+  // Get today's reservations from API data
+  const today = new Date().toISOString().split('T')[0];
+  const todayReservations = reservations
+    .filter(r => r.date === today)
+    .map(r => ({
+      id: r.id,
+      time: r.time,
+      court: r.court,
+      client: r.clientName,
+      sport: r.court,
+      status: r.status,
+      duration: `${r.duration} min`,
+      price: r.price
+    }));
+
+  // Get alerts from notifications
+  const alerts = notifications.slice(0, 5).map(n => ({
+    id: n.id,
+    type: n.type === 'booking_confirmed' ? 'success' : 
+          n.type === 'payment_failed' ? 'warning' : 'info',
+    message: n.message,
+    time: n.time
+  }));
+
+  // Generate court status from real data
+  const courtStatus = courts.length > 0 
+    ? courts.map((court) => {
+        // Check if court has a current booking
+        const now = new Date();
+        const currentHour = `${now.getHours().toString().padStart(2, '0')}:00`;
+        const currentBooking = reservations.find(
+          r => r.courtId === court.id && 
+               r.date === today && 
+               r.time <= currentHour && 
+               r.status === 'confirmed'
+        );
+        
+        const sportNames: Record<string, string> = {
+          'futbol5': 'Fútbol 5',
+          'futbol': 'Fútbol 5',
+          'paddle': 'Paddle',
+          'tenis': 'Tenis',
+          'basquet': 'Básquet',
+          'voley': 'Vóley',
+          'futbol11': 'Fútbol 11'
+        };
+        
+        return {
+          name: court.name,
+          status: currentBooking ? 'occupied' : (court.isActive ? 'available' : 'maintenance'),
+          sport: sportNames[court.sport] || court.sport,
+          until: currentBooking ? currentBooking.endTime : null
+        };
+      })
+    : [{ name: 'Sin canchas registradas', status: 'available', sport: 'N/A', until: null }];
 
   const getStatusColor = (status: string) => {
     switch (status) {

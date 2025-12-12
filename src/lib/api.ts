@@ -208,6 +208,26 @@ class ApiClient {
     return this.request(`/api/bookings/${id}`);
   }
 
+  async getEstablishmentBookings(establishmentId: string, params?: {
+    status?: string;
+    date?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+
+    const endpoint = `/api/bookings/establishment/${establishmentId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return this.request(endpoint);
+  }
+
   async cancelBooking(id: string) {
     return this.request(`/api/bookings/${id}/cancel`, {
       method: 'POST',

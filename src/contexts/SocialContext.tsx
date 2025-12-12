@@ -174,8 +174,8 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   const [socialState, setSocialState] = useState({
     friends: [] as Player[],
     friendRequests: [] as FriendRequest[],
-    nearbyPlayers: mockPlayers,
-    matches: mockMatches,
+    nearbyPlayers: [] as Player[],
+    matches: [] as Match[],
     teams: [] as Team[],
     activities: [] as Activity[],
     isLoading: false
@@ -242,34 +242,33 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       
       setSocialState(prev => ({
         ...prev,
-        matches: transformedMatches.length > 0 ? transformedMatches : mockMatches
+        matches: transformedMatches
       }));
     } catch (error) {
       console.error('Error loading matches:', error);
-      // Fallback to mock data
+      // No fallback to mock data - show empty state
       setSocialState(prev => ({
         ...prev,
-        matches: mockMatches
+        matches: []
       }));
     }
   }, []);
 
+  // Load public matches always (even without authentication)
+  useEffect(() => {
+    loadMatches();
+  }, [loadMatches]);
+
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Load user's friends based on their friend IDs
-      const userFriends = mockPlayers.filter(player => 
-        user.friends && user.friends.includes(player.id)
-      );
-      
+      // Load user's friends - this would need a friends API
+      // For now, just set empty array
       setSocialState(prev => ({
         ...prev,
-        friends: userFriends
+        friends: []
       }));
-
-      // Load matches from API
-      loadMatches();
     }
-  }, [user, isAuthenticated, loadMatches]);
+  }, [user, isAuthenticated]);
 
   const sendFriendRequest = async (userId: string, message?: string): Promise<boolean> => {
     try {

@@ -112,6 +112,74 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
       const user = JSON.parse(userData);
       console.log('EstablishmentContext: User data:', { userType: user.userType, establishmentId: user.establishmentId });
       
+      // Handle admin users - load first establishment
+      if (user.userType === 'admin') {
+        try {
+          console.log('EstablishmentContext: Admin user - loading first establishment');
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiUrl}/api/establishments`, {
+            headers: {
+              'Authorization': `Bearer ${userToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            const establishments = result.data || result.establishments || [];
+            
+            if (establishments.length > 0) {
+              const establishmentData = establishments[0];
+              console.log('EstablishmentContext: Admin loaded establishment:', establishmentData.name);
+              
+              const formattedData: EstablishmentData = {
+                id: establishmentData.id,
+                name: establishmentData.name,
+                description: establishmentData.description || '',
+                phone: establishmentData.phone || '',
+                email: establishmentData.email || '',
+                address: establishmentData.address || '',
+                city: establishmentData.city || '',
+                province: establishmentData.province || '',
+                postalCode: establishmentData.postalCode || '',
+                coordinates: establishmentData.latitude && establishmentData.longitude ? {
+                  lat: parseFloat(establishmentData.latitude),
+                  lng: parseFloat(establishmentData.longitude)
+                } : undefined,
+                schedule: establishmentData.openingHours || {},
+                amenities: establishmentData.amenities || [],
+                images: establishmentData.images || [],
+                courts: establishmentData.courts || [],
+                staff: establishmentData.staff || [],
+                representative: {
+                  fullName: '',
+                  email: '',
+                  phone: '',
+                  documentType: '',
+                  documentNumber: '',
+                  position: '',
+                  businessName: '',
+                  taxId: '',
+                  address: ''
+                },
+                status: establishmentData.registrationStatus || 'approved',
+                createdAt: establishmentData.createdAt ? new Date(establishmentData.createdAt) : new Date(),
+                updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date()
+              };
+              
+              setEstablishment(formattedData);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (apiError) {
+          console.error('EstablishmentContext: Error loading establishments for admin:', apiError);
+        }
+        setEstablishment(null);
+        setLoading(false);
+        return;
+      }
+      
       if (user.userType === 'establishment') {
         // For establishment users, ALWAYS try to load their real data first from API
         try {

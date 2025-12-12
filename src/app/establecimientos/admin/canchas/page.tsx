@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { useEstablishmentAdmin } from '@/hooks/useEstablishmentAdmin';
 import CourtModal from '@/components/dashboard/CourtModal';
 import { 
   MapPin, 
@@ -26,13 +27,14 @@ import {
   Users,
   Star,
   Wrench,
+  RefreshCw,
   Image as ImageIcon
 } from 'lucide-react';
 
 interface Court {
   id: string;
   name: string;
-  type: 'futbol' | 'tenis' | 'paddle' | 'basquet' | 'voley';
+  type: 'futbol' | 'futbol5' | 'tenis' | 'paddle' | 'basquet' | 'voley';
   status: 'available' | 'maintenance' | 'out_of_service';
   surface: string;
   capacity: number;
@@ -51,7 +53,17 @@ interface Court {
 }
 
 const CourtsPage = () => {
-  const { establishment, loading } = useEstablishment();
+  const { establishment, loading: establishmentLoading } = useEstablishment();
+  const { 
+    courts: apiCourts, 
+    courtsLoading,
+    loadCourts,
+    createCourt: apiCreateCourt,
+    updateCourt: apiUpdateCourt,
+    deleteCourt: apiDeleteCourt,
+    refreshAll
+  } = useEstablishmentAdmin();
+  
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -59,38 +71,30 @@ const CourtsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
-  const [courts, setCourts] = useState<Court[]>([]);
 
-  // Initialize courts from establishment data or demo data
-  useEffect(() => {
-    if (establishment?.courts && establishment.courts.length > 0) {
-      // Convert establishment courts to Court format
-      const convertedCourts: Court[] = establishment.courts.map((court: any, index: number) => ({
-        id: (index + 1).toString(),
-        name: court.name,
-        type: court.type as Court['type'],
-        status: 'available' as Court['status'],
-        surface: court.surface || 'No especificado',
-        capacity: court.capacity || 0,
-        pricePerHour: court.pricePerHour || 0,
-        openTime: '08:00',
-        closeTime: '22:00',
-        lighting: court.lighting || false,
-        covered: court.covered || false,
-        images: [],
-        lastMaintenance: new Date().toISOString().split('T')[0],
-        nextMaintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        totalReservations: 0,
-        monthlyRevenue: 0,
-        rating: 0,
-        description: court.description || `Cancha de ${court.type} profesional`
-      }));
-      setCourts(convertedCourts);
-    } else {
-      // No courts available
-      setCourts([]);
-    }
-  }, [establishment]);
+  const loading = establishmentLoading || courtsLoading;
+
+  // Transform API courts to local format
+  const courts: Court[] = apiCourts.map((court) => ({
+    id: court.id,
+    name: court.name,
+    type: court.sport as Court['type'],
+    status: court.isActive ? 'available' : 'out_of_service',
+    surface: court.surface || 'No especificado',
+    capacity: court.capacity || 0,
+    pricePerHour: court.pricePerHour || 0,
+    openTime: '08:00',
+    closeTime: '22:00',
+    lighting: court.amenities?.includes('Iluminación') || court.amenities?.includes('Iluminación LED') || false,
+    covered: court.isIndoor || false,
+    images: [],
+    lastMaintenance: new Date().toISOString().split('T')[0],
+    nextMaintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    totalReservations: 0,
+    monthlyRevenue: 0,
+    rating: 0,
+    description: court.description || `Cancha de ${court.sport} profesional`
+  }));
 
   // Form state for creating/editing courts
   const [formData, setFormData] = useState<Partial<Court>>({
@@ -107,53 +111,61 @@ const CourtsPage = () => {
     description: ''
   });
 
-  // Handler functions
-  const handleCreateCourt = () => {
-    const newCourt: Court = {
-      id: Date.now().toString(),
+  // Handler functions - using API
+  const handleCreateCourt = async () => {
+    const courtData = {
       name: formData.name || '',
-      type: formData.type as Court['type'] || 'futbol',
-      status: formData.status as Court['status'] || 'available',
-      surface: formData.surface || '',
-      capacity: formData.capacity || 0,
+      sport: formData.type || 'futbol',
+      surface: formData.surface || 'synthetic',
+      capacity: formData.capacity || 10,
       pricePerHour: formData.pricePerHour || 0,
-      openTime: formData.openTime || '08:00',
-      closeTime: formData.closeTime || '22:00',
-      lighting: formData.lighting || false,
-      covered: formData.covered || false,
-      images: [],
-      lastMaintenance: new Date().toISOString().split('T')[0],
-      nextMaintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      totalReservations: 0,
-      monthlyRevenue: 0,
-      rating: 0,
+      isIndoor: formData.covered || false,
+      amenities: formData.lighting ? ['Iluminación LED'] : [],
       description: formData.description || ''
     };
 
-    setCourts(prev => [...prev, newCourt]);
-    setShowCreateModal(false);
-    resetForm();
-    alert('Cancha creada exitosamente');
+    const success = await apiCreateCourt(courtData);
+    if (success) {
+      setShowCreateModal(false);
+      resetForm();
+      alert('Cancha creada exitosamente');
+    } else {
+      alert('Error al crear la cancha');
+    }
   };
 
-  const handleEditCourt = () => {
+  const handleEditCourt = async () => {
     if (!selectedCourt) return;
 
-    setCourts(prev => prev.map(court => 
-      court.id === selectedCourt.id 
-        ? { ...court, ...formData }
-        : court
-    ));
-    setShowEditModal(false);
-    setSelectedCourt(null);
-    resetForm();
-    alert('Cancha actualizada exitosamente');
+    const courtData = {
+      name: formData.name,
+      sport: formData.type,
+      surface: formData.surface,
+      capacity: formData.capacity,
+      pricePerHour: formData.pricePerHour,
+      isIndoor: formData.covered,
+      description: formData.description
+    };
+
+    const success = await apiUpdateCourt(selectedCourt.id, courtData);
+    if (success) {
+      setShowEditModal(false);
+      setSelectedCourt(null);
+      resetForm();
+      alert('Cancha actualizada exitosamente');
+    } else {
+      alert('Error al actualizar la cancha');
+    }
   };
 
-  const handleDeleteCourt = (courtId: string) => {
+  const handleDeleteCourt = async (courtId: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar esta cancha?')) {
-      setCourts(prev => prev.filter(court => court.id !== courtId));
-      alert('Cancha eliminada exitosamente');
+      const success = await apiDeleteCourt(courtId);
+      if (success) {
+        alert('Cancha eliminada exitosamente');
+      } else {
+        alert('Error al eliminar la cancha');
+      }
     }
   };
 

@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEstablishmentAdmin } from '@/hooks/useEstablishmentAdmin';
 import HeaderSearchBar from '@/components/HeaderSearchBar';
 
 interface AdminLayoutProps {
@@ -37,6 +38,7 @@ interface AdminLayoutProps {
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { establishment } = useEstablishment();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { notifications, stats, markNotificationRead } = useEstablishmentAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -123,38 +125,23 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     }
   ];
 
-  // Mock notifications data
-  const notifications = [
-    {
-      id: 1,
-      type: 'booking',
-      title: 'Nueva reserva',
-      message: 'Juan Pérez reservó la Cancha 1 para mañana a las 18:00',
-      time: '5 min',
-      read: false,
-      icon: Calendar
-    },
-    {
-      id: 2,
-      type: 'maintenance',
-      title: 'Mantenimiento pendiente',
-      message: 'La Cancha 2 necesita mantenimiento programado',
-      time: '1 hora',
-      read: false,
-      icon: AlertCircle
-    },
-    {
-      id: 3,
-      type: 'payment',
-      title: 'Pago recibido',
-      message: 'Se recibió el pago de $15.000 por reserva de María García',
-      time: '2 horas',
-      read: true,
-      icon: CheckCircle
-    }
-  ];
-
+  // Get unread count from API notifications
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Get icon for notification type
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'booking_confirmed':
+      case 'booking_cancelled':
+      case 'booking_reminder':
+        return Calendar;
+      case 'payment_received':
+      case 'payment_failed':
+        return CheckCircle;
+      default:
+        return AlertCircle;
+    }
+  };
 
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -313,20 +300,21 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                       </div>
                       
                       <div className="max-h-96 overflow-y-auto">
-                        {notifications.map((notification) => {
-                          const IconComponent = notification.icon;
+                        {notifications.length > 0 ? notifications.map((notification) => {
+                          const IconComponent = getNotificationIcon(notification.type);
                           return (
                             <div
                               key={notification.id}
-                              className={`p-4 border-b border-gray-700 hover:bg-gray-700 transition-colors ${
+                              onClick={() => markNotificationRead(notification.id)}
+                              className={`p-4 border-b border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer ${
                                 !notification.read ? 'bg-gray-750' : ''
                               }`}
                             >
                               <div className="flex items-start space-x-3">
                                 <div className={`p-2 rounded-lg ${
-                                  notification.type === 'booking' ? 'bg-emerald-500/20 text-emerald-400' :
-                                  notification.type === 'maintenance' ? 'bg-yellow-500/20 text-yellow-400' :
-                                  'bg-green-500/20 text-green-400'
+                                  notification.type.includes('booking') ? 'bg-emerald-500/20 text-emerald-400' :
+                                  notification.type.includes('payment') ? 'bg-green-500/20 text-green-400' :
+                                  'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                   <IconComponent className="w-4 h-4" />
                                 </div>
@@ -349,7 +337,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                               </div>
                             </div>
                           );
-                        })}
+                        }) : (
+                          <div className="p-8 text-center text-gray-400">
+                            <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>No hay notificaciones</p>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
