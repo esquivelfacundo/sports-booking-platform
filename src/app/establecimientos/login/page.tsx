@@ -196,10 +196,6 @@ const EstablishmentLoginPage = () => {
             transition={{ delay: 0.1 }}
             className="w-full"
           >
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">Bienvenido</h2>
-              <p className="text-gray-400">Ingresa tus credenciales para acceder</p>
-            </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email Field */}
@@ -319,7 +315,7 @@ const EstablishmentLoginPage = () => {
         {/* Footer */}
         <div className="p-8 pt-0">
           <p className="text-gray-600 text-sm">
-            © 2025 Mis Canchas. Todos los derechos reservados.
+            © 2026 Mis Canchas. Todos los derechos reservados.
           </p>
         </div>
       </div>
