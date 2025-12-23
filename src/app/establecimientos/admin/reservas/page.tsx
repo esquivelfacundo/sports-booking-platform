@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { apiClient } from '@/lib/api';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface Amenity {
   id: string;
@@ -618,7 +619,7 @@ const ReservationsPage = () => {
   if (isInitialLoad) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-white text-xl">Cargando reservas...</div>
+        <UnifiedLoader size="md" />
       </div>
     );
   }
@@ -753,13 +754,13 @@ const ReservationsPage = () => {
   const headerControls = (
     <div className="flex items-center w-full space-x-3">
       {/* View Mode Toggle */}
-      <div className="flex items-center bg-gray-800 rounded-lg p-0.5">
+      <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
         <button
           onClick={() => setViewMode('grid')}
           className={`flex items-center space-x-1 px-2.5 py-1 rounded-md text-sm transition-colors ${
             viewMode === 'grid' 
               ? 'bg-emerald-600 text-white' 
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           <Grid className="h-4 w-4" />
@@ -770,7 +771,7 @@ const ReservationsPage = () => {
           className={`flex items-center space-x-1 px-2.5 py-1 rounded-md text-sm transition-colors ${
             viewMode === 'list' 
               ? 'bg-emerald-600 text-white' 
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           <List className="h-4 w-4" />
@@ -786,13 +787,13 @@ const ReservationsPage = () => {
               newDate.setDate(newDate.getDate() - 1);
               setGridSelectedDate(newDate);
             }}
-            className="p-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            className="p-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             onClick={() => setShowDatePicker(!showDatePicker)}
-            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-white min-w-[200px] text-center transition-colors"
+            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-900 dark:text-white min-w-[200px] text-center transition-colors"
           >
             {formatDateDisplay(gridSelectedDate)}
           </button>
@@ -802,14 +803,14 @@ const ReservationsPage = () => {
               newDate.setDate(newDate.getDate() + 1);
               setGridSelectedDate(newDate);
             }}
-            className="p-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            className="p-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
           
           {/* Date Picker Dropdown */}
           {showDatePicker && (
-            <div className="absolute top-full left-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 p-3">
+            <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 p-3">
               {/* Month/Year Header */}
               <div className="flex items-center justify-between mb-3">
                 <button
@@ -818,11 +819,11 @@ const ReservationsPage = () => {
                     newDate.setMonth(newDate.getMonth() - 1);
                     setGridSelectedDate(newDate);
                   }}
-                  className="p-1 hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
-                  <ChevronLeft className="h-4 w-4 text-gray-400" />
+                  <ChevronLeft className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
-                <span className="text-white font-medium">
+                <span className="text-gray-900 dark:text-white font-medium">
                   {gridSelectedDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
                 </span>
                 <button
@@ -831,9 +832,9 @@ const ReservationsPage = () => {
                     newDate.setMonth(newDate.getMonth() + 1);
                     setGridSelectedDate(newDate);
                   }}
-                  className="p-1 hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 >
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
               
@@ -864,10 +865,10 @@ const ReservationsPage = () => {
                         isSelected
                           ? 'bg-emerald-600 text-white'
                           : isToday
-                            ? 'bg-emerald-600/30 text-emerald-400'
+                            ? 'bg-emerald-100 dark:bg-emerald-600/30 text-emerald-600 dark:text-emerald-400'
                             : isCurrentMonth
-                              ? 'text-white hover:bg-gray-700'
-                              : 'text-gray-600 hover:bg-gray-700'
+                              ? 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                              : 'text-gray-400 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
                       {day.getDate()}
@@ -882,7 +883,7 @@ const ReservationsPage = () => {
                   setGridSelectedDate(new Date());
                   setShowDatePicker(false);
                 }}
-                className="w-full mt-2 py-1.5 text-sm text-emerald-400 hover:bg-gray-700 rounded-lg transition-colors"
+                className="w-full mt-2 py-1.5 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 Hoy
               </button>
@@ -893,7 +894,7 @@ const ReservationsPage = () => {
       {/* Refresh Button */}
       <button 
         onClick={() => refreshAll()}
-        className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors"
+        className="p-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors"
         title="Actualizar"
       >
         <RefreshCw className="h-4 w-4" />
@@ -920,7 +921,7 @@ const ReservationsPage = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Loading overlay - shows while loading but doesn't hide content */}
           {loading && (
-            <div className="absolute top-2 right-2 z-50 bg-gray-800/80 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2">
+            <div className="absolute top-2 right-2 z-50 bg-white/80 dark:bg-gray-800/80 text-gray-900 dark:text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm">
               <RefreshCw className="h-3 w-3 animate-spin" />
               <span>Actualizando...</span>
             </div>
@@ -1110,29 +1111,29 @@ const ReservationsPage = () => {
         </div>
       ) : (
         /* List View - Reservations Table */
-        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-700">
+              <thead className="bg-gray-100 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Cliente</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Cancha</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Fecha y Hora</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Duración</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Precio</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Estado</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Pago</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Acciones</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Cancha</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Fecha y Hora</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Duración</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Precio</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Pago</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {paginatedReservations.map((reservation, index) => (
                   <motion.tr
                     key={reservation.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.02 }}
-                    className="hover:bg-gray-700/50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -1142,27 +1143,27 @@ const ReservationsPage = () => {
                           </span>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-white">{reservation.clientName}</div>
-                          <div className="text-sm text-gray-400">{reservation.clientEmail}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{reservation.clientName}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{reservation.clientEmail}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-white">{reservation.court}</span>
+                        <span className="text-sm text-gray-900 dark:text-white">{reservation.court}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-white">
+                      <div className="text-sm text-gray-900 dark:text-white">
                         {new Date(reservation.date + 'T12:00:00').toLocaleDateString('es-AR')}
                       </div>
-                      <div className="text-sm text-gray-400 flex items-center">
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
                         {reservation.time}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {reservation.duration} min
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -1629,7 +1630,7 @@ const ReservationsPage = () => {
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   >
                     <option value="Cancha 1 - Fútbol 5">Cancha 1 - Fútbol 5</option>
-                    <option value="Cancha 2 - Paddle">Cancha 2 - Paddle</option>
+                    <option value="Cancha 2 - Padel">Cancha 2 - Padel</option>
                     <option value="Cancha 3 - Tenis">Cancha 3 - Tenis</option>
                     <option value="Cancha 4 - Básquet">Cancha 4 - Básquet</option>
                   </select>

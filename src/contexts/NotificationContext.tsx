@@ -80,7 +80,7 @@ const mockNotifications: Notification[] = [
     id: '3',
     type: 'match_reminder',
     title: 'Recordatorio de partido',
-    message: 'Tu partido de paddle es en 1 hora en Paddle Center Norte',
+    message: 'Tu partido de paddle es en 1 hora en Padel Center Norte',
     userId: '1',
     isRead: true,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(), // 4 hours ago
@@ -99,7 +99,7 @@ const mockActivityFeed: ActivityFeedItem[] = [
       avatar: '/api/placeholder/150/150'
     },
     targetId: 'match1',
-    targetName: 'Paddle - Sábado mañana',
+    targetName: 'Padel - Sábado mañana',
     targetType: 'match',
     description: 'creó un nuevo partido de paddle para el sábado',
     createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 minutes ago

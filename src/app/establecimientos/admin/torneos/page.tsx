@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trophy, Users, Calendar, DollarSign, Edit, Trash2, Eye } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useTournament } from '@/contexts/TournamentContext';
 import { Tournament } from '@/types/tournament';
 
@@ -61,7 +62,7 @@ const TournamentsContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Torneos Activos</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {establishmentTournaments.filter(t => t.status === 'registration-open' || t.status === 'in-progress').length}
               </p>
             </div>
@@ -73,7 +74,7 @@ const TournamentsContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Total Participantes</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {establishmentTournaments.reduce((sum, t) => sum + t.currentParticipants, 0)}
               </p>
             </div>
@@ -85,7 +86,7 @@ const TournamentsContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Próximos Torneos</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {establishmentTournaments.filter(t => t.status === 'upcoming').length}
               </p>
             </div>
@@ -97,7 +98,7 @@ const TournamentsContent = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Ingresos Estimados</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 ${establishmentTournaments.reduce((sum, t) => sum + (t.currentParticipants * t.entryFee), 0).toLocaleString()}
               </p>
             </div>
@@ -107,16 +108,16 @@ const TournamentsContent = () => {
       </div>
 
       {/* Tournaments List */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <div className="p-6 border-b border-gray-700">
-          <h2 className="text-xl font-semibold text-white">Mis Torneos</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Mis Torneos</h2>
         </div>
 
         {establishmentTournaments.length === 0 ? (
           <div className="p-12 text-center">
-            <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-400 mb-2">No tienes torneos creados</h3>
-            <p className="text-gray-500 mb-6">Crea tu primer torneo para comenzar a atraer participantes</p>
+            <Trophy className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-500 dark:text-gray-400 mb-2">No tienes torneos creados</h3>
+            <p className="text-gray-400 dark:text-gray-500 mb-6">Crea tu primer torneo para comenzar a atraer participantes</p>
             <button
               onClick={() => setShowCreateModal(true)}
               className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-3 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200"
@@ -125,41 +126,41 @@ const TournamentsContent = () => {
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-700">
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {establishmentTournaments.map((tournament) => (
               <motion.div
                 key={tournament.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-6 hover:bg-gray-750 transition-colors"
+                className="p-6 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-3">
-                      <h3 className="text-lg font-semibold text-white">{tournament.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tournament.name}</h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(tournament.status)}`}>
                         {getStatusText(tournament.status)}
                       </span>
                     </div>
                     
-                    <p className="text-gray-400 mb-3">{tournament.description}</p>
+                    <p className="text-gray-500 dark:text-gray-400 mb-3">{tournament.description}</p>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <span className="text-gray-500">Deporte:</span>
-                        <span className="text-white ml-2 capitalize">{tournament.sport}</span>
+                        <span className="text-gray-900 dark:text-white ml-2 capitalize">{tournament.sport}</span>
                       </div>
                       <div>
                         <span className="text-gray-500">Participantes:</span>
-                        <span className="text-white ml-2">{tournament.currentParticipants}/{tournament.maxParticipants}</span>
+                        <span className="text-gray-900 dark:text-white ml-2">{tournament.currentParticipants}/{tournament.maxParticipants}</span>
                       </div>
                       <div>
                         <span className="text-gray-500">Inscripción:</span>
-                        <span className="text-white ml-2">${tournament.entryFee.toLocaleString()}</span>
+                        <span className="text-gray-900 dark:text-white ml-2">${tournament.entryFee.toLocaleString()}</span>
                       </div>
                       <div>
                         <span className="text-gray-500">Premio:</span>
-                        <span className="text-white ml-2">${tournament.prizePool.toLocaleString()}</span>
+                        <span className="text-gray-900 dark:text-white ml-2">${tournament.prizePool.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -167,19 +168,19 @@ const TournamentsContent = () => {
                   <div className="flex items-center space-x-2 ml-6">
                     <button
                       onClick={() => setSelectedTournament(tournament)}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title="Ver detalles"
                     >
                       <Eye className="w-5 h-5" />
                     </button>
                     <button
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title="Editar"
                     >
                       <Edit className="w-5 h-5" />
                     </button>
                     <button
-                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -280,7 +281,7 @@ const CreateTournamentModal = ({ onClose }: { onClose: () => void }) => {
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="futbol5">Fútbol 5</option>
-                <option value="paddle">Paddle</option>
+                <option value="paddle">Padel</option>
                 <option value="tenis">Tenis</option>
                 <option value="basquet">Básquet</option>
               </select>
@@ -443,7 +444,7 @@ const TournamentsPage = () => {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center p-8">
-        <div className="text-white">Cargando...</div>
+        <UnifiedLoader size="md" />
       </div>
     }>
       <TournamentsContent />

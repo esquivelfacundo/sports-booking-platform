@@ -23,6 +23,7 @@ import {
   Eye,
   MoreHorizontal
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import DirectSaleSidebar from '@/components/admin/DirectSaleSidebar';
@@ -236,13 +237,13 @@ const VentasPage = () => {
     <div className="flex items-center w-full space-x-2 overflow-x-auto">
       {/* Search */}
       <div className="relative flex-shrink-0">
-        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Buscar..."
-          className="pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36"
+          className="pl-8 pr-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36"
         />
       </div>
 
@@ -250,7 +251,7 @@ const VentasPage = () => {
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
-        className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+        className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
       >
         <option value="">Estados</option>
         <option value="pending">Pendiente</option>
@@ -262,7 +263,7 @@ const VentasPage = () => {
       <select
         value={paymentStatusFilter}
         onChange={(e) => setPaymentStatusFilter(e.target.value)}
-        className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+        className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
       >
         <option value="">Pagos</option>
         <option value="pending">Sin pagar</option>
@@ -274,7 +275,7 @@ const VentasPage = () => {
       <select
         value={orderTypeFilter}
         onChange={(e) => setOrderTypeFilter(e.target.value)}
-        className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+        className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
       >
         <option value="">Tipos</option>
         <option value="direct_sale">Directa</option>
@@ -287,14 +288,14 @@ const VentasPage = () => {
           type="date"
           value={dateRange.start}
           onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-          className="px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 w-32"
+          className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
         />
         <span className="text-gray-500">-</span>
         <input
           type="date"
           value={dateRange.end}
           onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-          className="px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 w-32"
+          className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
         />
       </div>
 
@@ -311,8 +312,8 @@ const VentasPage = () => {
 
   if (!establishment) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Cargando...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }
@@ -322,28 +323,20 @@ const VentasPage = () => {
       {/* Render controls in header via portal */}
       {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
       
-      <div className="min-h-screen bg-gray-900 p-6">
+      <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Ventas</h1>
-            <p className="text-gray-400">Gestiona tus pedidos y ventas directas</p>
-          </div>
-        </div>
-
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-gray-800 rounded-xl p-4 border border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Total Pedidos</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalOrders}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Total Pedidos</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalOrders}</p>
                 </div>
                 <div className="p-3 bg-blue-500/20 rounded-lg">
                   <Receipt className="w-6 h-6 text-blue-400" />
@@ -363,12 +356,12 @@ const VentasPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-gray-800 rounded-xl p-4 border border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Ingresos Totales</p>
-                  <p className="text-2xl font-bold text-white">${stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Totales</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">${stats.totalRevenue.toLocaleString()}</p>
                 </div>
                 <div className="p-3 bg-emerald-500/20 rounded-lg">
                   <DollarSign className="w-6 h-6 text-emerald-400" />
@@ -380,11 +373,11 @@ const VentasPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-gray-800 rounded-xl p-4 border border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Cobrado</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Cobrado</p>
                   <p className="text-2xl font-bold text-emerald-400">${stats.totalPaid.toLocaleString()}</p>
                 </div>
                 <div className="p-3 bg-emerald-500/20 rounded-lg">
@@ -397,11 +390,11 @@ const VentasPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-gray-800 rounded-xl p-4 border border-gray-700"
+              className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Pendiente</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Pendiente</p>
                   <p className="text-2xl font-bold text-yellow-400">${stats.pendingAmount.toLocaleString()}</p>
                 </div>
                 <div className="p-3 bg-yellow-500/20 rounded-lg">
@@ -416,15 +409,15 @@ const VentasPage = () => {
         )}
 
         {/* Orders Table */}
-        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
             </div>
           ) : orders.length === 0 ? (
             <div className="text-center py-12">
-              <ShoppingCart className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">No hay pedidos que mostrar</p>
+              <ShoppingCart className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No hay pedidos que mostrar</p>
               <button
                 onClick={() => setShowDirectSale(true)}
                 className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
@@ -436,9 +429,9 @@ const VentasPage = () => {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-700/50">
+                  <thead className="bg-gray-100 dark:bg-gray-700/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                         Pedido
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -462,16 +455,16 @@ const VentasPage = () => {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Fecha
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                         Acciones
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {orders.map((order) => (
                       <tr 
                         key={order.id} 
-                        className="hover:bg-gray-700/30 cursor-pointer transition-colors"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer transition-colors"
                         onClick={() => handleViewOrder(order)}
                       >
                         <td className="px-4 py-4">
@@ -484,7 +477,7 @@ const VentasPage = () => {
                               )}
                             </div>
                             <div>
-                              <p className="text-white font-medium">{order.orderNumber}</p>
+                              <p className="text-gray-900 dark:text-white font-medium">{order.orderNumber}</p>
                               <p className="text-xs text-gray-400">
                                 {order.createdByUser?.name || 'Sistema'}
                               </p>
@@ -494,7 +487,7 @@ const VentasPage = () => {
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-2">
                             <User className="w-4 h-4 text-gray-400" />
-                            <span className="text-white">
+                            <span className="text-gray-900 dark:text-white">
                               {order.client?.name || order.customerName || 'Cliente anónimo'}
                             </span>
                           </div>
@@ -512,11 +505,11 @@ const VentasPage = () => {
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-2">
                             <Package className="w-4 h-4 text-gray-400" />
-                            <span className="text-white">{order.items?.length || 0}</span>
+                            <span className="text-gray-900 dark:text-white">{order.items?.length || 0}</span>
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-white font-medium">${parseFloat(order.total.toString()).toLocaleString()}</p>
+                          <p className="text-gray-900 dark:text-white font-medium">${parseFloat(order.total.toString()).toLocaleString()}</p>
                           {order.discount > 0 && (
                             <p className="text-xs text-gray-400">-${parseFloat(order.discount.toString()).toLocaleString()} desc.</p>
                           )}
@@ -528,7 +521,7 @@ const VentasPage = () => {
                           {getPaymentStatusBadge(order.paymentStatus)}
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-gray-300 text-sm">{formatDate(order.createdAt)}</p>
+                          <p className="text-gray-600 dark:text-gray-300 text-sm">{formatDate(order.createdAt)}</p>
                         </td>
                         <td className="px-4 py-4 text-right">
                           <button
@@ -536,7 +529,7 @@ const VentasPage = () => {
                               e.stopPropagation();
                               handleViewOrder(order);
                             }}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                           >
                             <Eye className="w-4 h-4" />
                           </button>

@@ -1562,7 +1562,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
           
           {/* Sidebar */}
@@ -1571,7 +1571,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 z-50 flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 z-[101] flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-700">

@@ -23,6 +23,7 @@ import {
   Award,
   RefreshCw
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface UserData {
   firstName?: string;
@@ -190,7 +191,7 @@ const AdminDashboard = () => {
         const sportNames: Record<string, string> = {
           'futbol5': 'Fútbol 5',
           'futbol': 'Fútbol 5',
-          'paddle': 'Paddle',
+          'paddle': 'Padel',
           'tenis': 'Tenis',
           'basquet': 'Básquet',
           'voley': 'Vóley',
@@ -226,14 +227,14 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Cargando datos del establecimiento...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Registration Success Banner */}
         {showRegistrationSuccess && registrationData && (
@@ -288,18 +289,18 @@ const AdminDashboard = () => {
           className="relative mb-8 overflow-hidden"
         >
           {/* Main container with gradient background like Caja Activa */}
-          <div className="bg-gradient-to-r from-emerald-900/50 to-gray-800 rounded-xl border border-emerald-700/50 p-6">
+          <div className="bg-gradient-to-r from-emerald-100 dark:from-emerald-900/50 to-white dark:to-gray-800 rounded-xl border border-emerald-200 dark:border-emerald-700/50 p-6 shadow-sm dark:shadow-none">
             <div className="flex items-center justify-between">
               {/* Left: Welcome message */}
               <div className="flex items-center space-x-4">
                 {/* Decorative icon */}
-                <div className="hidden sm:flex items-center justify-center w-14 h-14 rounded-xl bg-emerald-500/20">
-                  <Building2 className="w-7 h-7 text-emerald-400" />
+                <div className="hidden sm:flex items-center justify-center w-14 h-14 rounded-xl bg-emerald-100 dark:bg-emerald-500/20">
+                  <Building2 className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 
                 <div>
                   {/* Greeting with user name */}
-                  <h1 className="text-xl sm:text-2xl text-white">
+                  <h1 className="text-xl sm:text-2xl text-gray-900 dark:text-white">
                     ¡{(() => {
                       const hour = currentTime.getHours();
                       if (hour >= 0 && hour < 12) return 'Buenos días';
@@ -309,7 +310,7 @@ const AdminDashboard = () => {
                   </h1>
                     
                   {/* Establishment name */}
-                  <p className="text-gray-400 text-sm sm:text-base mt-0.5">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base mt-0.5">
                     {establishment?.name || 'Panel de Control'}
                   </p>
                 </div>
@@ -335,12 +336,12 @@ const AdminDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm font-medium">{stat.name}</p>
-                <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{stat.name}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
               </div>
               <div className={`p-3 rounded-lg bg-${stat.color}-500/20`}>
                 <stat.icon className={`w-6 h-6 text-${stat.color}-400`} />
@@ -357,7 +358,7 @@ const AdminDashboard = () => {
               }`}>
                 {stat.change}
               </span>
-              <span className="text-gray-400 text-sm ml-1">vs ayer</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">vs ayer</span>
             </div>
           </motion.div>
         ))}
@@ -365,10 +366,10 @@ const AdminDashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
           {/* Today's Reservations */}
-        <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl p-6">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Próximas Reservas</h2>
-            <Link href="/establecimientos/admin/reservas" className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Próximas Reservas</h2>
+            <Link href="/establecimientos/admin/reservas" className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center space-x-1">
               <Eye className="w-4 h-4" />
               <span>Ver todas</span>
             </Link>
@@ -376,19 +377,19 @@ const AdminDashboard = () => {
           <div className="space-y-4">
             {upcomingReservations.length > 0 ? (
               upcomingReservations.map((reservation) => (
-                <div key={reservation.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                <div key={reservation.id} className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="text-center">
-                      <div className="text-emerald-400 font-bold">{reservation.time}</div>
-                      <span className="text-gray-400">${reservation.price || 0}</span>
+                      <div className="text-emerald-600 dark:text-emerald-400 font-bold">{reservation.time}</div>
+                      <span className="text-gray-500 dark:text-gray-400">${reservation.price || 0}</span>
                     </div>
                     <div>
-                      <div className="text-white font-medium">{reservation.client}</div>
-                      <div className="text-gray-400 text-sm">{reservation.court} • {reservation.sport}</div>
+                      <div className="text-gray-900 dark:text-white font-medium">{reservation.client}</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">{reservation.court} • {reservation.sport}</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="text-white font-bold">${(reservation.price || 0).toLocaleString()}</div>
+                    <div className="text-gray-900 dark:text-white font-bold">${(reservation.price || 0).toLocaleString()}</div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                       reservation.status === 'confirmed' 
                         ? 'bg-emerald-500/20 text-emerald-400' 
@@ -401,9 +402,9 @@ const AdminDashboard = () => {
               ))
             ) : (
               <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">No hay más reservas para hoy</p>
-                <p className="text-gray-500 text-sm mt-2">
+                <Calendar className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 text-lg">No hay más reservas para hoy</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                   Las próximas reservas aparecerán aquí automáticamente
                 </p>
               </div>
@@ -414,22 +415,22 @@ const AdminDashboard = () => {
           {/* Court Status & Alerts */}
           <div className="space-y-6">
             {/* Court Status */}
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Estado de Canchas</h2>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Estado de Canchas</h2>
               <div className="space-y-3">
                 {courtStatus.map((court, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className={`w-3 h-3 rounded-full ${getStatusColor(court.status)}`}></div>
                       <div>
-                        <div className="text-white font-medium">{court.name}</div>
-                        <div className="text-gray-400 text-sm">{court.sport}</div>
+                        <div className="text-gray-900 dark:text-white font-medium">{court.name}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-sm">{court.sport}</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-gray-300 text-sm">{getStatusText(court.status)}</div>
+                      <div className="text-gray-700 dark:text-gray-300 text-sm">{getStatusText(court.status)}</div>
                       {court.until && (
-                        <div className="text-gray-400 text-xs">hasta {court.until}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">hasta {court.until}</div>
                       )}
                     </div>
                   </div>
@@ -438,17 +439,17 @@ const AdminDashboard = () => {
             </div>
 
             {/* Alerts */}
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Alertas</h2>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Alertas</h2>
               <div className="space-y-3">
                 {alerts.map((alert) => (
-                  <div key={alert.id} className="flex items-start space-x-3 p-3 bg-gray-700 rounded-lg">
-                    {alert.type === 'warning' && <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />}
-                    {alert.type === 'info' && <Clock className="w-5 h-5 text-blue-400 mt-0.5" />}
-                    {alert.type === 'success' && <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />}
+                  <div key={alert.id} className="flex items-start space-x-3 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    {alert.type === 'warning' && <AlertCircle className="w-5 h-5 text-yellow-500 dark:text-yellow-400 mt-0.5" />}
+                    {alert.type === 'info' && <Clock className="w-5 h-5 text-blue-500 dark:text-blue-400 mt-0.5" />}
+                    {alert.type === 'success' && <CheckCircle className="w-5 h-5 text-emerald-500 dark:text-emerald-400 mt-0.5" />}
                     <div className="flex-1">
-                      <p className="text-gray-300 text-sm">{alert.message}</p>
-                      <p className="text-gray-400 text-xs mt-1">hace {alert.time}</p>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm">{alert.message}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">hace {alert.time}</p>
                     </div>
                   </div>
                 ))}

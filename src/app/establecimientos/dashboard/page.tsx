@@ -18,6 +18,7 @@ import {
   MapPin,
   UserCheck
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import Link from 'next/link';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,11 +65,8 @@ const EstablishmentDashboard = () => {
   // Show loading screen while data is being fetched
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando datos del establecimiento...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }

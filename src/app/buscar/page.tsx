@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Filter, Grid3X3, List, MapPin, Star, Heart, ArrowUp, ArrowDown } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import dynamic from 'next/dynamic';
 import FacilityCard from '@/components/FacilityCard';
 import CompactFacilityCard from '@/components/CompactFacilityCard';
@@ -97,7 +98,7 @@ const SearchContent = () => {
         id: est.id,
         name: est.name,
         sport: est.sports[0] === 'futbol5' ? 'Fútbol 5' :
-               est.sports[0] === 'paddle' ? 'Paddle' :
+               est.sports[0] === 'paddle' ? 'Padel' :
                est.sports[0] === 'tenis' ? 'Tenis' : 'Deporte',
         location: `${est.address}, ${est.city}`,
         price: 8000, // Default price
@@ -208,7 +209,7 @@ const SearchContent = () => {
   const getSportName = (sport: string) => {
     const sportNames: { [key: string]: string } = {
       'futbol5': 'Fútbol 5',
-      'paddle': 'Paddle',
+      'paddle': 'Padel',
       'tenis': 'Tenis',
       'basquet': 'Básquet',
       'voley': 'Vóley',
@@ -549,11 +550,8 @@ const SearchContent = () => {
 const SearchPage = () => {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Cargando resultados...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     }>
       <SearchContent />

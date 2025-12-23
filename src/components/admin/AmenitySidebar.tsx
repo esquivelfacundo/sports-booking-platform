@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -77,6 +78,7 @@ export default function AmenitySidebar({
   amenity, 
   mode 
 }: AmenitySidebarProps) {
+  const [mounted, setMounted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<Amenity>>({
     name: '',
@@ -89,6 +91,10 @@ export default function AmenitySidebar({
     isPublic: true,
     capacity: undefined,
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (amenity && mode === 'edit') {
@@ -138,7 +144,9 @@ export default function AmenitySidebar({
     return iconData ? iconData.icon : Sparkles;
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -148,7 +156,7 @@ export default function AmenitySidebar({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
 
           {/* Sidebar */}
@@ -157,7 +165,7 @@ export default function AmenitySidebar({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-900 border-l border-gray-800 z-50 flex flex-col"
+            className="fixed inset-y-0 right-0 w-full max-w-md bg-gray-900 border-l border-gray-800 z-[101] flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-800">
@@ -370,6 +378,7 @@ export default function AmenitySidebar({
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

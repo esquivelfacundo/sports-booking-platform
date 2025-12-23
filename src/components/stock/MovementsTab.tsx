@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, TrendingUp, TrendingDown, RefreshCw, Package } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { StockMovementSidebar } from './StockMovementSidebar';
 
 interface StockMovement {
@@ -130,110 +131,94 @@ const MovementsTab = ({
 
   return (
     <div className="space-y-6">
-      {/* Movements List */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-          <p className="text-gray-400 mt-4">Cargando movimientos...</p>
-        </div>
-      ) : movements.length === 0 ? (
-        <div className="text-center py-12 bg-gray-800 rounded-lg border border-gray-700">
-          <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No hay movimientos</h3>
-          <p className="text-gray-400 mb-6">Comienza registrando tu primer movimiento de stock</p>
-          <button
-            onClick={() => setShowSidebar(true)}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors inline-flex items-center space-x-2"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Registrar Movimiento</span>
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {movements.map((movement) => (
-            <motion.div
-              key={movement.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-gray-800 rounded-lg border border-gray-700 p-4 hover:border-gray-600 transition-colors"
+      {/* Movements Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <UnifiedLoader size="sm" />
+          </div>
+        ) : movements.length === 0 ? (
+          <div className="text-center py-12">
+            <Package className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No hay movimientos</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">Comienza registrando tu primer movimiento de stock</p>
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors inline-flex items-center space-x-2"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                  {/* Icon */}
-                  <div className="flex-shrink-0 mt-1">
-                    {getMovementIcon(movement.type)}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-white font-semibold">{movement.product.name}</h3>
-                      <span className={`text-xs px-2 py-1 rounded-full border ${getMovementColor(movement.type)}`}>
+              <Plus className="w-5 h-5" />
+              <span>Registrar Movimiento</span>
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-100 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Producto</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Tipo</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Cantidad</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Stock Anterior</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Stock Nuevo</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Costo</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {movements.map((movement, index) => (
+                  <motion.tr
+                    key={movement.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          {getMovementIcon(movement.type)}
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{movement.product.name}</div>
+                          {movement.product.category && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{movement.product.category.name}</div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getMovementColor(movement.type)}`}>
                         {getMovementLabel(movement.type)}
                       </span>
-                      {movement.product.category && (
-                        <span 
-                          className="text-xs px-2 py-1 rounded-full"
-                          style={{ 
-                            backgroundColor: `${movement.product.category.color}20`,
-                            color: movement.product.category.color
-                          }}
-                        >
-                          {movement.product.category.name}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-sm">
-                      <div>
-                        <p className="text-gray-400">Cantidad</p>
-                        <p className={`font-semibold ${
-                          movement.quantity > 0 ? 'text-emerald-400' : 'text-red-400'
-                        }`}>
-                          {movement.quantity > 0 ? '+' : ''}{movement.quantity} {movement.product.unit}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Stock Anterior</p>
-                        <p className="text-white">{movement.previousStock} {movement.product.unit}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Stock Nuevo</p>
-                        <p className="text-white font-semibold">{movement.newStock} {movement.product.unit}</p>
-                      </div>
-                      {movement.totalCost && (
-                        <div>
-                          <p className="text-gray-400">Costo Total</p>
-                          <p className="text-white">${movement.totalCost}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {movement.reason && (
-                      <p className="text-gray-400 text-sm mt-2">
-                        <span className="font-medium">Motivo:</span> {movement.reason}
-                      </p>
-                    )}
-
-                    {movement.notes && (
-                      <p className="text-gray-400 text-sm mt-1">
-                        <span className="font-medium">Notas:</span> {movement.notes}
-                      </p>
-                    )}
-
-                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                      <span>{formatDate(movement.createdAt)}</span>
-                      <span>•</span>
-                      <span>Por: {movement.user.name}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`text-sm font-semibold ${movement.quantity > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {movement.quantity > 0 ? '+' : ''}{movement.quantity} {movement.product.unit}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {movement.previousStock} {movement.product.unit}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {movement.newStock} {movement.product.unit}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {movement.totalCost ? `$${movement.totalCost.toLocaleString()}` : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {formatDate(movement.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {movement.user.name}
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Sidebar */}
       <StockMovementSidebar

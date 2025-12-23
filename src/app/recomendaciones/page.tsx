@@ -129,7 +129,7 @@ const RecommendationsPage = () => {
               >
                 <option value="all">Todos los deportes</option>
                 <option value="futbol5">Fútbol 5</option>
-                <option value="paddle">Paddle</option>
+                <option value="paddle">Padel</option>
                 <option value="tenis">Tenis</option>
                 <option value="basquet">Básquet</option>
               </select>

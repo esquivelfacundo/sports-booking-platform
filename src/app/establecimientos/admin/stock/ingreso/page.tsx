@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Upload, FileText, Camera, X, Check, AlertTriangle, 
@@ -90,6 +91,7 @@ export default function StockIngresoPage() {
   const router = useRouter();
   const { establishment } = useEstablishment();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   
   // Step management
   const [currentStep, setCurrentStep] = useState<Step>('upload');
@@ -141,9 +143,17 @@ export default function StockIngresoPage() {
   // OpenAI integration status
   const [hasOpenAIIntegration, setHasOpenAIIntegration] = useState<boolean | null>(null);
   
-  // Document preview modal
+  // Document preview sidebar
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
   const [documentZoom, setDocumentZoom] = useState(1);
+  
+  // Get the header portal container on mount
+  useEffect(() => {
+    const container = document.getElementById('header-page-controls');
+    if (container) {
+      setHeaderPortalContainer(container);
+    }
+  }, []);
 
   // Load products, suppliers and check integration on mount
   useEffect(() => {
@@ -535,28 +545,35 @@ export default function StockIngresoPage() {
 
   if (!establishment) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
 
+  // Header controls for topbar
+  const headerControls = (
+    <div className="flex items-center gap-4">
+      <button
+        onClick={() => router.push('/establecimientos/admin/stock')}
+        className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+      </button>
+      <div>
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Ingreso de Stock Inteligente</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-xs">Cargá una factura y el sistema extraerá los productos automáticamente</p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <>
+      {/* Render controls in header via portal */}
+      {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
+      
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => router.push('/establecimientos/admin/stock')}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Ingreso de Stock con OCR</h1>
-            <p className="text-gray-400 text-sm">Cargá una factura y el sistema extraerá los productos automáticamente</p>
-          </div>
-        </div>
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center mb-8">
@@ -573,11 +590,11 @@ export default function StockIngresoPage() {
               return (
                 <div key={s.step} className="flex items-center">
                   {index > 0 && (
-                    <div className={`w-12 h-0.5 ${isPast ? 'bg-emerald-500' : 'bg-gray-700'}`} />
+                    <div className={`w-12 h-0.5 ${isPast ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'}`} />
                   )}
                   <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                    isActive ? 'bg-emerald-500/20 text-emerald-400' : 
-                    isPast ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-800 text-gray-500'
+                    isActive ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 
+                    isPast ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-500' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
                   }`}>
                     <Icon className="w-4 h-4" />
                     <span className="text-sm font-medium">{s.label}</span>
@@ -626,7 +643,7 @@ export default function StockIngresoPage() {
                 className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all ${
                   selectedFile 
                     ? 'border-emerald-500 bg-emerald-500/5' 
-                    : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                    : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 bg-gray-100 dark:bg-gray-800/50'
                 }`}
               >
                 <input
@@ -639,7 +656,7 @@ export default function StockIngresoPage() {
                 
                 {previewUrl ? (
                   <div className="space-y-4">
-                    <div className="relative w-full max-w-md mx-auto aspect-[4/3] rounded-lg overflow-hidden bg-gray-900">
+                    <div className="relative w-full max-w-md mx-auto aspect-[4/3] rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-900">
                       <Image
                         src={previewUrl}
                         alt="Preview"
@@ -652,12 +669,12 @@ export default function StockIngresoPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="w-16 h-16 mx-auto bg-gray-700 rounded-full flex items-center justify-center">
-                      <Upload className="w-8 h-8 text-gray-400" />
+                    <div className="w-16 h-16 mx-auto bg-gray-300 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                      <Upload className="w-8 h-8 text-gray-600 dark:text-gray-400" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">Arrastrá una imagen o hacé click para seleccionar</p>
-                      <p className="text-gray-500 text-sm mt-1">Soporta JPG, PNG, WEBP</p>
+                      <p className="text-gray-900 dark:text-white font-medium">Arrastrá una imagen o hacé click para seleccionar</p>
+                      <p className="text-gray-600 dark:text-gray-500 text-sm mt-1">Soporta JPG, PNG, WEBP</p>
                     </div>
                   </div>
                 )}
@@ -679,7 +696,7 @@ export default function StockIngresoPage() {
                 <button
                   onClick={processImage}
                   disabled={!selectedFile || isProcessing}
-                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl font-medium transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl font-medium transition-colors"
                 >
                   {isProcessing ? (
                     <>
@@ -743,42 +760,42 @@ export default function StockIngresoPage() {
               </div>
 
               {/* Invoice Info */}
-              <div className="bg-gray-800 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Datos de la Factura</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Datos de la Factura</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Número de Factura</label>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Número de Factura</label>
                     <input
                       type="text"
                       value={invoiceNumber}
                       onChange={(e) => setInvoiceNumber(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       placeholder="0001-00012345"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Fecha</label>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Fecha</label>
                     <input
                       type="date"
                       value={invoiceDate}
                       onChange={(e) => setInvoiceDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm text-gray-400 mb-1">Proveedor</label>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Proveedor</label>
                     <div className="relative">
                       {selectedSupplier ? (
                         <div className="flex items-center gap-2">
                           <div className={`flex-1 px-3 py-2 rounded-lg flex items-center gap-2 ${
                             supplierMatchConfidence >= 0.8 ? 'bg-emerald-500/20 border border-emerald-500/30' :
                             supplierMatchConfidence >= 0.5 ? 'bg-yellow-500/20 border border-yellow-500/30' :
-                            'bg-gray-700 border border-gray-600'
+                            'bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600'
                           }`}>
                             <Truck className="w-4 h-4 text-emerald-400" />
-                            <span className="text-white">{selectedSupplier.name}</span>
+                            <span className="text-gray-900 dark:text-white">{selectedSupplier.name}</span>
                             {selectedSupplier.taxId && (
-                              <span className="text-gray-400 text-sm">({selectedSupplier.taxId})</span>
+                              <span className="text-gray-600 dark:text-gray-400 text-sm">({selectedSupplier.taxId})</span>
                             )}
                             {supplierMatchConfidence < 1 && supplierMatchConfidence > 0 && (
                               <span className="text-xs text-yellow-400">
@@ -791,7 +808,7 @@ export default function StockIngresoPage() {
                               setSelectedSupplier(null);
                               setShowSupplierDropdown(true);
                             }}
-                            className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white"
+                            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -814,8 +831,8 @@ export default function StockIngresoPage() {
                       
                       {/* Supplier Dropdown */}
                       {showSupplierDropdown && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                          <div className="p-3 border-b border-gray-700">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                             <div className="relative">
                               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                               <input
@@ -823,7 +840,7 @@ export default function StockIngresoPage() {
                                 value={supplierSearchQuery}
                                 onChange={(e) => setSupplierSearchQuery(e.target.value)}
                                 placeholder="Buscar proveedor..."
-                                className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500"
                                 autoFocus
                               />
                             </div>
@@ -836,7 +853,7 @@ export default function StockIngresoPage() {
                                 setShowSupplierDropdown(false);
                                 setShowSupplierSidebar(true);
                               }}
-                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-500/10 text-left border-b border-gray-700"
+                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-500/10 text-left border-b border-gray-200 dark:border-gray-700"
                             >
                               <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                                 <Plus className="w-4 h-4 text-blue-400" />
@@ -864,14 +881,14 @@ export default function StockIngresoPage() {
                                     setShowSupplierDropdown(false);
                                     setSupplierSearchQuery('');
                                   }}
-                                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-700/50 text-left"
+                                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700/50 text-left"
                                 >
-                                  <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                                    <Truck className="w-4 h-4 text-gray-400" />
+                                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                    <Truck className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-white text-sm font-medium truncate">{supplier.name}</p>
-                                    <p className="text-gray-500 text-xs truncate">
+                                    <p className="text-gray-900 dark:text-white text-sm font-medium truncate">{supplier.name}</p>
+                                    <p className="text-gray-600 dark:text-gray-500 text-xs truncate">
                                       {supplier.taxId || supplier.businessName || 'Sin CUIT'}
                                     </p>
                                   </div>
@@ -887,12 +904,12 @@ export default function StockIngresoPage() {
               </div>
 
               {/* Line Items */}
-              <div className="bg-gray-800 rounded-xl p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white">Items de la Factura</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Items de la Factura</h3>
                   <button
                     onClick={addLineItem}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg text-sm transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Agregar Item
@@ -903,7 +920,7 @@ export default function StockIngresoPage() {
                   {lineItems.map((item) => (
                     <div
                       key={item.id}
-                      className={`bg-gray-900 rounded-lg p-4 border ${
+                      className={`bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border ${
                         item.productId ? 'border-emerald-500/30' :
                         item.isNewProduct ? 'border-blue-500/30' :
                         'border-yellow-500/30'
@@ -916,7 +933,7 @@ export default function StockIngresoPage() {
                             type="text"
                             value={item.description}
                             onChange={(e) => updateLineItem(item.id, { description: e.target.value })}
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500"
                             placeholder="Descripción del producto"
                           />
                         </div>
@@ -933,11 +950,11 @@ export default function StockIngresoPage() {
                                 total: qty * item.unitPrice
                               });
                             }}
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm text-center focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm text-center focus:ring-2 focus:ring-emerald-500"
                             min="0"
                             step="1"
                           />
-                          <span className="text-xs text-gray-500 block text-center mt-1">Cantidad</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-500 block text-center mt-1">Cantidad</span>
                         </div>
 
                         {/* Unit Price */}
@@ -954,33 +971,33 @@ export default function StockIngresoPage() {
                                   total: item.quantity * price
                                 });
                               }}
-                              className="w-full pl-7 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                              className="w-full pl-7 pr-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500"
                               min="0"
                               step="0.01"
                             />
                           </div>
-                          <span className="text-xs text-gray-500 block text-center mt-1">Precio Unit.</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-500 block text-center mt-1">Precio Unit.</span>
                         </div>
 
                         {/* Total */}
                         <div className="w-32 text-right">
-                          <p className="text-white font-medium">${item.total.toFixed(2)}</p>
-                          <span className="text-xs text-gray-500">Total</span>
+                          <p className="text-gray-900 dark:text-white font-medium">${item.total.toFixed(2)}</p>
+                          <span className="text-xs text-gray-600 dark:text-gray-500">Total</span>
                         </div>
 
                         {/* Delete */}
                         <button
                           onClick={() => removeLineItem(item.id)}
-                          className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
+                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
 
                       {/* Product Association */}
-                      <div className="mt-3 pt-3 border-t border-gray-800">
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
                         <div className="flex items-center gap-3">
-                          <span className="text-sm text-gray-400">Producto:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Producto:</span>
                           
                           {item.productId ? (
                             <div className="flex items-center gap-2">
@@ -995,7 +1012,7 @@ export default function StockIngresoPage() {
                               </span>
                               <button
                                 onClick={() => associateProduct(item.id, null)}
-                                className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white"
+                                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -1008,7 +1025,7 @@ export default function StockIngresoPage() {
                               </span>
                               <button
                                 onClick={() => updateLineItem(item.id, { isNewProduct: false })}
-                                className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white"
+                                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-800 rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -1026,8 +1043,8 @@ export default function StockIngresoPage() {
                               
                               {/* Product Dropdown */}
                               {showProductDropdown === item.id && (
-                                <div className="absolute top-full left-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                                  <div className="p-3 border-b border-gray-700">
+                                <div className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                                     <div className="relative">
                                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                       <input
@@ -1035,7 +1052,7 @@ export default function StockIngresoPage() {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Buscar producto..."
-                                        className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                                        className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500"
                                         autoFocus
                                       />
                                     </div>
@@ -1049,7 +1066,7 @@ export default function StockIngresoPage() {
                                         setShowCreateProductSidebar(true);
                                         setShowProductDropdown(null);
                                       }}
-                                      className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-500/10 text-left border-b border-gray-700"
+                                      className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-500/10 text-left border-b border-gray-200 dark:border-gray-700"
                                     >
                                       <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                                         <Plus className="w-4 h-4 text-blue-400" />
@@ -1075,14 +1092,14 @@ export default function StockIngresoPage() {
                                         <button
                                           key={product.id}
                                           onClick={() => associateProduct(item.id, product)}
-                                          className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-700/50 text-left"
+                                          className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700/50 text-left"
                                         >
-                                          <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                                            <Package className="w-4 h-4 text-gray-400" />
+                                          <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <Package className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                                           </div>
                                           <div className="flex-1 min-w-0">
-                                            <p className="text-white text-sm font-medium truncate">{product.name}</p>
-                                            <p className="text-gray-500 text-xs">
+                                            <p className="text-gray-900 dark:text-white text-sm font-medium truncate">{product.name}</p>
+                                            <p className="text-gray-600 dark:text-gray-500 text-xs">
                                               Stock: {product.currentStock} | Costo: ${product.costPrice}
                                             </p>
                                           </div>
@@ -1107,20 +1124,20 @@ export default function StockIngresoPage() {
                 </div>
 
                 {/* Total */}
-                <div className="mt-6 pt-4 border-t border-gray-700 flex justify-between items-center">
-                  <span className="text-gray-400">Total calculado:</span>
-                  <span className="text-2xl font-bold text-white">${calculatedTotal.toFixed(2)}</span>
+                <div className="mt-6 pt-4 border-t border-gray-300 dark:border-gray-700 flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Total calculado:</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">${calculatedTotal.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Notes */}
-              <div className="bg-gray-800 rounded-xl p-6">
-                <label className="block text-sm text-gray-400 mb-2">Notas adicionales</label>
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">Notas adicionales</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   placeholder="Observaciones sobre este ingreso..."
                 />
               </div>
@@ -1137,7 +1154,7 @@ export default function StockIngresoPage() {
               <div className="flex justify-between">
                 <button
                   onClick={resetForm}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Empezar de nuevo
@@ -1146,7 +1163,7 @@ export default function StockIngresoPage() {
                 <button
                   onClick={saveStockMovements}
                   disabled={isSaving || lineItems.length === 0}
-                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl font-medium transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl font-medium transition-colors"
                 >
                   {isSaving ? (
                     <>
@@ -1176,15 +1193,15 @@ export default function StockIngresoPage() {
               <div className="w-20 h-20 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle className="w-10 h-10 text-emerald-400" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">¡Ingreso Registrado!</h2>
-              <p className="text-gray-400 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">¡Ingreso Registrado!</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
                 Se registraron {lineItems.length} movimientos de stock correctamente.
               </p>
               
               <div className="flex justify-center gap-4">
                 <button
                   onClick={resetForm}
-                  className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl font-medium transition-colors"
                 >
                   <Plus className="w-5 h-5" />
                   Nuevo Ingreso
@@ -1257,7 +1274,7 @@ export default function StockIngresoPage() {
         )}
       </AnimatePresence>
 
-      {/* Document Preview Modal */}
+      {/* Document Preview Sidebar */}
       <AnimatePresence>
         {showDocumentPreview && previewUrl && (
           <>
@@ -1267,73 +1284,79 @@ export default function StockIngresoPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDocumentPreview(false)}
-              className="fixed inset-0 bg-black/80 z-50"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
             />
             
-            {/* Modal */}
+            {/* Sidebar */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-4 md:inset-8 lg:inset-16 bg-gray-900 rounded-2xl z-50 flex flex-col overflow-hidden border border-gray-700 shadow-2xl"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-full max-w-4xl bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 z-[101] flex flex-col shadow-2xl"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-700">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-400" />
-                  Documento Escaneado
-                </h3>
-                <div className="flex items-center gap-2">
-                  {/* Zoom Controls */}
-                  <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
-                    <button
-                      onClick={() => setDocumentZoom(Math.max(0.5, documentZoom - 0.25))}
-                      className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors"
-                      title="Alejar"
-                    >
-                      <ZoomOut className="w-4 h-4" />
-                    </button>
-                    <span className="px-2 text-sm text-gray-400 min-w-[60px] text-center">
-                      {Math.round(documentZoom * 100)}%
-                    </span>
-                    <button
-                      onClick={() => setDocumentZoom(Math.min(3, documentZoom + 0.25))}
-                      className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors"
-                      title="Acercar"
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                    </button>
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <FileText className="w-5 h-5 text-blue-500" />
                   </div>
-                  <button
-                    onClick={() => setDocumentZoom(1)}
-                    className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    Reset
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowDocumentPreview(false);
-                      setDocumentZoom(1);
-                    }}
-                    className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Documento Escaneado</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Vista previa de la factura</p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowDocumentPreview(false);
+                    setDocumentZoom(1);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Zoom Controls */}
+              <div className="flex items-center justify-center gap-2 p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                <button
+                  onClick={() => setDocumentZoom(Math.max(0.5, documentZoom - 0.25))}
+                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  title="Alejar"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="px-4 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white font-medium min-w-[80px] text-center">
+                  {Math.round(documentZoom * 100)}%
+                </span>
+                <button
+                  onClick={() => setDocumentZoom(Math.min(3, documentZoom + 0.25))}
+                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  title="Acercar"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setDocumentZoom(1)}
+                  className="px-3 py-1.5 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white transition-colors"
+                >
+                  Reset
+                </button>
               </div>
               
               {/* Image Container */}
-              <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-gray-950">
-                <div 
-                  className="transition-transform duration-200"
-                  style={{ transform: `scale(${documentZoom})` }}
-                >
-                  <img
-                    src={previewUrl}
-                    alt="Documento escaneado"
-                    className="max-w-full h-auto rounded-lg shadow-lg"
-                    style={{ maxHeight: `calc(100vh - 200px)` }}
-                  />
+              <div className="flex-1 overflow-auto p-6 bg-gray-100 dark:bg-gray-950">
+                <div className="flex items-center justify-center min-h-full">
+                  <div 
+                    className="transition-transform duration-200"
+                    style={{ transform: `scale(${documentZoom})` }}
+                  >
+                    <img
+                      src={previewUrl}
+                      alt="Documento escaneado"
+                      className="max-w-full h-auto rounded-lg shadow-lg"
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1341,5 +1364,6 @@ export default function StockIngresoPage() {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }

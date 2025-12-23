@@ -95,7 +95,7 @@ const FindPlayersPage = () => {
   const getSportName = (sport: string) => {
     const sportNames: { [key: string]: string } = {
       'futbol5': 'Fútbol 5',
-      'paddle': 'Paddle',
+      'paddle': 'Padel',
       'tenis': 'Tenis',
       'basquet': 'Básquet'
     };
@@ -348,7 +348,7 @@ const FindPlayersPage = () => {
                 >
                   <option value="all">Todos</option>
                   <option value="futbol5">Fútbol 5</option>
-                  <option value="paddle">Paddle</option>
+                  <option value="paddle">Padel</option>
                   <option value="tenis">Tenis</option>
                   <option value="basquet">Básquet</option>
                 </select>
@@ -464,7 +464,7 @@ const FindPlayersPage = () => {
                         className="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       >
                         <option value="futbol5">Fútbol 5</option>
-                        <option value="paddle">Paddle</option>
+                        <option value="paddle">Padel</option>
                         <option value="tenis">Tenis</option>
                         <option value="basquet">Básquet</option>
                       </select>

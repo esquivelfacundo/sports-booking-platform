@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useSuperAdmin } from '@/contexts/SuperAdminContext';
 import { useRouter } from 'next/navigation';
 import SuperAdminDashboard from '@/components/control/SuperAdminDashboard';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 export default function ControlPage() {
   const { isAuthenticated, isLoading } = useSuperAdmin();
@@ -17,11 +18,8 @@ export default function ControlPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Verificando acceso...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }

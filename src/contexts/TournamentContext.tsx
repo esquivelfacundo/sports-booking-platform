@@ -62,11 +62,11 @@ const mockTournaments: Tournament[] = [
   },
   {
     id: '2',
-    name: 'Torneo Paddle Mixto',
+    name: 'Torneo Padel Mixto',
     description: 'Torneo de paddle mixto. Parejas formadas por un hombre y una mujer.',
     sport: 'paddle',
     establishmentId: 'est2',
-    establishmentName: 'Paddle Center Norte',
+    establishmentName: 'Padel Center Norte',
     startDate: '2025-02-20',
     endDate: '2025-02-22',
     registrationDeadline: '2025-02-15',

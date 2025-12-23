@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Plug, 
   Key, 
@@ -25,7 +27,7 @@ import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import Image from 'next/image';
-import Link from 'next/link';
+import ApiDocsContent from './docs/ApiDocsContent';
 
 interface Integration {
   id: string;
@@ -103,6 +105,8 @@ const INTEGRATION_CARDS: IntegrationCardData[] = [
 export default function IntegrationsPage() {
   const { establishment } = useEstablishment();
   const { showSuccess, showError } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +115,30 @@ export default function IntegrationsPage() {
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeIntegration, setActiveIntegration] = useState<IntegrationType | null>(null);
+  const [activeTab, setActiveTab] = useState<'integrations' | 'docs'>('integrations');
+  const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+
+  // Get header portal container on mount
+  useEffect(() => {
+    const container = document.getElementById('header-page-controls');
+    if (container) {
+      setHeaderPortalContainer(container);
+    }
+  }, []);
+
+  // Read tab from URL on mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['integrations', 'docs'].includes(tabParam)) {
+      setActiveTab(tabParam as 'integrations' | 'docs');
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (tab: 'integrations' | 'docs') => {
+    setActiveTab(tab);
+    router.push(`/establecimientos/admin/integraciones?tab=${tab}`, { scroll: false });
+  };
   
   const [mpStatus, setMpStatus] = useState<{
     connected: boolean;
@@ -466,33 +494,56 @@ export default function IntegrationsPage() {
     );
   };
 
+  // Header controls for topbar
+  const headerControls = (
+    <div className="flex items-center w-full space-x-4">
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex-shrink-0">
+        <button
+          onClick={() => handleTabChange('integrations')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'integrations'
+              ? 'bg-emerald-600 text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <Plug className="h-4 w-4" />
+          Integraciones
+        </button>
+        <button
+          onClick={() => handleTabChange('docs')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'docs'
+              ? 'bg-emerald-600 text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <ExternalLink className="h-4 w-4" />
+          Documentación
+        </button>
+      </div>
+    </div>
+  );
+
   if (loading && mpStatus.loading) {
-    return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><Loader2 className="w-8 h-8 text-emerald-500 animate-spin" /></div>;
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 text-emerald-500 animate-spin" /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-3"><Plug className="w-7 h-7 text-emerald-500" />Integraciones</h1>
-              <p className="text-gray-400 mt-2">Conecta servicios externos para potenciar tu establecimiento</p>
-            </div>
-            <Link
-              href="/establecimientos/admin/integraciones/docs"
-              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Ver Documentación API
-            </Link>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    <>
+      {/* Render controls in header via portal */}
+      {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
+      
+      {activeTab === 'docs' ? (
+        <ApiDocsContent />
+      ) : (
+        <div className="min-h-screen p-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {INTEGRATION_CARDS.map((card, index) => {
             const connected = isConnected(card.id);
             return (
-              <motion.div key={card.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className={`bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden hover:border-gray-600 transition-all cursor-pointer ${connected ? 'ring-2 ring-emerald-500/30' : ''}`} onClick={() => openSidebar(card.id)}>
+              <motion.div key={card.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer shadow-sm dark:shadow-none ${connected ? 'ring-2 ring-emerald-500/30' : ''}`} onClick={() => openSidebar(card.id)}>
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-lg`}>
@@ -500,12 +551,12 @@ export default function IntegrationsPage() {
                     </div>
                     {connected && <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-medium flex items-center gap-1"><CheckCircle className="w-3 h-3" />Conectado</span>}
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-1">{card.name}</h3>
-                  <p className="text-sm text-gray-400 mb-4">{card.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{card.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{card.description}</p>
                   <div className="flex flex-wrap gap-1.5">{card.features.map((feature, i) => <span key={i} className={`px-2 py-0.5 ${card.bgColor} ${card.color} rounded text-xs`}>{feature}</span>)}</div>
                 </div>
-                <div className="px-5 py-3 bg-gray-900/50 border-t border-gray-700">
-                  <button className={`w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${connected ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : `bg-gradient-to-r ${card.gradient} text-white hover:opacity-90`}`}>{connected ? <><Settings className="w-4 h-4" />Configurar</> : <><Zap className="w-4 h-4" />Conectar</>}</button>
+                <div className="px-5 py-3 bg-gray-100 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
+                  <button className={`w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${connected ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' : `bg-gradient-to-r ${card.gradient} text-white hover:opacity-90`}`}>{connected ? <><Settings className="w-4 h-4" />Configurar</> : <><Zap className="w-4 h-4" />Conectar</>}</button>
                 </div>
               </motion.div>
             );
@@ -516,11 +567,13 @@ export default function IntegrationsPage() {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-40" onClick={closeSidebar} />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 z-50 shadow-2xl">{renderSidebarContent()}</motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]" onClick={closeSidebar} />
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 z-[101] shadow-2xl">{renderSidebarContent()}</motion.div>
           </>
         )}
       </AnimatePresence>
     </div>
+      )}
+    </>
   );
 }

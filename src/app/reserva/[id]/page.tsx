@@ -18,6 +18,7 @@ import {
   Building2,
   CreditCard
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface BookingData {
   booking: {
@@ -184,11 +185,8 @@ export default function BookingDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-4" />
-          <p className="text-gray-400">Cargando reserva...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }

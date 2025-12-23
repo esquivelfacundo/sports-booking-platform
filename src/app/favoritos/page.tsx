@@ -21,7 +21,7 @@ const mockFacilities = [
   },
   {
     id: '2',
-    name: 'Paddle Center Norte',
+    name: 'Padel Center Norte',
     sport: 'paddle',
     location: 'Belgrano, Buenos Aires',
     price: 6500,
@@ -104,7 +104,7 @@ const FavoritesPage = () => {
   const getSportName = (sport: string) => {
     const sportNames: { [key: string]: string } = {
       'futbol5': 'Fútbol 5',
-      'paddle': 'Paddle',
+      'paddle': 'Padel',
       'tenis': 'Tenis',
       'basquet': 'Básquet'
     };
@@ -152,7 +152,7 @@ const FavoritesPage = () => {
               >
                 <option value="all">Todos los deportes</option>
                 <option value="futbol5">Fútbol 5</option>
-                <option value="paddle">Paddle</option>
+                <option value="paddle">Padel</option>
                 <option value="tenis">Tenis</option>
                 <option value="basquet">Básquet</option>
               </select>

@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Users, Calendar, MapPin, DollarSign, Clock, Filter, Search, Star } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useTournament } from '@/contexts/TournamentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tournament } from '@/types/tournament';
@@ -108,7 +109,7 @@ const TournamentsContent = () => {
             >
               <option value="">Todos los deportes</option>
               <option value="futbol5">Fútbol 5</option>
-              <option value="paddle">Paddle</option>
+              <option value="paddle">Padel</option>
               <option value="tenis">Tenis</option>
               <option value="basquet">Básquet</option>
               <option value="voley">Vóley</option>
@@ -428,8 +429,8 @@ const TournamentRegistrationModal = ({
 const TournamentsPage = () => {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Cargando torneos...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     }>
       <TournamentsContent />

@@ -112,7 +112,7 @@ const MarketingPage = () => {
     },
     {
       id: '3',
-      name: 'Torneo de Paddle',
+      name: 'Torneo de Padel',
       description: 'Promoción del torneo mensual de paddle',
       type: 'event',
       status: 'active',
@@ -347,11 +347,11 @@ const MarketingPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Marketing y Promociones</h1>
-          <p className="text-gray-400 mt-1">Gestiona campañas, promociones y estrategias de marketing</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Marketing y Promociones</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Gestiona campañas, promociones y estrategias de marketing</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl transition-colors">
+          <button className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white px-4 py-2 rounded-xl transition-colors">
             <Download className="h-4 w-4" />
             <span>Exportar</span>
           </button>
@@ -370,11 +370,11 @@ const MarketingPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Campañas Activas</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Campañas Activas</p>
               <p className="text-2xl font-bold text-emerald-400">{stats.active}</p>
             </div>
             <Megaphone className="h-8 w-8 text-emerald-400" />
@@ -385,11 +385,11 @@ const MarketingPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Alcance Total</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Alcance Total</p>
               <p className="text-2xl font-bold text-blue-400">{stats.totalReach.toLocaleString()}</p>
             </div>
             <Users className="h-8 w-8 text-blue-400" />
@@ -400,7 +400,7 @@ const MarketingPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -415,11 +415,11 @@ const MarketingPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">ROI Promedio</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">ROI Promedio</p>
               <p className="text-2xl font-bold text-yellow-400">{stats.avgROI.toFixed(1)}%</p>
             </div>
             <TrendingUp className="h-8 w-8 text-yellow-400" />
@@ -433,7 +433,7 @@ const MarketingPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Presupuesto</h3>
@@ -465,7 +465,7 @@ const MarketingPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Conversiones</h3>
@@ -489,7 +489,7 @@ const MarketingPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Tipos de Campaña</h3>

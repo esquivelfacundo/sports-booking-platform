@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { ProductDetailsSidebar } from './ProductDetailsSidebar';
 import { CategoryManagementSidebar } from './CategoryManagementSidebar';
 
@@ -154,12 +155,12 @@ const ProductsTab = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 rounded-lg p-4 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Total Productos</p>
-              <p className="text-2xl font-bold text-white mt-1">{products.length}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Productos</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{products.length}</p>
             </div>
             <Package className="w-8 h-8 text-emerald-500" />
           </div>
@@ -169,12 +170,12 @@ const ProductsTab = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-lg p-4 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Productos Activos</p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Productos Activos</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {products.filter(p => p.isActive).length}
               </p>
             </div>
@@ -186,11 +187,11 @@ const ProductsTab = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-lg p-4 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Stock Bajo</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Stock Bajo</p>
               <p className="text-2xl font-bold text-yellow-500 mt-1">
                 {lowStockProducts.length}
               </p>
@@ -203,12 +204,12 @@ const ProductsTab = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800 rounded-lg p-4 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Categorías</p>
-              <p className="text-2xl font-bold text-white mt-1">{categories.length}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Categorías</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{categories.length}</p>
             </div>
             <Filter className="w-8 h-8 text-purple-500" />
           </div>
@@ -237,15 +238,14 @@ const ProductsTab = ({
 
       {/* Products Table */}
       {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-          <p className="text-gray-400 mt-4">Cargando productos...</p>
+        <div className="flex items-center justify-center py-12">
+          <UnifiedLoader size="sm" />
         </div>
       ) : products.length === 0 ? (
-        <div className="text-center py-12 bg-gray-800 rounded-lg border border-gray-700">
-          <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No hay productos</h3>
-          <p className="text-gray-400 mb-6">Comienza agregando tu primer producto</p>
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <Package className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No hay productos</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">Comienza agregando tu primer producto</p>
           <button
             onClick={() => {
               setSelectedProduct(null);
@@ -258,12 +258,12 @@ const ProductsTab = ({
           </button>
         </div>
       ) : (
-        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-900/50">
+              <thead className="bg-gray-100 dark:bg-gray-900/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Producto
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -272,27 +272,27 @@ const ProductsTab = ({
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     SKU/Código
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Stock
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Costo
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Venta
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Margen
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {products.map((product) => {
                   const stockStatus = getStockStatus(product);
                   return (
@@ -300,11 +300,11 @@ const ProductsTab = ({
                       key={product.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="hover:bg-gray-700/50 transition-colors"
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                     >
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center flex-shrink-0">
                             {product.image ? (
                               <img 
                                 src={product.image} 
@@ -316,9 +316,9 @@ const ProductsTab = ({
                             )}
                           </div>
                           <div>
-                            <div className="text-white font-medium">{product.name}</div>
+                            <div className="text-gray-900 dark:text-white font-medium">{product.name}</div>
                             {product.description && (
-                              <div className="text-gray-400 text-sm truncate max-w-xs">
+                              <div className="text-gray-500 dark:text-gray-400 text-sm truncate max-w-xs">
                                 {product.description}
                               </div>
                             )}
@@ -343,10 +343,10 @@ const ProductsTab = ({
                       <td className="px-4 py-4">
                         <div className="text-sm">
                           {product.sku && (
-                            <div className="text-white">{product.sku}</div>
+                            <div className="text-gray-900 dark:text-white">{product.sku}</div>
                           )}
                           {product.barcode && (
-                            <div className="text-gray-400 text-xs">{product.barcode}</div>
+                            <div className="text-gray-500 dark:text-gray-400 text-xs">{product.barcode}</div>
                           )}
                           {!product.sku && !product.barcode && (
                             <span className="text-gray-500">-</span>
@@ -364,7 +364,7 @@ const ProductsTab = ({
                         </div>
                         <div className="text-gray-400 text-xs">{product.unit}</div>
                       </td>
-                      <td className="px-4 py-4 text-right text-white">
+                      <td className="px-4 py-4 text-right text-gray-900 dark:text-white">
                         ${Number(product.costPrice).toLocaleString('es-AR')}
                       </td>
                       <td className="px-4 py-4 text-right text-emerald-400 font-semibold">
@@ -387,14 +387,14 @@ const ProductsTab = ({
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleEditProduct(product)}
-                            className="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-700 rounded transition-colors"
+                            className="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             title="Editar"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteProduct(product.id)}
-                            className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded transition-colors"
+                            className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4" />

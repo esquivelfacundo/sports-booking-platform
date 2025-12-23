@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, Package, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface ReportsTabProps {
   establishmentId: string;
@@ -70,9 +71,8 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-        <p className="text-gray-400 mt-4">Cargando reportes...</p>
+      <div className="flex items-center justify-center py-12">
+        <UnifiedLoader size="sm" />
       </div>
     );
   }
@@ -84,13 +84,13 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 rounded-lg border border-gray-700 p-6"
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-400 text-sm">Valor del Inventario</h3>
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm">Valor del Inventario</h3>
             <DollarSign className="w-8 h-8 text-emerald-500" />
           </div>
-          <p className="text-3xl font-bold text-white">
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
             ${summary?.inventoryValue?.toFixed(2) || '0.00'}
           </p>
           <p className="text-sm text-gray-400 mt-1">Valor total en stock</p>
@@ -100,13 +100,13 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-lg border border-gray-700 p-6"
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-400 text-sm">Unidades Totales</h3>
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm">Unidades Totales</h3>
             <Package className="w-8 h-8 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-white">
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
             {summary?.totalUnits || 0}
           </p>
           <p className="text-sm text-gray-400 mt-1">En todos los productos</p>
@@ -116,10 +116,10 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-lg border border-gray-700 p-6"
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-400 text-sm">Productos con Stock Bajo</h3>
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm">Productos con Stock Bajo</h3>
             <AlertTriangle className="w-8 h-8 text-yellow-500" />
           </div>
           <p className="text-3xl font-bold text-yellow-500">
@@ -132,13 +132,13 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800 rounded-lg border border-gray-700 p-6"
+          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-400 text-sm">Movimientos Totales</h3>
+            <h3 className="text-gray-500 dark:text-gray-400 text-sm">Movimientos Totales</h3>
             <TrendingUp className="w-8 h-8 text-purple-500" />
           </div>
-          <p className="text-3xl font-bold text-white">
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
             {summary?.movementsByType?.reduce((sum, m) => sum + (m.count || 0), 0) || 0}
           </p>
           <p className="text-sm text-gray-400 mt-1">En el período</p>
@@ -146,8 +146,8 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
       </div>
 
       {/* Movements by Type */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-        <h3 className="text-xl font-bold text-white mb-6">Movimientos por Tipo</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm dark:shadow-none">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Movimientos por Tipo</h3>
         
         {summary?.movementsByType && summary.movementsByType.length > 0 ? (
           <div className="space-y-4">
@@ -158,7 +158,7 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
                     {movement.count || 0}
                   </div>
                   <div>
-                    <p className="text-white font-medium">{getMovementTypeLabel(movement.type)}</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{getMovementTypeLabel(movement.type)}</p>
                     {movement.totalValue && (
                       <p className="text-sm text-gray-400">
                         Valor: ${movement.totalValue.toFixed(2)}
@@ -166,7 +166,7 @@ const ReportsTab = ({ establishmentId, dateRange, setDateRange }: ReportsTabProp
                     )}
                   </div>
                 </div>
-                <div className="w-32 bg-gray-700 rounded-full h-2">
+                <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${
                       movement.type === 'entrada' ? 'bg-emerald-500' :

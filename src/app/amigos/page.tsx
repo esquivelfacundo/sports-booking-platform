@@ -80,7 +80,7 @@ const FriendsPage = () => {
   const getSportName = (sport: string) => {
     const sportNames: { [key: string]: string } = {
       'futbol5': 'Fútbol 5',
-      'paddle': 'Paddle',
+      'paddle': 'Padel',
       'tenis': 'Tenis',
       'basquet': 'Básquet'
     };
@@ -374,7 +374,7 @@ const FriendsPage = () => {
                   >
                     <option value="all">Todos los deportes</option>
                     <option value="futbol5">Fútbol 5</option>
-                    <option value="paddle">Paddle</option>
+                    <option value="paddle">Padel</option>
                     <option value="tenis">Tenis</option>
                     <option value="basquet">Básquet</option>
                   </select>

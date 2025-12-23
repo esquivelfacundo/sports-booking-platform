@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { 
   Settings, 
@@ -52,6 +53,7 @@ import PhoneInput from '@/components/ui/PhoneInput';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Argentine National Holidays 2024-2025
 const NATIONAL_HOLIDAYS = [
@@ -84,7 +86,33 @@ const ROLE_LABELS: Record<string, { label: string; color: string; icon: any }> =
 const ConfigurationPage = () => {
   const { establishment, loading, updateEstablishment } = useEstablishment();
   const { showSuccess, showError, showWarning } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('general');
+  const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  
+  // Get header portal container on mount
+  useEffect(() => {
+    const container = document.getElementById('header-page-controls');
+    if (container) {
+      setHeaderPortalContainer(container);
+    }
+  }, []);
+  
+  // Read tab from URL on mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs = ['general', 'business', 'staff', 'booking', 'notifications', 'payments', 'security'];
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+  
+  // Update URL when tab changes
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/establecimientos/admin/configuracion?tab=${tab}`, { scroll: false });
+  };
   const [showPassword, setShowPassword] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -180,9 +208,9 @@ const ConfigurationPage = () => {
     currency: 'ARS',
     
     // Social Media
-    instagram: '',
-    facebook: '',
-    twitter: '',
+    instagram: (establishment as any)?.instagram || '',
+    facebook: (establishment as any)?.facebook || '',
+    twitter: (establishment as any)?.twitter || '',
     
     // Gallery
     galleryImages: [] as string[],
@@ -686,7 +714,11 @@ const ConfigurationPage = () => {
         noShowPenaltyType: config.noShowPenaltyType,
         noShowPenaltyPercentage: config.noShowPenaltyPercentage,
         // Include deposit payment deadline
-        depositPaymentDeadlineHours: config.depositPaymentDeadlineHours
+        depositPaymentDeadlineHours: config.depositPaymentDeadlineHours,
+        // Include social media
+        instagram: config.instagram,
+        facebook: config.facebook,
+        twitter: config.twitter
       };
       
       await updateEstablishment(updatedEstablishment);
@@ -715,16 +747,16 @@ const ConfigurationPage = () => {
 
   const renderGeneralTab = () => (
     <div className="space-y-6">
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Información del Establecimiento</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información del Establecimiento</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Logo and Name Row */}
           <div className="md:col-span-2 flex flex-col sm:flex-row gap-6">
             {/* Logo Upload */}
             <div className="flex-shrink-0">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Logo</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Logo</label>
               <div className="relative">
-                <div className="w-24 h-24 rounded-xl bg-gray-700 border-2 border-dashed border-gray-600 flex items-center justify-center overflow-hidden">
+                <div className="w-24 h-24 rounded-xl bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden">
                   {config.logo ? (
                     <img 
                       src={config.logo.startsWith('http') ? config.logo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${config.logo}`}
@@ -782,7 +814,7 @@ const ConfigurationPage = () => {
             
             {/* Name Field */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-300 mb-2">Nombre del Establecimiento</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Nombre del Establecimiento</label>
               <input
                 type="text"
                 value={config.establishmentName}
@@ -790,17 +822,17 @@ const ConfigurationPage = () => {
                   setConfig((prev: any) => ({ ...prev, establishmentName: e.target.value }));
                   setUnsavedChanges(true);
                 }}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                 suppressHydrationWarning={true}
               />
             </div>
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
               Link de Reservas (Slug)
             </label>
             <div className="flex items-center">
-              <span className="px-4 py-2 bg-gray-600 border border-gray-600 border-r-0 rounded-l-xl text-gray-400 text-sm">
+              <span className="px-4 py-2 bg-gray-200 dark:bg-gray-600 border border-gray-300 dark:border-gray-600 border-r-0 rounded-l-xl text-gray-500 dark:text-gray-400 text-sm">
                 {typeof window !== 'undefined' ? window.location.origin : ''}/reservar/
               </span>
               <input
@@ -813,7 +845,7 @@ const ConfigurationPage = () => {
                   setUnsavedChanges(true);
                 }}
                 placeholder="mi-establecimiento"
-                className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-r-xl text-white focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-r-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                 suppressHydrationWarning={true}
               />
             </div>
@@ -827,7 +859,7 @@ const ConfigurationPage = () => {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Teléfono</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Teléfono</label>
             <PhoneInput
               value={config.phone}
               onChange={(value) => {
@@ -835,11 +867,11 @@ const ConfigurationPage = () => {
                 setUnsavedChanges(true);
               }}
               placeholder="Número de teléfono"
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Email</label>
             <input
               type="email"
               value={config.email}
@@ -847,13 +879,13 @@ const ConfigurationPage = () => {
                 setConfig(prev => ({ ...prev, email: e.target.value }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
               suppressHydrationWarning={true}
             />
           </div>
         </div>
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Dirección</label>
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Dirección</label>
           <input
             type="text"
             value={config.address}
@@ -861,38 +893,38 @@ const ConfigurationPage = () => {
               setConfig(prev => ({ ...prev, address: e.target.value }));
               setUnsavedChanges(true);
             }}
-            className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
             suppressHydrationWarning={true}
           />
         </div>
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Descripción</label>
           {/* Rich Text Editor Toolbar */}
-          <div className="flex items-center space-x-1 p-2 bg-gray-600 rounded-t-xl border border-gray-500 border-b-0">
+          <div className="flex items-center space-x-1 p-2 bg-gray-200 dark:bg-gray-600 rounded-t-xl border border-gray-300 dark:border-gray-500 border-b-0">
             <button
               type="button"
-              className="p-2 rounded hover:bg-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               title="Negrita"
             >
               <Bold className="h-4 w-4" />
             </button>
             <button
               type="button"
-              className="p-2 rounded hover:bg-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               title="Cursiva"
             >
               <Italic className="h-4 w-4" />
             </button>
             <button
               type="button"
-              className="p-2 rounded hover:bg-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               title="Lista"
             >
               <List className="h-4 w-4" />
             </button>
             <button
               type="button"
-              className="p-2 rounded hover:bg-gray-500 text-gray-300 hover:text-white transition-colors"
+              className="p-2 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               title="Enlace"
             >
               <Link className="h-4 w-4" />
@@ -906,7 +938,7 @@ const ConfigurationPage = () => {
             }}
             rows={5}
             placeholder="Describe tu establecimiento: instalaciones, servicios, horarios especiales, promociones..."
-            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-b-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 resize-none"
+            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-b-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 resize-none"
             suppressHydrationWarning={true}
           />
           <p className="text-xs text-gray-400 mt-1">
@@ -916,11 +948,11 @@ const ConfigurationPage = () => {
       </div>
 
       {/* Social Media Section */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Redes Sociales</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Redes Sociales</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
               <div className="flex items-center space-x-2">
                 <Instagram className="h-4 w-4 text-pink-400" />
                 <span>Instagram</span>
@@ -936,12 +968,12 @@ const ConfigurationPage = () => {
                   setUnsavedChanges(true);
                 }}
                 placeholder="tu_establecimiento"
-                className="w-full pl-8 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-8 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
               <div className="flex items-center space-x-2">
                 <Facebook className="h-4 w-4 text-blue-400" />
                 <span>Facebook</span>
@@ -955,11 +987,11 @@ const ConfigurationPage = () => {
                 setUnsavedChanges(true);
               }}
               placeholder="https://facebook.com/tu-pagina"
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
               <div className="flex items-center space-x-2">
                 <Twitter className="h-4 w-4 text-sky-400" />
                 <span>Twitter / X</span>
@@ -975,12 +1007,12 @@ const ConfigurationPage = () => {
                   setUnsavedChanges(true);
                 }}
                 placeholder="tu_establecimiento"
-                className="w-full pl-8 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-8 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
               <div className="flex items-center space-x-2">
                 <Globe className="h-4 w-4 text-emerald-400" />
                 <span>Sitio Web</span>
@@ -994,18 +1026,18 @@ const ConfigurationPage = () => {
                 setUnsavedChanges(true);
               }}
               placeholder="https://www.tu-sitio.com"
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500"
             />
           </div>
         </div>
       </div>
 
       {/* Gallery Section */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white">Galería de Fotos</h3>
-            <p className="text-sm text-gray-400">Arrastra para reordenar las imágenes</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Galería de Fotos</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Arrastra para reordenar las imágenes</p>
           </div>
           <label className={`flex items-center space-x-2 px-4 py-2 text-white rounded-xl cursor-pointer transition-colors ${
             uploadingImages ? 'bg-gray-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
@@ -1110,18 +1142,18 @@ const ConfigurationPage = () => {
         )}
       </div>
 
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Configuración Regional</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configuración Regional</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Zona Horaria</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Zona Horaria</label>
             <select
               value={config.timezone}
               onChange={(e) => {
                 setConfig(prev => ({ ...prev, timezone: e.target.value }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
             >
               <option value="America/Argentina/Buenos_Aires">Buenos Aires (GMT-3)</option>
               <option value="America/Argentina/Cordoba">Córdoba (GMT-3)</option>
@@ -1129,14 +1161,14 @@ const ConfigurationPage = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Idioma</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Idioma</label>
             <select
               value={config.language}
               onChange={(e) => {
                 setConfig(prev => ({ ...prev, language: e.target.value }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
             >
               <option value="es">Español</option>
               <option value="en">English</option>
@@ -1144,14 +1176,14 @@ const ConfigurationPage = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Moneda</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Moneda</label>
             <select
               value={config.currency}
               onChange={(e) => {
                 setConfig(prev => ({ ...prev, currency: e.target.value }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
             >
               <option value="ARS">Peso Argentino (ARS)</option>
               <option value="USD">Dólar (USD)</option>
@@ -1165,16 +1197,16 @@ const ConfigurationPage = () => {
 
   const renderBusinessTab = () => (
     <div className="space-y-6">
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Horarios de Funcionamiento</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Horarios de Funcionamiento</h3>
         <div className="space-y-4">
           {Object.entries(config.businessHours).map(([day, hours]) => {
             const dayHours = hours as { open: string; close: string; closed: boolean };
             return (
-              <div key={day} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+              <div key={day} className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <div className="w-20">
-                    <span className="text-white font-medium capitalize">
+                    <span className="text-gray-900 dark:text-white font-medium capitalize">
                       {day === 'monday' ? 'Lunes' :
                        day === 'tuesday' ? 'Martes' :
                        day === 'wednesday' ? 'Miércoles' :
@@ -1188,29 +1220,29 @@ const ConfigurationPage = () => {
                       type="checkbox"
                       checked={!dayHours.closed}
                       onChange={(e) => handleConfigChange('businessHours', day, { ...dayHours, closed: !e.target.checked })}
-                      className="rounded border-gray-600 text-emerald-600 focus:ring-emerald-500"
+                      className="rounded border-gray-400 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500"
                     />
-                    <span className="text-gray-300">Abierto</span>
+                    <span className="text-gray-600 dark:text-gray-300">Abierto</span>
                   </div>
                 </div>
                 {!dayHours.closed && (
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <span className="text-gray-400">Desde:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Desde:</span>
                       <input
                         type="time"
                         value={dayHours.open}
                         onChange={(e) => handleConfigChange('businessHours', day, { ...dayHours, open: e.target.value })}
-                        className="px-3 py-1 bg-gray-600 border border-gray-500 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                        className="px-3 py-1 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                       />
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-gray-400">Hasta:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Hasta:</span>
                       <input
                         type="time"
                         value={dayHours.close}
                         onChange={(e) => handleConfigChange('businessHours', day, { ...dayHours, close: e.target.value })}
-                        className="px-3 py-1 bg-gray-600 border border-gray-500 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
+                        className="px-3 py-1 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                       />
                     </div>
                   </div>
@@ -1222,9 +1254,9 @@ const ConfigurationPage = () => {
       </div>
 
       {/* Closed Days Section - Annual Calendar */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Días Cerrados</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Días Cerrados</h3>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-red-500/30 border border-red-500"></div>
@@ -1238,12 +1270,12 @@ const ConfigurationPage = () => {
         </div>
         
         {/* National Holidays Toggle */}
-        <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-6">
+        <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg mb-6">
           <div className="flex items-center space-x-3">
-            <Calendar className="h-5 w-5 text-emerald-400" />
+            <Calendar className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
             <div>
-              <h4 className="text-white font-medium">Feriados Nacionales</h4>
-              <p className="text-gray-400 text-sm">Marcar automáticamente los feriados de Argentina como cerrados</p>
+              <h4 className="text-gray-900 dark:text-white font-medium">Feriados Nacionales</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Marcar automáticamente los feriados de Argentina como cerrados</p>
             </div>
           </div>
           <button
@@ -1273,8 +1305,8 @@ const ConfigurationPage = () => {
             const monthName = firstDay.toLocaleDateString('es-AR', { month: 'long' });
             
             return (
-              <div key={monthIndex} className="bg-gray-700/50 rounded-lg p-3">
-                <h4 className="text-white font-medium text-center mb-2 capitalize">{monthName}</h4>
+              <div key={monthIndex} className="bg-gray-100 dark:bg-gray-700/50 rounded-lg p-3">
+                <h4 className="text-gray-900 dark:text-white font-medium text-center mb-2 capitalize">{monthName}</h4>
                 
                 {/* Day headers */}
                 <div className="grid grid-cols-7 gap-1 mb-1">
@@ -1327,10 +1359,10 @@ const ConfigurationPage = () => {
                           aspect-square flex items-center justify-center text-xs rounded transition-all cursor-pointer hover:scale-110
                           ${isToday ? 'ring-2 ring-emerald-500' : ''}
                           ${isManualClosed 
-                            ? 'bg-red-500/30 border border-red-500 text-red-300' 
+                            ? 'bg-red-500/30 border border-red-500 text-red-400 dark:text-red-300' 
                             : isHoliday 
-                              ? 'bg-orange-500/30 border border-orange-500 text-orange-300'
-                              : 'bg-gray-600/50 text-gray-300 hover:bg-gray-600'
+                              ? 'bg-orange-500/30 border border-orange-500 text-orange-400 dark:text-orange-300'
+                              : 'bg-gray-200 dark:bg-gray-600/50 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                           }
                         `}
                       >
@@ -1345,18 +1377,18 @@ const ConfigurationPage = () => {
         </div>
 
         {/* Summary */}
-        <div className="mt-6 p-4 bg-gray-700/50 rounded-lg">
+        <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
               <CalendarX className="h-4 w-4 text-red-400" />
-              <span className="text-gray-300">
+              <span className="text-gray-600 dark:text-gray-300">
                 {config.closedDates.length} día{config.closedDates.length !== 1 ? 's' : ''} cerrado{config.closedDates.length !== 1 ? 's' : ''} manualmente
               </span>
             </div>
             {config.nationalHolidays && (
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-orange-400" />
-                <span className="text-gray-300">
+                <span className="text-gray-600 dark:text-gray-300">
                   {NATIONAL_HOLIDAYS.filter(h => new Date(h.date).getFullYear() === new Date().getFullYear()).length} feriados nacionales
                 </span>
               </div>
@@ -1370,11 +1402,11 @@ const ConfigurationPage = () => {
   // Staff Management Tab
   const renderStaffTab = () => (
     <div className="space-y-6">
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-white">Usuarios del Establecimiento</h3>
-            <p className="text-gray-400 text-sm">Gestiona el acceso del personal al sistema</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Usuarios del Establecimiento</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Gestiona el acceso del personal al sistema</p>
           </div>
           <button
             onClick={() => {
@@ -1390,13 +1422,13 @@ const ConfigurationPage = () => {
         </div>
 
         {/* Role Legend */}
-        <div className="flex flex-wrap gap-3 mb-6 p-4 bg-gray-700/50 rounded-lg">
+        <div className="flex flex-wrap gap-3 mb-6 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
           {Object.entries(ROLE_LABELS).map(([key, { label, color, icon: Icon }]) => (
             <div key={key} className="flex items-center space-x-2">
               <div className={`p-1.5 rounded ${color}`}>
                 <Icon className="h-3 w-3" />
               </div>
-              <span className="text-sm text-gray-300">{label}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-300">{label}</span>
             </div>
           ))}
         </div>
@@ -1415,7 +1447,7 @@ const ConfigurationPage = () => {
               return (
                 <div
                   key={staff.id}
-                  className={`flex items-center justify-between p-4 bg-gray-700 rounded-lg ${
+                  className={`flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg ${
                     !staff.isActive ? 'opacity-50' : ''
                   }`}
                 >
@@ -1425,14 +1457,14 @@ const ConfigurationPage = () => {
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h4 className="text-white font-medium">{staff.name}</h4>
+                        <h4 className="text-gray-900 dark:text-white font-medium">{staff.name}</h4>
                         {!staff.isActive && (
                           <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">
                             Inactivo
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-400 text-sm">{staff.email}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">{staff.email}</p>
                       <div className="flex items-center space-x-2">
                         <p className="text-gray-500 text-xs">{roleInfo?.label}</p>
                         {staff.phone && <p className="text-gray-500 text-xs">• {staff.phone}</p>}
@@ -1511,36 +1543,36 @@ const ConfigurationPage = () => {
       </div>
 
       {/* Permissions Info */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Permisos por Rol</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permisos por Rol</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-gray-700 rounded-lg">
+          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
               <Shield className="h-4 w-4 text-red-400" />
-              <span className="text-white font-medium">Administrador</span>
+              <span className="text-gray-900 dark:text-white font-medium">Administrador</span>
             </div>
-            <p className="text-gray-400 text-sm">Acceso total al sistema, configuración y reportes</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Acceso total al sistema, configuración y reportes</p>
           </div>
-          <div className="p-4 bg-gray-700 rounded-lg">
+          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
               <UserCog className="h-4 w-4 text-purple-400" />
-              <span className="text-white font-medium">Gerente</span>
+              <span className="text-gray-900 dark:text-white font-medium">Gerente</span>
             </div>
-            <p className="text-gray-400 text-sm">Gestión de reservas, canchas, clientes y reportes</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Gestión de reservas, canchas, clientes y reportes</p>
           </div>
-          <div className="p-4 bg-gray-700 rounded-lg">
+          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
               <UserCheck className="h-4 w-4 text-blue-400" />
-              <span className="text-white font-medium">Recepcionista</span>
+              <span className="text-gray-900 dark:text-white font-medium">Recepcionista</span>
             </div>
-            <p className="text-gray-400 text-sm">Crear reservas, cobros y gestión de clientes</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Crear reservas, cobros y gestión de clientes</p>
           </div>
-          <div className="p-4 bg-gray-700 rounded-lg">
+          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div className="flex items-center space-x-2 mb-2">
               <User className="h-4 w-4 text-gray-400" />
-              <span className="text-white font-medium">Personal</span>
+              <span className="text-gray-900 dark:text-white font-medium">Personal</span>
             </div>
-            <p className="text-gray-400 text-sm">Solo ver agenda y reservas del día</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Solo ver agenda y reservas del día</p>
           </div>
         </div>
       </div>
@@ -1703,11 +1735,11 @@ const ConfigurationPage = () => {
   const renderBookingTab = () => (
     <div className="space-y-6">
       {/* General Booking Settings */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Configuración General de Reservas</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configuración General de Reservas</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Días máximos de anticipación</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Días máximos de anticipación</label>
             <input
               type="number"
               value={config.maxAdvanceBookingDays}
@@ -1715,12 +1747,12 @@ const ConfigurationPage = () => {
                 setConfig(prev => ({ ...prev, maxAdvanceBookingDays: parseInt(e.target.value) }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
             />
             <p className="text-xs text-gray-400 mt-1">Cuántos días en el futuro se puede reservar</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Horas mínimas de anticipación</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Horas mínimas de anticipación</label>
             <input
               type="number"
               value={config.minAdvanceBookingHours}
@@ -1728,16 +1760,16 @@ const ConfigurationPage = () => {
                 setConfig(prev => ({ ...prev, minAdvanceBookingHours: parseInt(e.target.value) }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
             />
             <p className="text-xs text-gray-400 mt-1">Tiempo mínimo antes del horario reservado</p>
           </div>
         </div>
         <div className="mt-6">
-          <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
             <div>
-              <h4 className="text-white font-medium">Permitir reservas el mismo día</h4>
-              <p className="text-gray-400 text-sm">Los clientes pueden hacer reservas para el día actual</p>
+              <h4 className="text-gray-900 dark:text-white font-medium">Permitir reservas el mismo día</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Los clientes pueden hacer reservas para el día actual</p>
             </div>
             <button
               onClick={() => {
@@ -1757,11 +1789,11 @@ const ConfigurationPage = () => {
       </div>
 
       {/* Deposit/Seña Settings */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white">Configuración de Señas</h3>
-            <p className="text-gray-400 text-sm">Define cómo se manejan los pagos anticipados</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configuración de Señas</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Define cómo se manejan los pagos anticipados</p>
           </div>
           <button
             onClick={() => {
@@ -1786,7 +1818,7 @@ const ConfigurationPage = () => {
           >
             {/* Deposit Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Tipo de seña</label>
+              <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-3">Tipo de seña</label>
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={() => {
@@ -1796,12 +1828,12 @@ const ConfigurationPage = () => {
                   className={`p-4 rounded-xl border-2 transition-all ${
                     config.depositType === 'percentage'
                       ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
                   }`}
                 >
                   <div className="text-2xl mb-2">%</div>
-                  <div className="text-white font-medium">Porcentaje</div>
-                  <div className="text-gray-400 text-sm">Del total de la reserva</div>
+                  <div className="text-gray-900 dark:text-white font-medium">Porcentaje</div>
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">Del total de la reserva</div>
                 </button>
                 <button
                   onClick={() => {
@@ -1811,12 +1843,12 @@ const ConfigurationPage = () => {
                   className={`p-4 rounded-xl border-2 transition-all ${
                     config.depositType === 'fixed'
                       ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                      : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
                   }`}
                 >
                   <div className="text-2xl mb-2">$</div>
-                  <div className="text-white font-medium">Monto Fijo</div>
-                  <div className="text-gray-400 text-sm">Cantidad específica</div>
+                  <div className="text-gray-900 dark:text-white font-medium">Monto Fijo</div>
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">Cantidad específica</div>
                 </button>
               </div>
             </div>
@@ -1825,7 +1857,7 @@ const ConfigurationPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {config.depositType === 'percentage' ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Porcentaje de seña</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Porcentaje de seña</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -1836,7 +1868,7 @@ const ConfigurationPage = () => {
                         setConfig(prev => ({ ...prev, depositPercentage: parseInt(e.target.value) || 0 }));
                         setUnsavedChanges(true);
                       }}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 pr-12"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-12"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">%</span>
                   </div>
@@ -1846,7 +1878,7 @@ const ConfigurationPage = () => {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Monto fijo de seña</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Monto fijo de seña</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                     <input
@@ -1857,14 +1889,14 @@ const ConfigurationPage = () => {
                         setConfig(prev => ({ ...prev, depositFixedAmount: parseInt(e.target.value) || 0 }));
                         setUnsavedChanges(true);
                       }}
-                      className="w-full pl-8 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+                      className="w-full pl-8 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Monto fijo independiente del precio de la reserva</p>
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tiempo límite para pagar seña</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Tiempo límite para pagar seña</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -1874,7 +1906,7 @@ const ConfigurationPage = () => {
                       setConfig(prev => ({ ...prev, depositPaymentDeadlineHours: parseInt(e.target.value) || 1 }));
                       setUnsavedChanges(true);
                     }}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 pr-16"
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-16"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">horas</span>
                 </div>
@@ -1883,7 +1915,7 @@ const ConfigurationPage = () => {
             </div>
 
             {/* Full Payment Option */}
-            <div className="border-t border-gray-700 pt-4 mt-4">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -1892,10 +1924,10 @@ const ConfigurationPage = () => {
                     setConfig(prev => ({ ...prev, allowFullPayment: e.target.checked }));
                     setUnsavedChanges(true);
                   }}
-                  className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                  className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-emerald-500 focus:ring-emerald-500"
                 />
                 <div>
-                  <span className="text-white font-medium">Permitir pago completo online</span>
+                  <span className="text-gray-900 dark:text-white font-medium">Permitir pago completo online</span>
                   <p className="text-xs text-gray-400">Los clientes podrán elegir entre pagar solo la seña o el monto completo</p>
                 </div>
               </label>
@@ -1903,8 +1935,8 @@ const ConfigurationPage = () => {
 
             {/* Preview */}
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-              <h4 className="text-emerald-400 font-medium mb-2">Vista previa</h4>
-              <p className="text-gray-300 text-sm">
+              <h4 className="text-emerald-600 dark:text-emerald-400 font-medium mb-2">Vista previa</h4>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
                 {config.depositType === 'percentage' 
                   ? `Se requerirá el ${config.depositPercentage}% del total como seña.`
                   : `Se requerirá $${config.depositFixedAmount.toLocaleString()} como seña fija.`}
@@ -1925,12 +1957,12 @@ const ConfigurationPage = () => {
       </div>
 
       {/* Cancellation Policy */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Política de Cancelación</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Política de Cancelación</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Horas límite para cancelar</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Horas límite para cancelar</label>
             <div className="relative">
               <input
                 type="number"
@@ -1940,21 +1972,21 @@ const ConfigurationPage = () => {
                   setConfig(prev => ({ ...prev, cancellationDeadlineHours: parseInt(e.target.value) || 0 }));
                   setUnsavedChanges(true);
                 }}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 pr-16"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-16"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">horas</span>
             </div>
             <p className="text-xs text-gray-400 mt-1">Antes del horario de la reserva</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Política de reembolso</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Política de reembolso</label>
             <select
               value={config.cancellationPolicy}
               onChange={(e) => {
                 setConfig(prev => ({ ...prev, cancellationPolicy: e.target.value as any }));
                 setUnsavedChanges(true);
               }}
-              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
             >
               <option value="full_refund">Reembolso total</option>
               <option value="partial_refund">Reembolso parcial</option>
@@ -1966,7 +1998,7 @@ const ConfigurationPage = () => {
 
         {config.cancellationPolicy === 'partial_refund' && (
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Porcentaje de reembolso</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Porcentaje de reembolso</label>
             <div className="relative w-full md:w-1/2">
               <input
                 type="number"
@@ -1977,7 +2009,7 @@ const ConfigurationPage = () => {
                   setConfig(prev => ({ ...prev, refundPercentage: parseInt(e.target.value) || 0 }));
                   setUnsavedChanges(true);
                 }}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 pr-12"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-12"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">%</span>
             </div>
@@ -1986,11 +2018,11 @@ const ConfigurationPage = () => {
         )}
 
         {/* No-Show Penalty */}
-        <div className="border-t border-gray-700 pt-6">
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="text-white font-medium">Penalidad por No-Show</h4>
-              <p className="text-gray-400 text-sm">Cobrar cuando el cliente no se presenta</p>
+              <h4 className="text-gray-900 dark:text-white font-medium">Penalidad por No-Show</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Cobrar cuando el cliente no se presenta</p>
             </div>
             <button
               onClick={() => {
@@ -2010,14 +2042,14 @@ const ConfigurationPage = () => {
           {config.noShowPenalty && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de penalidad</label>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Tipo de penalidad</label>
                 <select
                   value={config.noShowPenaltyType}
                   onChange={(e) => {
                     setConfig(prev => ({ ...prev, noShowPenaltyType: e.target.value as any }));
                     setUnsavedChanges(true);
                   }}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="full_charge">Cobrar el total de la reserva</option>
                   <option value="deposit_only">Solo retener la seña</option>
@@ -2026,7 +2058,7 @@ const ConfigurationPage = () => {
               </div>
               {config.noShowPenaltyType === 'percentage' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Porcentaje de penalidad</label>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Porcentaje de penalidad</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -2037,7 +2069,7 @@ const ConfigurationPage = () => {
                         setConfig(prev => ({ ...prev, noShowPenaltyPercentage: parseInt(e.target.value) || 0 }));
                         setUnsavedChanges(true);
                       }}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 pr-12"
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-12"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">%</span>
                   </div>
@@ -2049,8 +2081,8 @@ const ConfigurationPage = () => {
 
         {/* Policy Summary */}
         <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-          <h4 className="text-blue-400 font-medium mb-2">Resumen de política</h4>
-          <ul className="text-gray-300 text-sm space-y-1">
+          <h4 className="text-blue-600 dark:text-blue-400 font-medium mb-2">Resumen de política</h4>
+          <ul className="text-gray-600 dark:text-gray-300 text-sm space-y-1">
             <li>• Cancelación permitida hasta {config.cancellationDeadlineHours} horas antes</li>
             <li>• Al cancelar a tiempo: {
               config.cancellationPolicy === 'full_refund' ? 'Reembolso total' :
@@ -2213,11 +2245,11 @@ const ConfigurationPage = () => {
   const renderPaymentsTab = () => (
     <div className="space-y-6">
       {/* Payment Methods for Admin Dashboard */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white">Métodos de Pago</h3>
-            <p className="text-gray-400 text-sm">Métodos de pago disponibles para reservas y ventas desde el panel de administración</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Métodos de Pago</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Métodos de pago disponibles para reservas y ventas desde el panel de administración</p>
           </div>
           <button
             onClick={() => setShowNewPaymentMethodForm(true)}
@@ -2235,16 +2267,16 @@ const ConfigurationPage = () => {
         ) : (
           <div className="space-y-3">
             {paymentMethods.map((method) => (
-              <div key={method.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div key={method.id} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${method.isActive ? 'bg-emerald-500/20' : 'bg-gray-600/50'}`}>
-                    {method.code === 'cash' && <DollarSign className={`h-5 w-5 ${method.isActive ? 'text-emerald-400' : 'text-gray-500'}`} />}
-                    {method.code === 'transfer' && <Building2 className={`h-5 w-5 ${method.isActive ? 'text-blue-400' : 'text-gray-500'}`} />}
-                    {(method.code === 'credit_card' || method.code === 'debit_card') && <CreditCard className={`h-5 w-5 ${method.isActive ? 'text-purple-400' : 'text-gray-500'}`} />}
-                    {!['cash', 'transfer', 'credit_card', 'debit_card'].includes(method.code) && <DollarSign className={`h-5 w-5 ${method.isActive ? 'text-gray-400' : 'text-gray-500'}`} />}
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${method.isActive ? 'bg-emerald-100 dark:bg-emerald-500/20' : 'bg-gray-200 dark:bg-gray-600/50'}`}>
+                    {method.code === 'cash' && <DollarSign className={`h-5 w-5 ${method.isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500'}`} />}
+                    {method.code === 'transfer' && <Building2 className={`h-5 w-5 ${method.isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'}`} />}
+                    {(method.code === 'credit_card' || method.code === 'debit_card') && <CreditCard className={`h-5 w-5 ${method.isActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`} />}
+                    {!['cash', 'transfer', 'credit_card', 'debit_card'].includes(method.code) && <DollarSign className={`h-5 w-5 ${method.isActive ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500'}`} />}
                   </div>
                   <div>
-                    <h4 className={`font-medium ${method.isActive ? 'text-white' : 'text-gray-500'}`}>{method.name}</h4>
+                    <h4 className={`font-medium ${method.isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>{method.name}</h4>
                     <p className="text-gray-500 text-xs">{method.code}</p>
                   </div>
                 </div>
@@ -2284,27 +2316,27 @@ const ConfigurationPage = () => {
         
         {/* New Payment Method Form */}
         {showNewPaymentMethodForm && (
-          <div className="mt-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-            <h4 className="text-white font-medium mb-3">Nuevo Método de Pago</h4>
+          <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <h4 className="text-gray-900 dark:text-white font-medium mb-3">Nuevo Método de Pago</h4>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nombre</label>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Nombre</label>
                 <input
                   type="text"
                   value={newPaymentMethod.name}
                   onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Ej: Cheque, Cuenta corriente..."
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Código (identificador único)</label>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Código (identificador único)</label>
                 <input
                   type="text"
                   value={newPaymentMethod.code}
                   onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, code: e.target.value }))}
                   placeholder="Ej: cheque, cuenta_corriente..."
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div className="flex space-x-2">
@@ -2331,11 +2363,11 @@ const ConfigurationPage = () => {
       </div>
 
       {/* Expense Categories */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white">Categorías de Gastos</h3>
-            <p className="text-gray-400 text-sm">Categorías para clasificar los gastos y egresos de caja</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Categorías de Gastos</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Categorías para clasificar los gastos y egresos de caja</p>
           </div>
           <button
             onClick={() => setShowNewExpenseCategoryForm(true)}
@@ -2353,7 +2385,7 @@ const ConfigurationPage = () => {
         ) : (
           <div className="space-y-3">
             {expenseCategories.map((category) => (
-              <div key={category.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div key={category.id} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div 
                     className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -2365,11 +2397,11 @@ const ConfigurationPage = () => {
                     />
                   </div>
                   <div>
-                    <p className={`font-medium ${category.isActive ? 'text-white' : 'text-gray-500'}`}>
+                    <p className={`font-medium ${category.isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
                       {category.name}
                     </p>
                     {category.description && (
-                      <p className="text-sm text-gray-400">{category.description}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{category.description}</p>
                     )}
                   </div>
                 </div>
@@ -2405,31 +2437,31 @@ const ConfigurationPage = () => {
         
         {/* New Expense Category Form */}
         {showNewExpenseCategoryForm && (
-          <div className="mt-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-            <h4 className="text-white font-medium mb-3">Nueva Categoría de Gastos</h4>
+          <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <h4 className="text-gray-900 dark:text-white font-medium mb-3">Nueva Categoría de Gastos</h4>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nombre *</label>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Nombre *</label>
                 <input
                   type="text"
                   value={newExpenseCategory.name}
                   onChange={(e) => setNewExpenseCategory(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Ej: Limpieza, Mantenimiento, Insumos..."
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Descripción (opcional)</label>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Descripción (opcional)</label>
                 <input
                   type="text"
                   value={newExpenseCategory.description}
                   onChange={(e) => setNewExpenseCategory(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Descripción de la categoría..."
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Color</label>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Color</label>
                 <div className="flex items-center space-x-3">
                   <input
                     type="color"
@@ -2441,7 +2473,7 @@ const ConfigurationPage = () => {
                     type="text"
                     value={newExpenseCategory.color}
                     onChange={(e) => setNewExpenseCategory(prev => ({ ...prev, color: e.target.value }))}
-                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -2469,11 +2501,11 @@ const ConfigurationPage = () => {
       </div>
 
       {/* Mercado Pago for Customer Self-Service */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-white">Mercado Pago (Reservas Online)</h3>
-            <p className="text-gray-400 text-sm">Para que los clientes paguen señas al reservar online</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mercado Pago (Reservas Online)</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Para que los clientes paguen señas al reservar online</p>
           </div>
           <button
             onClick={() => {
@@ -2492,8 +2524,8 @@ const ConfigurationPage = () => {
       </div>
 
       {config.mercadoPagoEnabled && (
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Conectar Cuenta de Mercado Pago</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Conectar Cuenta de Mercado Pago</h3>
           
           {mpStatus.loading ? (
             <div className="flex items-center justify-center py-8">
@@ -2507,8 +2539,8 @@ const ConfigurationPage = () => {
                   <Check className="w-6 h-6 text-emerald-400" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-white font-medium">Cuenta conectada</h4>
-                  <p className="text-sm text-gray-400">
+                  <h4 className="text-gray-900 dark:text-white font-medium">Cuenta conectada</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     ID: {mpStatus.mpUserId}
                     {mpStatus.mpEmail && ` • ${mpStatus.mpEmail}`}
                   </p>
@@ -2520,9 +2552,9 @@ const ConfigurationPage = () => {
                 </div>
               </div>
               
-              <div className="p-4 bg-gray-700/50 rounded-xl">
-                <h5 className="text-sm font-medium text-white mb-2">¿Cómo funciona?</h5>
-                <ul className="text-sm text-gray-400 space-y-1">
+              <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-xl">
+                <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">¿Cómo funciona?</h5>
+                <ul className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                   <li>• Los pagos de reservas van directo a tu cuenta de Mercado Pago</li>
                   <li>• La plataforma cobra una pequeña comisión por servicio</li>
                   <li>• Recibís el dinero en tu cuenta automáticamente</li>
@@ -2539,9 +2571,9 @@ const ConfigurationPage = () => {
           ) : (
             <div className="space-y-4">
               {/* Not Connected State */}
-              <div className="p-4 bg-gray-700/50 rounded-xl">
-                <h5 className="text-sm font-medium text-white mb-2">Conectá tu cuenta para recibir pagos</h5>
-                <ul className="text-sm text-gray-400 space-y-1">
+              <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-xl">
+                <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Conectá tu cuenta para recibir pagos</h5>
+                <ul className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                   <li>• Recibí pagos de reservas directamente en tu cuenta</li>
                   <li>• Proceso seguro con un solo clic</li>
                   <li>• Sin necesidad de configurar credenciales manualmente</li>
@@ -2652,61 +2684,65 @@ const ConfigurationPage = () => {
     </div>
   );
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Configuración</h1>
-          <p className="text-gray-400 mt-1">Administra la configuración del sistema</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          {unsavedChanges && (
-            <div className="flex items-center space-x-2 text-yellow-400">
-              <AlertTriangle className="h-4 w-4" />
-              <span className="text-sm">Cambios sin guardar</span>
-            </div>
-          )}
-          <button 
-            onClick={handleSave}
-            disabled={!unsavedChanges || saving || loading}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors ${
-              unsavedChanges && !saving && !loading
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            <Save className="h-4 w-4" />
-            <span>{saving ? 'Guardando...' : 'Guardar Cambios'}</span>
-          </button>
-        </div>
+  // Header controls for topbar
+  const headerControls = (
+    <div className="flex items-center w-full space-x-4">
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex-shrink-0">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{tab.name}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Tabs */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700">
-        <div className="border-b border-gray-700">
-          <nav className="flex space-x-8 px-6">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-emerald-500 text-emerald-400'
-                      : 'border-transparent text-gray-400 hover:text-gray-300'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.name}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
-        <div className="p-6">
+      {/* Save button and unsaved changes indicator */}
+      <div className="flex items-center space-x-3 flex-shrink-0">
+        {unsavedChanges && (
+          <div className="flex items-center space-x-2 text-yellow-400">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm">Cambios sin guardar</span>
+          </div>
+        )}
+        <button 
+          onClick={handleSave}
+          disabled={!unsavedChanges || saving || loading}
+          className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            unsavedChanges && !saving && !loading
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          <Save className="h-4 w-4" />
+          <span>{saving ? 'Guardando...' : 'Guardar'}</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Render controls in header via portal */}
+      {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
+      
+      <div className="p-6">
+        {/* Content */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none p-6">
           {activeTab === 'general' && renderGeneralTab()}
           {activeTab === 'business' && renderBusinessTab()}
           {activeTab === 'staff' && renderStaffTab()}
@@ -2716,7 +2752,7 @@ const ConfigurationPage = () => {
           {activeTab === 'security' && renderSecurityTab()}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

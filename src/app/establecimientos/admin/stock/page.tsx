@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Package, TrendingUp, DollarSign, Plus, Search, Filter, FileText, Truck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ProductsTab from '@/components/stock/ProductsTab';
 import MovementsTab from '@/components/stock/MovementsTab';
 import ReportsTab from '@/components/stock/ReportsTab';
@@ -22,9 +23,24 @@ interface Category {
 
 const StockPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>('products');
   const { establishment } = useEstablishment();
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  
+  // Read tab from URL on mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['products', 'movements', 'suppliers', 'reports'].includes(tabParam)) {
+      setActiveTab(tabParam as Tab);
+    }
+  }, [searchParams]);
+  
+  // Update URL when tab changes
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    router.push(`/establecimientos/admin/stock?tab=${tab}`, { scroll: false });
+  };
   
   // Products tab state
   const [productSearch, setProductSearch] = useState('');
@@ -76,6 +92,31 @@ const StockPage = () => {
   // Header controls based on active tab
   const headerControls = (
     <div className="flex items-center w-full space-x-2 overflow-x-auto">
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex-shrink-0">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{tab.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Products Tab Controls */}
       {activeTab === 'products' && (
         <>
           {/* Search */}
@@ -86,7 +127,7 @@ const StockPage = () => {
               placeholder="Buscar..."
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
-              className="pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-32"
+              className="pl-8 pr-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-32"
             />
           </div>
 
@@ -94,7 +135,7 @@ const StockPage = () => {
           <select
             value={productCategory}
             onChange={(e) => setProductCategory(e.target.value)}
-            className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+            className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
           >
             <option value="all">Categorías</option>
             {categories.map(cat => (
@@ -105,7 +146,7 @@ const StockPage = () => {
           {/* Categories Button */}
           <button
             onClick={() => setShowCategorySidebar(true)}
-            className="flex items-center space-x-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+            className="flex items-center space-x-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
           >
             <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">Categorías</span>
@@ -122,13 +163,14 @@ const StockPage = () => {
         </>
       )}
 
+      {/* Movements Tab Controls */}
       {activeTab === 'movements' && (
         <>
           {/* Movement Type Filter */}
           <select
             value={movementType}
             onChange={(e) => setMovementType(e.target.value)}
-            className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+            className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
           >
             <option value="all">Todos</option>
             <option value="entrada">Entradas</option>
@@ -144,7 +186,7 @@ const StockPage = () => {
             className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
           >
             <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Ingreso con OCR</span>
+            <span className="hidden sm:inline"></span>
           </button>
 
           {/* Register Movement Button */}
@@ -158,46 +200,42 @@ const StockPage = () => {
         </>
       )}
 
+      {/* Suppliers Tab Controls */}
       {activeTab === 'suppliers' && (
-        <>
-          {/* New Supplier Button */}
-          <button
-            onClick={() => {/* TODO: Open supplier sidebar */}}
-            className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nuevo Proveedor</span>
-          </button>
-        </>
+        <button
+          onClick={() => {/* TODO: Open supplier sidebar */}}
+          className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Nuevo Proveedor</span>
+        </button>
       )}
 
+      {/* Reports Tab Controls */}
       {activeTab === 'reports' && (
-        <>
-          {/* Date Range */}
-          <div className="flex items-center space-x-1 flex-shrink-0">
-            <input
-              type="date"
-              value={reportDateRange.startDate}
-              onChange={(e) => setReportDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 w-32"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="date"
-              value={reportDateRange.endDate}
-              onChange={(e) => setReportDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 w-32"
-            />
-          </div>
-        </>
+        <div className="flex items-center space-x-1 flex-shrink-0">
+          <input
+            type="date"
+            value={reportDateRange.startDate}
+            onChange={(e) => setReportDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+            className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
+          />
+          <span className="text-gray-500">-</span>
+          <input
+            type="date"
+            value={reportDateRange.endDate}
+            onChange={(e) => setReportDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+            className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
+          />
+        </div>
       )}
     </div>
   );
 
   if (!establishment) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Cargando...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }
@@ -207,37 +245,8 @@ const StockPage = () => {
       {/* Render controls in header via portal */}
       {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
       
-      <div className="min-h-screen bg-gray-900 p-6">
+      <div className="min-h-screen p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-white mb-2">Gestión de Stock</h1>
-            <p className="text-gray-400">Administra tu inventario, productos y movimientos</p>
-          </div>
-
-          {/* Tabs */}
-          <div className="border-b border-gray-700 mb-6">
-            <nav className="flex space-x-8">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-emerald-500 text-emerald-500'
-                        : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span>{tab.name}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
           {/* Tab Content */}
           <motion.div
             key={activeTab}

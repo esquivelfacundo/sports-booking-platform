@@ -31,6 +31,7 @@ import {
   CreditCard,
   AlertCircle
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface TimeSlot {
   time: string;
@@ -422,14 +423,8 @@ const BookingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
-          </div>
-          <p className="text-gray-400">Cargando establecimiento...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }

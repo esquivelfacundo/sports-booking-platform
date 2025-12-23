@@ -487,25 +487,25 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   };
 
   return (
-    <div className="bg-gray-800 border border-gray-700 overflow-hidden h-full flex flex-col">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden h-full flex flex-col">
       {/* Mobile Court Selector */}
       {isMobile && courts.length > 0 && (
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 bg-gray-700/50">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700/50">
           <button
             onClick={() => setMobileCourtIndex(prev => Math.max(0, prev - 1))}
             disabled={mobileCourtIndex === 0}
-            className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div className="text-center flex-1">
-            <div className="font-medium text-white text-sm">{mobileCurrentCourt?.name}</div>
-            <div className="text-xs text-gray-400 capitalize">{mobileCurrentCourt?.sport}</div>
+            <div className="font-medium text-gray-900 dark:text-white text-sm">{mobileCurrentCourt?.name}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{mobileCurrentCourt?.sport}</div>
           </div>
           <button
             onClick={() => setMobileCourtIndex(prev => Math.min(courts.length - 1, prev + 1))}
             disabled={mobileCourtIndex === courts.length - 1}
-            className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -514,13 +514,13 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
 
       {/* Mobile court indicator dots */}
       {isMobile && courts.length > 1 && (
-        <div className="flex justify-center gap-1.5 py-1.5 bg-gray-800/50 border-b border-gray-700">
+        <div className="flex justify-center gap-1.5 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
           {courts.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setMobileCourtIndex(idx)}
               className={`w-2 h-2 rounded-full transition-colors ${
-                idx === mobileCourtIndex ? 'bg-emerald-500' : 'bg-gray-600'
+                idx === mobileCourtIndex ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
               }`}
             />
           ))}
@@ -537,26 +537,26 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
         <div className={`${isMobile ? '' : 'min-w-[800px]'} flex flex-col h-full`}>
           {/* Court + Amenity Headers - Desktop only */}
           {!isMobile && (
-            <div className="grid border-b border-gray-700 flex-shrink-0" style={{ gridTemplateColumns: `80px repeat(${courts.length + amenities.length}, 1fr)` }}>
-              <div className="p-3 bg-gray-700/50 border-r border-gray-600">
-                <Clock className="h-4 w-4 text-gray-400 mx-auto" />
+            <div className="grid border-b border-gray-200 dark:border-gray-700 flex-shrink-0" style={{ gridTemplateColumns: `80px repeat(${courts.length + amenities.length}, 1fr)` }}>
+              <div className="p-3 bg-gray-100 dark:bg-gray-700/50 border-r border-gray-200 dark:border-gray-600">
+                <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400 mx-auto" />
               </div>
               {courts.map((court) => (
                 <div 
                   key={court.id} 
-                  className="p-3 bg-gray-700/50 border-r border-gray-600 text-center"
+                  className="p-3 bg-gray-100 dark:bg-gray-700/50 border-r border-gray-200 dark:border-gray-600 text-center"
                 >
-                  <div className="font-medium text-white text-sm">{court.name}</div>
-                  <div className="text-xs text-gray-400 capitalize">{court.sport}</div>
+                  <div className="font-medium text-gray-900 dark:text-white text-sm">{court.name}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{court.sport}</div>
                 </div>
               ))}
               {amenities.map((amenity) => (
                 <div 
                   key={`amenity-${amenity.id}`} 
-                  className="p-3 bg-purple-900/30 border-r border-gray-600 last:border-r-0 text-center"
+                  className="p-3 bg-purple-100 dark:bg-purple-900/30 border-r border-gray-200 dark:border-gray-600 last:border-r-0 text-center"
                 >
-                  <div className="font-medium text-purple-300 text-sm">{amenity.name}</div>
-                  <div className="text-xs text-purple-400/70">{amenity.isPublic ? 'Amenity' : 'Interno'}</div>
+                  <div className="font-medium text-purple-700 dark:text-purple-300 text-sm">{amenity.name}</div>
+                  <div className="text-xs text-purple-500 dark:text-purple-400/70">{amenity.isPublic ? 'Amenity' : 'Interno'}</div>
                 </div>
               ))}
             </div>
@@ -569,11 +569,11 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
               {timeSlots.map((time) => (
                 <div 
                   key={time} 
-                  className={`grid border-b border-gray-700/50 last:border-b-0`}
+                  className={`grid border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0`}
                   style={{ gridTemplateColumns: isMobile ? '50px 1fr' : `80px repeat(${courts.length + amenities.length}, 1fr)` }}
                 >
                   {/* Time Label */}
-                  <div className={`p-2 text-xs text-gray-400 text-right pr-2 border-r border-gray-600 bg-gray-800/50 h-8 ${isMobile ? 'pr-1' : 'pr-3'}`}>
+                  <div className={`p-2 text-xs text-gray-500 dark:text-gray-400 text-right pr-2 border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 h-8 ${isMobile ? 'pr-1' : 'pr-3'}`}>
                     {time}
                   </div>
 
@@ -591,18 +591,18 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                     return (
                       <div
                         key={key}
-                        className={`relative border-r border-gray-600 last:border-r-0 h-8 transition-colors ${
+                        className={`relative border-r border-gray-200 dark:border-gray-600 last:border-r-0 h-8 transition-colors ${
                           hasBooking 
                             ? '' 
                             : isPast
-                              ? 'bg-gray-800/50'
+                              ? 'bg-gray-100 dark:bg-gray-800/50'
                               : draggedBooking 
                                 ? canDrop 
                                   ? isDropTarget 
                                     ? 'bg-emerald-500/40' 
                                     : 'bg-emerald-500/10' 
                                   : 'bg-red-500/10'
-                                : 'hover:bg-emerald-500/20 cursor-pointer group'
+                                : 'hover:bg-emerald-100 dark:hover:bg-emerald-500/20 cursor-pointer group'
                         }`}
                         onClick={() => isClickable && onSlotClick(court.id, time, selectedDate)}
                         onDragOver={(e) => !isPast && !isMobile && handleDragOver(e, court.id, time)}
@@ -621,7 +621,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                         )}
                         {isPast && !hasBooking && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-full h-[1px] bg-gray-600/50 rotate-[-15deg]" />
+                            <div className="w-full h-[1px] bg-gray-300 dark:bg-gray-600/50 rotate-[-15deg]" />
                           </div>
                         )}
                       </div>
@@ -639,23 +639,23 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                     return (
                       <div
                         key={`amenity-slot-${amenity.id}-${time}`}
-                        className={`relative border-r border-gray-600 last:border-r-0 h-8 transition-colors bg-purple-900/10 ${
+                        className={`relative border-r border-gray-200 dark:border-gray-600 last:border-r-0 h-8 transition-colors bg-purple-50 dark:bg-purple-900/10 ${
                           hasBooking
                             ? ''
                             : isPast
-                              ? 'bg-gray-800/50'
-                              : 'hover:bg-purple-500/20 cursor-pointer group'
+                              ? 'bg-gray-100 dark:bg-gray-800/50'
+                              : 'hover:bg-purple-100 dark:hover:bg-purple-500/20 cursor-pointer group'
                         }`}
                         onClick={() => isClickable && onSlotClick(amenity.id, time, selectedDate)}
                       >
                         {isClickable && (
-                          <span className="opacity-0 group-hover:opacity-100 text-xs text-purple-400 transition-opacity absolute inset-0 flex items-center justify-center">
+                          <span className="opacity-0 group-hover:opacity-100 text-xs text-purple-600 dark:text-purple-400 transition-opacity absolute inset-0 flex items-center justify-center">
                             + Reservar
                           </span>
                         )}
                         {isPast && !hasBooking && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-full h-[1px] bg-gray-600/50 rotate-[-15deg]" />
+                            <div className="w-full h-[1px] bg-gray-300 dark:bg-gray-600/50 rotate-[-15deg]" />
                           </div>
                         )}
                       </div>
@@ -718,30 +718,30 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
       </div>
 
       {/* Legend - Hidden on mobile, shown on desktop */}
-      <div className="hidden md:flex items-center justify-end gap-4 p-3 border-t border-gray-700 bg-gray-800/50 flex-wrap">
+      <div className="hidden md:flex items-center justify-end gap-4 p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-yellow-600"></div>
-          <span className="text-xs text-gray-400">Pendiente</span>
+          <div className="w-3 h-3 rounded bg-yellow-500 dark:bg-yellow-600"></div>
+          <span className="text-xs text-gray-600 dark:text-gray-400">Pendiente</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-blue-600"></div>
-          <span className="text-xs text-gray-400">En curso</span>
+          <div className="w-3 h-3 rounded bg-blue-500 dark:bg-blue-600"></div>
+          <span className="text-xs text-gray-600 dark:text-gray-400">En curso</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-emerald-600"></div>
-          <span className="text-xs text-gray-400">Completada</span>
+          <div className="w-3 h-3 rounded bg-emerald-500 dark:bg-emerald-600"></div>
+          <span className="text-xs text-gray-600 dark:text-gray-400">Completada</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-red-600/50"></div>
-          <span className="text-xs text-gray-400">No asistió</span>
+          <div className="w-3 h-3 rounded bg-red-400 dark:bg-red-600/50"></div>
+          <span className="text-xs text-gray-600 dark:text-gray-400">No asistió</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-red-800/50"></div>
-          <span className="text-xs text-gray-400">Cancelada</span>
+          <div className="w-3 h-3 rounded bg-red-600 dark:bg-red-800/50"></div>
+          <span className="text-xs text-gray-600 dark:text-gray-400">Cancelada</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-purple-600"></div>
-          <span className="text-xs text-gray-400">Turno fijo</span>
+          <div className="w-3 h-3 rounded bg-purple-500 dark:bg-purple-600"></div>
+          <span className="text-xs text-gray-600 dark:text-gray-400">Turno fijo</span>
         </div>
       </div>
     </div>

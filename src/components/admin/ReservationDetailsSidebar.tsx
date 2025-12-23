@@ -742,7 +742,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
           
           {/* Sidebar */}
@@ -751,7 +751,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className={`fixed right-0 top-0 h-full bg-gray-800 shadow-2xl z-50 flex flex-col transition-all duration-300 ${
+            className={`fixed right-0 top-0 h-full bg-gray-800 shadow-2xl z-[101] flex flex-col transition-all duration-300 ${
               isFullscreen ? 'w-full' : 'w-full max-w-md'
             }`}
           >

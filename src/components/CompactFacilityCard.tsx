@@ -128,7 +128,7 @@ const CompactFacilityCard = ({ facility, onReserve, onTimeSlotSelect, onLoginReq
   const getSportName = (sport: string) => {
     const sportNames: { [key: string]: string } = {
       'futbol5': 'Fútbol 5',
-      'paddle': 'Paddle',
+      'paddle': 'Padel',
       'tenis': 'Tenis',
       'basquet': 'Básquet',
       'voley': 'Vóley',

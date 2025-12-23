@@ -35,7 +35,7 @@ export const useRecommendations = () => {
     },
     {
       id: '2',
-      name: 'Paddle Center Norte',
+      name: 'Padel Center Norte',
       location: 'Belgrano, Buenos Aires',
       sports: ['paddle', 'tenis'],
       rating: 4.7,

@@ -290,8 +290,7 @@ export function UserProfileSidebar({ isOpen, onClose, onUpdate }: UserProfileSid
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                >
+                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
                   <X className="h-5 w-5 text-gray-400" />
                 </button>
               </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
@@ -127,8 +128,24 @@ export default function CashRegisterPage() {
   const { user } = useAuth();
   const { cashRegister, isOpen, loading: cashRegisterLoading, openCashRegister, closeCashRegister, refreshCashRegister } = useCashRegisterContext();
   const { requestPin, PinModal } = usePinConfirmation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  
+  // Read tab from URL on mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['current', 'history'].includes(tabParam)) {
+      setActiveTab(tabParam as 'current' | 'history');
+    }
+  }, [searchParams]);
+  
+  // Update URL when tab changes
+  const handleTabChange = (tab: 'current' | 'history') => {
+    setActiveTab(tab);
+    router.push(`/establecimientos/admin/caja?tab=${tab}`, { scroll: false });
+  };
   const [history, setHistory] = useState<CashRegisterHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [selectedCashRegister, setSelectedCashRegister] = useState<CashRegisterHistory | null>(null);
@@ -402,23 +419,23 @@ export default function CashRegisterPage() {
   const headerControls = (
     <div className="flex items-center w-full space-x-2 overflow-x-auto">
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-800 p-1 rounded-lg flex-shrink-0">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex-shrink-0">
         <button
-          onClick={() => setActiveTab('current')}
+          onClick={() => handleTabChange('current')}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'current'
               ? 'bg-emerald-600 text-white'
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           Caja Actual
         </button>
         <button
-          onClick={() => setActiveTab('history')}
+          onClick={() => handleTabChange('history')}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'history'
               ? 'bg-emerald-600 text-white'
-              : 'text-gray-400 hover:text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
           Historial
@@ -467,8 +484,8 @@ export default function CashRegisterPage() {
       <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Sistema de Caja</h1>
-        <p className="text-gray-400">Gestiona la caja y visualiza el historial</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sistema de Caja</h1>
+        <p className="text-gray-500 dark:text-gray-400">Gestiona la caja y visualiza el historial</p>
       </div>
 
       {/* Tab Content */}
@@ -476,34 +493,34 @@ export default function CashRegisterPage() {
         /* CAJA ACTUAL TAB */
         cashRegisterLoading ? (
           /* Loading State - Animación de carga */
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-12">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 shadow-sm dark:shadow-none">
             <div className="flex flex-col items-center justify-center">
               <div className="relative">
-                <div className="w-20 h-20 border-4 border-gray-700 rounded-full"></div>
+                <div className="w-20 h-20 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
                 <div className="absolute top-0 left-0 w-20 h-20 border-4 border-emerald-500 rounded-full animate-spin border-t-transparent"></div>
                 <DollarSign className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-emerald-500" />
               </div>
-              <h2 className="text-xl font-semibold text-white mt-6 mb-2">Verificando estado de caja...</h2>
-              <p className="text-gray-400 text-sm">Por favor espera mientras verificamos si hay una caja abierta</p>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-6 mb-2">Verificando estado de caja...</h2>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Por favor espera mientras verificamos si hay una caja abierta</p>
             </div>
           </div>
         ) : isOpen && cashRegister ? (
           <div className="space-y-6">
             {/* Header con estado y acciones rápidas */}
-            <div className="bg-gradient-to-r from-emerald-900/50 to-gray-800 rounded-xl border border-emerald-700/50 p-6">
+            <div className="bg-gradient-to-r from-emerald-100 dark:from-emerald-900/50 to-white dark:to-gray-800 rounded-xl border border-emerald-200 dark:border-emerald-700/50 p-6 shadow-sm dark:shadow-none">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                    <DollarSign className="w-7 h-7 text-emerald-400" />
+                  <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                    <DollarSign className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold text-white">Caja Abierta</h2>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Caja Abierta</h2>
                       <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full animate-pulse">
                         ● Activa
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400 mt-1">
                       <span className="flex items-center gap-1">
                         <User className="w-3.5 h-3.5" />
                         {user?.name || 'Usuario'}
@@ -522,13 +539,13 @@ export default function CashRegisterPage() {
                 
                 {/* Métricas rápidas */}
                 <div className="flex items-center gap-3">
-                  <div className="bg-gray-800/80 rounded-lg px-4 py-2 text-center min-w-[100px]">
+                  <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg px-4 py-2 text-center min-w-[100px] shadow-sm dark:shadow-none">
                     <p className="text-xs text-gray-500">Pedidos</p>
-                    <p className="text-xl font-bold text-white">{cashRegister.totalOrders}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{cashRegister.totalOrders}</p>
                   </div>
-                  <div className="bg-gray-800/80 rounded-lg px-4 py-2 text-center min-w-[100px]">
+                  <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg px-4 py-2 text-center min-w-[100px] shadow-sm dark:shadow-none">
                     <p className="text-xs text-gray-500">Movimientos</p>
-                    <p className="text-xl font-bold text-white">{cashRegister.totalMovements}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{cashRegister.totalMovements}</p>
                   </div>
                 </div>
               </div>
@@ -537,16 +554,16 @@ export default function CashRegisterPage() {
             {/* Cards de resumen principal */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Caja Inicial */}
-              <div className="bg-gray-800 rounded-xl border border-gray-700 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm dark:shadow-none">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-sm">Caja Inicial</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Caja Inicial</span>
                   <Banknote className="w-4 h-4 text-gray-500" />
                 </div>
-                <p className="text-2xl font-bold text-white">{formatCurrency(cashRegister.initialCash)}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(cashRegister.initialCash)}</p>
               </div>
               
               {/* Total Ventas */}
-              <div className="bg-gray-800 rounded-xl border border-green-700/50 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-green-200 dark:border-green-700/50 p-4 shadow-sm dark:shadow-none">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-green-400 text-sm">Total Ingresos</span>
                   <TrendingUp className="w-4 h-4 text-green-500" />
@@ -555,7 +572,7 @@ export default function CashRegisterPage() {
               </div>
               
               {/* Total Gastos */}
-              <div className="bg-gray-800 rounded-xl border border-red-700/50 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-red-200 dark:border-red-700/50 p-4 shadow-sm dark:shadow-none">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-red-400 text-sm">Total Egresos</span>
                   <TrendingDown className="w-4 h-4 text-red-500" />
@@ -564,7 +581,7 @@ export default function CashRegisterPage() {
               </div>
               
               {/* Efectivo Esperado */}
-              <div className="bg-gradient-to-br from-blue-900/50 to-gray-800 rounded-xl border border-blue-700/50 p-4">
+              <div className="bg-gradient-to-br from-blue-100 dark:from-blue-900/50 to-white dark:to-gray-800 rounded-xl border border-blue-200 dark:border-blue-700/50 p-4 shadow-sm dark:shadow-none">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-blue-400 text-sm">Efectivo en Caja</span>
                   <DollarSign className="w-4 h-4 text-blue-500" />
@@ -576,8 +593,8 @@ export default function CashRegisterPage() {
             {/* Desglose por método de pago y gastos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Ingresos por método de pago */}
-              <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm dark:shadow-none">
+                <h3 className="text-gray-900 dark:text-white font-semibold mb-4 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-green-400" />
                   Ingresos por método de pago
                 </h3>
@@ -590,13 +607,13 @@ export default function CashRegisterPage() {
                     return (
                       <div key={pm.id} className="space-y-1">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-400 flex items-center gap-2 text-sm">
+                          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm">
                             <Icon className={`w-4 h-4 ${colorClass}`} />
                             {pm.name}
                           </span>
-                          <span className="text-white font-medium">{formatCurrency(total)}</span>
+                          <span className="text-gray-900 dark:text-white font-medium">{formatCurrency(total)}</span>
                         </div>
-                        <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div 
                             className={`h-full rounded-full transition-all duration-500 ${
                               pm.code === 'cash' ? 'bg-green-500' :
@@ -613,9 +630,9 @@ export default function CashRegisterPage() {
               </div>
 
               {/* Gastos */}
-              <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm dark:shadow-none">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-white font-semibold flex items-center gap-2">
+                  <h3 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
                     <TrendingDown className="w-4 h-4 text-red-400" />
                     Gastos del turno
                   </h3>
@@ -745,12 +762,12 @@ export default function CashRegisterPage() {
           </div>
         ) : (
           /* No hay caja abierta */
-          <div className="bg-gray-800 rounded-xl border border-gray-700 p-12 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gray-700/50 rounded-full flex items-center justify-center">
-              <DollarSign className="w-10 h-10 text-gray-500" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center shadow-sm dark:shadow-none">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center">
+              <DollarSign className="w-10 h-10 text-gray-400 dark:text-gray-500" />
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">No hay caja abierta</h2>
-            <p className="text-gray-400 mb-6 max-w-md mx-auto">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No hay caja abierta</h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
               Abre una caja para comenzar a registrar ventas, pagos y gastos del turno.
             </p>
             <button
@@ -766,13 +783,13 @@ export default function CashRegisterPage() {
         /* HISTORIAL TAB */
         <div className="space-y-6">
           {/* Historial de Cierres - Tabla */}
-          <div className="bg-gray-800 rounded-xl border border-gray-700">
-            <div className="p-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Clock className="w-5 h-5" />
                 Historial de Cierres
               </h3>
-              <p className="text-sm text-gray-400 mt-1">Mostrando {history.length} cierres</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Mostrando {history.length} cierres</p>
             </div>
             
             {historyLoading ? (
@@ -780,15 +797,15 @@ export default function CashRegisterPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
               </div>
             ) : history.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                 <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No hay historial de cajas</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-400 border-b border-gray-700">
+                  <thead className="bg-gray-100 dark:bg-gray-700/50">
+                    <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                       <th className="p-4 font-medium">Cajero</th>
                       <th className="p-4 font-medium">Apertura</th>
                       <th className="p-4 font-medium">Cierre</th>
@@ -798,12 +815,12 @@ export default function CashRegisterPage() {
                       <th className="p-4 font-medium">Detalle</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {history.map((cr) => (
-                      <tr key={cr.id} className="text-gray-300 hover:bg-gray-700/30">
-                        <td className="p-4">{cr.user?.name || 'Usuario'}</td>
-                        <td className="p-4 text-gray-400">{formatDateTime(cr.openedAt)}</td>
-                        <td className="p-4 text-gray-400">{cr.closedAt ? formatDateTime(cr.closedAt) : '-'}</td>
+                      <tr key={cr.id} className="text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                        <td className="p-4 text-gray-900 dark:text-white">{cr.user?.name || 'Usuario'}</td>
+                        <td className="p-4 text-gray-500 dark:text-gray-400">{formatDateTime(cr.openedAt)}</td>
+                        <td className="p-4 text-gray-500 dark:text-gray-400">{cr.closedAt ? formatDateTime(cr.closedAt) : '-'}</td>
                         <td className="p-4 font-medium text-green-400">{formatCurrency(cr.totalSales)}</td>
                         <td className="p-4 font-medium text-red-400">{formatCurrency(cr.totalExpenses)}</td>
                         <td className="p-4 font-medium text-white">{formatCurrency(cr.expectedCash)}</td>

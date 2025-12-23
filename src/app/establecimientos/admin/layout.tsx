@@ -36,6 +36,9 @@ import { CommandMenuProvider } from '@/contexts/CommandMenuContext';
 import { UserProfileSidebar } from '@/components/admin/UserProfileSidebar';
 import { SetupPinSidebar } from '@/components/admin/SetupPinSidebar';
 import { usePinConfirmation } from '@/components/admin/PinConfirmation';
+import { ThemeToggle } from '@/components/admin/ThemeToggle';
+import { useTheme } from '@/contexts/ThemeContext';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -46,6 +49,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const { notifications, stats, markNotificationRead } = useEstablishmentAdminContext();
   const { requestPin, PinModal } = usePinConfirmation();
+  const { theme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -260,8 +264,8 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   // Show loading screen while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Verificando autenticación...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }
@@ -274,17 +278,17 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   // For staff-only users, render a simplified layout without sidebar
   if (isStaffOnly) {
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Staff-only header with logo */}
-        <header className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
+        <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
           <div className="w-full px-4">
             <div className="flex items-center h-12">
               {/* Logo */}
               <div className="flex items-center space-x-3 mr-4">
                 <img 
-                  src="/assets/logo-3.png" 
+                  src={theme === 'dark' ? '/assets/logos/logo-dark.svg' : '/assets/logos/logo-light.svg'}
                   alt="Mis Canchas" 
-                  className="h-7 w-auto"
+                  className="h-10 w-auto"
                 />
               </div>
 
@@ -391,17 +395,17 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
 
   return (
     <CommandMenuProvider>
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-gray-800">
+        <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-white dark:bg-gray-800">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center space-x-3">
               <img 
-                src="/assets/logo-3.png" 
+                src={theme === 'dark' ? '/assets/logos/logo-dark.svg' : '/assets/logos/logo-light.svg'}
                 alt="Mis Canchas" 
-                className="h-8 w-auto"
+                className="h-10 w-auto"
               />
             </div>
             <button
@@ -416,7 +420,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
               <div key={groupIndex}>
                 {/* Separator between groups */}
                 {groupIndex > 0 && (
-                  <div className="mx-4 my-3 border-t border-gray-700" />
+                  <div className="mx-4 my-3 border-t border-gray-200 dark:border-gray-700" />
                 )}
                 
                 <div className="px-2 space-y-1">
@@ -427,7 +431,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                       className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                         item.current
                           ? 'bg-emerald-600 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                       }`}
                       onClick={() => setSidebarOpen(false)}
                     >
@@ -446,13 +450,13 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
           </nav>
           
           {/* Establishment info at bottom of mobile sidebar - clickable to open profile */}
-          <div className="flex-shrink-0 border-t border-gray-700 p-4">
+          <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
             <button
               onClick={() => {
                 setSidebarOpen(false);
                 handleOpenProfile();
               }}
-              className="w-full flex items-center space-x-3 hover:bg-gray-700 rounded-lg p-1 -m-1 transition-colors"
+              className="w-full flex items-center space-x-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-1 -m-1 transition-colors"
             >
               <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {establishment?.logo ? (
@@ -468,10 +472,10 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                 )}
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-medium text-white truncate">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Usuario')}
                 </p>
-                <p className="text-xs text-gray-400 truncate">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {establishment?.name || 'Mi Establecimiento'}
                 </p>
               </div>
@@ -488,24 +492,20 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
         onMouseEnter={() => setSidebarCollapsed(false)}
         onMouseLeave={() => setSidebarCollapsed(true)}
       >
-        <div className="flex flex-col flex-grow bg-gray-800 pt-4 pb-4 overflow-hidden">
+        <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 pt-4 pb-4 overflow-hidden shadow-lg dark:shadow-none relative">
           {/* Logo section */}
-          <div className="flex items-center flex-shrink-0 px-3 h-10">
-            {sidebarCollapsed ? (
-              <div className="w-10 flex items-center justify-center">
-                <img 
-                  src="/assets/favicon.png" 
-                  alt="Mis Canchas" 
-                  className="h-10 w-10"
-                />
-              </div>
-            ) : (
+          <div className="flex items-center flex-shrink-0 px-3 h-12 transition-none">
+            <div className="w-full flex items-center justify-start transition-none">
               <img 
-                src="/assets/logo-3.png" 
+                src={sidebarCollapsed 
+                  ? (theme === 'dark' ? '/assets/logos/favicon-dark.svg' : '/assets/logos/favicon-light.svg')
+                  : (theme === 'dark' ? '/assets/logos/logo-dark.svg' : '/assets/logos/logo-light.svg')
+                }
                 alt="Mis Canchas" 
-                className="h-8 w-auto"
+                className="h-10 w-auto transition-none"
+                style={{ transition: 'none' }}
               />
-            )}
+            </div>
           </div>
           
           {/* Navigation with groups and separators */}
@@ -514,7 +514,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
               <div key={groupIndex}>
                 {/* Separator between groups */}
                 {groupIndex > 0 && (
-                  <div className="mx-3 my-2 border-t border-gray-700" />
+                  <div className="mx-3 my-2 border-t border-gray-200 dark:border-gray-700" />
                 )}
                 
                 <div className="px-2 space-y-1">
@@ -525,7 +525,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                       className={`group flex items-center px-3 py-2.5 rounded-lg transition-colors duration-150 ${
                         item.current
                           ? 'bg-emerald-600 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                       }`}
                       title={sidebarCollapsed ? item.name : undefined}
                     >
@@ -550,10 +550,10 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
           </nav>
           
           {/* Establishment info at bottom of sidebar - clickable to open profile */}
-          <div className="flex-shrink-0 border-t border-gray-700 p-3">
+          <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-3">
             <button
               onClick={handleOpenProfile}
-              className="w-full flex items-center hover:bg-gray-700 rounded-lg p-1 -m-1 transition-colors"
+              className="w-full flex items-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-1 -m-1 transition-colors"
             >
               <div className="h-9 w-9 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {establishment?.logo ? (
@@ -571,10 +571,10 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
               <div className={`flex-1 min-w-0 ml-3 text-left transition-opacity duration-200 ${
                 sidebarCollapsed ? 'opacity-0' : 'opacity-100'
               }`}>
-                <p className="text-sm font-medium text-white truncate">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Usuario')}
                 </p>
-                <p className="text-xs text-gray-400 truncate">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {establishment?.name || 'Mi Establecimiento'}
                 </p>
               </div>
@@ -588,13 +588,13 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
         sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-52'
       }`}>
         {/* Top navigation bar - fixed height, contains page controls on left and global actions on right */}
-        <header id="admin-header" className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
+        <header id="admin-header" className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
           <div className="w-full px-4">
             <div className="flex items-center h-12">
               {/* Mobile Menu Button */}
               <button
                 type="button"
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200 lg:hidden mr-2"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 lg:hidden mr-2"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="h-5 w-5" />
@@ -603,9 +603,9 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
               {/* Logo - Hidden on desktop since sidebar has it */}
               <div className="lg:hidden flex items-center mr-3">
                 <img 
-                  src="/assets/logo-3.png" 
+                  src={theme === 'dark' ? '/assets/logos/logo-dark.svg' : '/assets/logos/logo-light.svg'}
                   alt="Mis Canchas" 
-                  className="h-7 w-auto"
+                  className="h-10 w-auto"
                 />
               </div>
 
@@ -614,6 +614,9 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
 
               {/* Right side actions - always visible */}
               <div className="flex items-center space-x-1 ml-4">
+                {/* Theme Toggle */}
+                <ThemeToggle />
+
                 {/* Cash Register */}
                 <CashRegisterTopbar establishmentId={establishment?.id || null} />
 
@@ -621,7 +624,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                 <div className="relative">
                   <button 
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200"
+                    className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
                   >
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
@@ -636,13 +639,13 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-96 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50"
+                      className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50"
                     >
-                      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-white">Notificaciones</h3>
+                      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notificaciones</h3>
                         <button
                           onClick={() => setShowNotifications(false)}
-                          className="text-gray-400 hover:text-white transition-colors"
+                          className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -655,8 +658,8 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                             <div
                               key={notification.id}
                               onClick={() => markNotificationRead(notification.id)}
-                              className={`p-4 border-b border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer ${
-                                !notification.read ? 'bg-gray-750' : ''
+                              className={`p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
+                                !notification.read ? 'bg-gray-50 dark:bg-gray-750' : ''
                               }`}
                             >
                               <div className="flex items-start space-x-3">
@@ -670,16 +673,16 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between">
                                     <p className={`text-sm font-medium ${
-                                      !notification.read ? 'text-white' : 'text-gray-300'
+                                      !notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'
                                     }`}>
                                       {notification.title}
                                     </p>
-                                    <span className="text-xs text-gray-400 flex items-center">
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                                       <Clock className="w-3 h-3 mr-1" />
                                       {notification.time}
                                     </span>
                                   </div>
-                                  <p className="text-sm text-gray-400 mt-1">
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                     {notification.message}
                                   </p>
                                 </div>
@@ -687,7 +690,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                             </div>
                           );
                         }) : (
-                          <div className="p-8 text-center text-gray-400">
+                          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                             <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
                             <p>No hay notificaciones</p>
                           </div>
@@ -702,8 +705,8 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                   onClick={handleOpenConfiguration}
                   className={`p-2 rounded-lg transition-all duration-200 ${
                     pathname.startsWith('/establecimientos/admin/configuracion')
-                      ? 'text-emerald-400 bg-emerald-500/20'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                   title="Configuración"
                 >
@@ -713,7 +716,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                 {/* Logout */}
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-all duration-200"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
                   title="Cerrar Sesión"
                 >
                   <LogOut className="h-5 w-5" />

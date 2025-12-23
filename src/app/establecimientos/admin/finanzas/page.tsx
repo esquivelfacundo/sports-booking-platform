@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import { 
@@ -24,6 +26,7 @@ import {
   User,
   MapPin
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface FinanceResponse {
   success: boolean;
@@ -84,7 +87,32 @@ const FinancePage = () => {
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'pending'>('overview');
+  const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+
+  // Get header portal container on mount
+  useEffect(() => {
+    const container = document.getElementById('header-page-controls');
+    if (container) {
+      setHeaderPortalContainer(container);
+    }
+  }, []);
+  
+  // Read tab from URL on mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['overview', 'transactions', 'pending'].includes(tabParam)) {
+      setActiveTab(tabParam as 'overview' | 'transactions' | 'pending');
+    }
+  }, [searchParams]);
+  
+  // Update URL when tab changes
+  const handleTabChange = (tab: 'overview' | 'transactions' | 'pending') => {
+    setActiveTab(tab);
+    router.push(`/establecimientos/admin/finanzas?tab=${tab}`, { scroll: false });
+  };
 
   const fetchFinance = useCallback(async () => {
     if (!establishment?.id) return;
@@ -152,10 +180,7 @@ const FinancePage = () => {
   if (establishmentLoading || loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-3">
-          <RefreshCw className="h-6 w-6 text-emerald-400 animate-spin" />
-          <span className="text-white text-xl">Cargando finanzas...</span>
-        </div>
+        <UnifiedLoader size="md" />
       </div>
     );
   }
@@ -180,58 +205,101 @@ const FinancePage = () => {
 
   const { summary, breakdown, charts, transactions } = finance;
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Gestión Financiera</h1>
-          <p className="text-gray-400 mt-1">
-            {finance.period.start} - {finance.period.end}
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="appearance-none bg-gray-700 border border-gray-600 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500 pr-8"
-            >
-              <option value="week">Última semana</option>
-              <option value="month">Último mes</option>
-              <option value="quarter">Último trimestre</option>
-              <option value="year">Último año</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          </div>
-          
-          <button 
-            onClick={fetchFinance}
-            className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl transition-colors"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Actualizar</span>
-          </button>
-        </div>
+  // Header controls for topbar
+  const headerControls = (
+    <div className="flex items-center w-full space-x-4">
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex-shrink-0">
+        <button
+          onClick={() => handleTabChange('overview')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'overview'
+              ? 'bg-emerald-600 text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          Resumen
+        </button>
+        <button
+          onClick={() => handleTabChange('transactions')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'transactions'
+              ? 'bg-emerald-600 text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          Transacciones ({transactions.length})
+        </button>
+        <button
+          onClick={() => handleTabChange('pending')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'pending'
+              ? 'bg-emerald-600 text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          Pendientes ({pendingPayments.length})
+        </button>
       </div>
 
+      {/* Period info */}
+      <span className="text-sm text-gray-500 dark:text-gray-400">
+        {finance.period.start} - {finance.period.end}
+      </span>
+      
+      {/* Spacer */}
+      <div className="flex-1" />
+      
+      {/* Filters */}
+      <div className="flex items-center space-x-3 flex-shrink-0">
+        <div className="relative">
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value as any)}
+            className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-8"
+          >
+            <option value="week">Última semana</option>
+            <option value="month">Último mes</option>
+            <option value="quarter">Último trimestre</option>
+            <option value="year">Último año</option>
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        </div>
+        
+        <button 
+          onClick={fetchFinance}
+          className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Actualizar</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Render controls in header via portal */}
+      {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
+      
+      <div className="p-6 space-y-6">
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Ingresos Totales</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(summary.totalRevenue)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Totales</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalRevenue)}</p>
               <div className="flex items-center space-x-1 mt-2">
                 {getTrendIcon(summary.growth.trend)}
                 <span className={`text-sm font-medium ${getTrendColor(summary.growth.trend)}`}>
                   {Math.abs(summary.growth.revenue)}%
                 </span>
-                <span className="text-gray-400 text-sm">vs anterior</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">vs anterior</span>
               </div>
             </div>
             <DollarSign className="h-8 w-8 text-emerald-400" />
@@ -242,12 +310,12 @@ const FinancePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Señas Cobradas</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(summary.totalDeposits)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Señas Cobradas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalDeposits)}</p>
               <p className="text-sm text-gray-500 mt-2">
                 {summary.totalRevenue > 0 ? Math.round((summary.totalDeposits / summary.totalRevenue) * 100) : 0}% del total
               </p>
@@ -260,12 +328,12 @@ const FinancePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Por Cobrar</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(summary.pendingBalance)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Por Cobrar</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.pendingBalance)}</p>
               <p className="text-sm text-gray-500 mt-2">Saldo pendiente</p>
             </div>
             <Wallet className="h-8 w-8 text-orange-400" />
@@ -276,12 +344,12 @@ const FinancePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Ticket Promedio</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(summary.averageTicket)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ticket Promedio</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.averageTicket)}</p>
               <p className="text-sm text-gray-500 mt-2">{summary.totalBookings} reservas</p>
             </div>
             <Receipt className="h-8 w-8 text-blue-400" />
@@ -289,47 +357,13 @@ const FinancePage = () => {
         </motion.div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-2 border-b border-gray-700">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'overview'
-              ? 'text-emerald-400 border-b-2 border-emerald-400'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Resumen
-        </button>
-        <button
-          onClick={() => setActiveTab('transactions')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'transactions'
-              ? 'text-emerald-400 border-b-2 border-emerald-400'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Transacciones ({transactions.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'pending'
-              ? 'text-emerald-400 border-b-2 border-emerald-400'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Pagos Pendientes ({pendingPayments.length})
-        </button>
-      </div>
-
       {activeTab === 'overview' && (
         <>
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Daily Revenue Chart */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Ingresos Diarios</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ingresos Diarios</h3>
               {charts.dailyRevenue.length > 0 ? (
                 <div>
                   <div className="flex items-end justify-between space-x-1" style={{ height: '200px' }}>
@@ -365,8 +399,8 @@ const FinancePage = () => {
             </div>
 
             {/* Monthly Comparison */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Comparativa Mensual</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Comparativa Mensual</h3>
               {charts.monthlyComparison.length > 0 ? (
                 <div>
                   <div className="flex items-end justify-between space-x-2" style={{ height: '200px' }}>
@@ -402,8 +436,8 @@ const FinancePage = () => {
           {/* Breakdown Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* By Payment Method */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Por Método de Pago</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Por Método de Pago</h3>
               <div className="space-y-3">
                 {breakdown.byPaymentMethod.map((item, index) => (
                   <div key={index} className="flex items-center justify-between">
@@ -424,8 +458,8 @@ const FinancePage = () => {
             </div>
 
             {/* By Court */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Por Cancha</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Por Cancha</h3>
               <div className="space-y-3">
                 {breakdown.byCourt.map((item, index) => (
                   <div key={index}>
@@ -450,8 +484,8 @@ const FinancePage = () => {
             </div>
 
             {/* By Type */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Por Tipo de Reserva</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Por Tipo de Reserva</h3>
               <div className="space-y-3">
                 {breakdown.byType.map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg">
@@ -472,33 +506,33 @@ const FinancePage = () => {
       )}
 
       {activeTab === 'transactions' && (
-        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-700">
+              <thead className="bg-gray-100 dark:bg-gray-700">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Cliente</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Cancha</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Método</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase">Seña</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase">Total</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-300 uppercase">Estado</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Fecha</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cliente</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cancha</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Método</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Seña</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Total</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-700/50">
+                  <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-4 py-3">
-                      <div className="text-white text-sm">{formatDate(tx.date)}</div>
-                      <div className="text-gray-400 text-xs">{tx.time?.substring(0, 5)}</div>
+                      <div className="text-gray-900 dark:text-white text-sm">{formatDate(tx.date)}</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.time?.substring(0, 5)}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-white text-sm">{tx.clientName || 'Cliente'}</div>
-                      <div className="text-gray-400 text-xs">{tx.clientPhone}</div>
+                      <div className="text-gray-900 dark:text-white text-sm">{tx.clientName || 'Cliente'}</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.clientPhone}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-300 text-sm">{tx.court}</td>
-                    <td className="px-4 py-3 text-gray-300 text-sm capitalize">{tx.paymentMethod}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.court}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm capitalize">{tx.paymentMethod}</td>
                     <td className="px-4 py-3 text-right text-yellow-400 text-sm">
                       {tx.depositAmount > 0 ? formatCurrency(tx.depositAmount) : '-'}
                     </td>
@@ -544,32 +578,32 @@ const FinancePage = () => {
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-700">
+                <thead className="bg-gray-100 dark:bg-gray-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Fecha</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Cliente</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Cancha</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase">Total</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase">Seña</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase">Pendiente</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Fecha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cliente</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cancha</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Total</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Seña</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Pendiente</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {pendingPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-700/50">
+                    <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-4 py-3">
-                        <div className="text-white text-sm">{formatDate(payment.date)}</div>
-                        <div className="text-gray-400 text-xs">{payment.time?.substring(0, 5)}</div>
+                        <div className="text-gray-900 dark:text-white text-sm">{formatDate(payment.date)}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">{payment.time?.substring(0, 5)}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-white text-sm">{payment.clientName}</div>
-                        <div className="text-gray-400 text-xs">{payment.clientPhone}</div>
+                        <div className="text-gray-900 dark:text-white text-sm">{payment.clientName}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">{payment.clientPhone}</div>
                       </td>
-                      <td className="px-4 py-3 text-gray-300 text-sm">{payment.court}</td>
-                      <td className="px-4 py-3 text-right text-gray-300">{formatCurrency(payment.totalAmount)}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{payment.court}</td>
+                      <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{formatCurrency(payment.totalAmount)}</td>
                       <td className="px-4 py-3 text-right text-yellow-400">{formatCurrency(payment.depositAmount)}</td>
                       <td className="px-4 py-3 text-right text-orange-400 font-bold">
                         {formatCurrency(payment.pendingAmount)}
@@ -590,6 +624,7 @@ const FinancePage = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

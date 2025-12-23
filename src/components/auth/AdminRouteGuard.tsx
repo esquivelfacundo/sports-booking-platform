@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface AdminRouteGuardProps {
   children: React.ReactNode;
@@ -55,11 +55,8 @@ export default function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   // Show loading while checking auth
   if (isLoading || isChecking) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-          <p className="text-gray-400">Verificando sesión...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     );
   }

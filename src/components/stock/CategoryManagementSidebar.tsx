@@ -154,7 +154,7 @@ export const CategoryManagementSidebar: React.FC<CategoryManagementSidebarProps>
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           />
 
           {/* Sidebar */}
@@ -163,7 +163,7 @@ export const CategoryManagementSidebar: React.FC<CategoryManagementSidebarProps>
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-full sm:w-[500px] bg-gray-900 shadow-2xl z-50 flex flex-col"
+            className="fixed right-0 top-0 h-full w-full sm:w-[500px] bg-gray-900 shadow-2xl z-[101] flex flex-col"
           >
             {/* Header */}
             <div className="flex-shrink-0 bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">

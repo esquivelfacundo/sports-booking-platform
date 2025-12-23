@@ -101,7 +101,7 @@ const BookingModal = ({ facility, selectedTimeSlot, isOpen, onClose }: BookingMo
   const getSportName = (sport: string) => {
     const sportNames: { [key: string]: string } = {
       'futbol5': 'Fútbol 5',
-      'paddle': 'Paddle',
+      'paddle': 'Padel',
       'tenis': 'Tenis',
       'basquet': 'Básquet',
       'voley': 'Vóley',

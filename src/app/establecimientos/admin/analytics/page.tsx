@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
@@ -21,6 +22,7 @@ import {
   CreditCard,
   TrendingUp
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface AnalyticsResponse {
   success: boolean;
@@ -63,6 +65,15 @@ const AnalyticsPage = () => {
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+
+  // Get header portal container on mount
+  useEffect(() => {
+    const container = document.getElementById('header-page-controls');
+    if (container) {
+      setHeaderPortalContainer(container);
+    }
+  }, []);
 
   const fetchAnalytics = useCallback(async () => {
     if (!establishment?.id) return;
@@ -133,10 +144,7 @@ const AnalyticsPage = () => {
   if (establishmentLoading || loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center space-x-3">
-          <RefreshCw className="h-6 w-6 text-emerald-400 animate-spin" />
-          <span className="text-white text-xl">Cargando analytics...</span>
-        </div>
+        <UnifiedLoader size="md" />
       </div>
     );
   }
@@ -161,58 +169,67 @@ const AnalyticsPage = () => {
 
   const { summary, charts } = analytics;
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Análisis y Métricas</h1>
-          <p className="text-gray-400 mt-1">
-            {analytics.period.start} - {analytics.period.end}
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as any)}
-              className="appearance-none bg-gray-700 border border-gray-600 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 pr-8"
-            >
-              <option value="7d">Últimos 7 días</option>
-              <option value="30d">Últimos 30 días</option>
-              <option value="90d">Últimos 90 días</option>
-              <option value="1y">Último año</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          </div>
-          
-          <button 
-            onClick={fetchAnalytics}
-            className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl transition-colors"
+  // Header controls for topbar
+  const headerControls = (
+    <div className="flex items-center w-full space-x-4">
+      {/* Period info */}
+      <span className="text-sm text-gray-500 dark:text-gray-400">
+        {analytics.period.start} - {analytics.period.end}
+      </span>
+      
+      {/* Spacer */}
+      <div className="flex-1" />
+      
+      {/* Filters */}
+      <div className="flex items-center space-x-3 flex-shrink-0">
+        <div className="relative">
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value as any)}
+            className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 pr-8"
           >
-            <RefreshCw className="h-4 w-4" />
-            <span>Actualizar</span>
-          </button>
+            <option value="7d">Últimos 7 días</option>
+            <option value="30d">Últimos 30 días</option>
+            <option value="90d">Últimos 90 días</option>
+            <option value="1y">Último año</option>
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
         </div>
+        
+        <button 
+          onClick={fetchAnalytics}
+          className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Actualizar</span>
+        </button>
       </div>
+    </div>
+  );
 
+  return (
+    <>
+      {/* Render controls in header via portal */}
+      {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
+      
+      <div className="p-6 space-y-6">
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Ingresos Totales</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(summary.revenue.current)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Totales</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.revenue.current)}</p>
               <div className="flex items-center space-x-1 mt-2">
                 {getTrendIcon(summary.revenue.trend)}
                 <span className={`text-sm font-medium ${getTrendColor(summary.revenue.trend)}`}>
                   {Math.abs(summary.revenue.change)}%
                 </span>
-                <span className="text-gray-400 text-sm">vs anterior</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">vs anterior</span>
               </div>
             </div>
             <DollarSign className="h-8 w-8 text-emerald-400" />
@@ -223,18 +240,18 @@ const AnalyticsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Reservas</p>
-              <p className="text-2xl font-bold text-white">{summary.reservations.current}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Reservas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.reservations.current}</p>
               <div className="flex items-center space-x-1 mt-2">
                 {getTrendIcon(summary.reservations.trend)}
                 <span className={`text-sm font-medium ${getTrendColor(summary.reservations.trend)}`}>
                   {Math.abs(summary.reservations.change)}%
                 </span>
-                <span className="text-gray-400 text-sm">vs anterior</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">vs anterior</span>
               </div>
             </div>
             <Calendar className="h-8 w-8 text-blue-400" />
@@ -245,18 +262,18 @@ const AnalyticsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Clientes Únicos</p>
-              <p className="text-2xl font-bold text-white">{summary.customers.current}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Clientes Únicos</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.customers.current}</p>
               <div className="flex items-center space-x-1 mt-2">
                 {getTrendIcon(summary.customers.trend)}
                 <span className={`text-sm font-medium ${getTrendColor(summary.customers.trend)}`}>
                   {Math.abs(summary.customers.change)}%
                 </span>
-                <span className="text-gray-400 text-sm">vs anterior</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">vs anterior</span>
               </div>
             </div>
             <Users className="h-8 w-8 text-purple-400" />
@@ -267,18 +284,18 @@ const AnalyticsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Ocupación</p>
-              <p className="text-2xl font-bold text-white">{summary.occupancy.current}%</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ocupación</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.occupancy.current}%</p>
               <div className="flex items-center space-x-1 mt-2">
                 {getTrendIcon(summary.occupancy.trend)}
                 <span className={`text-sm font-medium ${getTrendColor(summary.occupancy.trend)}`}>
                   {Math.abs(summary.occupancy.change)}%
                 </span>
-                <span className="text-gray-400 text-sm">vs anterior</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">vs anterior</span>
               </div>
             </div>
             <Target className="h-8 w-8 text-orange-400" />
@@ -288,32 +305,32 @@ const AnalyticsPage = () => {
 
       {/* Secondary Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
           <div className="flex items-center space-x-3">
             <CreditCard className="h-6 w-6 text-emerald-400" />
             <div>
-              <p className="text-gray-400 text-sm">Ticket Promedio</p>
-              <p className="text-xl font-bold text-white">{formatCurrency(summary.averageBookingValue.current)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ticket Promedio</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.averageBookingValue.current)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
           <div className="flex items-center space-x-3">
             <Percent className="h-6 w-6 text-red-400" />
             <div>
-              <p className="text-gray-400 text-sm">Tasa de Cancelación</p>
-              <p className="text-xl font-bold text-white">{summary.cancellationRate}%</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Tasa de Cancelación</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.cancellationRate}%</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
           <div className="flex items-center space-x-3">
             <DollarSign className="h-6 w-6 text-yellow-400" />
             <div>
-              <p className="text-gray-400 text-sm">Señas Cobradas</p>
-              <p className="text-xl font-bold text-white">{formatCurrency(summary.deposits.total)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Señas Cobradas</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.deposits.total)}</p>
               <p className="text-xs text-gray-500">{summary.deposits.percentage}% de reservas con seña</p>
             </div>
           </div>
@@ -323,8 +340,8 @@ const AnalyticsPage = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Revenue Chart */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Ingresos Diarios</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ingresos Diarios</h3>
           {charts.dailyRevenue.length > 0 ? (
             <div>
               <div className="flex items-end justify-between space-x-1" style={{ height: '200px' }}>
@@ -361,8 +378,8 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Court Utilization */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Utilización por Cancha</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Utilización por Cancha</h3>
           <div className="space-y-4">
             {charts.courtUtilization.map((court, index) => (
               <div key={index}>
@@ -391,8 +408,8 @@ const AnalyticsPage = () => {
       {/* Peak Hours & Day of Week */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Peak Hours */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Horarios Pico</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Horarios Pico</h3>
           {charts.peakHours.length > 0 ? (
             <div>
               <div className="flex items-end justify-between space-x-1" style={{ height: '180px' }}>
@@ -450,8 +467,8 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Day of Week */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Reservas por Día</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Reservas por Día</h3>
           <div className="space-y-2">
             {charts.dayOfWeek.map((day, index) => {
               const maxCount = Math.max(...charts.dayOfWeek.map(d => d.count));
@@ -481,8 +498,8 @@ const AnalyticsPage = () => {
       {/* Booking Types & Top Customers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Booking Types */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Tipos de Reserva</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tipos de Reserva</h3>
           <div className="space-y-3">
             {charts.bookingTypes.map((type, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
@@ -500,8 +517,8 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Top Customers */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Mejores Clientes</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Mejores Clientes</h3>
           <div className="space-y-3">
             {topCustomers.map((customer, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
@@ -524,6 +541,7 @@ const AnalyticsPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

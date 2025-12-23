@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useEstablishmentAdminContext } from '@/contexts/EstablishmentAdminContext';
 import { CreateCourtSidebar } from '@/components/admin/CreateCourtSidebar';
@@ -54,6 +55,7 @@ import {
   Accessibility,
   Lock
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface Court {
   id: string;
@@ -95,7 +97,7 @@ const AMENITY_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   UtensilsCrossed, TreePine, Flame, Music, Tv, Baby, Dog, Accessibility, Lock
 };
 
-const CourtsPage = () => {
+const CanchasPage = () => {
   const { establishment, loading: establishmentLoading } = useEstablishment();
   const { 
     courts: apiCourts, 
@@ -124,6 +126,22 @@ const CourtsPage = () => {
   const [selectedAmenity, setSelectedAmenity] = useState<Amenity | null>(null);
   const [amenityMode, setAmenityMode] = useState<'create' | 'edit'>('create');
   const [activeTab, setActiveTab] = useState<'courts' | 'amenities'>('courts');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Read tab from URL on mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['courts', 'amenities'].includes(tabParam)) {
+      setActiveTab(tabParam as 'courts' | 'amenities');
+    }
+  }, [searchParams]);
+  
+  // Update URL when tab changes
+  const handleTabChange = (tab: 'courts' | 'amenities') => {
+    setActiveTab(tab);
+    router.push(`/establecimientos/admin/canchas?tab=${tab}`, { scroll: false });
+  };
 
   // Load amenities
   const loadAmenities = async () => {
@@ -393,7 +411,7 @@ const CourtsPage = () => {
   const allCourtTypes = [
     { id: 'futbol', name: 'Fútbol', color: 'emerald' },
     { id: 'tenis', name: 'Tenis', color: 'blue' },
-    { id: 'paddle', name: 'Paddle', color: 'purple' },
+    { id: 'paddle', name: 'Padel', color: 'purple' },
     { id: 'basquet', name: 'Básquet', color: 'orange' },
     { id: 'voley', name: 'Vóley', color: 'cyan' }
   ];
@@ -466,76 +484,121 @@ const CourtsPage = () => {
   // Header controls to be rendered via portal
   const headerControls = (
     <div className="flex items-center w-full space-x-2 overflow-x-auto">
-      {/* Search */}
-      <div className="relative flex-shrink-0">
-        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-        <input
-          type="text"
-          placeholder="Buscar..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-32"
-        />
-      </div>
-
-      {/* Sport Type Pills - Only show sports from this establishment */}
-      <div className="flex items-center space-x-1 flex-shrink-0">
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg flex-shrink-0">
         <button
-          onClick={() => setSelectedType('all')}
-          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
-            selectedType === 'all'
+          onClick={() => handleTabChange('courts')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'courts'
               ? 'bg-emerald-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Todos
+          <MapPin className="h-4 w-4" />
+          Canchas ({courts.length})
         </button>
-        {establishmentSports.map(type => (
-          <button
-            key={type.id}
-            onClick={() => setSelectedType(type.id)}
-            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
-              selectedType === type.id
-                ? `${type.color === 'emerald' ? 'bg-emerald-600' : 
-                    type.color === 'blue' ? 'bg-blue-600' : 
-                    type.color === 'purple' ? 'bg-purple-600' : 
-                    type.color === 'orange' ? 'bg-orange-600' : 
-                    'bg-cyan-600'} text-white`
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
-            }`}
-          >
-            {type.name}
-          </button>
-        ))}
+        <button
+          onClick={() => handleTabChange('amenities')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'amenities'
+              ? 'bg-purple-600 text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <Sparkles className="h-4 w-4" />
+          Amenities ({amenities.length})
+        </button>
       </div>
 
-      {/* Status Filter */}
-      <select
-        value={selectedStatus}
-        onChange={(e) => setSelectedStatus(e.target.value)}
-        className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
-      >
-        <option value="all">Todos</option>
-        <option value="available">Disponibles</option>
-        <option value="maintenance">Mantenimiento</option>
-        <option value="out_of_service">Fuera de servicio</option>
-      </select>
+      {/* Spacer */}
+      <div className="flex-1" />
 
-      {/* New Court Button */}
-      <button 
-        onClick={() => setShowCreateModal(true)}
-        className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
-      >
-        <Plus className="h-4 w-4" />
-        <span className="hidden sm:inline">Nueva Cancha</span>
-      </button>
+      {/* Courts Tab Controls */}
+      {activeTab === 'courts' && (
+        <>
+          {/* Search */}
+          <div className="relative flex-shrink-0">
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 pr-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-32"
+            />
+          </div>
+
+          {/* Sport Type Pills - Only show sports from this establishment */}
+          <div className="flex items-center space-x-1 flex-shrink-0">
+            <button
+              onClick={() => setSelectedType('all')}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                selectedType === 'all'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Todos
+            </button>
+            {establishmentSports.map(type => (
+              <button
+                key={type.id}
+                onClick={() => setSelectedType(type.id)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                  selectedType === type.id
+                    ? `${type.color === 'emerald' ? 'bg-emerald-600' : 
+                        type.color === 'blue' ? 'bg-blue-600' : 
+                        type.color === 'purple' ? 'bg-purple-600' : 
+                        type.color === 'orange' ? 'bg-orange-600' : 
+                        'bg-cyan-600'} text-white`
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {type.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Status Filter */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+          >
+            <option value="all">Todos</option>
+            <option value="available">Disponibles</option>
+            <option value="maintenance">Mantenimiento</option>
+            <option value="out_of_service">Fuera de servicio</option>
+          </select>
+
+          {/* New Court Button */}
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nueva Cancha</span>
+          </button>
+        </>
+      )}
+
+      {/* Amenities Tab Controls */}
+      {activeTab === 'amenities' && (
+        <button 
+          onClick={openAmenityCreate}
+          className="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Nuevo Amenity</span>
+        </button>
+      )}
     </div>
   );
 
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-white text-xl">Cargando canchas...</div>
+        <UnifiedLoader size="md" />
       </div>
     );
   }
@@ -546,54 +609,20 @@ const CourtsPage = () => {
       {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
       
       <div className="p-6">
-      <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Gestión de Instalaciones</h1>
-          <p className="text-gray-400 mt-1">Administra canchas y amenities del complejo</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-700 pb-4">
-        <button
-          onClick={() => setActiveTab('courts')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === 'courts'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
-          }`}
-        >
-          <MapPin className="h-4 w-4 inline mr-2" />
-          Canchas ({courts.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('amenities')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === 'amenities'
-              ? 'bg-purple-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
-          }`}
-        >
-          <Sparkles className="h-4 w-4 inline mr-2" />
-          Amenities ({amenities.length})
-        </button>
-      </div>
-
-      {activeTab === 'courts' && (
-      <>
+        <div className="space-y-6">
+          {activeTab === 'courts' && (
+            <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Total Canchas</p>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Canchas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
             <MapPin className="h-8 w-8 text-blue-400" />
           </div>
@@ -603,12 +632,12 @@ const CourtsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Disponibles</p>
-              <p className="text-2xl font-bold text-emerald-400">{stats.available}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Disponibles</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.available}</p>
             </div>
             <CheckCircle className="h-8 w-8 text-emerald-400" />
           </div>
@@ -618,12 +647,12 @@ const CourtsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Mantenimiento</p>
-              <p className="text-2xl font-bold text-yellow-400">{stats.maintenance}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Mantenimiento</p>
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.maintenance}</p>
             </div>
             <Wrench className="h-8 w-8 text-yellow-400" />
           </div>
@@ -633,12 +662,12 @@ const CourtsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Fuera de Servicio</p>
-              <p className="text-2xl font-bold text-red-400">{stats.outOfService}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Fuera de Servicio</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.outOfService}</p>
             </div>
             <XCircle className="h-8 w-8 text-red-400" />
           </div>
@@ -648,12 +677,12 @@ const CourtsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Ingresos Mensuales</p>
-              <p className="text-2xl font-bold text-emerald-400">{formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Mensuales</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(stats.totalRevenue)}</p>
             </div>
             <DollarSign className="h-8 w-8 text-emerald-400" />
           </div>
@@ -663,12 +692,12 @@ const CourtsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Rating Promedio</p>
-              <p className="text-2xl font-bold text-yellow-400">{stats.avgRating.toFixed(1)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Rating Promedio</p>
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.avgRating.toFixed(1)}</p>
             </div>
             <Star className="h-8 w-8 text-yellow-400" />
           </div>
@@ -677,38 +706,38 @@ const CourtsPage = () => {
 
 
       {/* Courts List */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-700">
+              <thead className="bg-gray-100 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Cancha</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Tipo</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Estado</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Precio/Hora</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Reservas</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Ingresos</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Rating</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Acciones</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Cancha</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Tipo</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Precio/Hora</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Reservas</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Ingresos</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Rating</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredCourts.map((court, index) => (
                   <motion.tr
                     key={court.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="hover:bg-gray-700/50 transition-colors"
+                    className="hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-lg bg-gray-600 flex items-center justify-center">
-                          <MapPin className="h-5 w-5 text-emerald-400" />
+                        <div className="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                          <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-white">{court.name}</div>
-                          <div className="text-sm text-gray-400">{court.surface}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{court.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{court.surface}</div>
                         </div>
                       </div>
                     </td>
@@ -726,13 +755,13 @@ const CourtsPage = () => {
                         </span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(court.pricePerHour)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {court.totalReservations}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(court.monthlyRevenue)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -775,10 +804,10 @@ const CourtsPage = () => {
           {filteredCourts.length === 0 && (
             <div className="text-center py-12">
               <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-white">
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
                 {courts.length === 0 ? 'No hay canchas registradas' : 'No hay canchas'}
               </h3>
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {courts.length === 0 
                   ? 'Agrega canchas desde la configuración del establecimiento para empezar a gestionar tus instalaciones.'
                   : 'No se encontraron canchas que coincidan con los filtros seleccionados.'
@@ -831,6 +860,155 @@ const CourtsPage = () => {
         editingCourt={showEditModal ? selectedCourt : null}
       />
 
+      {/* Court Statistics Sidebar - rendered via portal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showStatsModal && selectedCourt && courtStats && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+                onClick={() => {
+                  setShowStatsModal(false);
+                  setSelectedCourt(null);
+                }}
+              />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-full max-w-lg bg-gray-800 border-l border-gray-700 z-[101] flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Estadísticas</h2>
+                      <p className="text-sm text-gray-400">{selectedCourt.name}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowStatsModal(false);
+                      setSelectedCourt(null);
+                    }}
+                    className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <X className="h-5 w-5 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="w-4 h-4 text-blue-400" />
+                      <span className="text-xs text-gray-400">Reservas Totales</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{courtStats.totalReservations}</p>
+                    <p className="text-xs text-gray-500">{courtStats.monthlyReservations} este mes</p>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Percent className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs text-gray-400">Ocupación</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{courtStats.occupancyRate}%</p>
+                    <p className="text-xs text-gray-500">promedio mensual</p>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-4 h-4 text-yellow-400" />
+                      <span className="text-xs text-gray-400">Ingresos Mensuales</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">${courtStats.monthlyRevenue.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">${courtStats.avgRevenuePerDay.toLocaleString()}/día</p>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="w-4 h-4 text-purple-400" />
+                      <span className="text-xs text-gray-400">Esta Semana</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{courtStats.weeklyReservations}</p>
+                    <p className="text-xs text-gray-500">reservas</p>
+                  </div>
+                </div>
+
+                {/* Popular Hours */}
+                <div className="bg-gray-700/50 rounded-xl p-4">
+                  <h3 className="text-sm font-medium text-gray-300 mb-4">Horarios Más Populares</h3>
+                  <div className="space-y-3">
+                    {courtStats.popularHours.sort((a, b) => b.count - a.count).map((hour, index) => (
+                      <div key={hour.hour} className="flex items-center gap-3">
+                        <span className="text-sm text-gray-400 w-12">{hour.hour}</span>
+                        <div className="flex-1 bg-gray-600 rounded-full h-2">
+                          <div 
+                            className="bg-emerald-500 h-2 rounded-full" 
+                            style={{ width: `${(hour.count / Math.max(...courtStats.popularHours.map(h => h.count))) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm text-white w-8 text-right">{hour.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Weekday Distribution */}
+                <div className="bg-gray-700/50 rounded-xl p-4">
+                  <h3 className="text-sm font-medium text-gray-300 mb-4">Distribución por Día</h3>
+                  <div className="flex items-end justify-between gap-2" style={{ height: '120px' }}>
+                    {courtStats.weekdayDistribution.map((day) => (
+                      <div key={day.day} className="flex-1 flex flex-col items-center h-full">
+                        <div className="w-full flex-1 flex items-end">
+                          <div 
+                            className="w-full bg-blue-500 rounded-t transition-all"
+                            style={{ height: `${day.percentage}%`, minHeight: '4px' }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-400 mt-2">{day.day}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Top Clients */}
+                <div className="bg-gray-700/50 rounded-xl p-4">
+                  <h3 className="text-sm font-medium text-gray-300 mb-4">Clientes Frecuentes</h3>
+                  <div className="space-y-3">
+                    {courtStats.topClients.map((client, index) => (
+                      <div key={client.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-medium text-gray-300">{index + 1}</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">{client.name}</p>
+                            <p className="text-xs text-gray-400">{client.reservations} reservas</p>
+                          </div>
+                        </div>
+                        <span className="text-sm text-emerald-400">${client.spent.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>,
+      document.body
+      )}
+
       </>
       )}
 
@@ -838,316 +1016,135 @@ const CourtsPage = () => {
       {activeTab === 'amenities' && (
         <div className="space-y-6">
           {/* Amenities Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-white">Amenities del Establecimiento</h2>
-              <p className="text-gray-400 text-sm mt-1">
-                Gestiona servicios adicionales como quincho, pileta, vestuarios, etc.
-              </p>
-            </div>
-            <button
-              onClick={openAmenityCreate}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Nuevo Amenity
-            </button>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Amenities del Establecimiento</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              Gestiona servicios adicionales como quincho, pileta, vestuarios, etc.
+            </p>
           </div>
 
-          {/* Amenities Grid */}
-          {amenitiesLoading ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400">Cargando amenities...</div>
-            </div>
-          ) : amenities.length === 0 ? (
-            <div className="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
-              <Sparkles className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-white">No hay amenities</h3>
-              <p className="mt-1 text-sm text-gray-400">
-                Agrega amenities como quincho, pileta, vestuarios para que tus clientes puedan reservarlos.
-              </p>
-              <button
-                onClick={openAmenityCreate}
-                className="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl transition-colors"
-              >
-                Agregar Primer Amenity
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {amenities.map((amenity) => {
-                const IconComponent = AMENITY_ICONS[amenity.icon || 'Sparkles'] || Sparkles;
-                return (
-                  <motion.div
-                    key={amenity.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`bg-gray-800 rounded-xl border ${amenity.isActive ? 'border-gray-700' : 'border-red-900/50 opacity-60'} p-4`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${amenity.isActive ? 'bg-purple-500/20' : 'bg-gray-700'}`}>
-                          <IconComponent className={`h-5 w-5 ${amenity.isActive ? 'text-purple-400' : 'text-gray-500'}`} />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-white">{amenity.name}</h3>
-                          <p className="text-sm text-emerald-400">{formatCurrencyAmenity(amenity.pricePerHour)}/hora</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openAmenityEdit(amenity)}
-                          className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded transition-colors"
-                          title="Editar"
+          {/* Amenities Table */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
+            {amenitiesLoading ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400">Cargando amenities...</div>
+              </div>
+            ) : amenities.length === 0 ? (
+              <div className="text-center py-12">
+                <Sparkles className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay amenities</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Agrega amenities como quincho, pileta, vestuarios para que tus clientes puedan reservarlos.
+                </p>
+                <button
+                  onClick={openAmenityCreate}
+                  className="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl transition-colors"
+                >
+                  Agregar Primer Amenity
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Amenity</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Precio/Hora</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Capacidad</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Visibilidad</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {amenities.map((amenity, index) => {
+                      const IconComponent = AMENITY_ICONS[amenity.icon || 'Sparkles'] || Sparkles;
+                      return (
+                        <motion.tr
+                          key={amenity.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
                         >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAmenity(amenity.id)}
-                          className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {amenity.description && (
-                      <p className="text-gray-400 text-sm mt-2 line-clamp-2">{amenity.description}</p>
-                    )}
-
-                    <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-700">
-                      <div className="flex items-center gap-1.5">
-                        {amenity.isPublic ? (
-                          <Eye className="h-4 w-4 text-emerald-400" />
-                        ) : (
-                          <EyeOff className="h-4 w-4 text-gray-500" />
-                        )}
-                        <span className={`text-xs ${amenity.isPublic ? 'text-emerald-400' : 'text-gray-500'}`}>
-                          {amenity.isPublic ? 'Público' : 'Interno'}
-                        </span>
-                      </div>
-                      {amenity.capacity && (
-                        <div className="flex items-center gap-1.5">
-                          <Users className="h-4 w-4 text-gray-400" />
-                          <span className="text-xs text-gray-400">{amenity.capacity} personas</span>
-                        </div>
-                      )}
-                      {!amenity.isActive && (
-                        <span className="text-xs text-red-400 bg-red-400/10 px-2 py-0.5 rounded">Inactivo</span>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${amenity.isActive ? 'bg-purple-100 dark:bg-purple-500/20' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                                <IconComponent className={`h-5 w-5 ${amenity.isActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`} />
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{amenity.name}</div>
+                                {amenity.description && (
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{amenity.description}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                            {formatCurrencyAmenity(amenity.pricePerHour)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {amenity.capacity} {amenity.capacity === 1 ? 'persona' : 'personas'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${amenity.isPublic ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400'}`}>
+                              {amenity.isPublic ? 'Público' : 'Interno'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${amenity.isActive ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'}`}>
+                              {amenity.isActive ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-1">
+                              <button
+                                onClick={() => openAmenityEdit(amenity)}
+                                className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded transition-colors"
+                                title="Editar"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAmenity(amenity.id)}
+                                className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Amenity Sidebar */}
-      <AmenitySidebar
-        isOpen={showAmenitySidebar}
-        onClose={() => {
-          setShowAmenitySidebar(false);
-          setSelectedAmenity(null);
-        }}
-        onSave={amenityMode === 'create' ? handleCreateAmenity : handleUpdateAmenity}
-        amenity={selectedAmenity}
-        mode={amenityMode}
-      />
-
-      {/* Court Statistics Sidebar - rendered via portal */}
-      {mounted && createPortal(
-        <AnimatePresence>
-          {showStatsModal && selectedCourt && courtStats && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => {
-                  setShowStatsModal(false);
-                  setSelectedCourt(null);
+          {/* Amenity Sidebar - Moved outside tabs */}
+          <AnimatePresence>
+            {showAmenitySidebar && (
+              <AmenitySidebar
+                isOpen={showAmenitySidebar}
+                onClose={() => {
+                  setShowAmenitySidebar(false);
+                  setSelectedAmenity(null);
+                  setAmenityMode('create');
                 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                onSave={amenityMode === 'create' ? handleCreateAmenity : handleUpdateAmenity}
+                amenity={selectedAmenity}
+                mode={amenityMode}
               />
-              
-              {/* Sidebar */}
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed inset-y-0 right-0 w-full max-w-xl bg-gray-800 border-l border-gray-700 z-[101] flex flex-col"
-              >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <BarChart3 className="h-5 w-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Estadísticas de {selectedCourt.name}</h3>
-                  <p className="text-gray-400 text-sm capitalize">{selectedCourt.type} • {selectedCourt.surface}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowStatsModal(false);
-                  setSelectedCourt(null);
-                }}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-4">
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Percent className="h-4 w-4 text-blue-400" />
-                    <span className="text-gray-400 text-sm">Ocupación</span>
-                  </div>
-                  <p className="text-2xl font-bold text-white">{courtStats.occupancyRate}%</p>
-                  <p className="text-xs text-gray-500">del tiempo disponible</p>
-                </div>
-                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Calendar className="h-4 w-4 text-emerald-400" />
-                    <span className="text-gray-400 text-sm">Reservas/Mes</span>
-                  </div>
-                  <p className="text-2xl font-bold text-white">{courtStats.monthlyReservations}</p>
-                  <p className="text-xs text-gray-500">{courtStats.weeklyReservations} esta semana</p>
-                </div>
-                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <DollarSign className="h-4 w-4 text-yellow-400" />
-                    <span className="text-gray-400 text-sm">Ingresos/Mes</span>
-                  </div>
-                  <p className="text-2xl font-bold text-emerald-400">${courtStats.monthlyRevenue.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">${courtStats.avgRevenuePerDay.toLocaleString()}/día</p>
-                </div>
-                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <TrendingUp className="h-4 w-4 text-purple-400" />
-                    <span className="text-gray-400 text-sm">Total Histórico</span>
-                  </div>
-                  <p className="text-2xl font-bold text-white">{courtStats.totalReservations}</p>
-                  <p className="text-xs text-gray-500">reservas totales</p>
-                </div>
-              </div>
-
-              {/* Popular Hours */}
-              <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <h4 className="font-medium text-white mb-4 flex items-center">
-                  <Clock className="h-4 w-4 mr-2 text-blue-400" />
-                  Horarios Más Populares
-                </h4>
-                <div className="space-y-3">
-                  {courtStats.popularHours.sort((a, b) => b.count - a.count).map((slot, index) => (
-                    <div key={slot.hour} className="flex items-center">
-                      <span className="text-gray-400 w-14 text-sm">{slot.hour}</span>
-                      <div className="flex-1 mx-3">
-                        <div className="h-5 bg-gray-700 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full ${
-                              index === 0 ? 'bg-emerald-500' : 
-                              index === 1 ? 'bg-emerald-600' : 
-                              'bg-emerald-700'
-                            }`}
-                            style={{ width: `${(slot.count / Math.max(...courtStats.popularHours.map(h => h.count))) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <span className="text-white font-medium w-10 text-right text-sm">{slot.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Weekday Distribution */}
-              <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <h4 className="font-medium text-white mb-4 flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-purple-400" />
-                  Distribución por Día
-                </h4>
-                <div className="flex items-end justify-between h-28 px-1">
-                  {courtStats.weekdayDistribution.map((day) => (
-                    <div key={day.day} className="flex flex-col items-center flex-1">
-                      <div 
-                        className="w-6 bg-purple-500 rounded-t"
-                        style={{ height: `${day.percentage * 1.1}px` }}
-                      />
-                      <span className="text-xs text-gray-400 mt-2">{day.day}</span>
-                      <span className="text-xs text-white">{day.percentage}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Top Clients */}
-              <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <h4 className="font-medium text-white mb-4 flex items-center">
-                  <Users className="h-4 w-4 mr-2 text-yellow-400" />
-                  Clientes Frecuentes
-                </h4>
-                <div className="space-y-3">
-                  {courtStats.topClients.map((client, index) => (
-                    <div key={client.name} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                          index === 0 ? 'bg-yellow-500' :
-                          index === 1 ? 'bg-gray-400' :
-                          index === 2 ? 'bg-orange-600' :
-                          'bg-gray-600'
-                        }`}>
-                          <span className="text-xs font-bold text-white">
-                            {client.name.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-white text-sm">{client.name}</span>
-                          <p className="text-xs text-gray-500">{client.reservations} reservas</p>
-                        </div>
-                      </div>
-                      <span className="text-emerald-400 font-medium text-sm">
-                        ${client.spent.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-gray-700">
-              <button
-                onClick={() => {
-                  setShowStatsModal(false);
-                  setSelectedCourt(null);
-                }}
-                className="w-full px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors border border-gray-700"
-              >
-                Cerrar
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-        </AnimatePresence>,
-        document.body
-      )}
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
     </>
   );
 };
 
-export default CourtsPage;
+export default CanchasPage;

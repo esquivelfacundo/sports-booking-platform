@@ -133,7 +133,7 @@ const ProfilePage = () => {
   const getSportName = (sport: string) => {
     const names: { [key: string]: string } = {
       futbol5: 'Fútbol 5',
-      paddle: 'Paddle',
+      paddle: 'Padel',
       tenis: 'Tenis',
       basquet: 'Básquet'
     };
@@ -383,7 +383,7 @@ const ProfilePage = () => {
                               className="bg-gray-600 border border-gray-500 rounded-lg px-3 py-1 text-white text-sm"
                             >
                               <option value="futbol5">Fútbol 5</option>
-                              <option value="paddle">Paddle</option>
+                              <option value="paddle">Padel</option>
                               <option value="tenis">Tenis</option>
                               <option value="basquet">Básquet</option>
                             </select>

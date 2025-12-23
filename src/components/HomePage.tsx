@@ -62,7 +62,7 @@ const HomePage = () => {
                (establishment.images && Array.isArray(establishment.images) && establishment.images.length > 0) ? establishment.images[0] : 
                '/assets/default-card.png',
         sport: establishment.sports[0] === 'futbol5' ? 'Fútbol 5' :
-               establishment.sports[0] === 'paddle' ? 'Paddle' :
+               establishment.sports[0] === 'paddle' ? 'Padel' :
                establishment.sports[0] === 'tenis' ? 'Tenis' : 'Deporte',
         features: establishment.amenities ? establishment.amenities.slice(0, 3) : []
       };
@@ -122,13 +122,13 @@ const HomePage = () => {
     },
     {
       id: 2,
-      name: 'Paddle Center Palermo',
+      name: 'Padel Center Palermo',
       location: 'Palermo, Buenos Aires',
       rating: 4.9,
       reviews: 187,
       price: 6200,
       image: '🏓',
-      sport: 'Paddle',
+      sport: 'Padel',
       features: ['Canchas cubiertas', 'Iluminación LED', 'Cafetería']
     },
     {
@@ -154,7 +154,7 @@ const HomePage = () => {
     },
     {
       id: 2,
-      name: 'Paddle',
+      name: 'Padel',
       icon: '🏓',
       facilities: 89,
       description: 'Canchas cubiertas y al aire libre'
@@ -319,7 +319,7 @@ const HomePage = () => {
                       <span className="text-2xl">{match.sport === 'futbol5' ? '⚽' : match.sport === 'paddle' ? '🏓' : match.sport === 'tenis' ? '🎾' : '🏀'}</span>
                       <h3 className="font-semibold text-white group-hover:text-emerald-400 transition-colors">
                         {match.sport === 'futbol5' ? 'Fútbol 5' : 
-                         match.sport === 'paddle' ? 'Paddle' : 
+                         match.sport === 'paddle' ? 'Padel' : 
                          match.sport === 'tenis' ? 'Tenis' : 'Básquet'}
                       </h3>
                     </div>
@@ -431,7 +431,7 @@ const HomePage = () => {
                     <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center">
                       <span className="text-2xl">
                         {facility.sport === 'Fútbol 5' ? '⚽' : 
-                         facility.sport === 'Paddle' ? '🏓' : 
+                         facility.sport === 'Padel' ? '🏓' : 
                          facility.sport === 'Tenis' ? '🎾' : '🏟️'}
                       </span>
                     </div>

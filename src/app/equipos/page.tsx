@@ -206,7 +206,7 @@ const TeamsPage = () => {
                   >
                     <option value="all">Todos los deportes</option>
                     <option value="futbol5">Fútbol 5</option>
-                    <option value="paddle">Paddle</option>
+                    <option value="paddle">Padel</option>
                     <option value="tenis">Tenis</option>
                     <option value="basquet">Básquet</option>
                   </select>
@@ -407,7 +407,7 @@ const CreateTeamModal = ({ isOpen, onClose, onCreate, isCreating }: {
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
             >
               <option value="futbol5">Fútbol 5</option>
-              <option value="paddle">Paddle</option>
+              <option value="paddle">Padel</option>
               <option value="tenis">Tenis</option>
               <option value="basquet">Básquet</option>
             </select>

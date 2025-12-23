@@ -27,6 +27,7 @@ import {
   Check,
   Link2
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useSuperAdmin } from '@/contexts/SuperAdminContext';
 import { superAdminApi, EstablishmentData, UserData } from '@/services/superAdminApi';
 
@@ -641,10 +642,7 @@ const SuperAdminDashboard = () => {
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-400">Cargando datos...</p>
-            </div>
+            <UnifiedLoader size="sm" />
           </div>
         )}
 

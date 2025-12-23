@@ -180,7 +180,7 @@ const getMockEstablishments = (): Establishment[] => [
   },
   {
     id: '3',
-    name: 'Paddle & Tenis Club',
+    name: 'Padel & Tenis Club',
     description: 'Especialistas en paddle y tenis con instructores profesionales',
     address: 'Av. Santa Fe 2800',
     city: 'Buenos Aires',

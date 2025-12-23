@@ -47,7 +47,7 @@ const MobileSearchModal = ({ isOpen, onClose }: MobileSearchModalProps) => {
   const sports = [
     { value: '', label: 'Todos', icon: Trophy },
     { value: 'futbol5', label: 'Fútbol 5', icon: Circle },
-    { value: 'paddle', label: 'Paddle', icon: Square },
+    { value: 'paddle', label: 'Padel', icon: Square },
     { value: 'tenis', label: 'Tenis', icon: Disc },
     { value: 'basquet', label: 'Básquet', icon: Circle },
     { value: 'voley', label: 'Vóley', icon: Hexagon },

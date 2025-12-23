@@ -52,7 +52,7 @@ const mockRatings: PlayerRating[] = [
     matchId: 'match1',
     match: {
       id: 'match1',
-      title: 'Paddle - Sábado mañana',
+      title: 'Padel - Sábado mañana',
       sport: 'paddle',
       date: '2024-01-20'
     },

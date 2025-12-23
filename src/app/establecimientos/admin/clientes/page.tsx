@@ -31,6 +31,7 @@ import {
   Clock,
   MapPin
 } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface Client {
   id: string;
@@ -140,7 +141,7 @@ const ClientsPage = () => {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-white text-xl">Cargando clientes...</div>
+        <UnifiedLoader size="md" />
       </div>
     );
   }
@@ -395,13 +396,13 @@ const ClientsPage = () => {
     <div className="flex items-center w-full space-x-2 overflow-x-auto">
       {/* Search */}
       <div className="relative flex-shrink-0">
-        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
         <input
           type="text"
           placeholder="Buscar..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36"
+          className="pl-8 pr-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36"
         />
       </div>
 
@@ -409,7 +410,7 @@ const ClientsPage = () => {
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive' | 'blocked')}
-        className="px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+        className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
       >
         <option value="all">Estados</option>
         <option value="active">Activos</option>
@@ -420,14 +421,14 @@ const ClientsPage = () => {
       {/* Refresh Button */}
       <button 
         onClick={loadClients}
-        className="flex items-center space-x-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+        className="flex items-center space-x-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
       >
         <RefreshCw className="h-4 w-4" />
         <span className="hidden sm:inline">Actualizar</span>
       </button>
 
       {/* Import CSV */}
-      <label className="flex items-center space-x-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer flex-shrink-0">
+      <label className="flex items-center space-x-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer flex-shrink-0">
         <Upload className="h-4 w-4" />
         <span className="hidden sm:inline">Importar</span>
         <input
@@ -441,7 +442,7 @@ const ClientsPage = () => {
       {/* Export CSV */}
       <button 
         onClick={handleExportCSV}
-        className="flex items-center space-x-1.5 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+        className="flex items-center space-x-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
       >
         <Download className="h-4 w-4" />
         <span className="hidden sm:inline">Exportar</span>
@@ -464,33 +465,25 @@ const ClientsPage = () => {
       {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
       
       <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Gestión de Clientes</h1>
-          <p className="text-gray-400 mt-1">Administra la base de datos de clientes del complejo</p>
-        </div>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+          className="bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Total Clientes</p>
-              <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Clientes</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
-            <div className="bg-emerald-500/10 p-3 rounded-lg">
-              <Users className="h-6 w-6 text-emerald-400" />
+            <div className="bg-emerald-100 dark:bg-emerald-500/10 p-3 rounded-lg">
+              <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <span className="text-emerald-400">{stats.active}</span>
-            <span className="text-gray-400 ml-1">activos</span>
+            <span className="text-emerald-600 dark:text-emerald-400">{stats.active}</span>
+            <span className="text-gray-500 dark:text-gray-400 ml-1">activos</span>
           </div>
         </motion.div>
 
@@ -498,20 +491,20 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+          className="bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Total Reservas</p>
-              <p className="text-2xl font-bold text-white mt-1">{stats.totalReservations}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Reservas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.totalReservations}</p>
             </div>
-            <div className="bg-blue-500/10 p-3 rounded-lg">
-              <Calendar className="h-6 w-6 text-blue-400" />
+            <div className="bg-blue-100 dark:bg-blue-500/10 p-3 rounded-lg">
+              <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <span className="text-blue-400">{stats.total > 0 ? Math.round(stats.totalReservations / stats.total) : 0}</span>
-            <span className="text-gray-400 ml-1">promedio por cliente</span>
+            <span className="text-blue-600 dark:text-blue-400">{stats.total > 0 ? Math.round(stats.totalReservations / stats.total) : 0}</span>
+            <span className="text-gray-500 dark:text-gray-400 ml-1">promedio por cliente</span>
           </div>
         </motion.div>
 
@@ -519,19 +512,19 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+          className="bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Ingresos Totales</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Totales</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(stats.totalRevenue)}</p>
             </div>
             <div className="bg-emerald-500/10 p-3 rounded-lg">
               <DollarSign className="h-6 w-6 text-emerald-400" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <span className="text-gray-400">De todos los clientes</span>
+            <span className="text-gray-500 dark:text-gray-400">De todos los clientes</span>
           </div>
         </motion.div>
 
@@ -539,19 +532,19 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+          className="bg-white dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Gasto Promedio</p>
-              <p className="text-2xl font-bold text-white mt-1">{formatCurrency(stats.avgSpent)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Gasto Promedio</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(stats.avgSpent)}</p>
             </div>
-            <div className="bg-purple-500/10 p-3 rounded-lg">
-              <Activity className="h-6 w-6 text-purple-400" />
+            <div className="bg-purple-100 dark:bg-purple-500/10 p-3 rounded-lg">
+              <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm">
-            <span className="text-gray-400">Por cliente</span>
+            <span className="text-gray-500 dark:text-gray-400">Por cliente</span>
           </div>
         </motion.div>
       </div>
@@ -562,24 +555,24 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Estado de Clientes</h3>
-            <Activity className="h-5 w-5 text-emerald-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Estado de Clientes</h3>
+            <Activity className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">Activos</span>
-              <span className="text-emerald-400 font-medium">{stats.active}</span>
+              <span className="text-gray-600 dark:text-gray-400">Activos</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.active}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">Inactivos</span>
-              <span className="text-yellow-400 font-medium">{stats.inactive}</span>
+              <span className="text-gray-600 dark:text-gray-400">Inactivos</span>
+              <span className="text-yellow-600 dark:text-yellow-400 font-medium">{stats.inactive}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">Con deuda</span>
-              <span className="text-red-400 font-medium">{stats.blocked}</span>
+              <span className="text-gray-600 dark:text-gray-400">Con deuda</span>
+              <span className="text-red-600 dark:text-red-400 font-medium">{stats.blocked}</span>
             </div>
           </div>
         </motion.div>
@@ -588,26 +581,26 @@ const ClientsPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Resumen de Reservas</h3>
-            <Calendar className="h-5 w-5 text-blue-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Resumen de Reservas</h3>
+            <Calendar className="h-5 w-5 text-blue-500 dark:text-blue-400" />
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">Total</span>
-              <span className="text-white font-medium">{stats.totalReservations}</span>
+              <span className="text-gray-600 dark:text-gray-400">Total</span>
+              <span className="text-gray-900 dark:text-white font-medium">{stats.totalReservations}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">Completadas</span>
-              <span className="text-emerald-400 font-medium">
+              <span className="text-gray-600 dark:text-gray-400">Completadas</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                 {clients.reduce((sum, c) => sum + (c.completedBookings || 0), 0)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-400">No asistió</span>
-              <span className="text-orange-400 font-medium">
+              <span className="text-gray-600 dark:text-gray-400">No asistió</span>
+              <span className="text-orange-600 dark:text-orange-400 font-medium">
                 {clients.reduce((sum, c) => sum + (c.noShowBookings || 0), 0)}
               </span>
             </div>
@@ -616,29 +609,29 @@ const ClientsPage = () => {
       </div>
 
       {/* Clients Table */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-700">
+            <thead className="bg-gray-100 dark:bg-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Cliente</th>
-                <th className="px-3 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">Reservas</th>
-                <th className="px-3 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">Completadas</th>
-                <th className="px-3 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">Pendientes</th>
-                <th className="px-3 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">Canceladas</th>
-                <th className="px-3 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider">No asistió</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Última Visita</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Acciones</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Reservas</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Completadas</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Pendientes</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Canceladas</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">No asistió</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Última Visita</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredClients.map((client, index) => (
                 <motion.tr
                   key={client.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="hover:bg-gray-700/50 transition-colors"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center">
@@ -648,12 +641,12 @@ const ClientsPage = () => {
                         </span>
                       </div>
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-white">{client.name}</div>
-                        <div className="text-xs text-gray-400">{client.phone || client.email || '-'}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{client.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{client.phone || client.email || '-'}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-white font-medium">
+                  <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-gray-900 dark:text-white font-medium">
                     {client.totalBookings || 0}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-emerald-400">
@@ -662,13 +655,13 @@ const ClientsPage = () => {
                   <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-yellow-400">
                     {client.pendingBookings || 0}
                   </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
                     {client.cancelledBookings || 0}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-orange-400">
                     {client.noShowBookings || 0}
                   </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {client.lastCompletedBookingDate 
                       ? new Date(client.lastCompletedBookingDate).toLocaleDateString('es-AR') 
                       : '-'}
@@ -724,10 +717,10 @@ const ClientsPage = () => {
 
       {/* Client Sidebar */}
       {sidebarMode && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-[100] flex">
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/50" 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
             onClick={closeSidebar}
           />
           
@@ -737,7 +730,7 @@ const ClientsPage = () => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-xl overflow-y-auto"
+            className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-xl overflow-y-auto z-[101]"
           >
             <div className="p-6">
               {/* Header */}

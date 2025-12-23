@@ -142,11 +142,11 @@ const mockMatches: Match[] = [
   },
   {
     id: '2',
-    title: 'Paddle - Sábado mañana',
+    title: 'Padel - Sábado mañana',
     sport: 'paddle',
     venue: {
       id: '2',
-      name: 'Paddle Center Norte',
+      name: 'Padel Center Norte',
       location: 'Belgrano, Buenos Aires'
     },
     date: '2024-01-20',

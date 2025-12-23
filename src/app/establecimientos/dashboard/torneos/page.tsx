@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trophy, Users, Calendar, DollarSign, Edit, Trash2, Eye } from 'lucide-react';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useTournament } from '@/contexts/TournamentContext';
 import { Tournament } from '@/types/tournament';
 
@@ -282,7 +283,7 @@ const CreateTournamentModal = ({ onClose }: { onClose: () => void }) => {
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="futbol5">Fútbol 5</option>
-                <option value="paddle">Paddle</option>
+                <option value="paddle">Padel</option>
                 <option value="tenis">Tenis</option>
                 <option value="basquet">Básquet</option>
               </select>
@@ -444,8 +445,8 @@ const TournamentDetailsModal = ({ tournament, onClose }: { tournament: Tournamen
 const TournamentsPage = () => {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Cargando...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <UnifiedLoader size="lg" />
       </div>
     }>
       <TournamentsContent />

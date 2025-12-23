@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Truck, Search, Plus, Edit2, Trash2, Phone, Mail, MapPin, FileText } from 'lucide-react';
 import { apiClient } from '@/lib/api';
+import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import SupplierSidebar from './SupplierSidebar';
 
 interface Supplier {
@@ -60,7 +61,7 @@ export default function SuppliersTab({ establishmentId }: SuppliersTabProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-400">Cargando proveedores...</div>
+        <UnifiedLoader size="sm" />
       </div>
     );
   }
@@ -75,7 +76,7 @@ export default function SuppliersTab({ establishmentId }: SuppliersTabProps) {
           placeholder="Buscar proveedores..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
         />
       </div>
 
@@ -95,15 +96,15 @@ export default function SuppliersTab({ establishmentId }: SuppliersTabProps) {
           {filteredSuppliers.map((supplier) => (
             <div
               key={supplier.id}
-              className="bg-gray-800 rounded-xl border border-gray-700 p-5 hover:border-gray-600 transition-all"
+              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm dark:shadow-none"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                    <Truck className="w-5 h-5 text-emerald-400" />
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                    <Truck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">{supplier.name}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{supplier.name}</h3>
                     {supplier.businessName && (
                       <p className="text-xs text-gray-500">{supplier.businessName}</p>
                     )}
@@ -138,13 +139,13 @@ export default function SuppliersTab({ establishmentId }: SuppliersTabProps) {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-3 border-t border-gray-700">
+              <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => {
                     setEditingSupplier(supplier);
                     setSidebarOpen(true);
                   }}
-                  className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
                 >
                   <Edit2 className="w-4 h-4" />
                   Editar
