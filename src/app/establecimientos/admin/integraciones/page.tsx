@@ -25,6 +25,7 @@ import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Integration {
   id: string;
@@ -470,13 +471,22 @@ export default function IntegrationsPage() {
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
-                <button
-                  onClick={() => setShowCourtsSidebar(true)}
-                  className="w-full px-4 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-medium hover:bg-blue-500/30 flex items-center justify-center gap-2 mt-3"
-                >
-                  <Settings className="w-5 h-5" />
-                  Ver IDs de Canchas (JSON)
-                </button>
+                <div className="flex gap-3 mt-3">
+                  <button
+                    onClick={() => setShowCourtsSidebar(true)}
+                    className="flex-1 px-4 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-medium hover:bg-blue-500/30 flex items-center justify-center gap-2"
+                  >
+                    <Settings className="w-5 h-5" />
+                    Ver IDs de Canchas
+                  </button>
+                  <Link
+                    href="/establecimientos/admin/integraciones/docs"
+                    className="flex-1 px-4 py-3 bg-purple-500/20 text-purple-400 rounded-xl font-medium hover:bg-purple-500/30 flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-5 h-5" />
+                    Ver Documentación
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -491,13 +501,22 @@ export default function IntegrationsPage() {
                   {generatingBotKey ? <Loader2 className="w-5 h-5 animate-spin" /> : <Key className="w-5 h-5" />}
                   Generar API Key
                 </button>
-                <button
-                  onClick={() => setShowCourtsSidebar(true)}
-                  className="w-full px-4 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-medium hover:bg-blue-500/30 flex items-center justify-center gap-2"
-                >
-                  <Settings className="w-5 h-5" />
-                  Ver IDs de Canchas (JSON)
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCourtsSidebar(true)}
+                    className="flex-1 px-4 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-medium hover:bg-blue-500/30 flex items-center justify-center gap-2"
+                  >
+                    <Settings className="w-5 h-5" />
+                    Ver IDs de Canchas
+                  </button>
+                  <Link
+                    href="/establecimientos/admin/integraciones/docs"
+                    className="flex-1 px-4 py-3 bg-purple-500/20 text-purple-400 rounded-xl font-medium hover:bg-purple-500/30 flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-5 h-5" />
+                    Ver Documentación
+                  </Link>
+                </div>
               </div>
             )}
           </div>
