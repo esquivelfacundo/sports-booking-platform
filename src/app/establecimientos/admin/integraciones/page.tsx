@@ -412,10 +412,19 @@ export default function IntegrationsPage() {
 
         {/* API Key para Bot de WhatsApp */}
         <div className="mt-10">
-          <h2 className="text-xl font-bold text-white flex items-center gap-3 mb-4">
-            <Bot className="w-6 h-6 text-green-500" />
-            API Key para Bot de WhatsApp
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-3">
+              <Bot className="w-6 h-6 text-green-500" />
+              API Key para Bot de WhatsApp
+            </h2>
+            <Link
+              href="/establecimientos/admin/integraciones/docs"
+              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Ver Documentación API
+            </Link>
+          </div>
           <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
             <p className="text-gray-400 text-sm mb-4">
               Esta API Key permite que el bot de WhatsApp acceda a la información de tu establecimiento (canchas, disponibilidad, precios) para gestionar reservas automáticamente.
