@@ -67,7 +67,7 @@ const INTEGRATION_CARDS: IntegrationCardData[] = [
     name: 'Bot de WhatsApp',
     description: 'API para integrar bots y automatizar reservas',
     logo: '/assets/logos-empresas/whatsapp.svg',
-    logoSize: 48,
+    logoSize: 36,
     color: 'text-green-400',
     gradient: 'from-green-500 to-emerald-500',
     bgColor: 'bg-green-500/10',
@@ -424,15 +424,6 @@ export default function IntegrationsPage() {
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
-                  {card.docsUrl && (
-                    <Link
-                      href={card.docsUrl}
-                      className="w-full px-4 py-3 bg-purple-500/20 text-purple-400 rounded-xl font-medium hover:bg-purple-500/30 flex items-center justify-center gap-2"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                      Ver Documentación
-                    </Link>
-                  )}
                 </>
               ) : (
                 <>
@@ -447,15 +438,6 @@ export default function IntegrationsPage() {
                     {generatingBotKey ? <Loader2 className="w-5 h-5 animate-spin" /> : <Key className="w-5 h-5" />}
                     Generar API Key
                   </button>
-                  {card.docsUrl && (
-                    <Link
-                      href={card.docsUrl}
-                      className="w-full px-4 py-3 bg-purple-500/20 text-purple-400 rounded-xl font-medium hover:bg-purple-500/30 flex items-center justify-center gap-2"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                      Ver Documentación
-                    </Link>
-                  )}
                 </>
               )}
             </div>
@@ -492,8 +474,19 @@ export default function IntegrationsPage() {
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3"><Plug className="w-7 h-7 text-emerald-500" />Integraciones</h1>
-          <p className="text-gray-400 mt-2">Conecta servicios externos para potenciar tu establecimiento</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white flex items-center gap-3"><Plug className="w-7 h-7 text-emerald-500" />Integraciones</h1>
+              <p className="text-gray-400 mt-2">Conecta servicios externos para potenciar tu establecimiento</p>
+            </div>
+            <Link
+              href="/establecimientos/admin/integraciones/docs"
+              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Ver Documentación API
+            </Link>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {INTEGRATION_CARDS.map((card, index) => {
