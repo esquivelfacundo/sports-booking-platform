@@ -47,7 +47,8 @@ export interface UserData {
 
 class SuperAdminApiService {
   private getAuthHeaders() {
-    const token = localStorage.getItem('superAdminToken');
+    // Try auth_token first (new secure login), fallback to superAdminToken (legacy)
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('superAdminToken');
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
