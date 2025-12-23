@@ -30,12 +30,14 @@ export default function ApiDocsPage() {
   const menuGroups = [
     {
       title: 'General',
+      color: 'gray',
       items: [
         { id: 'intro', title: 'Introducción' },
       ]
     },
     {
-      title: 'API de Reservas (WhatsApp Bot)',
+      title: 'API de Reservas',
+      color: 'green',
       items: [
         { id: 'auth', title: 'Autenticación' },
         { id: 'create-booking', title: 'Crear Reserva' },
@@ -48,6 +50,7 @@ export default function ApiDocsPage() {
     },
     {
       title: 'OpenAI',
+      color: 'purple',
       items: [
         { id: 'openai-intro', title: 'Configuración' },
         { id: 'openai-assistant', title: 'Asistente IA' },
@@ -56,6 +59,7 @@ export default function ApiDocsPage() {
     },
     {
       title: 'MercadoPago',
+      color: 'blue',
       items: [
         { id: 'mp-intro', title: 'Configuración' },
         { id: 'mp-credentials', title: 'Credenciales' },
@@ -65,11 +69,22 @@ export default function ApiDocsPage() {
     },
     {
       title: 'Ayuda',
+      color: 'gray',
       items: [
         { id: 'support', title: 'Soporte' },
       ]
     }
   ];
+
+  const getBadgeClass = (color: string) => {
+    const colors: Record<string, string> = {
+      green: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+      purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+      blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+      gray: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+    };
+    return colors[color] || colors.gray;
+  };
 
   const getButtonClass = (isActive: boolean) => {
     if (isActive) {
@@ -89,7 +104,9 @@ export default function ApiDocsPage() {
         <nav className="flex-1 overflow-y-auto p-4">
           {menuGroups.map((group) => (
             <div key={group.title} className="mb-6">
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-3">{group.title}</h3>
+              <h3 className="flex items-center gap-2 mb-2 px-3">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getBadgeClass(group.color)}`}>{group.title}</span>
+              </h3>
               <ul className="space-y-1">
                 {group.items.map((item) => (
                   <li key={item.id}>
