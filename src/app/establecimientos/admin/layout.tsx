@@ -297,7 +297,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                     <div className="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center overflow-hidden">
                       {establishment?.logo ? (
                         <img 
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
+                          src={establishment.logo.startsWith('http') ? establishment.logo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
                           alt={establishment.name}
                           className="w-full h-full object-cover"
                         />
@@ -451,7 +451,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
               <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {establishment?.logo ? (
                   <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
+                    src={establishment.logo.startsWith('http') ? establishment.logo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
                     alt={establishment.name}
                     className="w-full h-full object-cover"
                   />
@@ -552,7 +552,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
               <div className="h-9 w-9 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {establishment?.logo ? (
                   <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
+                    src={establishment.logo.startsWith('http') ? establishment.logo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
                     alt={establishment.name}
                     className="w-full h-full object-cover"
                   />
