@@ -92,7 +92,13 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
         if (!token) return;
         
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
-        const response = await fetch(`${API_URL}/api/staff/me`, {
+        
+        // Check endpoint based on user type
+        const endpoint = isStaff 
+          ? `${API_URL}/api/staff/me`
+          : `${API_URL}/api/establishments/my/profile`;
+        
+        const response = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -111,7 +117,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
     };
     
     checkUserPin();
-  }, [isAuthenticated, isLoading, hasCheckedPin]);
+  }, [isAuthenticated, isLoading, hasCheckedPin, isStaff]);
 
   const handleLogout = () => {
     // Clear all auth tokens
