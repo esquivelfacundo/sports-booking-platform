@@ -119,13 +119,26 @@ const EstablishmentLoginPage = () => {
     <div className="min-h-screen w-full flex">
       {/* Background Slider - Full screen behind everything */}
       <div className="fixed inset-0 z-0">
-        <AnimatePresence mode="wait">
+        {/* Base layer - next image (always visible underneath) */}
+        <div className="absolute inset-0">
+          <Image
+            src={SLIDER_IMAGES[(currentImageIndex + 1) % SLIDER_IMAGES.length]}
+            alt="Background"
+            fill
+            className="object-cover"
+            quality={85}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        </div>
+        
+        {/* Animated layer - current image (fades in/out) */}
+        <AnimatePresence mode="sync">
           <motion.div
             key={currentImageIndex}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: 'easeInOut' }}
+            transition={{ duration: 1.2, ease: 'easeInOut' }}
             className="absolute inset-0"
           >
             <Image
@@ -159,24 +172,19 @@ const EstablishmentLoginPage = () => {
 
       {/* Sidebar - Fixed width, always visible */}
       <div className="relative z-10 w-full md:w-[480px] lg:w-[520px] min-h-screen bg-gray-900/95 backdrop-blur-sm flex flex-col">
-        {/* Logo and Header */}
+        {/* Logo */}
         <div className="p-8 pt-12">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3"
           >
             <Image
               src="/assets/logo-3.png"
               alt="Mis Canchas"
-              width={48}
-              height={48}
-              className="w-12 h-12"
+              width={180}
+              height={60}
+              className="h-14 w-auto"
             />
-            <div>
-              <h1 className="text-2xl font-bold text-white">Mis Canchas</h1>
-              <p className="text-sm text-gray-400">Panel de Administración</p>
-            </div>
           </motion.div>
         </div>
 
