@@ -58,7 +58,24 @@ export function SetupPinSidebar({ isOpen, onComplete }: SetupPinSidebarProps) {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${API_URL}/api/staff/me`, {
+      const userData = localStorage.getItem('user_data');
+      let isStaff = false;
+      
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          isStaff = user.isStaff === true;
+        } catch (e) {
+          console.error('Error parsing user data', e);
+        }
+      }
+      
+      // Use different endpoint based on user type
+      const endpoint = isStaff 
+        ? `${API_URL}/api/staff/me`
+        : `${API_URL}/api/establishments/my/profile`;
+      
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
