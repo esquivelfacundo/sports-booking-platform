@@ -6,7 +6,7 @@ import {
   Upload, FileText, Camera, X, Check, AlertTriangle, 
   Plus, Trash2, Edit2, Search, Package, ArrowLeft,
   Loader2, CheckCircle, XCircle, RefreshCw, Save,
-  ChevronDown, Link2, Unlink, Truck
+  ChevronDown, Link2, Unlink, Truck, Eye, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
@@ -140,6 +140,10 @@ export default function StockIngresoPage() {
   
   // OpenAI integration status
   const [hasOpenAIIntegration, setHasOpenAIIntegration] = useState<boolean | null>(null);
+  
+  // Document preview modal
+  const [showDocumentPreview, setShowDocumentPreview] = useState(false);
+  const [documentZoom, setDocumentZoom] = useState(1);
 
   // Load products, suppliers and check integration on mount
   useEffect(() => {
@@ -703,26 +707,39 @@ export default function StockIngresoPage() {
               className="space-y-6"
             >
               {/* OCR Confidence & Warnings */}
-              <div className="flex flex-wrap gap-4">
-                <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                  ocrConfidence >= 0.8 ? 'bg-emerald-500/20 text-emerald-400' :
-                  ocrConfidence >= 0.5 ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-red-500/20 text-red-400'
-                }`}>
-                  {ocrConfidence >= 0.8 ? <CheckCircle className="w-4 h-4" /> :
-                   ocrConfidence >= 0.5 ? <AlertTriangle className="w-4 h-4" /> :
-                   <XCircle className="w-4 h-4" />}
-                  <span className="text-sm font-medium">
-                    Confianza: {Math.round(ocrConfidence * 100)}%
-                  </span>
+              <div className="flex flex-wrap gap-4 items-center justify-between">
+                <div className="flex flex-wrap gap-4">
+                  <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                    ocrConfidence >= 0.8 ? 'bg-emerald-500/20 text-emerald-400' :
+                    ocrConfidence >= 0.5 ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-red-500/20 text-red-400'
+                  }`}>
+                    {ocrConfidence >= 0.8 ? <CheckCircle className="w-4 h-4" /> :
+                     ocrConfidence >= 0.5 ? <AlertTriangle className="w-4 h-4" /> :
+                     <XCircle className="w-4 h-4" />}
+                    <span className="text-sm font-medium">
+                      Confianza: {Math.round(ocrConfidence * 100)}%
+                    </span>
+                  </div>
+                  
+                  {ocrWarnings.map((warning, i) => (
+                    <div key={i} className="px-4 py-2 rounded-lg bg-yellow-500/10 text-yellow-400 text-sm flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      {warning}
+                    </div>
+                  ))}
                 </div>
                 
-                {ocrWarnings.map((warning, i) => (
-                  <div key={i} className="px-4 py-2 rounded-lg bg-yellow-500/10 text-yellow-400 text-sm flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    {warning}
-                  </div>
-                ))}
+                {/* View Document Button */}
+                {previewUrl && (
+                  <button
+                    onClick={() => setShowDocumentPreview(true)}
+                    className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg flex items-center gap-2 transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span className="text-sm font-medium">Ver Documento</span>
+                  </button>
+                )}
               </div>
 
               {/* Invoice Info */}
@@ -1237,6 +1254,90 @@ export default function StockIngresoPage() {
               setCreateProductForItem(null);
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Document Preview Modal */}
+      <AnimatePresence>
+        {showDocumentPreview && previewUrl && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDocumentPreview(false)}
+              className="fixed inset-0 bg-black/80 z-50"
+            />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-4 md:inset-8 lg:inset-16 bg-gray-900 rounded-2xl z-50 flex flex-col overflow-hidden border border-gray-700 shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-400" />
+                  Documento Escaneado
+                </h3>
+                <div className="flex items-center gap-2">
+                  {/* Zoom Controls */}
+                  <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+                    <button
+                      onClick={() => setDocumentZoom(Math.max(0.5, documentZoom - 0.25))}
+                      className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors"
+                      title="Alejar"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="px-2 text-sm text-gray-400 min-w-[60px] text-center">
+                      {Math.round(documentZoom * 100)}%
+                    </span>
+                    <button
+                      onClick={() => setDocumentZoom(Math.min(3, documentZoom + 0.25))}
+                      className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors"
+                      title="Acercar"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setDocumentZoom(1)}
+                    className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDocumentPreview(false);
+                      setDocumentZoom(1);
+                    }}
+                    className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Image Container */}
+              <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-gray-950">
+                <div 
+                  className="transition-transform duration-200"
+                  style={{ transform: `scale(${documentZoom})` }}
+                >
+                  <img
+                    src={previewUrl}
+                    alt="Documento escaneado"
+                    className="max-w-full h-auto rounded-lg shadow-lg"
+                    style={{ maxHeight: `calc(100vh - 200px)` }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
