@@ -763,7 +763,21 @@ const ConfigurationPage = () => {
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
               </div>
-              <p className="text-gray-500 text-xs mt-1">Click para cambiar</p>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-gray-500 text-xs">Click para cambiar</p>
+                {config.logo && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfig((prev: any) => ({ ...prev, logo: '' }));
+                      setUnsavedChanges(true);
+                    }}
+                    className="text-xs text-red-400 hover:text-red-300 underline"
+                  >
+                    Eliminar
+                  </button>
+                )}
+              </div>
             </div>
             
             {/* Name Field */}
