@@ -56,21 +56,23 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Validate against environment variables
-      const validEmail = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
-      const validPassword = process.env.NEXT_PUBLIC_SUPERADMIN_PASSWORD;
-      const tokenSecret = process.env.NEXT_PUBLIC_SUPERADMIN_SECRET || 'default_secret';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       
-      if (!validEmail || !validPassword) {
-        console.error('Super admin credentials not configured');
-        return false;
-      }
-      
-      if (email === validEmail && password === validPassword) {
+      const response = await fetch(`${apiUrl}/api/auth/superadmin-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         const adminData: SuperAdmin = {
-          id: 'super-admin-1',
-          email: email,
-          name: 'Super Administrador',
+          id: data.user.id,
+          email: data.user.email,
+          name: `${data.user.firstName} ${data.user.lastName}`,
           role: 'super_admin',
           permissions: [
             'manage_establishments',
@@ -83,13 +85,15 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           ]
         };
 
-        // Generate token that backend will recognize
-        const token = `superadmin_${tokenSecret}_${Date.now()}`;
-        
-        localStorage.setItem('superAdminToken', token);
+        // Store JWT tokens
+        localStorage.setItem('auth_token', data.tokens.accessToken);
+        localStorage.setItem('refresh_token', data.tokens.refreshToken);
+        localStorage.setItem('superAdminToken', data.tokens.accessToken);
         localStorage.setItem('superAdminData', JSON.stringify(adminData));
-        setSuperAdmin(adminData);
+        localStorage.setItem('user_data', JSON.stringify(data.user));
+        localStorage.setItem('user_type', 'superadmin');
         
+        setSuperAdmin(adminData);
         return true;
       }
       
@@ -101,8 +105,12 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const logout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('superAdminToken');
     localStorage.removeItem('superAdminData');
+    localStorage.removeItem('user_data');
+    localStorage.removeItem('user_type');
     setSuperAdmin(null);
   };
 
