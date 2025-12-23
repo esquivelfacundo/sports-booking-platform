@@ -163,7 +163,7 @@ export default function IntegrationsPage() {
     if (!establishment?.id) return;
     try {
       setCourtsLoading(true);
-      const response = await apiClient.getCourts();
+      const response = await apiClient.getCourts(establishment.id);
       setCourts(response.data || []);
     } catch (error) {
       console.error('Error loading courts:', error);
@@ -505,30 +505,55 @@ export default function IntegrationsPage() {
                 Cargando canchas...
               </div>
             ) : courts.length > 0 ? (
-              <div className="space-y-3">
-                {courts.map((court) => (
-                  <div key={court.id} className="bg-gray-900 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-white font-medium">{court.name}</span>
-                      <span className="text-xs text-gray-500">{court.sport}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={court.id}
-                        readOnly
-                        className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 font-mono text-sm"
-                      />
-                      <button
-                        onClick={() => copyToClipboard(court.id)}
-                        className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300"
-                        title="Copiar ID"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
+              <div className="space-y-4">
+                {/* Campo para copiar todos los IDs */}
+                <div className="bg-gray-900 rounded-xl p-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Todos los IDs (formato JSON)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <textarea
+                      value={JSON.stringify(courts.map(c => ({ id: c.id, name: c.name, sport: c.sport })), null, 2)}
+                      readOnly
+                      rows={Math.min(courts.length * 4, 10)}
+                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 font-mono text-xs resize-none"
+                    />
+                    <button
+                      onClick={() => copyToClipboard(JSON.stringify(courts.map(c => ({ id: c.id, name: c.name, sport: c.sport })), null, 2))}
+                      className="p-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white"
+                      title="Copiar JSON"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
                   </div>
-                ))}
+                </div>
+
+                {/* Lista individual de canchas */}
+                <div className="space-y-3">
+                  {courts.map((court) => (
+                    <div key={court.id} className="bg-gray-900 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-white font-medium">{court.name}</span>
+                        <span className="text-xs text-gray-500">{court.sport}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={court.id}
+                          readOnly
+                          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 font-mono text-sm"
+                        />
+                        <button
+                          onClick={() => copyToClipboard(court.id)}
+                          className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300"
+                          title="Copiar ID"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="p-4 bg-gray-900 rounded-xl">
