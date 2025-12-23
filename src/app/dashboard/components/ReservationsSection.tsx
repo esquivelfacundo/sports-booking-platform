@@ -10,94 +10,53 @@ import {
   Search,
   ChevronDown,
   Trophy,
-  Users,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { usePlayerDashboard } from '@/hooks/usePlayerDashboard';
 
-interface ReservationsSectionProps {
-  user: any;
-}
-
-const ReservationsSection: React.FC<ReservationsSectionProps> = ({ user }) => {
+const ReservationsSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  
+  const { 
+    upcomingBookings, 
+    pastBookings, 
+    cancelledBookings, 
+    stats,
+    loading,
+    cancelBooking 
+  } = usePlayerDashboard();
 
-  // Mock data - replace with real API call
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Transform bookings to display format
+  const transformBooking = (booking: any) => ({
+    id: booking.id,
+    facility: booking.establishmentName,
+    court: booking.courtName,
+    sport: booking.sport,
+    date: booking.date,
+    time: `${booking.startTime} - ${booking.endTime || ''}`,
+    duration: `${booking.duration}min`,
+    price: formatCurrency(booking.totalAmount),
+    status: booking.status,
+    location: booking.location || ''
+  });
+
   const reservations = {
-    upcoming: [
-      {
-        id: 1,
-        facility: 'Club Deportivo Central',
-        court: 'Cancha de Tenis #1',
-        sport: 'Tenis',
-        date: '2024-01-15',
-        time: '18:00 - 19:30',
-        duration: '1h 30min',
-        price: '$2,500',
-        status: 'confirmed',
-        players: 2,
-        location: 'Palermo, CABA'
-      },
-      {
-        id: 2,
-        facility: 'Padel Club Norte',
-        court: 'Cancha de Padel #3',
-        sport: 'Padel',
-        date: '2024-01-18',
-        time: '20:00 - 21:00',
-        duration: '1h',
-        price: '$1,800',
-        status: 'confirmed',
-        players: 4,
-        location: 'Belgrano, CABA'
-      }
-    ],
-    past: [
-      {
-        id: 3,
-        facility: 'Futbol 5 San Telmo',
-        court: 'Cancha Sintética #2',
-        sport: 'Fútbol 5',
-        date: '2024-01-10',
-        time: '19:00 - 20:00',
-        duration: '1h',
-        price: '$3,200',
-        status: 'completed',
-        players: 10,
-        location: 'San Telmo, CABA'
-      },
-      {
-        id: 4,
-        facility: 'Basketball Arena',
-        court: 'Cancha Principal',
-        sport: 'Basketball',
-        date: '2024-01-08',
-        time: '17:30 - 18:30',
-        duration: '1h',
-        price: '$2,000',
-        status: 'completed',
-        players: 8,
-        location: 'Villa Crespo, CABA'
-      }
-    ],
-    cancelled: [
-      {
-        id: 5,
-        facility: 'Tenis Club Premium',
-        court: 'Cancha de Tenis #2',
-        sport: 'Tenis',
-        date: '2024-01-12',
-        time: '16:00 - 17:00',
-        duration: '1h',
-        price: '$2,200',
-        status: 'cancelled',
-        players: 2,
-        location: 'Recoleta, CABA'
-      }
-    ]
+    upcoming: upcomingBookings.map(transformBooking),
+    past: pastBookings.map(transformBooking),
+    cancelled: cancelledBookings.map(transformBooking)
   };
 
   const getStatusIcon = (status: string) => {
@@ -148,7 +107,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ user }) => {
   const currentReservations = reservations[activeTab as keyof typeof reservations] || [];
 
   return (
-    <div className="p-8">
+    <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
           Mis Reservas
@@ -272,14 +231,12 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ user }) => {
                       <Trophy className="w-4 h-4" />
                       <span>{reservation.sport}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Users className="w-4 h-4" />
-                      <span>{reservation.players} jugadores</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{reservation.location}</span>
-                    </div>
+                    {reservation.location && (
+                      <div className="flex items-center space-x-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{reservation.location}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
@@ -302,10 +259,14 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ user }) => {
                 
                 {activeTab === 'upcoming' && (
                   <div className="flex space-x-2">
-                    <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm">
-                      Ver detalles
-                    </button>
-                    <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm">
+                    <button 
+                      onClick={async () => {
+                        if (confirm('¿Estás seguro de que quieres cancelar esta reserva?')) {
+                          await cancelBooking(reservation.id);
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                    >
                       Cancelar
                     </button>
                   </div>

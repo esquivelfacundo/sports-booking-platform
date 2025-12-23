@@ -1,13 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Menu, X, User, Globe, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import HeaderSearchBar from './HeaderSearchBar';
 import UserAvatar from './UserAvatar';
-import { useMobileSearchModal } from './MobileSearchModalProvider';
 
 interface HeaderProps {
   onLoginClick?: () => void;
@@ -15,29 +11,6 @@ interface HeaderProps {
 
 const Header = ({ onLoginClick }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
-  const pathname = usePathname();
-  const { setShowMobileSearch } = useMobileSearchModal();
-  
-  // Check if we're on homepage
-  const isHomepage = pathname === '/';
-  
-  // Hero section height (approximately 600px based on py-24 and content)
-  const heroHeight = 600;
-  
-  // Show search bar if not on homepage OR if scrolled past hero section
-  const showSearchBar = !isHomepage || scrollY > heroHeight;
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-
-    if (isHomepage) {
-      window.addEventListener('scroll', handleScroll);
-      return () => window.removeEventListener('scroll', handleScroll);
-    }
-  }, [isHomepage]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -57,27 +30,8 @@ const Header = ({ onLoginClick }: HeaderProps) => {
             />
           </Link>
 
-          {/* Desktop Search Bar - Hidden on homepage hero */}
-          {showSearchBar && (
-            <motion.div
-              className="hidden md:block"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-            >
-              <HeaderSearchBar />
-            </motion.div>
-          )}
-
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/torneos" 
-              className="text-gray-300 hover:text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-all duration-200 font-medium"
-            >
-              Torneos
-            </Link>
             <Link 
               href="/establecimientos" 
               className="text-gray-300 hover:text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-all duration-200 font-medium border border-gray-700 hover:border-gray-600"
@@ -85,12 +39,7 @@ const Header = ({ onLoginClick }: HeaderProps) => {
               Anuncia tu establecimiento
             </Link>
             
-            <div className="flex items-center space-x-3">
-              <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200">
-                <Globe className="w-5 h-5" />
-              </button>
-              <UserAvatar onLoginClick={onLoginClick || (() => {})} />
-            </div>
+            <UserAvatar onLoginClick={onLoginClick || (() => {})} />
           </div>
 
           {/* Mobile Actions */}
@@ -106,28 +55,6 @@ const Header = ({ onLoginClick }: HeaderProps) => {
 
         </div>
 
-        {/* Mobile Search Button - Hidden on homepage hero */}
-        {showSearchBar && (
-          <motion.div 
-            className="md:hidden pb-4"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <button 
-              onClick={() => setShowMobileSearch(true)}
-              className="w-full flex items-center border border-gray-600 rounded-xl py-3 px-4 bg-gray-800 hover:bg-gray-700 transition-all duration-200"
-            >
-              <Search className="w-5 h-5 text-gray-400 mr-3" />
-              <div className="text-left">
-                <div className="text-sm font-medium text-white">¿A dónde vas?</div>
-                <div className="text-xs text-gray-400">Ubicación • Deporte • Fecha</div>
-              </div>
-            </button>
-          </motion.div>
-        )}
-
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-700 py-4">
@@ -138,18 +65,6 @@ const Header = ({ onLoginClick }: HeaderProps) => {
               >
                 Anuncia tu establecimiento
               </Link>
-              <Link 
-                href="/torneos"
-                className="block text-gray-300 hover:text-white px-3 py-2 rounded-xl hover:bg-gray-800 transition-all duration-200 font-medium"
-              >
-                Torneos
-              </Link>
-              <button 
-                onClick={() => window.location.href = '/buscar'}
-                className="block w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-xl hover:bg-gray-800 transition-all duration-200 font-medium"
-              >
-                Buscar canchas
-              </button>
             </div>
           </div>
         )}

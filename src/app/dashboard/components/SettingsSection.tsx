@@ -429,15 +429,15 @@ const SettingsSection: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <div className="bg-gray-900">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <h1 className="text-3xl font-bold text-white mb-2">Configuración</h1>
-          <p className="text-gray-400">Personaliza tu experiencia en la plataforma</p>
+          <h1 className="text-3xl font-bold text-white mb-1">Configuración</h1>
+          <p className="text-gray-400 text-sm">Personaliza tu experiencia en la plataforma</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

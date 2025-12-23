@@ -10,120 +10,228 @@ import {
   DollarSign, 
   Users, 
   MapPin, 
-  Wrench, 
-  Target, 
   Menu, 
-  Search, 
   Bell, 
   Settings, 
   LogOut, 
   X,
   ChevronDown,
-  Trophy,
   Clock,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Package,
+  ShoppingCart,
+  Wallet,
+  CreditCard,
+  Plug
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEstablishmentAdmin } from '@/hooks/useEstablishmentAdmin';
+import { EstablishmentAdminProvider, useEstablishmentAdminContext } from '@/contexts/EstablishmentAdminContext';
 import HeaderSearchBar from '@/components/HeaderSearchBar';
+import CashRegisterTopbar from '@/components/admin/CashRegisterTopbar';
+import { CommandMenuProvider } from '@/contexts/CommandMenuContext';
+import { UserProfileSidebar } from '@/components/admin/UserProfileSidebar';
+import { SetupPinSidebar } from '@/components/admin/SetupPinSidebar';
+import { usePinConfirmation } from '@/components/admin/PinConfirmation';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const AdminLayout = ({ children }: AdminLayoutProps) => {
+const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   const { establishment } = useEstablishment();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
-  const { notifications, stats, markNotificationRead } = useEstablishmentAdmin();
+  const { notifications, stats, markNotificationRead } = useEstablishmentAdminContext();
+  const { requestPin, PinModal } = usePinConfirmation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [staffMenuOpen, setStaffMenuOpen] = useState(false);
+  const [showProfileSidebar, setShowProfileSidebar] = useState(false);
+  const [showSetupPinSidebar, setShowSetupPinSidebar] = useState(false);
+  const [hasCheckedPin, setHasCheckedPin] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Authentication guard
+  // Check if user is staff-only (role: 'staff')
+  const isStaffOnly = user?.isStaff && user?.staffRole === 'staff';
+  
+  // Check if user is staff (has isStaff flag)
+  const isStaff = user?.isStaff === true;
+
+  // Authentication guard and staff redirect
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       console.log('AdminLayout: User not authenticated, redirecting to login');
       router.push('/establecimientos/login');
+      return;
     }
-  }, [isAuthenticated, isLoading, router]);
+
+    // Redirect staff-only users to reservas page if they're on a different page
+    if (!isLoading && isAuthenticated && isStaffOnly) {
+      const allowedPaths = ['/establecimientos/admin/reservas'];
+      const isAllowedPath = allowedPaths.some(path => pathname.startsWith(path));
+      
+      if (!isAllowedPath) {
+        console.log('AdminLayout: Staff-only user, redirecting to reservas');
+        router.push('/establecimientos/admin/reservas');
+      }
+    }
+  }, [isAuthenticated, isLoading, router, isStaffOnly, pathname]);
+
+  // Check if user has PIN configured
+  useEffect(() => {
+    const checkUserPin = async () => {
+      if (!isAuthenticated || isLoading || hasCheckedPin) return;
+      
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+        
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+        const response = await fetch(`${API_URL}/api/staff/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.profile) {
+          setHasCheckedPin(true);
+          // If user doesn't have PIN, show setup sidebar
+          if (!data.profile.hasPin) {
+            setShowSetupPinSidebar(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user PIN:', error);
+      }
+    };
+    
+    checkUserPin();
+  }, [isAuthenticated, isLoading, hasCheckedPin]);
 
   const handleLogout = () => {
+    // Clear all auth tokens
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_type');
+      localStorage.removeItem('user_data');
+    }
     logout();
     // Force reload establishment context after logout
     if (typeof window !== 'undefined') {
-      window.location.href = '/';
+      window.location.href = '/establecimientos/login';
     }
   };
 
-  const navigation = [
+  // Open profile sidebar with PIN validation
+  const handleOpenProfile = () => {
+    requestPin(() => {
+      setShowProfileSidebar(true);
+    }, { title: 'Acceder al perfil', description: 'Ingresa tu PIN para continuar' });
+  };
+
+  // Navigate to configuration with PIN validation
+  const handleOpenConfiguration = () => {
+    requestPin(() => {
+      router.push('/establecimientos/admin/configuracion');
+    }, { title: 'Acceder a configuración', description: 'Ingresa tu PIN para continuar' });
+  };
+
+  // Sidebar collapsed state - collapsed by default
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+
+  // Navigation items grouped with separators
+  const navigationGroups = [
     {
-      name: 'Dashboard',
-      href: '/establecimientos/admin',
-      icon: LayoutDashboard,
-      current: pathname === '/establecimientos/admin'
+      items: [
+        {
+          name: 'Dashboard',
+          href: '/establecimientos/admin',
+          icon: LayoutDashboard,
+          current: pathname === '/establecimientos/admin'
+        }
+      ]
     },
     {
-      name: 'Reservas',
-      href: '/establecimientos/admin/reservas',
-      icon: Calendar,
-      current: pathname.startsWith('/establecimientos/admin/reservas'),
-      badge: '12'
+      items: [
+        {
+          name: 'Reservas',
+          href: '/establecimientos/admin/reservas',
+          icon: Calendar,
+          current: pathname.startsWith('/establecimientos/admin/reservas'),
+          badge: stats.pendingBookings > 0 ? stats.pendingBookings.toString() : undefined
+        },
+        {
+          name: 'Canchas',
+          href: '/establecimientos/admin/canchas',
+          icon: MapPin,
+          current: pathname.startsWith('/establecimientos/admin/canchas')
+        },
+        {
+          name: 'Clientes',
+          href: '/establecimientos/admin/clientes',
+          icon: Users,
+          current: pathname.startsWith('/establecimientos/admin/clientes')
+        }
+      ]
     },
     {
-      name: 'Torneos',
-      href: '/establecimientos/admin/torneos',
-      icon: Trophy,
-      current: pathname.startsWith('/establecimientos/admin/torneos')
+      items: [
+        {
+          name: 'Ventas',
+          href: '/establecimientos/admin/ventas',
+          icon: ShoppingCart,
+          current: pathname.startsWith('/establecimientos/admin/ventas')
+        },
+        {
+          name: 'Stock',
+          href: '/establecimientos/admin/stock',
+          icon: Package,
+          current: pathname.startsWith('/establecimientos/admin/stock')
+        },
+        {
+          name: 'Cuentas',
+          href: '/establecimientos/admin/cuentas-corrientes',
+          icon: CreditCard,
+          current: pathname.startsWith('/establecimientos/admin/cuentas-corrientes')
+        }
+      ]
     },
     {
-      name: 'Análisis',
-      href: '/establecimientos/admin/analytics',
-      icon: BarChart3,
-      current: pathname.startsWith('/establecimientos/admin/analytics')
+      items: [
+        {
+          name: 'Análisis',
+          href: '/establecimientos/admin/analytics',
+          icon: BarChart3,
+          current: pathname.startsWith('/establecimientos/admin/analytics')
+        },
+        {
+          name: 'Finanzas',
+          href: '/establecimientos/admin/finanzas',
+          icon: DollarSign,
+          current: pathname.startsWith('/establecimientos/admin/finanzas')
+        }
+      ]
     },
     {
-      name: 'Finanzas',
-      href: '/establecimientos/admin/finanzas',
-      icon: DollarSign,
-      current: pathname.startsWith('/establecimientos/admin/finanzas')
-    },
-    {
-      name: 'Personal',
-      href: '/establecimientos/admin/personal',
-      icon: Users,
-      current: pathname.startsWith('/establecimientos/admin/personal')
-    },
-    {
-      name: 'Canchas',
-      href: '/establecimientos/admin/canchas',
-      icon: MapPin,
-      current: pathname.startsWith('/establecimientos/admin/canchas')
-    },
-    {
-      name: 'Clientes',
-      href: '/establecimientos/admin/clientes',
-      icon: Users,
-      current: pathname.startsWith('/establecimientos/admin/clientes')
-    },
-    {
-      name: 'Mantenimiento',
-      href: '/establecimientos/admin/mantenimiento',
-      icon: Wrench,
-      current: pathname.startsWith('/establecimientos/admin/mantenimiento')
-    },
-    {
-      name: 'Marketing',
-      href: '/establecimientos/admin/marketing',
-      icon: Target,
-      current: pathname.startsWith('/establecimientos/admin/marketing')
+      items: [
+        {
+          name: 'Integraciones',
+          href: '/establecimientos/admin/integraciones',
+          icon: Plug,
+          current: pathname.startsWith('/establecimientos/admin/integraciones')
+        }
+      ]
     }
   ];
+
+  // Flat navigation for mobile
+  const navigation = navigationGroups.flatMap(group => group.items);
 
   // Get unread count from API notifications
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -157,8 +265,127 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     return null;
   }
 
+  // For staff-only users, render a simplified layout without sidebar
+  if (isStaffOnly) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        {/* Staff-only header with logo */}
+        <header className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
+          <div className="w-full px-4">
+            <div className="flex items-center h-12">
+              {/* Logo */}
+              <div className="flex items-center space-x-3 mr-4">
+                <img 
+                  src="/assets/logo-3.png" 
+                  alt="Mis Canchas" 
+                  className="h-7 w-auto"
+                />
+              </div>
+
+              {/* Page controls slot - same as admin layout */}
+              <div id="header-page-controls" className="flex-1 flex items-center"></div>
+
+              {/* Right side - user info and menu */}
+              <div className="flex items-center space-x-2 ml-4">
+                {/* Desktop: show user info and logout */}
+                <div className="hidden sm:flex items-center space-x-3">
+                  <button
+                    onClick={handleOpenProfile}
+                    className="flex items-center gap-3 hover:bg-gray-800 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    {/* Establishment logo or placeholder */}
+                    <div className="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center overflow-hidden">
+                      {establishment?.logo ? (
+                        <img 
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
+                          alt={establishment.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Users className="w-5 h-5 text-emerald-400" />
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-white">{establishment?.name || 'Establecimiento'}</p>
+                      <p className="text-xs text-gray-400">{user?.firstName || user?.name || 'Personal'}</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-all duration-200"
+                    title="Cerrar Sesión"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Mobile: menu button */}
+                <div className="relative sm:hidden">
+                  <button
+                    onClick={() => setStaffMenuOpen(!staffMenuOpen)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200"
+                  >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <circle cx="4" cy="10" r="2" />
+                      <circle cx="10" cy="10" r="2" />
+                      <circle cx="16" cy="10" r="2" />
+                    </svg>
+                  </button>
+
+                  {/* Mobile dropdown menu */}
+                  {staffMenuOpen && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setStaffMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50">
+                        <div className="p-3 border-b border-gray-700">
+                          <p className="text-sm text-white font-medium">{establishment?.name}</p>
+                          <p className="text-xs text-gray-400">{user?.firstName || 'Personal'}</p>
+                        </div>
+                        <div className="py-1">
+                          <button
+                            onClick={() => {
+                              setStaffMenuOpen(false);
+                              handleOpenProfile();
+                            }}
+                            className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Mi Perfil
+                          </button>
+                          <button
+                            onClick={() => {
+                              setStaffMenuOpen(false);
+                              handleLogout();
+                            }}
+                            className="w-full flex items-center px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+                          >
+                            <LogOut className="h-4 w-4 mr-2" />
+                            Cerrar Sesión
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Full-width content */}
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900">
+    <CommandMenuProvider>
+      <div className="min-h-screen bg-gray-900">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
@@ -178,103 +405,219 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <X className="h-6 w-6" />
             </button>
           </div>
-          <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                  item.current
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                {item.name}
-                {item.badge && (
-                  <span className="ml-auto bg-emerald-500 text-white text-xs px-2 py-1 rounded-full">
-                    {item.badge}
-                  </span>
+          <nav className="flex-1 py-4 overflow-y-auto">
+            {navigationGroups.map((group, groupIndex) => (
+              <div key={groupIndex}>
+                {/* Separator between groups */}
+                {groupIndex > 0 && (
+                  <div className="mx-4 my-3 border-t border-gray-700" />
                 )}
-              </Link>
+                
+                <div className="px-2 space-y-1">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                        item.current
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                      {item.name}
+                      {item.badge && (
+                        <span className="ml-auto bg-emerald-500 text-white text-xs px-2 py-1 rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
-        </div>
-      </div>
-
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-gray-800 pt-5 pb-4 overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-4">
-            <img 
-              src="/assets/logo-3.png" 
-              alt="Mis Canchas" 
-              className="h-8 w-auto"
-            />
+          
+          {/* Establishment info at bottom of mobile sidebar - clickable to open profile */}
+          <div className="flex-shrink-0 border-t border-gray-700 p-4">
+            <button
+              onClick={() => {
+                setSidebarOpen(false);
+                handleOpenProfile();
+              }}
+              className="w-full flex items-center space-x-3 hover:bg-gray-700 rounded-lg p-1 -m-1 transition-colors"
+            >
+              <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {establishment?.logo ? (
+                  <img 
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
+                    alt={establishment.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-medium text-white">
+                    {establishment?.name ? establishment.name.charAt(0).toUpperCase() : 'E'}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Usuario')}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {establishment?.name || 'Mi Establecimiento'}
+                </p>
+              </div>
+            </button>
           </div>
-          <nav className="mt-8 flex-1 flex flex-col divide-y divide-gray-700 overflow-y-auto">
-            <div className="px-2 space-y-1">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    item.current
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                  {item.name}
-                  {item.badge && (
-                    <span className="ml-auto bg-emerald-500 text-white text-xs px-2 py-1 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </nav>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="lg:pl-64 flex flex-col flex-1">
-        {/* Top navigation */}
-        <header className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
-          <div className="w-full px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+      {/* Desktop sidebar - collapsible with hover */}
+      <div 
+        className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col transition-[width] duration-200 ease-out z-40 ${
+          sidebarCollapsed ? 'lg:w-16' : 'lg:w-52'
+        }`}
+        onMouseEnter={() => setSidebarCollapsed(false)}
+        onMouseLeave={() => setSidebarCollapsed(true)}
+      >
+        <div className="flex flex-col flex-grow bg-gray-800 pt-4 pb-4 overflow-hidden">
+          {/* Logo section */}
+          <div className="flex items-center flex-shrink-0 px-3 h-10">
+            {sidebarCollapsed ? (
+              <div className="w-10 flex items-center justify-center">
+                <img 
+                  src="/assets/favicon.png" 
+                  alt="Mis Canchas" 
+                  className="h-10 w-10"
+                />
+              </div>
+            ) : (
+              <img 
+                src="/assets/logo-3.png" 
+                alt="Mis Canchas" 
+                className="h-8 w-auto"
+              />
+            )}
+          </div>
+          
+          {/* Navigation with groups and separators */}
+          <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
+            {navigationGroups.map((group, groupIndex) => (
+              <div key={groupIndex}>
+                {/* Separator between groups */}
+                {groupIndex > 0 && (
+                  <div className="mx-3 my-2 border-t border-gray-700" />
+                )}
+                
+                <div className="px-2 space-y-1">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`group flex items-center px-3 py-2.5 rounded-lg transition-colors duration-150 ${
+                        item.current
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`}
+                      title={sidebarCollapsed ? item.name : undefined}
+                    >
+                      <item.icon className="flex-shrink-0 h-5 w-5" />
+                      <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${
+                        sidebarCollapsed ? 'opacity-0' : 'opacity-100'
+                      }`}>
+                        {item.name}
+                      </span>
+                      {item.badge && (
+                        <span className={`ml-auto bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full transition-opacity duration-200 ${
+                          sidebarCollapsed ? 'opacity-0' : 'opacity-100'
+                        }`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+          
+          {/* Establishment info at bottom of sidebar - clickable to open profile */}
+          <div className="flex-shrink-0 border-t border-gray-700 p-3">
+            <button
+              onClick={handleOpenProfile}
+              className="w-full flex items-center hover:bg-gray-700 rounded-lg p-1 -m-1 transition-colors"
+            >
+              <div className="h-9 w-9 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {establishment?.logo ? (
+                  <img 
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${establishment.logo}`}
+                    alt={establishment.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-medium text-white">
+                    {establishment?.name ? establishment.name.charAt(0).toUpperCase() : 'E'}
+                  </span>
+                )}
+              </div>
+              <div className={`flex-1 min-w-0 ml-3 text-left transition-opacity duration-200 ${
+                sidebarCollapsed ? 'opacity-0' : 'opacity-100'
+              }`}>
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Usuario')}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {establishment?.name || 'Mi Establecimiento'}
+                </p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content - padding adjusts based on sidebar state */}
+      <div className={`flex flex-col flex-1 transition-[padding] duration-200 ease-out ${
+        sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-52'
+      }`}>
+        {/* Top navigation bar - fixed height, contains page controls on left and global actions on right */}
+        <header id="admin-header" className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
+          <div className="w-full px-4">
+            <div className="flex items-center h-12">
               {/* Mobile Menu Button */}
               <button
                 type="button"
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200 lg:hidden"
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200 lg:hidden mr-2"
                 onClick={() => setSidebarOpen(true)}
               >
-                <Menu className="h-6 w-6" />
+                <Menu className="h-5 w-5" />
               </button>
 
               {/* Logo - Hidden on desktop since sidebar has it */}
-              <div className="lg:hidden flex items-center">
+              <div className="lg:hidden flex items-center mr-3">
                 <img 
                   src="/assets/logo-3.png" 
                   alt="Mis Canchas" 
-                  className="h-8 w-auto"
+                  className="h-7 w-auto"
                 />
               </div>
 
-              {/* Spacer for layout balance */}
-              <div className="flex-1"></div>
+              {/* Page controls slot - pages will use a portal to inject content here */}
+              <div id="header-page-controls" className="flex-1 flex items-center"></div>
 
-              {/* Right side actions */}
-              <div className="flex items-center space-x-4">
+              {/* Right side actions - always visible */}
+              <div className="flex items-center space-x-1 ml-4">
+                {/* Cash Register */}
+                <CashRegisterTopbar establishmentId={establishment?.id || null} />
+
                 {/* Notifications */}
                 <div className="relative">
                   <button 
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all duration-200"
+                    className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200"
                   >
-                    <Bell className="h-6 w-6" />
+                    <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 rounded-full flex items-center justify-center text-xs text-white">
                         {unreadCount}
@@ -349,67 +692,26 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 </div>
 
                 {/* Configuration */}
-                <Link
-                  href="/establecimientos/admin/configuracion"
-                  className={`p-2 rounded-xl transition-all duration-200 ${
+                <button
+                  onClick={handleOpenConfiguration}
+                  className={`p-2 rounded-lg transition-all duration-200 ${
                     pathname.startsWith('/establecimientos/admin/configuracion')
                       ? 'text-emerald-400 bg-emerald-500/20'
                       : 'text-gray-400 hover:text-white hover:bg-gray-800'
                   }`}
+                  title="Configuración"
                 >
-                  <Settings className="h-6 w-6" />
-                </Link>
+                  <Settings className="h-5 w-5" />
+                </button>
 
-                {/* User menu */}
-                <div className="relative">
-                  <button
-                    className="flex items-center space-x-2 border border-gray-700 rounded-xl px-4 py-2 hover:bg-gray-800 transition-all duration-200 hover:border-gray-600"
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  >
-                    <div className="h-6 w-6 rounded-full bg-emerald-600 flex items-center justify-center">
-                      <span className="text-xs font-medium text-white">
-                        {user?.name ? user.name.charAt(0).toUpperCase() : establishment?.name ? establishment.name.charAt(0).toUpperCase() : 'U'}
-                      </span>
-                    </div>
-                    <div className="hidden sm:block text-left">
-                      <div className="text-white font-medium text-sm">
-                        {user?.name || user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : establishment?.representative?.fullName || establishment?.name || 'Usuario'}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {user?.email || establishment?.representative?.email || establishment?.email || ''}
-                      </div>
-                      {user?.userType === 'establishment' && (
-                        <div className="text-xs text-emerald-400">Administrador</div>
-                      )}
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                  </button>
-
-                  {userMenuOpen && (
-                    <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-gray-800 py-2 shadow-xl ring-1 ring-gray-700 border border-gray-600">
-                      <Link
-                        href="/establecimientos/admin/perfil"
-                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                      >
-                        Mi Perfil
-                      </Link>
-                      <Link
-                        href="/establecimientos/admin/configuracion"
-                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                      >
-                        Configuración
-                      </Link>
-                      <hr className="my-2 border-gray-700" />
-                      <button 
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                      >
-                        <LogOut className="inline h-4 w-4 mr-2" />
-                        Cerrar Sesión
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-all duration-200"
+                  title="Cerrar Sesión"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
             </div>
           </div>
@@ -421,6 +723,31 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </main>
       </div>
     </div>
+
+    {/* User Profile Sidebar */}
+    <UserProfileSidebar
+      isOpen={showProfileSidebar}
+      onClose={() => setShowProfileSidebar(false)}
+    />
+
+    {/* Setup PIN Sidebar - shown when user doesn't have PIN configured */}
+    <SetupPinSidebar
+      isOpen={showSetupPinSidebar}
+      onComplete={() => setShowSetupPinSidebar(false)}
+    />
+
+    {/* PIN Confirmation Modal */}
+    <PinModal />
+    </CommandMenuProvider>
+  );
+};
+
+// Wrap with provider
+const AdminLayout = ({ children }: AdminLayoutProps) => {
+  return (
+    <EstablishmentAdminProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </EstablishmentAdminProvider>
   );
 };
 

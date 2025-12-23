@@ -33,11 +33,12 @@ interface EstablishmentDetails {
 }
 
 interface UseEstablishmentDetailsOptions {
-  establishmentId: string | null;
+  establishmentId?: string | null;
+  slug?: string | null;
   autoFetch?: boolean;
 }
 
-export const useEstablishmentDetails = ({ establishmentId, autoFetch = true }: UseEstablishmentDetailsOptions) => {
+export const useEstablishmentDetails = ({ establishmentId, slug, autoFetch = true }: UseEstablishmentDetailsOptions) => {
   const [establishment, setEstablishment] = useState<EstablishmentDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,17 +61,46 @@ export const useEstablishmentDetails = ({ establishmentId, autoFetch = true }: U
     }
   };
 
-  useEffect(() => {
-    if (autoFetch && establishmentId) {
-      fetchEstablishmentDetails(establishmentId);
+  const fetchEstablishmentBySlug = async (slugParam: string) => {
+    if (!slugParam) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await apiClient.getEstablishmentBySlug(slugParam);
+      setEstablishment(response);
+    } catch (err) {
+      console.error('Error fetching establishment by slug:', err);
+      setError('Error al cargar los detalles del establecimiento');
+      setEstablishment(null);
+    } finally {
+      setLoading(false);
     }
-  }, [establishmentId, autoFetch]);
+  };
+
+  useEffect(() => {
+    if (autoFetch) {
+      if (slug) {
+        fetchEstablishmentBySlug(slug);
+      } else if (establishmentId) {
+        fetchEstablishmentDetails(establishmentId);
+      }
+    }
+  }, [establishmentId, slug, autoFetch]);
 
   return {
     establishment,
     loading,
     error,
     fetchEstablishmentDetails,
-    refetch: () => establishmentId && fetchEstablishmentDetails(establishmentId)
+    fetchEstablishmentBySlug,
+    refetch: () => {
+      if (slug) {
+        fetchEstablishmentBySlug(slug);
+      } else if (establishmentId) {
+        fetchEstablishmentDetails(establishmentId);
+      }
+    }
   };
 };

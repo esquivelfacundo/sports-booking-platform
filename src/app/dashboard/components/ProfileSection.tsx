@@ -130,8 +130,8 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div>
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
           Mi Perfil
         </h1>

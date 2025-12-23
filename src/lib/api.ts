@@ -4,14 +4,90 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 // API Client class
 class ApiClient {
   private baseURL: string;
+  private isRefreshing: boolean = false;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
   }
 
+  // Redirect to appropriate login page based on user type
+  private redirectToLogin() {
+    if (typeof window !== 'undefined') {
+      const userType = localStorage.getItem('user_type');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_type');
+      localStorage.removeItem('user_data');
+      
+      // Redirect based on user type or current path
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/establecimientos') || userType === 'admin') {
+        window.location.href = '/establecimientos/login';
+      } else {
+        window.location.href = '/login';
+      }
+    }
+  }
+
+  // Try to refresh the access token
+  private async tryRefreshToken(): Promise<boolean> {
+    // If already refreshing, wait for that to complete
+    if (this.isRefreshing && this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.isRefreshing = true;
+    this.refreshPromise = (async () => {
+      try {
+        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+        
+        if (!refreshToken) {
+          console.log('ApiClient: No refresh token available');
+          return false;
+        }
+
+        const response = await fetch(`${this.baseURL}/api/auth/refresh-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!response.ok) {
+          console.log('ApiClient: Refresh token request failed');
+          return false;
+        }
+
+        const data = await response.json();
+        
+        if (data.tokens?.accessToken) {
+          localStorage.setItem('auth_token', data.tokens.accessToken);
+          if (data.tokens.refreshToken) {
+            localStorage.setItem('refresh_token', data.tokens.refreshToken);
+          }
+          console.log('ApiClient: Token refreshed successfully');
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('ApiClient: Error refreshing token:', error);
+        return false;
+      } finally {
+        this.isRefreshing = false;
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryOnUnauthorized: boolean = true
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
@@ -46,7 +122,24 @@ class ApiClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('API error response:', errorData);
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        
+        // Handle 401 Unauthorized - try to refresh token
+        if (response.status === 401 && retryOnUnauthorized && !endpoint.includes('/auth/')) {
+          console.log('ApiClient: Token expired, attempting refresh...');
+          const refreshed = await this.tryRefreshToken();
+          
+          if (refreshed) {
+            // Retry the original request with new token
+            return this.request<T>(endpoint, options, false);
+          } else {
+            // Refresh failed, redirect to login
+            console.log('ApiClient: Token refresh failed, redirecting to login');
+            this.redirectToLogin();
+            throw new Error('Session expired. Please login again.');
+          }
+        }
+        
+        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
       }
 
       const responseData = await response.json();
@@ -138,6 +231,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getEstablishmentBySlug(slug: string) {
+    const response = await this.request(`/api/establishments/slug/${slug}`) as any;
+    return response.establishment || response.data;
+  }
+
   async createEstablishment(data: any) {
     return this.request('/api/establishments', {
       method: 'POST',
@@ -152,6 +250,10 @@ class ApiClient {
     });
   }
 
+  async getMyEstablishments() {
+    return this.request('/api/establishments/me');
+  }
+
   // Courts endpoints
   async getCourts(establishmentId?: string) {
     const endpoint = establishmentId 
@@ -160,12 +262,48 @@ class ApiClient {
     return this.request(endpoint);
   }
 
+  async getCourtsByEstablishment(establishmentId: string) {
+    return this.request(`/api/courts/establishment/${establishmentId}`);
+  }
+
   async getCourt(id: string) {
     return this.request(`/api/courts/${id}`);
   }
 
-  async getCourtAvailability(courtId: string, date: string) {
-    return this.request(`/api/courts/${courtId}/availability?date=${date}`);
+  async getCourtAvailability(courtId: string, date: string, duration: number = 60) {
+    return this.request(`/api/courts/${courtId}/availability?date=${date}&duration=${duration}`);
+  }
+
+  async createCourt(data: {
+    establishmentId: string;
+    name: string;
+    sport?: string;
+    surface?: string;
+    isIndoor?: boolean;
+    capacity?: number;
+    pricePerHour?: number;
+    pricePerHour90?: number;
+    pricePerHour120?: number;
+    amenities?: string[];
+    description?: string;
+  }) {
+    return this.request('/api/courts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCourt(id: string, data: any) {
+    return this.request(`/api/courts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCourt(id: string) {
+    return this.request(`/api/courts/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   // Bookings endpoints
@@ -173,11 +311,32 @@ class ApiClient {
     courtId: string;
     date: string;
     startTime: string;
+    endTime?: string;
     duration: number;
+    totalAmount?: number;
+    clientName?: string;
+    clientPhone?: string;
+    clientEmail?: string;
     paymentType?: string;
+    notes?: string;
     participants?: any[];
+    depositAmount?: number;
+    depositMethod?: string;
   }) {
     return this.request('/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async checkRecurringAvailability(data: {
+    courtId: string;
+    dates: string[];
+    startTime: string;
+    duration: number;
+    sport?: string;
+  }) {
+    return this.request('/api/bookings/check-recurring-availability', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -211,6 +370,11 @@ class ApiClient {
   async getEstablishmentBookings(establishmentId: string, params?: {
     status?: string;
     date?: string;
+    startDate?: string;
+    endDate?: string;
+    futureOnly?: boolean;
+    clientId?: string;
+    courtId?: string;
     page?: number;
     limit?: number;
   }) {
@@ -228,10 +392,33 @@ class ApiClient {
     return this.request(endpoint);
   }
 
-  async cancelBooking(id: string) {
-    return this.request(`/api/bookings/${id}/cancel`, {
-      method: 'POST',
+  async updateBooking(id: string, data: any) {
+    return this.request(`/api/bookings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
+  }
+
+  async cancelBooking(id: string) {
+    return this.request(`/api/bookings/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async registerBookingPayment(bookingId: string, data: {
+    amount: number;
+    method?: 'cash' | 'transfer' | 'card' | 'other';
+    playerName?: string;
+    notes?: string;
+  }) {
+    return this.request(`/api/bookings/${bookingId}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getBookingPayments(bookingId: string) {
+    return this.request(`/api/bookings/${bookingId}/payments`);
   }
 
   // Payments endpoints
@@ -371,6 +558,11 @@ class ApiClient {
     return this.request(`/api/notifications/${id}/read`, {
       method: 'PUT',
     });
+  }
+
+  // Alias for markNotificationAsRead
+  async markNotificationRead(id: string) {
+    return this.markNotificationAsRead(id);
   }
 
   async markAllNotificationsAsRead() {
@@ -581,6 +773,749 @@ class ApiClient {
 
   async adminGetStats() {
     return this.request('/api/admin/stats');
+  }
+
+  // Client endpoints
+  async searchClients(establishmentId: string, query: string) {
+    return this.request(`/api/clients/establishment/${establishmentId}/search?q=${encodeURIComponent(query)}&limit=10`);
+  }
+
+  async getClients(establishmentId: string, params?: { page?: number; limit?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/clients/establishment/${establishmentId}${query}`);
+  }
+
+  async createClient(establishmentId: string, clientData: { name: string; phone?: string; email?: string; notes?: string }) {
+    return this.request(`/api/clients/establishment/${establishmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(clientData),
+    });
+  }
+
+  async updateClient(establishmentId: string, clientId: string, clientData: any) {
+    return this.request(`/api/clients/establishment/${establishmentId}/${clientId}`, {
+      method: 'PUT',
+      body: JSON.stringify(clientData),
+    });
+  }
+
+  async deleteClient(establishmentId: string, clientId: string) {
+    return this.request(`/api/clients/establishment/${establishmentId}/${clientId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Analytics endpoints
+  async getEstablishmentAnalytics(establishmentId: string, period: '7d' | '30d' | '90d' | '1y' = '30d') {
+    return this.request(`/api/analytics/establishment/${establishmentId}?period=${period}`);
+  }
+
+  async getTopCustomers(establishmentId: string, period: '7d' | '30d' | '90d' | '1y' = '30d', limit: number = 10) {
+    return this.request(`/api/analytics/establishment/${establishmentId}/top-customers?period=${period}&limit=${limit}`);
+  }
+
+  // Finance endpoints
+  async getFinancialSummary(establishmentId: string, period: 'week' | 'month' | 'quarter' | 'year' = 'month') {
+    return this.request(`/api/finance/establishment/${establishmentId}?period=${period}`);
+  }
+
+  async getPendingPayments(establishmentId: string) {
+    return this.request(`/api/finance/establishment/${establishmentId}/pending`);
+  }
+
+  // Staff endpoints
+  async getStaff(establishmentId: string) {
+    return this.request(`/api/staff/establishment/${establishmentId}`);
+  }
+
+  async createStaff(establishmentId: string, staffData: { name: string; email: string; phone?: string; password: string; role: string }) {
+    return this.request(`/api/staff/establishment/${establishmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(staffData),
+    });
+  }
+
+  async updateStaff(establishmentId: string, staffId: string, staffData: any) {
+    return this.request(`/api/staff/establishment/${establishmentId}/${staffId}`, {
+      method: 'PUT',
+      body: JSON.stringify(staffData),
+    });
+  }
+
+  async deleteStaff(establishmentId: string, staffId: string) {
+    return this.request(`/api/staff/establishment/${establishmentId}/${staffId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getDefaultPermissions() {
+    return this.request(`/api/staff/permissions`);
+  }
+
+  // Upload endpoints
+  async uploadImage(file: File): Promise<{ success: boolean; url: string; filename: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    
+    const response = await fetch(`${this.baseURL}/api/upload/image`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to upload image');
+    }
+    
+    return response.json();
+  }
+
+  async uploadImages(files: File[]): Promise<{ success: boolean; urls: string[]; count: number }> {
+    const formData = new FormData();
+    files.forEach(file => formData.append('images', file));
+    
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    
+    const response = await fetch(`${this.baseURL}/api/upload/images`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to upload images');
+    }
+    
+    return response.json();
+  }
+
+  async deleteImage(filename: string): Promise<{ success: boolean }> {
+    return this.request(`/api/upload/image/${filename}`, {
+      method: 'DELETE',
+    }) as Promise<{ success: boolean }>;
+  }
+
+  getImageUrl(path: string): string {
+    if (path.startsWith('http')) return path;
+    return `${this.baseURL}${path}`;
+  }
+
+  // ==================== STOCK MANAGEMENT ====================
+  // Products
+  async getProducts(params?: {
+    establishmentId?: string;
+    categoryId?: string;
+    search?: string;
+    isActive?: boolean;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.establishmentId) queryParams.append('establishmentId', params.establishmentId);
+    if (params?.categoryId) queryParams.append('categoryId', params.categoryId);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/products${query}`);
+  }
+
+  async getProduct(id: string) {
+    return this.request(`/api/products/${id}`);
+  }
+
+  async createProduct(data: any) {
+    return this.request('/api/products', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProduct(id: string, data: any) {
+    return this.request(`/api/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProduct(id: string) {
+    return this.request(`/api/products/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getLowStockProducts(establishmentId: string) {
+    return this.request(`/api/products/alerts/low-stock?establishmentId=${establishmentId}`);
+  }
+
+  // Product Categories
+  async getProductCategories(establishmentId: string) {
+    return this.request(`/api/product-categories?establishmentId=${establishmentId}`);
+  }
+
+  async createProductCategory(data: any) {
+    return this.request('/api/product-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProductCategory(id: string, data: any) {
+    return this.request(`/api/product-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProductCategory(id: string) {
+    return this.request(`/api/product-categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Suppliers
+  async getSuppliers(params?: {
+    establishmentId?: string;
+    search?: string;
+    isActive?: boolean;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.establishmentId) queryParams.append('establishmentId', params.establishmentId);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/suppliers${query}`);
+  }
+
+  async getSupplier(id: string) {
+    return this.request(`/api/suppliers/${id}`);
+  }
+
+  async createSupplier(data: any) {
+    return this.request('/api/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSupplier(id: string, data: any) {
+    return this.request(`/api/suppliers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSupplier(id: string) {
+    return this.request(`/api/suppliers/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Stock Movements
+  async getStockMovements(params?: {
+    establishmentId?: string;
+    productId?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.establishmentId) queryParams.append('establishmentId', params.establishmentId);
+    if (params?.productId) queryParams.append('productId', params.productId);
+    if (params?.type) queryParams.append('type', params.type);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/stock-movements${query}`);
+  }
+
+  async createStockMovement(data: any) {
+    return this.request('/api/stock-movements', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getStockSummary(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('establishmentId', params.establishmentId);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    
+    return this.request(`/api/stock-movements/summary?${queryParams.toString()}`);
+  }
+
+  // Booking Consumptions
+  async getBookingConsumptions(bookingId: string) {
+    return this.request(`/api/booking-consumptions/booking/${bookingId}`);
+  }
+
+  async addBookingConsumption(data: {
+    bookingId: string;
+    productId: string;
+    quantity: number;
+    notes?: string;
+  }) {
+    return this.request('/api/booking-consumptions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateBookingConsumption(consumptionId: string, data: { quantity: number }) {
+    return this.request(`/api/booking-consumptions/${consumptionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteBookingConsumption(consumptionId: string) {
+    return this.request(`/api/booking-consumptions/${consumptionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Orders
+  async getOrders(params: {
+    establishmentId: string;
+    status?: string;
+    paymentStatus?: string;
+    orderType?: string;
+    startDate?: string;
+    endDate?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append('status', params.status);
+    if (params.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+    if (params.orderType) queryParams.append('orderType', params.orderType);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/orders/establishment/${params.establishmentId}${query}`);
+  }
+
+  async getOrder(orderId: string) {
+    return this.request(`/api/orders/${orderId}`);
+  }
+
+  async getOrderByBookingId(bookingId: string) {
+    return this.request(`/api/orders/booking/${bookingId}`);
+  }
+
+  async createOrder(data: {
+    establishmentId: string;
+    clientId?: string;
+    customerName?: string;
+    customerPhone?: string;
+    customerEmail?: string;
+    currentAccountId?: string;
+    items: Array<{ productId: string; quantity: number; notes?: string; unitPrice?: number }>;
+    paymentMethod?: string;
+    paidAmount?: number;
+    discount?: number;
+    notes?: string;
+  }) {
+    return this.request('/api/orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createOrderFromBooking(bookingId: string, data: {
+    paymentMethod?: string;
+    paidAmount?: number;
+  }) {
+    return this.request(`/api/orders/from-booking/${bookingId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async addOrderPayment(orderId: string, data: {
+    amount: number;
+    paymentMethod: string;
+    reference?: string;
+    notes?: string;
+  }) {
+    return this.request(`/api/orders/${orderId}/payment`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateOrderStatus(orderId: string, status: string) {
+    return this.request(`/api/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async getOrderStats(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/orders/stats/${params.establishmentId}${query}`);
+  }
+
+  // ==================== PAYMENT METHODS ====================
+  async getPaymentMethods(establishmentId: string, includeInactive = false) {
+    const query = includeInactive ? '?includeInactive=true' : '';
+    return this.request(`/api/payment-methods/establishment/${establishmentId}${query}`);
+  }
+
+  async createPaymentMethod(data: {
+    establishmentId: string;
+    name: string;
+    code: string;
+    icon?: string;
+  }) {
+    return this.request('/api/payment-methods', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePaymentMethod(id: string, data: {
+    name?: string;
+    icon?: string;
+    isActive?: boolean;
+    sortOrder?: number;
+  }) {
+    return this.request(`/api/payment-methods/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePaymentMethod(id: string) {
+    return this.request(`/api/payment-methods/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async initializePaymentMethods(establishmentId: string) {
+    return this.request(`/api/payment-methods/initialize/${establishmentId}`, {
+      method: 'POST',
+    });
+  }
+
+  // ==================== EXPENSE CATEGORIES ====================
+  async getExpenseCategories(establishmentId: string) {
+    return this.request(`/api/expense-categories?establishmentId=${establishmentId}`);
+  }
+
+  async createExpenseCategory(data: {
+    establishmentId: string;
+    name: string;
+    description?: string;
+    color?: string;
+  }) {
+    return this.request('/api/expense-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateExpenseCategory(id: string, data: {
+    name?: string;
+    description?: string;
+    color?: string;
+    isActive?: boolean;
+    sortOrder?: number;
+  }) {
+    return this.request(`/api/expense-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteExpenseCategory(id: string) {
+    return this.request(`/api/expense-categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== CASH REGISTER ====================
+  async getActiveCashRegister(establishmentId: string) {
+    return this.request(`/api/cash-registers/active?establishmentId=${establishmentId}`);
+  }
+
+  async getCashRegisterHistory(params: {
+    establishmentId: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) query.append(key, String(value));
+    });
+    return this.request(`/api/cash-registers/history?${query.toString()}`);
+  }
+
+  async getCashRegister(id: string) {
+    return this.request(`/api/cash-registers/${id}`);
+  }
+
+  async openCashRegister(data: {
+    establishmentId: string;
+    initialCash: number;
+    openingNotes?: string;
+  }) {
+    return this.request('/api/cash-registers/open', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async closeCashRegister(id: string, data: {
+    actualCash: number;
+    closingNotes?: string;
+  }) {
+    return this.request(`/api/cash-registers/${id}/close`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ==================== CASH REGISTER MOVEMENTS ====================
+  async getCashRegisterMovements(params: {
+    cashRegisterId?: string;
+    establishmentId?: string;
+    type?: string;
+    paymentMethod?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) query.append(key, String(value));
+    });
+    return this.request(`/api/cash-register-movements?${query.toString()}`);
+  }
+
+  async createExpenseMovement(data: {
+    cashRegisterId: string;
+    amount: number;
+    paymentMethod: string;
+    expenseCategoryId?: string;
+    description?: string;
+    notes?: string;
+  }) {
+    return this.request('/api/cash-register-movements/expense', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCashRegisterReport(cashRegisterId: string) {
+    return this.request(`/api/cash-register-movements/report/${cashRegisterId}`);
+  }
+
+  // ==================== AMENITIES ====================
+  async getAmenities(establishmentId: string, options?: { includeInactive?: boolean; publicOnly?: boolean }) {
+    const query = new URLSearchParams();
+    if (options?.includeInactive) query.append('includeInactive', 'true');
+    if (options?.publicOnly) query.append('publicOnly', 'true');
+    const queryString = query.toString();
+    return this.request(`/api/amenities/establishment/${establishmentId}${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getPublicAmenities(establishmentId: string) {
+    return this.request(`/api/amenities/public/${establishmentId}`, {}, false);
+  }
+
+  async getAmenity(id: string) {
+    return this.request(`/api/amenities/${id}`);
+  }
+
+  async createAmenity(data: {
+    establishmentId: string;
+    name: string;
+    description?: string;
+    icon?: string;
+    images?: string[];
+    pricePerHour: number;
+    pricePerHour90?: number;
+    pricePerHour120?: number;
+    isBookable?: boolean;
+    isPublic?: boolean;
+    capacity?: number;
+    customSchedule?: any;
+    sortOrder?: number;
+  }) {
+    return this.request('/api/amenities', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAmenity(id: string, data: Partial<{
+    name: string;
+    description: string;
+    icon: string;
+    images: string[];
+    pricePerHour: number;
+    pricePerHour90: number;
+    pricePerHour120: number;
+    isBookable: boolean;
+    isPublic: boolean;
+    isActive: boolean;
+    capacity: number;
+    customSchedule: any;
+    sortOrder: number;
+  }>) {
+    return this.request(`/api/amenities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAmenity(id: string) {
+    return this.request(`/api/amenities/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== INTEGRATIONS ====================
+  async getIntegrations() {
+    return this.request('/api/integrations');
+  }
+
+  async getIntegration(type: 'OPENAI' | 'WHATSAPP') {
+    return this.request(`/api/integrations/${type}`);
+  }
+
+  async saveIntegration(data: {
+    type: 'OPENAI' | 'WHATSAPP';
+    apiKey: string;
+    phoneNumberId?: string;
+    businessAccountId?: string;
+    verifyToken?: string;
+    config?: Record<string, any>;
+  }) {
+    return this.request('/api/integrations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async testIntegration(type: 'OPENAI' | 'WHATSAPP') {
+    return this.request(`/api/integrations/${type}/test`, {
+      method: 'POST',
+    });
+  }
+
+  async toggleIntegration(type: 'OPENAI' | 'WHATSAPP') {
+    return this.request(`/api/integrations/${type}/toggle`, {
+      method: 'PATCH',
+    });
+  }
+
+  async deleteIntegration(type: 'OPENAI' | 'WHATSAPP') {
+    return this.request(`/api/integrations/${type}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // OCR Processing
+  async processOCR(imageFile: File): Promise<{
+    success: boolean;
+    data: any;
+    confidence: number;
+    warnings: string[];
+    processingTimeMs: number;
+    error?: string;
+  }> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    
+    const response = await fetch(`${this.baseURL}/api/integrations/ocr/process`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to process OCR');
+    }
+    
+    return response.json();
+  }
+
+  async processOCRBase64(imageBase64: string): Promise<{
+    success: boolean;
+    data: any;
+    confidence: number;
+    warnings: string[];
+    processingTimeMs: number;
+    error?: string;
+  }> {
+    return this.request('/api/integrations/ocr/process', {
+      method: 'POST',
+      body: JSON.stringify({ imageBase64 }),
+    }) as Promise<any>;
+  }
+
+  // ==================== WHATSAPP ====================
+  async sendWhatsAppMessage(to: string, message: string) {
+    return this.request('/api/whatsapp/send', {
+      method: 'POST',
+      body: JSON.stringify({ to, message, type: 'text' }),
+    });
+  }
+
+  async sendWhatsAppBookingConfirmation(bookingId: string, phoneNumber: string) {
+    return this.request('/api/whatsapp/send-booking-confirmation', {
+      method: 'POST',
+      body: JSON.stringify({ bookingId, phoneNumber }),
+    });
+  }
+
+  async sendWhatsAppBookingReminder(bookingId: string, phoneNumber: string) {
+    return this.request('/api/whatsapp/send-booking-reminder', {
+      method: 'POST',
+      body: JSON.stringify({ bookingId, phoneNumber }),
+    });
   }
 }
 

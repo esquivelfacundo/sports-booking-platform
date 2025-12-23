@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEstablishmentDetails } from '@/hooks/useEstablishmentDetails';
+import { apiClient } from '@/lib/api';
 import LoginModal from '@/components/auth/LoginModal';
 import RegisterModal from '@/components/auth/RegisterModal';
 import { 
-  ArrowLeft, 
   Star, 
   MapPin, 
   Clock, 
@@ -19,693 +19,984 @@ import {
   Wifi,
   Car,
   Coffee,
-  ChevronDown,
-  ChevronUp
+  Share2,
+  Heart,
+  Phone,
+  Mail,
+  Globe,
+  Sparkles,
+  Shield,
+  Zap,
+  Timer,
+  CreditCard,
+  AlertCircle
 } from 'lucide-react';
 
 interface TimeSlot {
   time: string;
   available: boolean;
   price: number;
-  duration: number;
+  availableCourtIds?: string[]; // Track which courts are available at this time
 }
 
 interface Court {
   id: string;
   name: string;
-  type: string;
+  sport: string;
   surface: string;
-  timeSlots: TimeSlot[];
+  pricePerHour: number;
+  pricePerHour90?: number;
+  pricePerHour120?: number;
+  images?: string[];
+  isIndoor?: boolean;
 }
 
-interface Facility {
-  id: number;
+interface EstablishmentData {
+  id: string;
   name: string;
-  sport: string;
-  location: string;
-  price: number;
-  rating: number;
-  reviews: number;
-  image: string;
-  coordinates: [number, number];
-  amenities: string[];
-  availability: string[];
   description: string;
-  rules: string[];
-  courts?: Court[];
-  priceFrom?: number;
+  address: string;
+  city: string;
+  phone: string;
+  email: string;
+  website?: string;
+  images: any;
+  amenities: string[];
+  rating: number;
+  reviewCount: number;
+  courts: Court[];
+  openingHours?: Record<string, { open: string; close: string; closed?: boolean }>;
+  latitude?: number;
+  longitude?: number;
+  // Booking restrictions
+  maxAdvanceBookingDays?: number;
+  minAdvanceBookingHours?: number;
+  allowSameDayBooking?: boolean;
 }
 
 const BookingPage = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated } = useAuth();
-  const establishmentId = params.id as string;
+  const { isAuthenticated, user } = useAuth();
+  const idOrSlug = params.id as string;
   
-  // Use the establishment details hook
+  // Check if it's a UUID or a slug
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+  
   const { establishment, loading, error } = useEstablishmentDetails({
-    establishmentId,
+    establishmentId: isUUID ? idOrSlug : undefined,
+    slug: !isUUID ? idOrSlug : undefined,
     autoFetch: true
-  });
+  }) as { establishment: EstablishmentData | null; loading: boolean; error: string | null };
 
-  const [facility, setFacility] = useState<Facility | null>(null);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
-  const [selectedDuration, setSelectedDuration] = useState(60);
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
-  const [bookingStep, setBookingStep] = useState(1);
+  const [selectedTime, setSelectedTime] = useState<string>('');
+  const [selectedDuration, setSelectedDuration] = useState<number>(60);
+  const [customDuration, setCustomDuration] = useState<number>(60);
+  const [showCustomDuration, setShowCustomDuration] = useState(false);
+  const [selectedSport, setSelectedSport] = useState<string>('all');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [showOnlyAvailable, setShowOnlyAvailable] = useState(true);
-  const [expandedCourts, setExpandedCourts] = useState<string[]>([]);
-  const [paymentOption, setPaymentOption] = useState<'full' | 'split'>('full');
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showMobileBooking, setShowMobileBooking] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Generate mock time slots - each slot is 1 hour
-  const generateTimeSlots = (): TimeSlot[] => {
-    const slots: TimeSlot[] = [];
-    const times = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
-    
-    times.forEach(time => {
-      slots.push({
-        time,
-        available: Math.random() > 0.3, // Random availability
-        price: 2500,
-        duration: 60 // All slots are 1 hour
-      });
-    });
-    
-    return slots;
-  };
-
-  // Mock facility data - En una app real esto vendría de una API
-  const mockFacility: Facility = {
-    id: 1,
-    name: 'Complejo Deportivo San Lorenzo',
-    sport: 'futbol5',
-    location: 'Palermo, Buenos Aires',
-    price: 2500,
-    rating: 4.8,
-    reviews: 124,
-    image: '/assets/default-card.png',
-    coordinates: [-34.5875, -58.4260],
-    amenities: ['Estacionamiento', 'Vestuarios', 'Parrilla', 'Buffet', 'Duchas', 'Iluminación LED'],
-    availability: ['18:00', '19:00', '20:00', '21:00', '22:00'],
-    description: 'Moderno complejo deportivo con cancha de césped sintético de última generación. Ubicado en el corazón de Palermo, cuenta con todas las comodidades para una experiencia deportiva completa.',
-    rules: [
-      'Llegar 15 minutos antes del horario reservado',
-      'Usar botines con tapones de goma únicamente',
-      'Máximo 10 jugadores por equipo',
-      'No se permite el ingreso de bebidas alcohólicas',
-      'Respetar los horarios de inicio y finalización'
-    ],
-    courts: [
-      {
-        id: '1',
-        name: 'Cancha 1',
-        type: 'Exterior',
-        surface: 'Césped Sintético | Dobles',
-        timeSlots: generateTimeSlots()
-      },
-      {
-        id: '2',
-        name: 'Cancha 2', 
-        type: 'Exterior',
-        surface: 'Césped Sintético | Dobles',
-        timeSlots: generateTimeSlots()
-      },
-      {
-        id: '3',
-        name: 'Cancha 3',
-        type: 'Cubierta',
-        surface: 'Césped Sintético | Dobles',
-        timeSlots: generateTimeSlots()
-      }
-    ],
-    priceFrom: 2200
-  };
-
-  // Convert establishment data to facility format
-  useEffect(() => {
-    if (establishment) {
-      const convertedFacility: Facility = {
-        id: parseInt(establishment.id),
-        name: establishment.name,
-        sport: establishment.sports[0] || 'futbol5',
-        location: `${establishment.address}, ${establishment.city}`,
-        price: establishment.courts[0]?.pricePerHour || 2500,
-        rating: establishment.rating,
-        reviews: establishment.reviewCount,
-        image: (establishment.images?.photos && establishment.images.photos.length > 0) ? establishment.images.photos[0] : 
-               (establishment.images && Array.isArray(establishment.images) && establishment.images.length > 0) ? establishment.images[0] : 
-               '/assets/default-card.png',
-        coordinates: [establishment.latitude, establishment.longitude],
-        amenities: establishment.amenities,
-        availability: ['18:00', '19:00', '20:00', '21:00', '22:00'],
-        description: establishment.description || 'Moderno complejo deportivo con instalaciones de primera calidad.',
-        rules: [
-          'Llegar 15 minutos antes del horario reservado',
-          'Usar calzado deportivo adecuado',
-          'Respetar los horarios de inicio y finalización',
-          'No se permite el ingreso de bebidas alcohólicas',
-          'Mantener las instalaciones limpias'
-        ],
-        courts: establishment.courts.map(court => ({
-          id: court.id,
-          name: court.name,
-          type: court.type,
-          surface: court.surface,
-          timeSlots: generateTimeSlots()
-        })),
-        priceFrom: Math.min(...establishment.courts.map(c => c.pricePerHour))
-      };
-      
-      setFacility(convertedFacility);
-      
-      // Pre-select first court
-      if (convertedFacility.courts && convertedFacility.courts.length > 0) {
-        setSelectedCourt(convertedFacility.courts[0]);
-        setExpandedCourts([convertedFacility.courts[0].id]);
-      }
-      
-      // Set pre-selected time from URL if available
-      const timeParam = searchParams.get('time');
-      if (timeParam) {
-        setSelectedTimes([timeParam]);
-      }
+  // Booking restrictions (defaults, could come from establishment config)
+  const maxAdvanceBookingDays = establishment?.maxAdvanceBookingDays || 14;
+  const minAdvanceBookingHours = establishment?.minAdvanceBookingHours || 1;
+  const allowSameDayBooking = establishment?.allowSameDayBooking !== false;
+  
+  // Debug log
+  console.log('[Booking Config]', {
+    maxAdvanceBookingDays,
+    minAdvanceBookingHours,
+    allowSameDayBooking,
+    fromEstablishment: {
+      maxAdvanceBookingDays: establishment?.maxAdvanceBookingDays,
+      minAdvanceBookingHours: establishment?.minAdvanceBookingHours,
+      allowSameDayBooking: establishment?.allowSameDayBooking
     }
-  }, [establishment, searchParams]);
+  });
 
-  // Check authentication when component mounts
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      setShowLoginModal(true);
-    }
-  }, [loading, isAuthenticated]);
+  // Get unique sports from courts
+  const availableSports = establishment?.courts 
+    ? [...new Set(establishment.courts.map(c => c.sport).filter(Boolean))]
+    : [];
 
-  const getAmenityIcon = (amenity: string) => {
-    const icons: { [key: string]: any } = {
-      'Estacionamiento': Car,
-      'Vestuarios': Users,
-      'Parrilla': Coffee,
-      'Buffet': Coffee,
-      'Duchas': Users,
-      'Iluminación LED': Wifi
-    };
-    const IconComponent = icons[amenity] || Wifi;
-    return <IconComponent className="w-4 h-4" />;
+  // Filter courts by selected sport
+  const filteredCourts = establishment?.courts?.filter(court => 
+    selectedSport === 'all' || court.sport === selectedSport
+  ) || [];
+
+  // Get courts available at the selected time
+  const getAvailableCourtsAtTime = () => {
+    if (!selectedTime) return [];
+    const selectedSlot = availableSlots.find(slot => slot.time === selectedTime);
+    if (!selectedSlot?.availableCourtIds?.length) return [];
+    
+    // Filter courts that are available at this time AND match the sport filter
+    return filteredCourts.filter(court => 
+      selectedSlot.availableCourtIds?.includes(court.id)
+    );
   };
+  
+  const availableCourtsAtTime = getAvailableCourtsAtTime();
 
+  // Generate dates respecting maxAdvanceBookingDays
   const generateDates = () => {
     const dates = [];
     const today = new Date();
-    const dayNames = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     
-    for (let i = 0; i < 7; i++) {
+    // Start from today if same day booking is allowed, otherwise tomorrow
+    const startDay = allowSameDayBooking ? 0 : 1;
+    
+    console.log('[generateDates] allowSameDayBooking:', allowSameDayBooking, 'startDay:', startDay);
+    
+    for (let i = startDay; i < maxAdvanceBookingDays; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
+      // Use local date format instead of ISO (which uses UTC)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateValue = `${year}-${month}-${day}`;
+      
       dates.push({
-        value: date.toISOString().split('T')[0],
+        value: dateValue,
         dayName: dayNames[date.getDay()],
         dayNumber: date.getDate(),
         month: monthNames[date.getMonth()],
-        isToday: i === 0,
-        label: date.toLocaleDateString('es-AR', { 
-          weekday: 'short', 
-          day: 'numeric', 
-          month: 'short' 
-        })
+        isToday: i === startDay,
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
       });
+      
+      if (i === startDay) {
+        console.log('[generateDates] First date:', dateValue, 'isToday:', i === startDay);
+      }
     }
     return dates;
   };
 
-  const toggleCourtExpansion = (courtId: string) => {
-    setExpandedCourts(prev => 
-      prev.includes(courtId) 
-        ? prev.filter(id => id !== courtId)
-        : [...prev, courtId]
-    );
-  };
+  const dates = generateDates();
 
-  const getAvailableSlots = (court: Court) => {
-    if (!showOnlyAvailable) return court.timeSlots;
-    return court.timeSlots.filter(slot => slot.available);
-  };
+  // Check if a time slot is bookable (not in the past and respects minAdvanceBookingHours)
+  const isSlotBookable = useCallback((slotTime: string, slotDate: string): boolean => {
+    const now = new Date();
+    const [hours, minutes] = slotTime.split(':').map(Number);
+    
+    // Parse date in local timezone
+    const [year, month, day] = slotDate.split('-').map(Number);
+    const slotDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+    
+    // Check if slot date is today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const slotDateOnly = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const isToday = slotDateOnly.getTime() === today.getTime();
+    
+    // Debug log
+    if (hours === 8 && minutes === 0) {
+      console.log(`[isSlotBookable] Date: ${slotDate}, IsToday: ${isToday}, Today: ${today.toLocaleDateString()}, SlotDate: ${slotDateOnly.toLocaleDateString()}`);
+    }
+    
+    // For today: apply minimum advance hours restriction
+    if (isToday) {
+      const minBookingTime = new Date(now.getTime() + minAdvanceBookingHours * 60 * 60 * 1000);
+      const isBookable = slotDateTime > minBookingTime;
+      
+      // Debug log for all slots
+      console.log(`[Slot ${slotTime}] Now: ${now.toLocaleTimeString()}, MinTime: ${minBookingTime.toLocaleTimeString()}, SlotTime: ${slotDateTime.toLocaleTimeString()}, Bookable: ${isBookable}`);
+      
+      return isBookable;
+    }
+    
+    // For future dates: only check that slot is not in the past
+    return slotDateTime > now;
+  }, [minAdvanceBookingHours]);
 
-  const handleTimeToggle = (time: string) => {
-    setSelectedTimes(prev => {
-      if (prev.includes(time)) {
-        return prev.filter(t => t !== time);
-      } else {
-        return [...prev, time].sort();
+  // Set default date to today
+  useEffect(() => {
+    if (!selectedDate && dates.length > 0) {
+      setSelectedDate(dates[0].value);
+    }
+  }, [dates]);
+
+
+  // Fetch availability from backend for all courts (same logic as admin sidebar)
+  const fetchAvailability = useCallback(async () => {
+    if (!selectedDate || !establishment?.courts?.length) return;
+    
+    setLoadingSlots(true);
+    try {
+      // Filter courts by selected sport if any
+      const courtsToCheck = selectedSport === 'all' 
+        ? establishment.courts 
+        : establishment.courts.filter(c => c.sport === selectedSport);
+      
+      if (courtsToCheck.length === 0) {
+        setAvailableSlots([]);
+        setLoadingSlots(false);
+        return;
       }
-    });
+
+      // Generate all possible time slots from 8:00 to 23:00 every 30 minutes
+      const slots: Map<string, string[]> = new Map();
+      for (let hour = 8; hour <= 23; hour++) {
+        slots.set(`${hour.toString().padStart(2, '0')}:00`, []);
+        if (hour < 23) {
+          slots.set(`${hour.toString().padStart(2, '0')}:30`, []);
+        }
+      }
+      
+      // Check availability for each court
+      for (const court of courtsToCheck) {
+        try {
+          const response = await apiClient.getCourtAvailability(court.id, selectedDate, selectedDuration) as any;
+          const availability = response.availableSlots || [];
+          
+          // Add court to available slots
+          availability.forEach((slot: any) => {
+            const time = slot.startTime || slot.time;
+            if (slot.available !== false && slots.has(time)) {
+              const courtIds = slots.get(time) || [];
+              courtIds.push(court.id);
+              slots.set(time, courtIds);
+            }
+          });
+        } catch (err) {
+          console.error(`Error loading availability for court ${court.id}:`, err);
+        }
+      }
+      
+      // Convert to array - only slots with at least one available court AND bookable time are available
+      const slotsArray: TimeSlot[] = Array.from(slots.entries())
+        .map(([time, courtIds]) => ({
+          time,
+          // Slot is available only if: has courts AND is bookable (not in past, respects min advance)
+          available: courtIds.length > 0 && isSlotBookable(time, selectedDate),
+          price: courtsToCheck[0]?.pricePerHour || 2500,
+          availableCourtIds: courtIds // Store which courts are available at this time
+        }))
+        .sort((a, b) => a.time.localeCompare(b.time));
+      
+      setAvailableSlots(slotsArray);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+      generateFallbackSlots();
+    } finally {
+      setLoadingSlots(false);
+    }
+  }, [selectedDate, selectedDuration, selectedSport, establishment?.courts, isSlotBookable]);
+
+  // Fallback slot generation if API fails
+  const generateFallbackSlots = () => {
+    const slots: TimeSlot[] = [];
+    const dayOfWeek = new Date(selectedDate).getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    
+    let startHour = 8;
+    let endHour = 23;
+    
+    if (establishment?.openingHours?.[dayName]) {
+      const daySchedule = establishment.openingHours[dayName];
+      if (!daySchedule.closed) {
+        startHour = parseInt(daySchedule.open?.split(':')[0] || '8');
+        endHour = parseInt(daySchedule.close?.split(':')[0] || '23');
+      }
+    }
+    
+    const durationHours = selectedDuration / 60;
+    
+    for (let hour = startHour; hour <= endHour - durationHours; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const slotEndHour = hour + (minute + selectedDuration) / 60;
+        if (slotEndHour > endHour) continue;
+        
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push({
+          time,
+          // Apply time restrictions in fallback too
+          available: isSlotBookable(time, selectedDate),
+          price: 2500
+        });
+      }
+    }
+    
+    setAvailableSlots(slots);
   };
 
-  const calculateTotal = () => {
-    if (!selectedCourt || selectedTimes.length === 0) return 0;
-    return selectedTimes.length * 2500; // Each slot is $2500
+  // Update slots when date, duration, or sport changes
+  useEffect(() => {
+    if (selectedDate && selectedDuration && establishment?.courts?.length) {
+      setSelectedTime('');
+      setSelectedCourt(null);
+      fetchAvailability();
+    }
+  }, [selectedDate, selectedDuration, selectedSport, fetchAvailability]);
+
+  const getPrice = () => {
+    if (!selectedCourt) return 0;
+    const hourlyRate = selectedCourt.pricePerHour;
+    // Calculate price based on duration (pro-rated)
+    return Math.round(hourlyRate * (selectedDuration / 60));
   };
 
-  const calculateSplitPrice = () => {
-    const total = calculateTotal();
-    const players = 4; // Default players for split
-    return Math.ceil(total / players);
+  // Calculate end time based on start time and duration
+  const getEndTime = () => {
+    if (!selectedTime) return '';
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + selectedDuration;
+    const endHours = Math.floor(totalMinutes / 60) % 24;
+    const endMinutes = totalMinutes % 60;
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
   };
 
   const handleBooking = () => {
-    if (bookingStep === 1) {
-      if (!selectedDate || selectedTimes.length === 0 || !selectedCourt) {
-        alert('Por favor selecciona fecha, cancha y al menos un horario');
-        return;
-      }
-      setBookingStep(2);
-    } else {
-      // Redirigir a página de confirmación con parámetros
-      const params = new URLSearchParams({
-        facility: facility?.name || '',
-        court: selectedCourt?.name || '',
-        sport: getSportName(facility?.sport || ''),
-        date: selectedDate,
-        times: selectedTimes.join(','),
-        paymentOption: paymentOption,
-        total: calculateTotal().toString()
-      });
-      router.push(`/confirmacion?${params.toString()}`);
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
     }
+    
+    if (!selectedDate || !selectedTime || !selectedCourt) {
+      alert('Por favor selecciona fecha, cancha y horario');
+      return;
+    }
+    
+    const bookingParams = new URLSearchParams({
+      establishmentId: establishment?.id || '',
+      establishmentName: establishment?.name || '',
+      courtId: selectedCourt.id,
+      courtName: selectedCourt.name,
+      date: selectedDate,
+      time: selectedTime,
+      endTime: getEndTime(),
+      duration: selectedDuration.toString(),
+      price: getPrice().toString(),
+      sport: selectedCourt.sport || ''
+    });
+    
+    // Go to payment page first
+    router.push(`/reservar/pago?${bookingParams.toString()}`);
   };
 
-  const getSportName = (sport: string) => {
-    const sportNames: { [key: string]: string } = {
-      'futbol5': 'Fútbol 5',
-      'paddle': 'Paddle',
-      'tenis': 'Tenis',
-      'basquet': 'Básquet'
+  const getAmenityIcon = (amenity: string) => {
+    const iconMap: Record<string, any> = {
+      'estacionamiento': Car,
+      'parking': Car,
+      'wifi': Wifi,
+      'vestuarios': Users,
+      'duchas': Sparkles,
+      'cafeteria': Coffee,
+      'buffet': Coffee,
+      'iluminacion': Zap,
+      'techado': Shield,
     };
-    return sportNames[sport] || sport;
+    
+    const key = amenity.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (const [k, Icon] of Object.entries(iconMap)) {
+      if (key.includes(k)) return Icon;
+    }
+    return Check;
   };
+
+  const getImages = () => {
+    let imgs: string[] = [];
+    if (!establishment?.images) return imgs;
+    if (Array.isArray(establishment.images)) {
+      imgs = establishment.images;
+    } else if (establishment.images.photos) {
+      imgs = establishment.images.photos;
+    }
+    // Convert relative URLs to full backend URLs
+    return imgs.map((img: string) => apiClient.getImageUrl(img));
+  };
+
+  const images = getImages();
+  const mainImage = images[0] || '/assets/default-card.png';
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Cargando información de la cancha...</p>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-gray-400">Cargando establecimiento...</p>
         </div>
       </div>
     );
   }
 
-  if (error || (!loading && !establishment)) {
+  if (error || !establishment) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-white mb-2">Cancha no encontrada</h2>
-          <p className="text-gray-400 mb-4">
-            {error || 'La cancha que buscás no existe o no está disponible.'}
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center">
+            <X className="w-10 h-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Establecimiento no encontrado</h2>
+          <p className="text-gray-400 mb-6">
+            {error || 'El establecimiento que buscás no existe o no está disponible.'}
           </p>
           <button 
-            onClick={() => router.push('/')}
-            className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-2 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+            onClick={() => router.push('/buscar')}
+            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl font-medium hover:from-emerald-600 hover:to-cyan-600 transition-all"
           >
-            Volver al inicio
+            Buscar establecimientos
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!facility) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Preparando información...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <div className={`bg-gray-800 border-b border-gray-700 ${showLoginModal || showRegisterModal ? 'blur-sm' : ''} transition-all duration-300`}>
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-gray-950">
+      {/* Secondary Header - Below main navbar */}
+      <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
+              <h1 className="text-white font-medium truncate max-w-xs">{establishment.name}</h1>
+              <div className="flex items-center gap-1 text-emerald-400">
+                <Star className="w-4 h-4 fill-current" />
+                <span className="text-sm">{establishment.rating || '4.5'}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsFavorite(!isFavorite)}
+                className={`p-2 rounded-full transition-all ${isFavorite ? 'bg-red-500/20 text-red-500' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+              >
+                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+              </button>
+              <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <section>
+        <div className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+          {/* Main Image */}
+          <div className="absolute inset-0">
+            <img 
+              src={mainImage} 
+              alt={establishment.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
+          </div>
+          
+          {/* Gallery thumbnails */}
+          {images.length > 1 && (
+            <div className="absolute bottom-6 right-6 flex gap-2">
+              {images.slice(1, 4).map((img: string, idx: number) => (
+                <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border-2 border-white/20 hover:border-white/50 transition-colors cursor-pointer">
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+              {images.length > 4 && (
+                <div className="w-16 h-16 rounded-lg bg-black/50 backdrop-blur flex items-center justify-center text-white text-sm font-medium cursor-pointer hover:bg-black/70 transition-colors">
+                  +{images.length - 4}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Floating info cards container */}
+          <div className="absolute bottom-6 left-6 right-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col lg:flex-row gap-4">
+                {/* Main info card */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-gray-900/90 backdrop-blur-xl rounded-2xl p-5 border border-gray-700 flex-1 lg:max-w-md"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h1 className="text-xl md:text-2xl font-bold text-white mb-1">{establishment.name}</h1>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="flex items-center gap-1 text-emerald-400">
+                          <Star className="w-4 h-4 fill-current" />
+                          <span className="font-medium">{establishment.rating || '4.5'}</span>
+                        </div>
+                        <span className="text-gray-400">({establishment.reviewCount || 0} reseñas)</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-400">desde</div>
+                      <div className="text-xl font-bold text-white">
+                        ${establishment.courts?.[0]?.pricePerHour || 2500}
+                        <span className="text-xs font-normal text-gray-400">/hr</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mt-3 text-gray-400">
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm truncate">{establishment.address}, {establishment.city}</span>
+                  </div>
+                </motion.div>
+
+                {/* Quick Info Cards */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="hidden lg:grid grid-cols-4 gap-3 flex-1"
+                >
+                  {[
+                    { icon: Timer, label: 'Canchas', value: `${establishment.courts?.length || 0}` },
+                    { icon: Clock, label: 'Horario', value: '8 - 23hs' },
+                    { icon: Users, label: 'Capacidad', value: 'Hasta 10' },
+                    { icon: CreditCard, label: 'Pago', value: 'Online' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="bg-gray-900/90 backdrop-blur-xl rounded-xl p-3 border border-gray-700 flex flex-col justify-center">
+                      <item.icon className="w-5 h-5 text-emerald-400 mb-1" />
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">{item.label}</div>
+                      <div className="text-white font-semibold text-sm">{item.value}</div>
+                    </div>
+                  ))}
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Info - Mobile Only */}
+        <div className="grid grid-cols-4 gap-2 mb-6 lg:hidden">
+          {[
+            { icon: Timer, label: 'Canchas', value: `${establishment.courts?.length || 0}` },
+            { icon: Clock, label: 'Horario', value: '8-23hs' },
+            { icon: Users, label: 'Capacidad', value: '10' },
+            { icon: CreditCard, label: 'Pago', value: 'Online' },
+          ].map((item, idx) => (
+            <div key={idx} className="bg-gray-900 rounded-lg p-2 border border-gray-800 text-center">
+              <item.icon className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+              <div className="text-[9px] text-gray-400 uppercase">{item.label}</div>
+              <div className="text-white font-medium text-xs">{item.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Booking Section - Full Width */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden mb-12"
+        >
+          {/* Booking Header */}
+          <div className="p-6 border-b border-gray-800 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1">Reservar cancha</h2>
+                <p className="text-gray-400 text-sm">Selecciona cancha, fecha y horario para tu reserva</p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-400">Total</div>
+                <div className="text-3xl font-bold text-white">${getPrice()}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {/* Sport Filter Pills */}
+            {availableSports.length > 1 && (
+              <div className="mb-6">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedSport('all')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedSport === 'all'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  {availableSports.map((sport) => (
+                    <button
+                      key={sport}
+                      onClick={() => setSelectedSport(sport)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize ${
+                        selectedSport === sport
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                      }`}
+                    >
+                      {sport}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 1: Date Selection */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-sm">1</div>
+                <h3 className="text-lg font-semibold text-white">Elige el día</h3>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {dates.map((date) => (
+                  <button
+                    key={date.value}
+                    onClick={() => setSelectedDate(date.value)}
+                    className={`flex-shrink-0 flex flex-col items-center px-3 py-2 rounded-xl border-2 transition-all min-w-[65px] ${
+                      selectedDate === date.value
+                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        : date.isWeekend
+                        ? 'bg-gray-800/50 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                        : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                    }`}
+                  >
+                    <span className="text-[10px] font-medium opacity-70 uppercase">{date.dayName}</span>
+                    <span className="text-lg font-bold">{date.dayNumber}</span>
+                    {date.isToday && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                        selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'
+                      }`}>
+                        Hoy
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 2: Duration Selection */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${selectedDate ? 'bg-emerald-500' : 'bg-gray-600'}`}>2</div>
+                <h3 className="text-lg font-semibold text-white">Duración del partido</h3>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {[
+                  { value: 60, label: '1 hora' },
+                  { value: 90, label: '1:30 hs' },
+                  { value: 120, label: '2 horas' },
+                  { value: 180, label: '3 horas' }
+                ].map((duration) => (
+                  <button
+                    key={duration.value}
+                    onClick={() => {
+                      setSelectedDuration(duration.value);
+                      setShowCustomDuration(false);
+                    }}
+                    disabled={!selectedDate}
+                    className={`px-5 py-3 rounded-xl border-2 font-medium transition-all ${
+                      !selectedDate
+                        ? 'opacity-50 cursor-not-allowed bg-gray-800 border-gray-700'
+                        : selectedDuration === duration.value && !showCustomDuration
+                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                    }`}
+                  >
+                    {duration.label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setShowCustomDuration(!showCustomDuration)}
+                  disabled={!selectedDate}
+                  className={`px-5 py-3 rounded-xl border-2 font-medium transition-all ${
+                    !selectedDate
+                      ? 'opacity-50 cursor-not-allowed bg-gray-800 border-gray-700'
+                      : showCustomDuration
+                      ? 'bg-emerald-500 border-emerald-500 text-white'
+                      : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                  }`}
+                >
+                  Personalizado
+                </button>
+              </div>
+              
+              {/* Custom Duration Input */}
+              {showCustomDuration && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mt-4 flex items-center gap-4"
+                >
+                  <div className="flex items-center gap-2 bg-gray-800 rounded-xl p-2">
+                    <button
+                      onClick={() => setCustomDuration(Math.max(30, customDuration - 30))}
+                      className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
+                    >
+                      -
+                    </button>
+                    <div className="w-24 text-center">
+                      <span className="text-2xl font-bold text-white">{customDuration}</span>
+                      <span className="text-gray-400 ml-1">min</span>
+                    </div>
+                    <button
+                      onClick={() => setCustomDuration(Math.min(480, customDuration + 30))}
+                      className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedDuration(customDuration);
+                    }}
+                    className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors"
+                  >
+                    Aplicar
+                  </button>
+                  <span className="text-gray-400 text-sm">
+                    = {Math.floor(customDuration / 60)}h {customDuration % 60 > 0 ? `${customDuration % 60}min` : ''}
+                  </span>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Step 3: Time Selection */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${selectedDate && selectedDuration ? 'bg-emerald-500' : 'bg-gray-600'}`}>3</div>
+                <h3 className="text-lg font-semibold text-white">Horario disponible</h3>
+                {selectedDuration && (
+                  <span className="text-sm text-gray-400">
+                    (turnos de {selectedDuration >= 60 ? `${Math.floor(selectedDuration / 60)}h` : ''}{selectedDuration % 60 > 0 ? ` ${selectedDuration % 60}min` : ''})
+                  </span>
+                )}
+              </div>
+              {loadingSlots ? (
+                <div className="text-center py-10 bg-gray-800/50 rounded-xl">
+                  <div className="w-8 h-8 mx-auto mb-2 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-gray-400">Cargando horarios disponibles...</p>
+                </div>
+              ) : selectedDate && availableSlots.length > 0 ? (
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                  {availableSlots.map((slot: TimeSlot) => (
+                    <button
+                      key={slot.time}
+                      onClick={() => slot.available && setSelectedTime(slot.time)}
+                      disabled={!slot.available}
+                      className={`py-2.5 px-2 rounded-lg text-sm font-semibold transition-all ${
+                        selectedTime === slot.time
+                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                          : slot.available
+                          ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
+                          : 'bg-gray-800/30 text-gray-600 cursor-not-allowed line-through'
+                      }`}
+                    >
+                      {slot.time}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 text-gray-500 bg-gray-800/50 rounded-xl">
+                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Selecciona día y duración para ver horarios</p>
+                </div>
+              )}
+            </div>
+
+            {/* Step 4: Court Selection */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${selectedTime ? 'bg-emerald-500' : 'bg-gray-600'}`}>4</div>
+                <h3 className="text-lg font-semibold text-white">Selecciona la cancha</h3>
+                {selectedTime && availableCourtsAtTime.length > 0 && (
+                  <span className="text-sm text-gray-400">({availableCourtsAtTime.length} disponibles)</span>
+                )}
+              </div>
+              {selectedTime ? (
+                availableCourtsAtTime.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {availableCourtsAtTime.map((court) => (
+                      <motion.div
+                        key={court.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedCourt(court)}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          selectedCourt?.id === court.id 
+                            ? 'bg-emerald-500/10 border-emerald-500' 
+                            : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${
+                            selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-700'
+                          }`}>
+                            🏟️
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-white truncate">{court.name}</h4>
+                            <p className="text-xs text-gray-400 truncate">{court.sport} • {court.surface}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-emerald-400">${Math.round(court.pricePerHour * (selectedDuration / 60))}</p>
+                            <p className="text-[10px] text-gray-500">{selectedDuration} min</p>
+                          </div>
+                          {selectedCourt?.id === court.id && (
+                            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-gray-500 bg-gray-800/50 rounded-xl">
+                    <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No hay canchas disponibles en este horario</p>
+                    <p className="text-xs mt-1">Selecciona otro horario</p>
+                  </div>
+                )
+              ) : (
+                <div className="text-center py-10 text-gray-500 bg-gray-800/50 rounded-xl">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Selecciona un horario para ver las canchas disponibles</p>
+                </div>
+              )}
+            </div>
+
+            {/* Summary & Book Button */}
+            <div className="border-t border-gray-800 pt-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                {/* Summary */}
+                {selectedTime && selectedCourt ? (
+                  <div className="flex flex-wrap items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg">
+                      <span className="text-gray-400">Cancha:</span>
+                      <span className="text-white font-medium">{selectedCourt.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg">
+                      <span className="text-gray-400">Fecha:</span>
+                      <span className="text-white font-medium">{selectedDate}</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg">
+                      <span className="text-gray-400">Horario:</span>
+                      <span className="text-white font-medium">{selectedTime} - {getEndTime()}</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 rounded-lg border border-emerald-500/30">
+                      <span className="text-emerald-400">Total:</span>
+                      <span className="text-emerald-400 font-bold text-lg">${getPrice()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Completa los pasos anteriores para continuar</p>
+                )}
+                
+                {/* Book Button */}
+                <button
+                  onClick={handleBooking}
+                  disabled={!selectedTime || !selectedCourt || !selectedDate}
+                  className="w-full lg:w-auto px-12 py-4 rounded-xl font-semibold text-white text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40"
+                >
+                  {!isAuthenticated ? 'Iniciar sesión para reservar' : 'Confirmar reserva'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* About Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Description */}
+          <div>
+            <h2 className="text-xl font-bold text-white mb-4">Sobre el establecimiento</h2>
+            <p className="text-gray-300 leading-relaxed mb-6">
+              {establishment.description || 'Moderno complejo deportivo con instalaciones de primera calidad para disfrutar del deporte con amigos.'}
+            </p>
+            
+            {/* Contact */}
+            <div className="flex flex-wrap gap-3">
+              {establishment.phone && (
+                <a href={`tel:${establishment.phone}`} className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-xl border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors">
+                  <Phone className="w-4 h-4" />
+                  <span className="text-sm">{establishment.phone}</span>
+                </a>
+              )}
+              {establishment.email && (
+                <a href={`mailto:${establishment.email}`} className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-xl border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors">
+                  <Mail className="w-4 h-4" />
+                  <span className="text-sm">{establishment.email}</span>
+                </a>
+              )}
+              {establishment.website && (
+                <a href={establishment.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-xl border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors">
+                  <Globe className="w-4 h-4" />
+                  <span className="text-sm">Sitio web</span>
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Amenities */}
+          {establishment.amenities && establishment.amenities.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-white mb-4">Servicios</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {establishment.amenities.map((amenity, idx) => {
+                  const Icon = getAmenityIcon(amenity);
+                  return (
+                    <div key={idx} className="flex items-center gap-3 p-3 bg-gray-900 rounded-xl border border-gray-800">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <span className="text-gray-300 text-sm">{amenity}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Map */}
+        <div>
+          <h2 className="text-xl font-bold text-white mb-4">Ubicación</h2>
+          <div className="h-64 bg-gray-900 rounded-xl border border-gray-800 flex items-center justify-center">
+            <div className="text-center">
+              <MapPin className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+              <p className="text-gray-400 text-sm">{establishment.address}</p>
+              <p className="text-gray-500 text-xs">{establishment.city}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile Floating Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950/90 backdrop-blur-xl border-t border-gray-800 lg:hidden z-40">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-xl font-bold text-white">${getPrice()}</div>
+            <div className="text-xs text-gray-400">
+              {selectedTime ? `${selectedDate} • ${selectedTime}` : 'Selecciona horario'}
+            </div>
+          </div>
           <button
-            onClick={() => router.back()}
-            className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+            onClick={handleBooking}
+            disabled={!selectedTime || !selectedCourt || !selectedDate}
+            className="px-8 py-3 rounded-xl font-semibold text-white transition-all disabled:opacity-50 bg-gradient-to-r from-emerald-500 to-cyan-500"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Volver</span>
+            Reservar
           </button>
         </div>
       </div>
 
-      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${showLoginModal || showRegisterModal ? 'blur-sm' : ''} transition-all duration-300`}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Facility Info */}
-          <div className="lg:col-span-2">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {/* Image */}
-              <div className="w-full h-96 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-gray-700 rounded-xl mb-6 overflow-hidden">
-                {facility.image ? (
-                  <img 
-                    src={facility.image} 
-                    alt={facility.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-6xl">⚽</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Basic Info */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h1 className="text-3xl font-semibold text-white">{facility.name}</h1>
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-5 h-5 fill-current text-emerald-400" />
-                    <span className="font-medium text-white">{facility.rating}</span>
-                    <span className="text-gray-400">({facility.reviews} reseñas)</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center text-gray-400 mb-4">
-                  <MapPin className="w-5 h-5 mr-2" />
-                  <span>{facility.location}</span>
-                </div>
-
-                <p className="text-gray-300 leading-relaxed">{facility.description}</p>
-              </div>
-
-              {/* Amenities */}
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white mb-4">Servicios incluidos</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {facility.amenities.map((amenity, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <div className="text-emerald-400">{getAmenityIcon(amenity)}</div>
-                      <span className="text-gray-300">{amenity}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Rules */}
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white mb-4">Normas del establecimiento</h3>
-                <ul className="space-y-2">
-                  {facility.rules.map((rule, index) => (
-                    <li key={index} className="flex items-start space-x-2">
-                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-300">{rule}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Booking Panel */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-gray-800 border border-gray-700 rounded-xl p-6 sticky top-32"
-            >
-              <div className="mb-6">
-                <div className="flex items-baseline space-x-2 mb-2">
-                  <span className="text-2xl font-semibold text-white">${facility.price}</span>
-                  <span className="text-gray-400">por hora</span>
-                </div>
-              </div>
-
-              {bookingStep === 1 ? (
-                <>
-                  {/* Date Selection */}
-                  <div className="mb-6">
-                    <div className="flex items-center space-x-2 mb-3">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-medium text-white">¿Qué día quieres jugar?</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {generateDates().slice(0, 6).map((date) => (
-                        <button
-                          key={date.value}
-                          onClick={() => setSelectedDate(date.value)}
-                          className={`flex flex-col items-center p-3 rounded-lg border transition-all duration-200 ${
-                            selectedDate === date.value
-                              ? 'bg-emerald-500 text-white border-emerald-500'
-                              : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                          }`}
-                        >
-                          <span className="text-xs font-medium">{date.dayName}</span>
-                          <span className="text-lg font-bold">{date.dayNumber}</span>
-                          <span className="text-xs">{date.month}</span>
-                          {date.isToday && (
-                            <span className="text-xs text-emerald-400 mt-1">Hoy</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Show Only Available Toggle */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-white">Mostrar solo horarios disponibles</span>
-                      <button
-                        onClick={() => setShowOnlyAvailable(!showOnlyAvailable)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-                          showOnlyAvailable ? 'bg-emerald-500' : 'bg-gray-600'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                            showOnlyAvailable ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Court Selection */}
-                  {facility.courts && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-medium text-white mb-3">Reserva una cancha</h3>
-                      <p className="text-xs text-gray-400 mb-4">
-                        Crea un partido privado donde puedes invitar a tus amigos
-                      </p>
-                      
-                      <div className="space-y-3">
-                        {facility.courts.map((court) => {
-                          const availableSlots = getAvailableSlots(court);
-                          const isExpanded = expandedCourts.includes(court.id);
-                          
-                          return (
-                            <div key={court.id} className="border border-gray-600 rounded-lg">
-                              <button
-                                onClick={() => toggleCourtExpansion(court.id)}
-                                className="w-full p-4 text-left hover:bg-gray-700 transition-colors rounded-lg"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium text-white">{court.name}</h4>
-                                    <p className="text-sm text-gray-400">{court.surface}</p>
-                                  </div>
-                                  {isExpanded ? (
-                                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                                  ) : (
-                                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                                  )}
-                                </div>
-                              </button>
-                              
-                              {isExpanded && (
-                                <div className="px-4 pb-4">
-                                  <div className="mb-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-sm font-medium text-white">
-                                        Horarios disponibles (1 hora cada uno)
-                                      </span>
-                                      <span className="text-sm text-emerald-400">
-                                        $2500 por hora
-                                      </span>
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-2">
-                                      {court.timeSlots.map((slot) => {
-                                        const isSelected = selectedTimes.includes(slot.time) && selectedCourt?.id === court.id;
-                                        return (
-                                          <button
-                                            key={slot.time}
-                                            onClick={() => {
-                                              setSelectedCourt(court);
-                                              handleTimeToggle(slot.time);
-                                            }}
-                                            className={`px-2 py-1.5 text-xs rounded-md border transition-all duration-200 relative ${
-                                              isSelected
-                                                ? 'bg-emerald-500 text-white border-emerald-500'
-                                                : slot.available
-                                                ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                                                : 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed opacity-50'
-                                            }`}
-                                          >
-                                            <span className={!slot.available ? 'line-through' : ''}>
-                                              {slot.time}
-                                            </span>
-                                            {!slot.available && (
-                                              <div className="absolute inset-0 flex items-center justify-center">
-                                                <X className="w-3 h-3 text-red-400" />
-                                              </div>
-                                            )}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                    {selectedTimes.length > 0 && selectedCourt?.id === court.id && (
-                                      <div className="mt-3 p-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
-                                        <p className="text-xs text-emerald-400">
-                                          Seleccionados: {selectedTimes.join(', ')} ({selectedTimes.length} hora{selectedTimes.length > 1 ? 's' : ''})
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                </>
-              ) : (
-                <>
-                  {/* Booking Summary */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Resumen de la reserva</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Fecha:</span>
-                        <span className="font-medium text-white">{selectedDate}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Cancha:</span>
-                        <span className="font-medium text-white">{selectedCourt?.name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Horarios:</span>
-                        <span className="font-medium text-white">{selectedTimes.join(', ')}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Total horas:</span>
-                        <span className="font-medium text-white">{selectedTimes.length}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Options */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Opciones de pago</h3>
-                    
-                    {/* Split Payment Option */}
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => setPaymentOption('split')}
-                        className={`w-full p-4 rounded-lg border transition-all duration-200 ${
-                          paymentOption === 'split'
-                            ? 'bg-emerald-500/20 border-emerald-500 text-white'
-                            : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
-                              <span className="text-xs text-white font-bold">x4</span>
-                            </div>
-                            <span className="font-medium">Pagas tu parte</span>
-                          </div>
-                          <span className="font-bold text-emerald-400">${calculateSplitPrice()}</span>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-2 text-left">
-                          Si el resto de jugadores no paga antes del {new Date().toLocaleDateString()} 15:00 asumirás el pago de su parte (${calculateTotal()})
-                        </p>
-                      </button>
-
-                      {/* Full Payment Option */}
-                      <button
-                        onClick={() => setPaymentOption('full')}
-                        className={`w-full p-4 rounded-lg border transition-all duration-200 ${
-                          paymentOption === 'full'
-                            ? 'bg-emerald-500/20 border-emerald-500 text-white'
-                            : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center">
-                              <span className="text-xs text-white font-bold">x4</span>
-                            </div>
-                            <span className="font-medium">Pagas todo</span>
-                          </div>
-                          <span className="font-bold text-emerald-400">${calculateTotal()}</span>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Total */}
-              <div className="border-t border-gray-700 pt-4 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-white">
-                    {bookingStep === 2 && paymentOption === 'split' ? 'Tu parte' : 'Total'}
-                  </span>
-                  <span className="text-xl font-semibold text-white">
-                    ${bookingStep === 2 && paymentOption === 'split' ? calculateSplitPrice() : calculateTotal()}
-                  </span>
-                </div>
-                {bookingStep === 2 && (
-                  <div className="text-xs text-gray-400 mt-2">
-                    {selectedTimes.length} hora{selectedTimes.length > 1 ? 's' : ''} • {selectedCourt?.name} • {facility.name}
-                  </div>
-                )}
-              </div>
-
-              {/* Action Button */}
-              <button
-                onClick={handleBooking}
-                disabled={!selectedDate || selectedTimes.length === 0 || !selectedCourt}
-                className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-              >
-                {bookingStep === 1 ? 'Continuar' : `Continuar pagando $${bookingStep === 2 && paymentOption === 'split' ? calculateSplitPrice() : calculateTotal()}`}
-              </button>
-
-              {bookingStep === 2 && (
-                <button
-                  onClick={() => setBookingStep(1)}
-                  className="w-full mt-3 bg-gray-700 text-gray-300 py-3 rounded-xl font-medium hover:bg-gray-600 transition-colors border border-gray-600"
-                >
-                  Volver
-                </button>
-              )}
-            </motion.div>
-          </div>
-        </div>
-      </div>
-
-      {/* Login Modal with blur background */}
+      {/* Modals */}
       <LoginModal 
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
@@ -714,8 +1005,6 @@ const BookingPage = () => {
           setShowRegisterModal(true);
         }}
       />
-
-      {/* Register Modal */}
       <RegisterModal 
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}

@@ -26,6 +26,12 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   
+  // Staff-specific fields
+  isStaff?: boolean;
+  staffRole?: 'admin' | 'manager' | 'receptionist' | 'staff';
+  establishmentId?: string;
+  permissions?: Record<string, boolean>;
+  
   // Computed fields for compatibility
   name?: string;
   avatar?: string;

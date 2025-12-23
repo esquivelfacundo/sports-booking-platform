@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
+  loginWithGoogle: (credential: string) => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => Promise<User>;
@@ -150,6 +151,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Store the token
           localStorage.setItem('auth_token', loginResponse.token);
           localStorage.setItem('user_data', JSON.stringify(loginResponse.user));
+          // Store user type for proper redirect on session expiry
+          localStorage.setItem('user_type', loginResponse.user.userType || 'player');
           
           // Update auth state
           setAuthState({
@@ -157,6 +160,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             isAuthenticated: true,
             isLoading: false,
           });
+          
+          // Dispatch auth change event for EstablishmentContext
+          window.dispatchEvent(new Event('auth-change'));
           
           return true;
         }
@@ -194,6 +200,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           // Store user data in localStorage for persistence
           localStorage.setItem('user_data', JSON.stringify(transformedUser));
+          // Store user type for proper redirect on session expiry
+          localStorage.setItem('user_type', loginResponse.user.userType || 'player');
           
           // Set user state
           setAuthState({
@@ -201,6 +209,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             isAuthenticated: true,
             isLoading: false,
           });
+          
+          // Dispatch auth change event for EstablishmentContext
+          window.dispatchEvent(new Event('auth-change'));
+          
           return true;
         }
       } catch (apiError) {
@@ -375,6 +387,80 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (credential: string): Promise<boolean> => {
+    try {
+      console.log('AuthContext: Attempting Google login');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ credential }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('Google login failed:', data);
+        return false;
+      }
+      
+      if (data.tokens && data.tokens.accessToken) {
+        console.log('AuthContext: Google login successful');
+        
+        // Store tokens
+        localStorage.setItem('auth_token', data.tokens.accessToken);
+        if (data.tokens.refreshToken) {
+          localStorage.setItem('refresh_token', data.tokens.refreshToken);
+        }
+        
+        // Transform backend user data to frontend format
+        const transformedUser = {
+          ...data.user,
+          name: `${data.user.firstName} ${data.user.lastName}`.trim(),
+          avatar: data.user.avatar || data.user.profileImage,
+          birthDate: data.user.dateOfBirth,
+          level: data.user.skillLevel || 'beginner',
+          lastActive: data.user.lastLoginAt || data.user.updatedAt,
+          friends: data.user.friends || [],
+          favoriteVenues: data.user.favoriteVenues || [],
+          favoriteEstablishments: data.user.favoriteEstablishments || [],
+          sports: data.user.sports || [],
+          stats: data.user.stats || {
+            totalGames: 0,
+            totalReservations: 0,
+            favoriteVenuesCount: 0,
+            friendsCount: 0,
+            rating: 0,
+            reviewsReceived: 0
+          }
+        };
+        
+        // Store user data in localStorage for persistence
+        localStorage.setItem('user_data', JSON.stringify(transformedUser));
+        localStorage.setItem('user_type', data.user.userType || 'player');
+        
+        // Set user state
+        setAuthState({
+          user: transformedUser,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        
+        // Dispatch auth change event
+        window.dispatchEvent(new Event('auth-change'));
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Google login error:', error);
+      return false;
+    }
+  };
+
   const logout = () => {
     // Clear all auth-related localStorage items
     localStorage.removeItem('auth_token');
@@ -464,6 +550,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     ...authState,
     login,
+    loginWithGoogle,
     register,
     logout,
     updateProfile,

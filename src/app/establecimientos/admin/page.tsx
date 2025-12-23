@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
-import { useEstablishmentAdmin } from '@/hooks/useEstablishmentAdmin';
+import { useEstablishmentAdminContext } from '@/contexts/EstablishmentAdminContext';
 import { 
   Calendar, 
   DollarSign, 
@@ -23,30 +24,75 @@ import {
   RefreshCw
 } from 'lucide-react';
 
+interface UserData {
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email?: string;
+  userType?: string;
+  isStaff?: boolean;
+}
+
 const AdminDashboard = () => {
   const searchParams = useSearchParams();
   const { establishment, loading: establishmentLoading } = useEstablishment();
   const { 
+    establishmentId,
     reservations, 
     courts, 
     stats: adminStats, 
     notifications,
     loading: adminLoading,
     statsLoading,
+    loadReservations,
     refreshAll 
-  } = useEstablishmentAdmin();
+  } = useEstablishmentAdminContext();
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [registrationData, setRegistrationData] = useState<any>(null);
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+  const [userName, setUserName] = useState<string>('');
 
-  const loading = establishmentLoading || adminLoading;
+  const loading = establishmentLoading || adminLoading || statsLoading;
+
+  // Load today's reservations when establishment is available
+  useEffect(() => {
+    if (establishmentId) {
+      const today = new Date().toISOString().split('T')[0];
+      loadReservations({ date: today, limit: 100 });
+    }
+  }, [establishmentId, loadReservations]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Load user name from localStorage (only first name for greeting)
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem('user_data');
+      if (userData) {
+        const user: UserData = JSON.parse(userData);
+        // Get only the first name for the greeting
+        let firstName = '';
+        if (user.name) {
+          // Staff users have 'name' - get first part
+          firstName = user.name.split(' ')[0];
+        } else if (user.firstName) {
+          firstName = user.firstName;
+        } else if (user.email) {
+          firstName = user.email.split('@')[0];
+        } else {
+          firstName = 'Usuario';
+        }
+        setUserName(firstName);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
   }, []);
 
   useEffect(() => {
@@ -100,10 +146,14 @@ const AdminDashboard = () => {
     }
   ];
 
-  // Get today's reservations from API data
+  // Get upcoming reservations for today (next 5 from current time)
   const today = new Date().toISOString().split('T')[0];
-  const todayReservations = reservations
-    .filter(r => r.date === today)
+  const currentTimeStr = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
+  
+  const upcomingReservations = reservations
+    .filter(r => r.date === today && r.time >= currentTimeStr)
+    .sort((a, b) => a.time.localeCompare(b.time))
+    .slice(0, 5)
     .map(r => ({
       id: r.id,
       time: r.time,
@@ -231,35 +281,51 @@ const AdminDashboard = () => {
           </motion.div>
         )}
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              {establishment?.name || 'Panel de Control'}
-            </h1>
-            <p className="text-gray-400 mt-1">
-              {establishment?.address && (
-                <span className="flex items-center mr-4">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {establishment.address}, {establishment.city}
-                </span>
-              )}
-              {currentTime.toLocaleDateString('es-ES', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })} - {currentTime.toLocaleTimeString('es-ES', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}
-            </p>
+        {/* Welcome Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative mb-8 overflow-hidden"
+        >
+          {/* Main container with gradient background like Caja Activa */}
+          <div className="bg-gradient-to-r from-emerald-900/50 to-gray-800 rounded-xl border border-emerald-700/50 p-6">
+            <div className="flex items-center justify-between">
+              {/* Left: Welcome message */}
+              <div className="flex items-center space-x-4">
+                {/* Decorative icon */}
+                <div className="hidden sm:flex items-center justify-center w-14 h-14 rounded-xl bg-emerald-500/20">
+                  <Building2 className="w-7 h-7 text-emerald-400" />
+                </div>
+                
+                <div>
+                  {/* Greeting with user name */}
+                  <h1 className="text-xl sm:text-2xl text-white">
+                    ¡{(() => {
+                      const hour = currentTime.getHours();
+                      if (hour >= 0 && hour < 12) return 'Buenos días';
+                      if (hour >= 12 && hour < 19) return 'Buenas tardes';
+                      return 'Buenas noches';
+                    })()}, <span className="font-bold">{userName || 'Usuario'}</span>!
+                  </h1>
+                    
+                  {/* Establishment name */}
+                  <p className="text-gray-400 text-sm sm:text-base mt-0.5">
+                    {establishment?.name || 'Panel de Control'}
+                  </p>
+                </div>
+                </div>
+
+              {/* Right: Action button */}
+              <Link 
+                href="/establecimientos/admin/reservas"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center space-x-2 shadow-lg shadow-emerald-500/25"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Nueva Reserva</span>
+              </Link>
+            </div>
           </div>
-          <button className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 flex items-center space-x-2">
-            <Plus className="w-5 h-5" />
-            <span>Nueva Reserva</span>
-          </button>
-        </div>
+        </motion.div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -301,15 +367,15 @@ const AdminDashboard = () => {
           {/* Today's Reservations */}
         <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Reservas de Hoy</h2>
-            <button className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1">
+            <h2 className="text-xl font-bold text-white">Próximas Reservas</h2>
+            <Link href="/establecimientos/admin/reservas" className="text-emerald-400 hover:text-emerald-300 flex items-center space-x-1">
               <Eye className="w-4 h-4" />
               <span>Ver todas</span>
-            </button>
+            </Link>
           </div>
           <div className="space-y-4">
-            {todayReservations.length > 0 ? (
-              todayReservations.map((reservation) => (
+            {upcomingReservations.length > 0 ? (
+              upcomingReservations.map((reservation) => (
                 <div key={reservation.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="text-center">
@@ -336,9 +402,9 @@ const AdminDashboard = () => {
             ) : (
               <div className="text-center py-8">
                 <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">No hay reservas para hoy</p>
+                <p className="text-gray-400 text-lg">No hay más reservas para hoy</p>
                 <p className="text-gray-500 text-sm mt-2">
-                  Las reservas aparecerán aquí una vez que los clientes empiecen a reservar
+                  Las próximas reservas aparecerán aquí automáticamente
                 </p>
               </div>
             )}

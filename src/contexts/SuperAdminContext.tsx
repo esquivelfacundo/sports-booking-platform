@@ -56,12 +56,21 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // For now, use hardcoded credentials - in production this would be a secure API call
-      if (email === 'fesquivel@lidius.co' && password === 'Lidius@2001-mc') {
+      // Validate against environment variables
+      const validEmail = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
+      const validPassword = process.env.NEXT_PUBLIC_SUPERADMIN_PASSWORD;
+      const tokenSecret = process.env.NEXT_PUBLIC_SUPERADMIN_SECRET || 'default_secret';
+      
+      if (!validEmail || !validPassword) {
+        console.error('Super admin credentials not configured');
+        return false;
+      }
+      
+      if (email === validEmail && password === validPassword) {
         const adminData: SuperAdmin = {
           id: 'super-admin-1',
-          email: 'fesquivel@lidius.co',
-          name: 'Facundo Esquivel',
+          email: email,
+          name: 'Super Administrador',
           role: 'super_admin',
           permissions: [
             'manage_establishments',
@@ -74,8 +83,8 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           ]
         };
 
-        // Generate a mock token
-        const token = `super_admin_token_${Date.now()}`;
+        // Generate token that backend will recognize
+        const token = `superadmin_${tokenSecret}_${Date.now()}`;
         
         localStorage.setItem('superAdminToken', token);
         localStorage.setItem('superAdminData', JSON.stringify(adminData));

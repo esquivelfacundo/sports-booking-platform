@@ -25,6 +25,7 @@ import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import CashRegisterIndicator from '@/components/admin/CashRegisterIndicator';
 
 const AdminNavbar = () => {
   const { establishment, isDemo } = useEstablishment();
@@ -53,16 +54,16 @@ const AdminNavbar = () => {
       active: pathname.includes('/canchas')
     },
     { 
-      name: 'Personal', 
-      href: '/establecimientos/admin/personal', 
-      icon: Users,
-      active: pathname.includes('/personal')
-    },
-    { 
       name: 'Clientes', 
       href: '/establecimientos/admin/clientes', 
       icon: User,
       active: pathname.includes('/clientes')
+    },
+    { 
+      name: 'Caja', 
+      href: '/establecimientos/admin/caja', 
+      icon: Clock,
+      active: pathname.includes('/caja')
     },
     { 
       name: 'Configuración', 
@@ -182,6 +183,9 @@ const AdminNavbar = () => {
 
           {/* Usuario y notificaciones */}
           <div className="flex items-center space-x-4">
+            {/* Cash Register Indicator */}
+            <CashRegisterIndicator establishmentId={establishment?.id || null} />
+            
             {/* Notificaciones */}
             <div className="relative">
               <button 

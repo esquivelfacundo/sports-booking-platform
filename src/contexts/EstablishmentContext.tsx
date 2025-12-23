@@ -6,6 +6,8 @@ import { EstablishmentRegistration, Employee, Court } from '@/types/establishmen
 interface EstablishmentData {
   id?: string;
   name: string;
+  slug?: string;
+  logo?: string;
   description: string;
   phone: string;
   email: string;
@@ -17,7 +19,10 @@ interface EstablishmentData {
     lat: number;
     lng: number;
   };
-  schedule: Record<string, { open: string; close: string; isOpen: boolean }>;
+  schedule: Record<string, { open: string; close: string; isOpen?: boolean; closed?: boolean }>;
+  openingHours?: Record<string, { open: string; close: string; closed?: boolean }>;
+  closedDates?: string[];
+  useNationalHolidays?: boolean;
   amenities: string[];
   images: string[];
   courts: Court[];
@@ -36,6 +41,26 @@ interface EstablishmentData {
   status: 'pending' | 'approved' | 'rejected';
   createdAt?: Date;
   updatedAt?: Date;
+  // Deposit/Seña configuration
+  requireDeposit?: boolean;
+  depositType?: 'percentage' | 'fixed';
+  depositPercentage?: number;
+  depositFixedAmount?: number;
+  allowFullPayment?: boolean;
+  // Booking restrictions
+  maxAdvanceBookingDays?: number;
+  minAdvanceBookingHours?: number;
+  allowSameDayBooking?: boolean;
+  cancellationDeadlineHours?: number;
+  // Cancellation policy
+  cancellationPolicy?: 'full_refund' | 'partial_refund' | 'no_refund' | 'credit';
+  refundPercentage?: number;
+  // No-show penalty
+  noShowPenalty?: boolean;
+  noShowPenaltyType?: 'full_charge' | 'deposit_only' | 'percentage';
+  noShowPenaltyPercentage?: number;
+  // Deposit payment deadline
+  depositPaymentDeadlineHours?: number;
 }
 
 interface EstablishmentContextType {
@@ -58,6 +83,30 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
     }, 100);
     
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for storage changes (when user logs in/out)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_token' || e.key === 'user_data') {
+        console.log('EstablishmentContext: Storage changed, reloading data');
+        loadEstablishmentData();
+      }
+    };
+
+    // Also listen for custom auth events
+    const handleAuthChange = () => {
+      console.log('EstablishmentContext: Auth change detected, reloading data');
+      setTimeout(() => loadEstablishmentData(), 100);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-change', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-change', handleAuthChange);
+    };
   }, []);
 
   // Debug effect to log establishment data changes
@@ -110,14 +159,104 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
 
       // Usuario autenticado - obtener datos del backend
       const user = JSON.parse(userData);
-      console.log('EstablishmentContext: User data:', { userType: user.userType, establishmentId: user.establishmentId });
+      console.log('EstablishmentContext: User data:', { userType: user.userType, establishmentId: user.establishmentId, isStaff: user.isStaff });
       
-      // Handle admin users - load first establishment
+      // Handle staff users - they have establishmentId directly
+      if (user.isStaff && user.establishmentId) {
+        try {
+          console.log('EstablishmentContext: Staff user - loading establishment by ID:', user.establishmentId);
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+          const response = await fetch(`${apiUrl}/api/establishments/${user.establishmentId}`, {
+            headers: {
+              'Authorization': `Bearer ${userToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            const establishmentData = result.data || result.establishment || result;
+            console.log('EstablishmentContext: Staff loaded establishment:', establishmentData.name);
+            
+            const formattedData: EstablishmentData = {
+              id: establishmentData.id,
+              name: establishmentData.name,
+              slug: establishmentData.slug || '',
+              description: establishmentData.description || '',
+              phone: establishmentData.phone || '',
+              email: establishmentData.email || '',
+              address: establishmentData.address || '',
+              city: establishmentData.city || '',
+              province: establishmentData.province || '',
+              postalCode: establishmentData.postalCode || '',
+              coordinates: establishmentData.latitude && establishmentData.longitude ? {
+                lat: parseFloat(establishmentData.latitude),
+                lng: parseFloat(establishmentData.longitude)
+              } : undefined,
+              schedule: establishmentData.openingHours || {},
+              openingHours: establishmentData.openingHours || {},
+              closedDates: establishmentData.closedDates || [],
+              useNationalHolidays: establishmentData.useNationalHolidays !== false,
+              amenities: establishmentData.amenities || [],
+              images: establishmentData.images || [],
+              logo: establishmentData.logo || '',
+              courts: establishmentData.courts || [],
+              staff: establishmentData.staff || [],
+              representative: {
+                fullName: '',
+                email: '',
+                phone: '',
+                documentType: '',
+                documentNumber: '',
+                position: '',
+                businessName: '',
+                taxId: '',
+                address: ''
+              },
+              status: establishmentData.registrationStatus || 'approved',
+              createdAt: establishmentData.createdAt ? new Date(establishmentData.createdAt) : new Date(),
+              updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date(),
+              // Deposit/Seña configuration
+              requireDeposit: establishmentData.requireDeposit !== false,
+              depositType: establishmentData.depositType || 'percentage',
+              depositPercentage: establishmentData.depositPercentage ?? 50,
+              depositFixedAmount: establishmentData.depositFixedAmount || 5000,
+              allowFullPayment: establishmentData.allowFullPayment === true,
+              // Booking restrictions
+              maxAdvanceBookingDays: establishmentData.maxAdvanceBookingDays ?? 30,
+              minAdvanceBookingHours: establishmentData.minAdvanceBookingHours ?? 2,
+              allowSameDayBooking: establishmentData.allowSameDayBooking !== false,
+              cancellationDeadlineHours: establishmentData.cancellationDeadlineHours ?? 24,
+              // Cancellation policy
+              cancellationPolicy: establishmentData.cancellationPolicy || 'partial_refund',
+              refundPercentage: establishmentData.refundPercentage ?? 50,
+              // No-show penalty
+              noShowPenalty: establishmentData.noShowPenalty !== false,
+              noShowPenaltyType: establishmentData.noShowPenaltyType || 'deposit_only',
+              noShowPenaltyPercentage: establishmentData.noShowPenaltyPercentage ?? 100,
+              // Deposit payment deadline
+              depositPaymentDeadlineHours: establishmentData.depositPaymentDeadlineHours ?? 2
+            };
+            
+            setEstablishment(formattedData);
+            setLoading(false);
+            return;
+          }
+        } catch (apiError) {
+          console.error('EstablishmentContext: Error loading establishment for staff:', apiError);
+        }
+        setEstablishment(null);
+        setLoading(false);
+        return;
+      }
+      
+      // Handle admin users - load THEIR OWN establishments (not all)
       if (user.userType === 'admin') {
         try {
-          console.log('EstablishmentContext: Admin user - loading first establishment');
+          console.log('EstablishmentContext: Admin user - loading MY establishments');
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-          const response = await fetch(`${apiUrl}/api/establishments`, {
+          // Use /me endpoint to get only establishments owned by this user
+          const response = await fetch(`${apiUrl}/api/establishments/me`, {
             headers: {
               'Authorization': `Bearer ${userToken}`,
               'Content-Type': 'application/json'
@@ -135,6 +274,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
               const formattedData: EstablishmentData = {
                 id: establishmentData.id,
                 name: establishmentData.name,
+                slug: establishmentData.slug || '',
                 description: establishmentData.description || '',
                 phone: establishmentData.phone || '',
                 email: establishmentData.email || '',
@@ -147,8 +287,12 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
                   lng: parseFloat(establishmentData.longitude)
                 } : undefined,
                 schedule: establishmentData.openingHours || {},
+                openingHours: establishmentData.openingHours || {},
+                closedDates: establishmentData.closedDates || [],
+                useNationalHolidays: establishmentData.useNationalHolidays !== false,
                 amenities: establishmentData.amenities || [],
                 images: establishmentData.images || [],
+                logo: establishmentData.logo || '',
                 courts: establishmentData.courts || [],
                 staff: establishmentData.staff || [],
                 representative: {
@@ -164,7 +308,27 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
                 },
                 status: establishmentData.registrationStatus || 'approved',
                 createdAt: establishmentData.createdAt ? new Date(establishmentData.createdAt) : new Date(),
-                updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date()
+                updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date(),
+                // Deposit/Seña configuration
+                requireDeposit: establishmentData.requireDeposit !== false,
+                depositType: establishmentData.depositType || 'percentage',
+                depositPercentage: establishmentData.depositPercentage ?? 50,
+                depositFixedAmount: establishmentData.depositFixedAmount || 5000,
+                allowFullPayment: establishmentData.allowFullPayment === true,
+                // Booking restrictions
+                maxAdvanceBookingDays: establishmentData.maxAdvanceBookingDays ?? 30,
+                minAdvanceBookingHours: establishmentData.minAdvanceBookingHours ?? 2,
+                allowSameDayBooking: establishmentData.allowSameDayBooking !== false,
+                cancellationDeadlineHours: establishmentData.cancellationDeadlineHours ?? 24,
+                // Cancellation policy
+                cancellationPolicy: establishmentData.cancellationPolicy || 'partial_refund',
+                refundPercentage: establishmentData.refundPercentage ?? 50,
+                // No-show penalty
+                noShowPenalty: establishmentData.noShowPenalty !== false,
+                noShowPenaltyType: establishmentData.noShowPenaltyType || 'deposit_only',
+                noShowPenaltyPercentage: establishmentData.noShowPenaltyPercentage ?? 100,
+                // Deposit payment deadline
+                depositPaymentDeadlineHours: establishmentData.depositPaymentDeadlineHours ?? 2
               };
               
               setEstablishment(formattedData);
@@ -210,6 +374,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
             const formattedData: EstablishmentData = {
               id: establishmentData.id,
               name: establishmentData.name,
+              slug: establishmentData.slug || '',
               description: establishmentData.description,
               phone: establishmentData.phone,
               email: establishmentData.email,
@@ -222,8 +387,12 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
                 lng: parseFloat(establishmentData.longitude)
               } : undefined,
               schedule: establishmentData.openingHours || {},
+              openingHours: establishmentData.openingHours || {},
+              closedDates: establishmentData.closedDates || [],
+              useNationalHolidays: establishmentData.useNationalHolidays !== false,
               amenities: establishmentData.amenities || [],
               images: establishmentData.images?.photos || [],
+              logo: establishmentData.logo || '',
               courts: establishmentData.courts || [],
               staff: establishmentData.staff || [],
               representative: {
@@ -239,7 +408,27 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
               },
               status: establishmentData.registrationStatus || 'pending',
               createdAt: establishmentData.createdAt ? new Date(establishmentData.createdAt) : new Date(),
-              updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date()
+              updatedAt: establishmentData.updatedAt ? new Date(establishmentData.updatedAt) : new Date(),
+              // Deposit/Seña configuration
+              requireDeposit: establishmentData.requireDeposit !== false,
+              depositType: establishmentData.depositType || 'percentage',
+              depositPercentage: establishmentData.depositPercentage ?? 50,
+              depositFixedAmount: establishmentData.depositFixedAmount || 5000,
+              allowFullPayment: establishmentData.allowFullPayment === true,
+              // Booking restrictions
+              maxAdvanceBookingDays: establishmentData.maxAdvanceBookingDays ?? 30,
+              minAdvanceBookingHours: establishmentData.minAdvanceBookingHours ?? 2,
+              allowSameDayBooking: establishmentData.allowSameDayBooking !== false,
+              cancellationDeadlineHours: establishmentData.cancellationDeadlineHours ?? 24,
+              // Cancellation policy
+              cancellationPolicy: establishmentData.cancellationPolicy || 'partial_refund',
+              refundPercentage: establishmentData.refundPercentage ?? 50,
+              // No-show penalty
+              noShowPenalty: establishmentData.noShowPenalty !== false,
+              noShowPenaltyType: establishmentData.noShowPenaltyType || 'deposit_only',
+              noShowPenaltyPercentage: establishmentData.noShowPenaltyPercentage ?? 100,
+              // Deposit payment deadline
+              depositPaymentDeadlineHours: establishmentData.depositPaymentDeadlineHours ?? 2
             };
             
             setEstablishment(formattedData);
@@ -287,6 +476,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
             schedule: establishment.schedule || {},
             amenities: establishment.amenities || [],
             images: establishment.images || [],
+            logo: establishment.logo || '',
             courts: establishment.courts || [],
             staff: establishment.staff || [],
             representative: establishment.representative || {
@@ -346,6 +536,7 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
             schedule: establishment.schedule || {},
             amenities: establishment.amenities || [],
             images: establishment.images || [],
+            logo: establishment.logo || '',
             courts: establishment.courts || [],
             staff: establishment.staff || [],
             representative: establishment.representative || {
@@ -378,24 +569,99 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
   };
 
   const updateEstablishment = async (data: Partial<EstablishmentData>) => {
-    if (!establishment) return;
+    if (!establishment || !establishment.id) return;
 
-    const updatedEstablishment = {
-      ...establishment,
-      ...data,
-      updatedAt: new Date()
-    };
-
-    setEstablishment(updatedEstablishment);
-
-    // Guardar en localStorage si no es demo
-    localStorage.setItem('establishmentRegistrationData', JSON.stringify(updatedEstablishment));
-
-    // TODO: Aquí se podría hacer la llamada al backend para persistir los cambios
     try {
-      // await api.updateEstablishment(establishment.id, data);
+      const userToken = localStorage.getItem('auth_token');
+      if (!userToken) {
+        throw new Error('No authentication token');
+      }
+
+      // Build update payload with only defined values
+      const updatePayload: Record<string, any> = {};
+      
+      if (data.name) updatePayload.name = data.name;
+      if (data.slug !== undefined) updatePayload.slug = data.slug;
+      if (data.description !== undefined) updatePayload.description = data.description;
+      if (data.email) updatePayload.email = data.email;
+      if (data.address) updatePayload.address = data.address;
+      if (data.city) updatePayload.city = data.city;
+      if (data.province) updatePayload.province = data.province;
+      if (data.postalCode) updatePayload.postalCode = data.postalCode;
+      if (data.amenities) updatePayload.amenities = data.amenities;
+      if (data.schedule) updatePayload.openingHours = data.schedule;
+      if (data.closedDates !== undefined) updatePayload.closedDates = data.closedDates;
+      if (data.useNationalHolidays !== undefined) updatePayload.useNationalHolidays = data.useNationalHolidays;
+      if (data.images !== undefined) updatePayload.images = data.images;
+      
+      // Deposit/Seña configuration
+      if (data.requireDeposit !== undefined) updatePayload.requireDeposit = data.requireDeposit;
+      if (data.depositType !== undefined) updatePayload.depositType = data.depositType;
+      if (data.depositPercentage !== undefined) updatePayload.depositPercentage = data.depositPercentage;
+      if (data.depositFixedAmount !== undefined) updatePayload.depositFixedAmount = data.depositFixedAmount;
+      
+      // Full payment option
+      if (data.allowFullPayment !== undefined) updatePayload.allowFullPayment = data.allowFullPayment;
+      
+      // Booking restrictions
+      if (data.maxAdvanceBookingDays !== undefined) updatePayload.maxAdvanceBookingDays = data.maxAdvanceBookingDays;
+      if (data.minAdvanceBookingHours !== undefined) updatePayload.minAdvanceBookingHours = data.minAdvanceBookingHours;
+      if (data.allowSameDayBooking !== undefined) updatePayload.allowSameDayBooking = data.allowSameDayBooking;
+      if (data.cancellationDeadlineHours !== undefined) updatePayload.cancellationDeadlineHours = data.cancellationDeadlineHours;
+      
+      // Cancellation policy
+      if (data.cancellationPolicy !== undefined) updatePayload.cancellationPolicy = data.cancellationPolicy;
+      if (data.refundPercentage !== undefined) updatePayload.refundPercentage = data.refundPercentage;
+      
+      // No-show penalty
+      if (data.noShowPenalty !== undefined) updatePayload.noShowPenalty = data.noShowPenalty;
+      if (data.noShowPenaltyType !== undefined) updatePayload.noShowPenaltyType = data.noShowPenaltyType;
+      if (data.noShowPenaltyPercentage !== undefined) updatePayload.noShowPenaltyPercentage = data.noShowPenaltyPercentage;
+      
+      // Deposit payment deadline
+      if (data.depositPaymentDeadlineHours !== undefined) updatePayload.depositPaymentDeadlineHours = data.depositPaymentDeadlineHours;
+      
+      // Only include phone if it's a valid format (strip non-numeric for validation)
+      if (data.phone) {
+        const cleanPhone = data.phone.replace(/[^\d+]/g, '');
+        if (cleanPhone.length >= 10) {
+          updatePayload.phone = cleanPhone;
+        }
+      }
+
+      console.log('EstablishmentContext: Updating with payload:', updatePayload);
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/establishments/${establishment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatePayload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('EstablishmentContext: Update failed:', errorData);
+        throw new Error(errorData.message || 'Error updating establishment');
+      }
+
+      const result = await response.json();
+      console.log('EstablishmentContext: Update successful:', result);
+
+      // Update local state with the response data
+      const updatedEstablishment = {
+        ...establishment,
+        ...data,
+        updatedAt: new Date()
+      };
+
+      setEstablishment(updatedEstablishment);
+      localStorage.setItem('establishmentRegistrationData', JSON.stringify(updatedEstablishment));
     } catch (error) {
       console.error('Error updating establishment:', error);
+      throw error;
     }
   };
 

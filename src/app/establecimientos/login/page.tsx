@@ -18,24 +18,30 @@ import {
 
 const EstablishmentLoginPage = () => {
   const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
   const [formData, setFormData] = useState({
-    email: 'facundo@miscanchas.com',
-    password: 'Lidius@2001'
+    email: '',
+    password: ''
   });
 
   // Redirect if already authenticated
   React.useEffect(() => {
-    if (isAuthenticated) {
-      console.log('EstablishmentLogin: User already authenticated, redirecting to admin');
-      router.push('/establecimientos/admin');
+    if (isAuthenticated && user) {
+      // Staff-only users go directly to reservas
+      if (user.isStaff && user.staffRole === 'staff') {
+        console.log('EstablishmentLogin: Staff-only user already authenticated, redirecting to reservas');
+        router.push('/establecimientos/admin/reservas');
+      } else {
+        console.log('EstablishmentLogin: User already authenticated, redirecting to admin');
+        router.push('/establecimientos/admin');
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,9 +77,26 @@ const EstablishmentLoginPage = () => {
         setSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
         console.log('EstablishmentLogin: Login successful, redirecting to dashboard');
         
-        // Redirect to establishment admin dashboard after short delay
+        // Check user data to determine redirect
+        const userData = localStorage.getItem('user_data');
+        let redirectPath = '/establecimientos/admin';
+        
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            // Staff-only users go directly to reservas
+            if (user.isStaff && user.staffRole === 'staff') {
+              redirectPath = '/establecimientos/admin/reservas';
+              console.log('EstablishmentLogin: Staff-only user, redirecting to reservas');
+            }
+          } catch (e) {
+            console.error('EstablishmentLogin: Error parsing user data', e);
+          }
+        }
+        
+        // Redirect after short delay
         setTimeout(() => {
-          router.push('/establecimientos/admin');
+          router.push(redirectPath);
         }, 1500);
       } else {
         console.log('EstablishmentLogin: Login failed');
@@ -87,12 +110,7 @@ const EstablishmentLoginPage = () => {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setFormData({
-      email: 'facundo@miscanchas.com',
-      password: 'Lidius@2001'
-    });
-  };
+  // Demo credentials function removed for security
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-emerald-900 flex items-center justify-center p-4">
@@ -208,25 +226,6 @@ const EstablishmentLoginPage = () => {
               )}
             </button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mb-3">Credenciales de demostración:</p>
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 text-sm transition-colors"
-              >
-                <Shield className="h-4 w-4" />
-                <span>Usar credenciales de prueba</span>
-              </button>
-              <div className="mt-2 text-xs text-gray-500">
-                <p>Email: facundo@miscanchas.com</p>
-                <p>Contraseña: Lidius@2001</p>
-              </div>
-            </div>
-          </div>
 
           {/* Additional Links */}
           <div className="mt-6 text-center space-y-2">

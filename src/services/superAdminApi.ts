@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
 export interface EstablishmentData {
   id: string;
@@ -15,6 +15,23 @@ export interface EstablishmentData {
   rating: number;
   reviewCount: number;
   isActive: boolean;
+  customFeePercent?: number | null;
+  effectiveFeePercent?: number;
+  mpConnected?: boolean;
+  courtsCount?: number;
+  totalBookings?: number;
+  completedBookings?: number;
+  cancelledBookings?: number;
+  totalRevenue?: number;
+  totalDeposits?: number;
+  commissionsGenerated?: number;
+  owner?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
 }
 
 export interface UserData {
@@ -96,6 +113,36 @@ class SuperAdminApiService {
       return response.ok;
     } catch (error) {
       console.error('Error deleting establishment:', error);
+      return false;
+    }
+  }
+
+  async updateEstablishmentFee(id: string, customFeePercent: number | null): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/establishments/${id}/fee`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ customFeePercent }),
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Error updating establishment fee:', error);
+      return false;
+    }
+  }
+
+  async updateEstablishmentStatus(id: string, status: 'approved' | 'pending' | 'rejected', reason?: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/establishments/${id}/status`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ status, reason }),
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Error updating establishment status:', error);
       return false;
     }
   }

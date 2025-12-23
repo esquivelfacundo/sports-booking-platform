@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, LogOut, Settings, Heart, Calendar, Users, Search, Star } from 'lucide-react';
+import { User, LogOut, Settings, Heart, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
@@ -79,27 +79,12 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-white truncate">{user.name}</p>
                   <p className="text-sm text-gray-400 truncate">{user.email}</p>
-                  <div className="flex items-center space-x-1 mt-1">
-                    <span className="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full">
-                      {user.level}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {user.stats?.totalGames || 0} partidos
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
 
             {/* Menu Items */}
             <div className="p-2">
-              <Link
-                href="/dashboard?section=profile"
-                className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
-              >
-                <User className="w-5 h-5" />
-                <span>Mi Perfil</span>
-              </Link>
               <Link
                 href="/dashboard?section=reservations"
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
@@ -112,42 +97,7 @@ const UserAvatar = ({ onLoginClick }: UserAvatarProps) => {
                 className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
               >
                 <Heart className="w-5 h-5" />
-                <span>Mis Favoritos</span>
-              </Link>
-              <Link
-                href="/dashboard?section=friends"
-                className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
-              >
-                <Users className="w-5 h-5" />
-                <span>Mis Amigos</span>
-              </Link>
-              <Link
-                href="/dashboard?section=matches"
-                className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
-              >
-                <Search className="w-5 h-5" />
-                <span>Buscar Jugadores</span>
-              </Link>
-              <Link
-                href="/dashboard?section=teams"
-                className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
-              >
-                <Users className="w-5 h-5" />
-                <span>Mis Equipos</span>
-              </Link>
-              <Link
-                href="/dashboard?section=activity"
-                className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
-              >
-                <span className="text-lg">📱</span>
-                <span>Actividad Social</span>
-              </Link>
-              <Link
-                href="/dashboard?section=ratings"
-                className="flex items-center space-x-3 w-full px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
-              >
-                <Star className="w-5 h-5" />
-                <span>Calificaciones</span>
+                <span>Favoritos</span>
               </Link>
 
               <div className="border-t border-gray-700 my-2" />

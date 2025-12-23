@@ -6,7 +6,10 @@ import { SuperAdminProvider } from '@/contexts/SuperAdminContext';
 import { EstablishmentProvider } from '@/contexts/EstablishmentContext';
 import { TournamentProvider } from '@/contexts/TournamentContext';
 import { MobileSearchModalProvider } from '@/components/MobileSearchModalProvider';
+import { ToastProvider } from '@/contexts/ToastContext';
+import { CashRegisterProvider } from '@/contexts/CashRegisterContext';
 import ClientLayout from "@/components/ClientLayout";
+import GoogleAuthProviderWrapper from '@/components/providers/GoogleAuthProvider';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,19 +34,25 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} antialiased`}>
-        <AuthProvider>
-          <SuperAdminProvider>
-            <EstablishmentProvider>
-              <TournamentProvider>
-                <MobileSearchModalProvider>
-                  <ClientLayout>
-                    {children}
-                  </ClientLayout>
-                </MobileSearchModalProvider>
-              </TournamentProvider>
-            </EstablishmentProvider>
-          </SuperAdminProvider>
-        </AuthProvider>
+        <GoogleAuthProviderWrapper>
+          <AuthProvider>
+            <SuperAdminProvider>
+              <EstablishmentProvider>
+                <TournamentProvider>
+                  <MobileSearchModalProvider>
+                    <CashRegisterProvider>
+                      <ToastProvider>
+                        <ClientLayout>
+                          {children}
+                        </ClientLayout>
+                      </ToastProvider>
+                    </CashRegisterProvider>
+                  </MobileSearchModalProvider>
+                </TournamentProvider>
+              </EstablishmentProvider>
+            </SuperAdminProvider>
+          </AuthProvider>
+        </GoogleAuthProviderWrapper>
       </body>
     </html>
   );
