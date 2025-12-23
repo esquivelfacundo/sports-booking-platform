@@ -167,7 +167,7 @@ const EstablishmentLoginPage = () => {
             className="flex items-center gap-3"
           >
             <Image
-              src="/logo.svg"
+              src="/assets/logo-3.png"
               alt="Mis Canchas"
               width={48}
               height={48}
