@@ -123,13 +123,6 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
 
             {/* Content */}
             <div className="p-6">
-              {/* Demo credentials */}
-              <div className="mb-4 p-3 bg-emerald-600/10 border border-emerald-600/20 rounded-lg">
-                <p className="text-sm text-emerald-400 font-medium mb-1">Demo:</p>
-                <p className="text-xs text-gray-300">Email: juan@example.com</p>
-                <p className="text-xs text-gray-300">Contraseña: password</p>
-              </div>
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}
                 <div>
