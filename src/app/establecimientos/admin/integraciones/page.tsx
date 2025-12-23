@@ -120,6 +120,7 @@ export default function IntegrationsPage() {
   // Courts UUIDs
   const [courts, setCourts] = useState<any[]>([]);
   const [courtsLoading, setCourtsLoading] = useState(true);
+  const [showCourtsSidebar, setShowCourtsSidebar] = useState(false);
 
   useEffect(() => {
     loadIntegrations();
@@ -469,6 +470,13 @@ export default function IntegrationsPage() {
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
+                <button
+                  onClick={() => setShowCourtsSidebar(true)}
+                  className="w-full px-4 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-medium hover:bg-blue-500/30 flex items-center justify-center gap-2 mt-3"
+                >
+                  <Settings className="w-5 h-5" />
+                  Ver IDs de Canchas (JSON)
+                </button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -483,81 +491,13 @@ export default function IntegrationsPage() {
                   {generatingBotKey ? <Loader2 className="w-5 h-5 animate-spin" /> : <Key className="w-5 h-5" />}
                   Generar API Key
                 </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* UUIDs de Canchas */}
-        <div className="mt-10">
-          <h2 className="text-xl font-bold text-white flex items-center gap-3 mb-4">
-            <Settings className="w-6 h-6 text-blue-500" />
-            IDs de Canchas (para API)
-          </h2>
-          <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
-            <p className="text-gray-400 text-sm mb-4">
-              Estos son los IDs únicos de tus canchas. Úsalos en las peticiones a la API para crear reservas.
-            </p>
-            
-            {courtsLoading ? (
-              <div className="flex items-center gap-2 text-gray-400">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Cargando canchas...
-              </div>
-            ) : courts.length > 0 ? (
-              <div className="space-y-4">
-                {/* Campo para copiar todos los IDs */}
-                <div className="bg-gray-900 rounded-xl p-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Todos los IDs (formato JSON)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <textarea
-                      value={JSON.stringify(courts.map(c => ({ id: c.id, name: c.name, sport: c.sport })), null, 2)}
-                      readOnly
-                      rows={Math.min(courts.length * 4, 10)}
-                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 font-mono text-xs resize-none"
-                    />
-                    <button
-                      onClick={() => copyToClipboard(JSON.stringify(courts.map(c => ({ id: c.id, name: c.name, sport: c.sport })), null, 2))}
-                      className="p-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white"
-                      title="Copiar JSON"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Lista individual de canchas */}
-                <div className="space-y-3">
-                  {courts.map((court) => (
-                    <div key={court.id} className="bg-gray-900 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-white font-medium">{court.name}</span>
-                        <span className="text-xs text-gray-500">{court.sport}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={court.id}
-                          readOnly
-                          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 font-mono text-sm"
-                        />
-                        <button
-                          onClick={() => copyToClipboard(court.id)}
-                          className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300"
-                          title="Copiar ID"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-gray-900 rounded-xl">
-                <p className="text-gray-400 text-sm">No tienes canchas creadas aún.</p>
+                <button
+                  onClick={() => setShowCourtsSidebar(true)}
+                  className="w-full px-4 py-3 bg-blue-500/20 text-blue-400 rounded-xl font-medium hover:bg-blue-500/30 flex items-center justify-center gap-2"
+                >
+                  <Settings className="w-5 h-5" />
+                  Ver IDs de Canchas (JSON)
+                </button>
               </div>
             )}
           </div>
@@ -568,6 +508,104 @@ export default function IntegrationsPage() {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-40" onClick={closeSidebar} />
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 z-50 shadow-2xl">{renderSidebarContent()}</motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Courts JSON Sidebar */}
+      <AnimatePresence>
+        {showCourtsSidebar && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              className="fixed inset-0 bg-black/50 z-40" 
+              onClick={() => setShowCourtsSidebar(false)} 
+            />
+            <motion.div 
+              initial={{ x: '100%' }} 
+              animate={{ x: 0 }} 
+              exit={{ x: '100%' }} 
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }} 
+              className="fixed right-0 top-0 h-full w-full max-w-2xl bg-gray-800 border-l border-gray-700 z-50 shadow-2xl overflow-y-auto"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <Settings className="w-6 h-6 text-blue-500" />
+                    <h2 className="text-xl font-bold text-white">IDs de Canchas (JSON)</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowCourtsSidebar(false)}
+                    className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-400" />
+                  </button>
+                </div>
+
+                {courtsLoading ? (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Cargando canchas...
+                  </div>
+                ) : courts.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="bg-gray-900 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-sm font-medium text-gray-300">
+                          JSON Completo de Canchas
+                        </label>
+                        <button
+                          onClick={() => {
+                            const json = JSON.stringify(courts.map(c => ({ id: c.id, name: c.name, sport: c.sport })), null, 2);
+                            copyToClipboard(json);
+                          }}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white text-sm flex items-center gap-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Copiar Todo
+                        </button>
+                      </div>
+                      <textarea
+                        value={JSON.stringify(courts.map(c => ({ id: c.id, name: c.name, sport: c.sport })), null, 2)}
+                        readOnly
+                        rows={20}
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 font-mono text-sm resize-none"
+                      />
+                    </div>
+
+                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                      <h3 className="text-blue-400 font-medium mb-2">Ejemplo de uso en API:</h3>
+                      <pre className="text-xs text-gray-300 font-mono bg-gray-900 p-3 rounded-lg overflow-x-auto">
+{`POST /api/v1/bookings
+Headers:
+  X-API-Key: tu-api-key
+  Content-Type: application/json
+
+Body:
+{
+  "cancha_id": "${courts[0]?.id || 'uuid-cancha'}",
+  "fecha": "2025-12-23",
+  "hora_inicio": "19:00",
+  "duracion": 60,
+  "cliente": {
+    "nombre": "Juan Pérez",
+    "telefono": "5493794123456",
+    "email": "juan@email.com"
+  },
+  "origen": "whatsapp"
+}`}
+                      </pre>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-900 rounded-xl">
+                    <p className="text-gray-400 text-sm">No tienes canchas creadas aún.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
