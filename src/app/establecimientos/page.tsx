@@ -190,6 +190,29 @@ const EstablishmentPage = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-center md:text-left">
+              <p className="text-white font-semibold">Mis Canchas</p>
+              <p className="text-sm">© {new Date().getFullYear()} Todos los derechos reservados</p>
+            </div>
+            <div className="flex gap-6 text-sm">
+              <Link href="/privacidad" className="hover:text-white transition-colors">
+                Política de Privacidad
+              </Link>
+              <Link href="/legal" className="hover:text-white transition-colors">
+                Términos y Condiciones
+              </Link>
+              <a href="mailto:soporte@miscanchas.com" className="hover:text-white transition-colors">
+                Contacto
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
