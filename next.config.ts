@@ -1,11 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // Warning: This allows production builds to successfully complete even if
     // your project has type errors.
@@ -13,9 +8,22 @@ const nextConfig: NextConfig = {
   },
   // Optimize for deployment
   output: 'standalone',
-  // Configure image domains if needed
+  // Configure image patterns (remotePatterns replaces deprecated domains)
   images: {
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.railway.app',
+      },
+    ],
   },
   // Fix turbopack root warning
   turbopack: {
