@@ -116,11 +116,16 @@ export default function IntegrationsPage() {
   const [botApiKeyLoading, setBotApiKeyLoading] = useState(true);
   const [showBotApiKey, setShowBotApiKey] = useState(false);
   const [generatingBotKey, setGeneratingBotKey] = useState(false);
+  
+  // Courts UUIDs
+  const [courts, setCourts] = useState<any[]>([]);
+  const [courtsLoading, setCourtsLoading] = useState(true);
 
   useEffect(() => {
     loadIntegrations();
     loadMPStatus();
     loadBotApiKey();
+    loadCourts();
   }, [establishment?.id]);
 
   const loadIntegrations = async () => {
@@ -151,6 +156,19 @@ export default function IntegrationsPage() {
       console.error('Error loading bot API key:', error);
     } finally {
       setBotApiKeyLoading(false);
+    }
+  };
+
+  const loadCourts = async () => {
+    if (!establishment?.id) return;
+    try {
+      setCourtsLoading(true);
+      const response = await apiClient.getCourts();
+      setCourts(response.data || []);
+    } catch (error) {
+      console.error('Error loading courts:', error);
+    } finally {
+      setCourtsLoading(false);
     }
   };
 
@@ -465,6 +483,56 @@ export default function IntegrationsPage() {
                   {generatingBotKey ? <Loader2 className="w-5 h-5 animate-spin" /> : <Key className="w-5 h-5" />}
                   Generar API Key
                 </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* UUIDs de Canchas */}
+        <div className="mt-10">
+          <h2 className="text-xl font-bold text-white flex items-center gap-3 mb-4">
+            <Settings className="w-6 h-6 text-blue-500" />
+            IDs de Canchas (para API)
+          </h2>
+          <div className="bg-gray-800 rounded-2xl border border-gray-700 p-6">
+            <p className="text-gray-400 text-sm mb-4">
+              Estos son los IDs únicos de tus canchas. Úsalos en las peticiones a la API para crear reservas.
+            </p>
+            
+            {courtsLoading ? (
+              <div className="flex items-center gap-2 text-gray-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Cargando canchas...
+              </div>
+            ) : courts.length > 0 ? (
+              <div className="space-y-3">
+                {courts.map((court) => (
+                  <div key={court.id} className="bg-gray-900 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-white font-medium">{court.name}</span>
+                      <span className="text-xs text-gray-500">{court.sport}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={court.id}
+                        readOnly
+                        className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 font-mono text-sm"
+                      />
+                      <button
+                        onClick={() => copyToClipboard(court.id)}
+                        className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300"
+                        title="Copiar ID"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 bg-gray-900 rounded-xl">
+                <p className="text-gray-400 text-sm">No tienes canchas creadas aún.</p>
               </div>
             )}
           </div>
