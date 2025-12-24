@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import type { AdminReservation, AdminCourt, AdminStats, AdminNotification } from '@/types/admin';
 
@@ -68,8 +69,9 @@ const EstablishmentAdminContext = createContext<EstablishmentAdminContextType | 
 
 export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
+  const { establishment } = useEstablishment();
   
-  // State
+  // State - establishmentId now derived from EstablishmentContext when possible
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [reservations, setReservations] = useState<AdminReservation[]>([]);
   const [courts, setCourts] = useState<AdminCourt[]>([]);
@@ -114,25 +116,17 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
       return;
     }
 
-    // Load establishment ID for admin users
-    const loadEstablishment = async () => {
-      if (user.userType === 'admin') {
-        try {
-          const response = await apiClient.getMyEstablishments() as any;
-          const establishments = response.establishments || response.data || [];
-          if (establishments.length > 0) {
-            setEstablishmentId(establishments[0].id);
-          }
-        } catch (err) {
-          console.error('Error loading establishments:', err);
-        }
-      } else if (user.isStaff && user.establishmentId) {
-        setEstablishmentId(user.establishmentId);
-      }
-    };
+    // Use establishment from EstablishmentContext if available (eliminates duplicate API call)
+    if (establishment?.id) {
+      setEstablishmentId(establishment.id);
+      return;
+    }
 
-    loadEstablishment();
-  }, [isAuthenticated, user]);
+    // Fallback for staff users who have establishmentId directly in user object
+    if (user.isStaff && user.establishmentId) {
+      setEstablishmentId(user.establishmentId);
+    }
+  }, [isAuthenticated, user, establishment?.id]);
 
   // Load reservations
   const loadReservations = useCallback(async (filters?: {
