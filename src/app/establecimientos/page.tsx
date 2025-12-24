@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { 
   Building2, 
   BarChart3, 
@@ -30,10 +30,23 @@ import {
   ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
+
+// Slider images - same as login page
+const SLIDER_IMAGES = [
+  '/assets/slider-login/1.jpg',
+  '/assets/slider-login/2.jpg',
+  '/assets/slider-login/3.jpg',
+  '/assets/slider-login/4.jpg',
+  '/assets/slider-login/5.jpg',
+  '/assets/slider-login/6.jpg',
+  '/assets/slider-login/pexels-danielellis-11182335.jpg',
+];
 
 const EstablishmentPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -41,6 +54,14 @@ const EstablishmentPage = () => {
   });
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
+
+  // Image slider effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % SLIDER_IMAGES.length);
+    }, 6000); // Change image every 6 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -149,12 +170,43 @@ const EstablishmentPage = () => {
       <motion.div 
         ref={heroRef}
         style={{ opacity, scale }}
-        className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
+        className="relative overflow-hidden text-white"
       >
-        {/* Animated background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-emerald-500/20 to-transparent rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
+        {/* Background Slider */}
+        <div className="absolute inset-0 z-0">
+          {/* Base layer - next image (always visible underneath) */}
+          <div className="absolute inset-0">
+            <Image
+              src={SLIDER_IMAGES[(currentImageIndex + 1) % SLIDER_IMAGES.length]}
+              alt="Background"
+              fill
+              className="object-cover"
+              quality={85}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+          </div>
+          
+          {/* Animated layer - current image (fades in/out) */}
+          <AnimatePresence mode="sync">
+            <motion.div
+              key={currentImageIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2, ease: 'easeInOut' }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={SLIDER_IMAGES[currentImageIndex]}
+                alt="Background"
+                fill
+                className="object-cover"
+                priority
+                quality={85}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
