@@ -27,6 +27,7 @@ import {
   Shield,
   Smartphone,
   TrendingUp,
+  TrendingDown,
   MessageSquare,
   Star,
   CheckCircle,
