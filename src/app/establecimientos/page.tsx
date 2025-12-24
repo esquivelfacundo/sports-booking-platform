@@ -40,7 +40,12 @@ import {
   Gift,
   Printer,
   Wifi,
-  ChevronRight
+  ChevronRight,
+  X,
+  Phone,
+  AlertTriangle,
+  Loader2,
+  Hourglass
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -441,6 +446,221 @@ const EstablishmentPage = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Before/After Comparison Section */}
+      <div className="py-24 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className={`text-3xl md:text-5xl font-bold text-gray-900 mb-4 ${poppins.className}`}>
+              La diferencia es real
+            </h2>
+            <p className={`text-xl text-gray-600 max-w-3xl mx-auto ${inter.className}`}>
+              Descubre cómo Mis Canchas transforma la gestión de tu establecimiento
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
+            {/* Without Mis Canchas */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                <div className="bg-red-500 text-white px-6 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+                  <X className="w-4 h-4" />
+                  Sin Mis Canchas
+                </div>
+              </div>
+              <div className="bg-white border-2 border-red-200 rounded-2xl p-8 pt-12 h-full">
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4 p-4 bg-red-50 rounded-xl">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Phone className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Llamadas constantes</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        Atender 50+ llamadas diarias para consultas y reservas
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Hourglass className="w-4 h-4 text-red-500" />
+                        <span className={`text-xs text-red-600 font-semibold ${inter.className}`}>~15 horas/semana perdidas</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-red-50 rounded-xl">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Cancelaciones de último momento</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        Sin señas ni confirmación, pierdes hasta 30% de reservas
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <TrendingDown className="w-4 h-4 text-red-500" />
+                        <span className={`text-xs text-red-600 font-semibold ${inter.className}`}>-$150,000/mes en ingresos perdidos</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-red-50 rounded-xl">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Control manual de caja</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        Planillas de Excel, errores de cálculo, falta de visibilidad
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 text-red-500" />
+                        <span className={`text-xs text-red-600 font-semibold ${inter.className}`}>3-4 horas/día en administración</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-red-50 rounded-xl">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Users className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Clientes sin seguimiento</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        No sabes quiénes son tus mejores clientes ni cómo fidelizarlos
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        <span className={`text-xs text-red-600 font-semibold ${inter.className}`}>Pierdes oportunidades de crecimiento</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* With Mis Canchas */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Con Mis Canchas
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-50 to-cyan-50 border-2 border-emerald-200 rounded-2xl p-8 pt-12 h-full shadow-xl">
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-emerald-100">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Smartphone className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Reservas automáticas 24/7</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        Tus clientes reservan online cuando quieran, sin llamadas
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-emerald-500" />
+                        <span className={`text-xs text-emerald-600 font-semibold ${inter.className}`}>Ahorrás 15 horas/semana</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-emerald-100">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <CreditCard className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Cobro de señas automático</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        Confirmación con seña online, reduce cancelaciones al 5%
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                        <span className={`text-xs text-emerald-600 font-semibold ${inter.className}`}>+$150,000/mes recuperados</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-emerald-100">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <BarChart3 className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Caja digital en tiempo real</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        Todo automatizado: ingresos, gastos, reportes instantáneos
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-emerald-500" />
+                        <span className={`text-xs text-emerald-600 font-semibold ${inter.className}`}>5 minutos/día en administración</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-emerald-100">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Star className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold text-gray-900 mb-1 ${poppins.className}`}>Base de datos inteligente</h4>
+                      <p className={`text-sm text-gray-600 ${inter.className}`}>
+                        Conoce a tus clientes, crea promociones y aumenta la fidelización
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Target className="w-4 h-4 text-emerald-500" />
+                        <span className={`text-xs text-emerald-600 font-semibold ${inter.className}`}>+40% clientes recurrentes</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Stats Comparison */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 md:p-12"
+          >
+            <h3 className={`text-2xl md:text-3xl font-bold text-white text-center mb-12 ${poppins.className}`}>
+              Resultados reales de nuestros clientes
+            </h3>
+            <div className="grid md:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className={`text-4xl md:text-5xl font-bold text-emerald-400 mb-2 ${poppins.className}`}>85%</div>
+                <p className={`text-gray-300 ${inter.className}`}>Menos tiempo en gestión administrativa</p>
+              </div>
+              <div className="text-center">
+                <div className={`text-4xl md:text-5xl font-bold text-emerald-400 mb-2 ${poppins.className}`}>+35%</div>
+                <p className={`text-gray-300 ${inter.className}`}>Aumento en ingresos mensuales</p>
+              </div>
+              <div className="text-center">
+                <div className={`text-4xl md:text-5xl font-bold text-emerald-400 mb-2 ${poppins.className}`}>95%</div>
+                <p className={`text-gray-300 ${inter.className}`}>Tasa de confirmación de reservas</p>
+              </div>
+              <div className="text-center">
+                <div className={`text-4xl md:text-5xl font-bold text-emerald-400 mb-2 ${poppins.className}`}>24/7</div>
+                <p className={`text-gray-300 ${inter.className}`}>Tu negocio siempre abierto</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
 
