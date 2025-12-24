@@ -107,6 +107,8 @@ interface Reservation {
     id: string;
     orderNumber: string;
   }>;
+  reviewToken?: string;
+  reviewedAt?: string;
 }
 
 interface ReservationDetailsSidebarProps {
@@ -608,6 +610,11 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
       const establishmentUrl = estSlug 
         ? `https://miscanchas.com/reservar/${estSlug}` 
         : 'https://miscanchas.com';
+      
+      // Generate review URL if booking has a review token
+      const reviewUrl = reservation?.reviewToken 
+        ? `${window.location.origin}/valorar/${reservation.reviewToken}`
+        : undefined;
 
       // Debug: log data before creating ticket
       console.log('Ticket data debug:', {
@@ -645,7 +652,8 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
           method: p.method,
           amount: parseFloat(String(p.amount)) || 0
         })),
-        establishmentUrl: establishmentUrl
+        establishmentUrl: establishmentUrl,
+        reviewUrl: reviewUrl
       };
 
       await printTicket(ticketData);

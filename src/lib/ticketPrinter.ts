@@ -119,6 +119,9 @@ export interface TicketData {
   
   // QR Code URL (for establishment profile)
   establishmentUrl?: string;
+  
+  // Review URL (unique per booking - for rating QR)
+  reviewUrl?: string;
 }
 
 function getPaymentMethodLabel(method: string): string {
@@ -354,8 +357,8 @@ export function generateTicketData(data: TicketData): Uint8Array {
   const encoder = new TextEncoder();
   const textData = encoder.encode(txt);
   
-  // Generate QR code - always generate with establishment URL or default
-  const qrUrl = data.establishmentUrl || 'https://miscanchas.com';
+  // Generate QR code - use reviewUrl if available (unique per booking), otherwise establishment URL
+  const qrUrl = data.reviewUrl || data.establishmentUrl || 'https://miscanchas.com';
   const qrCode = generateQRCodeCommands(qrUrl);
   const qrSpacing = encoder.encode(NL + NL);
   const qrData = new Uint8Array(qrCode.length + qrSpacing.length);

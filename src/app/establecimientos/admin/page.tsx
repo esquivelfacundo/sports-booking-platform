@@ -21,7 +21,13 @@ import {
   Plus,
   Building2,
   Award,
-  RefreshCw
+  RefreshCw,
+  Megaphone,
+  ArrowRight,
+  Sparkles,
+  X,
+  Share2,
+  ShieldAlert
 } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
@@ -53,8 +59,13 @@ const AdminDashboard = () => {
   const [registrationData, setRegistrationData] = useState<any>(null);
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
   const [userName, setUserName] = useState<string>('');
+  const [totalBookings, setTotalBookings] = useState(0);
+  const [showMarketingBanner, setShowMarketingBanner] = useState(true);
 
   const loading = establishmentLoading || adminLoading || statsLoading;
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+  const UNLOCK_THRESHOLD = 200;
 
   // Load today's reservations when establishment is available
   useEffect(() => {
@@ -63,6 +74,31 @@ const AdminDashboard = () => {
       loadReservations({ date: today, limit: 100 });
     }
   }, [establishmentId, loadReservations]);
+
+  // Fetch total bookings for marketing banner
+  useEffect(() => {
+    const fetchTotalBookings = async () => {
+      if (!establishment?.id) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          `${API_URL}/api/bookings/establishment/${establishment.id}/count`,
+          {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }
+        );
+        const data = await response.json();
+        if (data.success) {
+          setTotalBookings(data.count || 0);
+        }
+      } catch (error) {
+        setTotalBookings(adminStats?.todayBookings || 0);
+      }
+    };
+
+    fetchTotalBookings();
+  }, [establishment?.id, adminStats?.todayBookings, API_URL]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -172,8 +208,13 @@ const AdminDashboard = () => {
     type: n.type === 'booking_confirmed' ? 'success' : 
           n.type === 'payment_failed' ? 'warning' : 'info',
     message: n.message,
-    time: n.time
+    time: n.createdAt || 'hace un momento'
   }));
+
+  // Marketing banner calculations
+  const remainingBookings = Math.max(0, UNLOCK_THRESHOLD - totalBookings);
+  const progress = Math.min(100, (totalBookings / UNLOCK_THRESHOLD) * 100);
+  const isUnlocked = totalBookings >= UNLOCK_THRESHOLD;
 
   // Generate court status from real data
   const courtStatus = courts.length > 0 
@@ -327,6 +368,73 @@ const AdminDashboard = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Marketing Banner */}
+        {showMarketingBanner && !isUnlocked && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 rounded-2xl p-8 relative overflow-hidden">
+              <button
+                onClick={() => setShowMarketingBanner(false)}
+                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                    <Megaphone className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Marketing & Difusión</h2>
+                    <p className="text-white/90 text-sm">Potencia tu negocio con herramientas de marketing profesionales</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-800/90 backdrop-blur-sm rounded-xl p-6 mt-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gray-700/50 rounded-lg flex items-center justify-center">
+                      <ShieldAlert className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white">Te faltan {remainingBookings} reservas</h3>
+                      <p className="text-gray-400 text-sm">
+                        Alcanza las {UNLOCK_THRESHOLD} reservas por la plataforma para desbloquear nuestras herramientas de marketing profesionales.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-300 text-sm font-medium">Progreso actual</span>
+                      <span className="text-emerald-400 font-bold">{totalBookings} / {UNLOCK_THRESHOLD} reservas</span>
+                    </div>
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 1, ease: 'easeOut' }}
+                        className="h-full bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-full"
+                      />
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/establecimientos/admin/marketing"
+                    className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                  >
+                    Ver todos los beneficios
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

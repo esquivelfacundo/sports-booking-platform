@@ -23,7 +23,10 @@ import {
   ShoppingCart,
   Wallet,
   CreditCard,
-  Plug
+  Plug,
+  Star,
+  Megaphone,
+  Ticket
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -187,6 +190,28 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
           href: '/establecimientos/admin/clientes',
           icon: Users,
           current: pathname.startsWith('/establecimientos/admin/clientes')
+        },
+        {
+          name: 'Reseñas',
+          href: '/establecimientos/admin/resenas',
+          icon: Star,
+          current: pathname.startsWith('/establecimientos/admin/resenas')
+        }
+      ]
+    },
+    {
+      items: [
+        {
+          name: 'Marketing',
+          href: '/establecimientos/admin/marketing',
+          icon: Megaphone,
+          current: pathname.startsWith('/establecimientos/admin/marketing')
+        },
+        {
+          name: 'Cupones',
+          href: '/establecimientos/admin/cupones',
+          icon: Ticket,
+          current: pathname.startsWith('/establecimientos/admin/cupones')
         }
       ]
     },
@@ -588,7 +613,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
         sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-52'
       }`}>
         {/* Top navigation bar - fixed height, contains page controls on left and global actions on right */}
-        <header id="admin-header" className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <header id="admin-header" className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
           <div className="w-full px-4">
             <div className="flex items-center h-12">
               {/* Mobile Menu Button */}
