@@ -1,165 +1,378 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Building2, BarChart3, Calendar, Users, DollarSign, Clock, Settings, Plus } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { 
+  Building2, 
+  BarChart3, 
+  Calendar, 
+  Users, 
+  DollarSign, 
+  Clock, 
+  Settings, 
+  Plus,
+  Zap,
+  Shield,
+  Smartphone,
+  TrendingUp,
+  MessageSquare,
+  Star,
+  CheckCircle,
+  ArrowRight,
+  Sparkles,
+  Target,
+  CreditCard,
+  Bell,
+  FileText,
+  Ticket,
+  Gift,
+  Printer,
+  Wifi,
+  ChevronRight
+} from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState, useRef } from 'react';
 
 const EstablishmentPage = () => {
-  const features = [
+  const [activeFeature, setActiveFeature] = useState(0);
+  const heroRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % 6);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const mainFeatures = [
     {
       icon: Calendar,
-      title: 'Gestión de Reservas',
-      description: 'Control completo de todas las reservas, horarios y disponibilidad de tus canchas.',
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      icon: BarChart3,
-      title: 'Análisis y Reportes',
-      description: 'Estadísticas detalladas de ocupación, ingresos y rendimiento de tu establecimiento.',
-      color: 'from-green-500 to-green-600'
+      title: 'Gestión Inteligente de Reservas',
+      description: 'Sistema completo de reservas online con calendario visual, confirmación automática y recordatorios por WhatsApp.',
+      benefits: ['Reservas 24/7', 'Confirmación instantánea', 'Recordatorios automáticos'],
+      color: 'emerald',
+      gradient: 'from-emerald-500 to-teal-500'
     },
     {
       icon: DollarSign,
-      title: 'Control Contable',
-      description: 'Registro completo de ingresos, gastos y facturación automatizada.',
-      color: 'from-purple-500 to-purple-600'
+      title: 'Control Financiero Total',
+      description: 'Caja registradora digital, cuentas corrientes, facturación automática y reportes de ingresos en tiempo real.',
+      benefits: ['Caja digital', 'Cuentas corrientes', 'Reportes detallados'],
+      color: 'blue',
+      gradient: 'from-blue-500 to-cyan-500'
     },
     {
       icon: Users,
-      title: 'Gestión de Personal',
-      description: 'Control de empleados, horarios trabajados y seguimiento de tareas.',
-      color: 'from-orange-500 to-orange-600'
+      title: 'Base de Datos de Clientes',
+      description: 'Gestión completa de clientes con historial de reservas, preferencias y sistema de fidelización.',
+      benefits: ['Historial completo', 'Segmentación', 'Fidelización'],
+      color: 'purple',
+      gradient: 'from-purple-500 to-pink-500'
     },
     {
-      icon: Clock,
-      title: 'Horarios Flexibles',
-      description: 'Configuración personalizada de horarios y precios por franja horaria.',
-      color: 'from-red-500 to-red-600'
+      icon: BarChart3,
+      title: 'Estadísticas y Analytics',
+      description: 'Métricas en tiempo real de ocupación, ingresos, horarios pico y rendimiento de cada cancha.',
+      benefits: ['Dashboards en vivo', 'Análisis predictivo', 'Exportación de datos'],
+      color: 'orange',
+      gradient: 'from-orange-500 to-red-500'
     },
     {
-      icon: Settings,
-      title: 'Configuración Avanzada',
-      description: 'Personalización completa de tu establecimiento y servicios adicionales.',
-      color: 'from-indigo-500 to-indigo-600'
+      icon: Ticket,
+      title: 'Sistema de Cupones',
+      description: 'Crea cupones de descuento personalizados para promociones, clientes VIP o campañas especiales.',
+      benefits: ['Descuentos flexibles', 'Cupones individuales', 'Tracking de uso'],
+      color: 'pink',
+      gradient: 'from-pink-500 to-rose-500'
+    },
+    {
+      icon: Star,
+      title: 'Sistema de Reseñas',
+      description: 'Recolecta valoraciones automáticas vía QR en tickets y mejora tu reputación online.',
+      benefits: ['QR en tickets', 'NPS Score', 'Respuestas a clientes'],
+      color: 'yellow',
+      gradient: 'from-yellow-500 to-orange-500'
     }
   ];
 
+  const allFeatures = [
+    { icon: Smartphone, title: 'App Móvil', description: 'Gestiona desde cualquier lugar', color: 'blue' },
+    { icon: Printer, title: 'Tickets Térmicos', description: 'Impresión con QR de valoración', color: 'purple' },
+    { icon: CreditCard, title: 'Pagos Online', description: 'Mercado Pago integrado', color: 'green' },
+    { icon: MessageSquare, title: 'WhatsApp Auto', description: 'Confirmaciones automáticas', color: 'emerald' },
+    { icon: FileText, title: 'Facturación', description: 'Facturas automáticas', color: 'orange' },
+    { icon: Shield, title: 'Seguridad', description: 'Datos encriptados', color: 'red' },
+    { icon: Bell, title: 'Notificaciones', description: 'Alertas en tiempo real', color: 'yellow' },
+    { icon: Wifi, title: 'Modo Offline', description: 'Sin conexión necesaria', color: 'cyan' },
+    { icon: Target, title: 'Marketing', description: 'Campañas automatizadas', color: 'pink' },
+    { icon: Gift, title: 'Promociones', description: 'Cupones y descuentos', color: 'indigo' },
+    { icon: Clock, title: 'Horarios Flex', description: 'Precios por franja', color: 'teal' },
+    { icon: Settings, title: 'Personalización', description: 'Adapta a tu negocio', color: 'slate' }
+  ];
+
   const stats = [
-    { label: 'Establecimientos registrados', value: '500+' },
-    { label: 'Reservas gestionadas mensualmente', value: '15,000+' },
-    { label: 'Ahorro promedio en gestión', value: '40%' },
-    { label: 'Satisfacción del cliente', value: '98%' }
+    { label: 'Establecimientos', value: '500+', icon: Building2 },
+    { label: 'Reservas/mes', value: '15K+', icon: Calendar },
+    { label: 'Ahorro', value: '40%', icon: TrendingUp },
+    { label: 'Satisfacción', value: '98%', icon: Star }
+  ];
+
+  const benefits = [
+    {
+      title: 'Ahorra Tiempo',
+      description: 'Automatiza tareas repetitivas y dedica más tiempo a hacer crecer tu negocio',
+      icon: Clock,
+      stat: '10 horas/semana'
+    },
+    {
+      title: 'Aumenta Ingresos',
+      description: 'Optimiza la ocupación de tus canchas y reduce cancelaciones',
+      icon: TrendingUp,
+      stat: '+35% ingresos'
+    },
+    {
+      title: 'Mejora Experiencia',
+      description: 'Ofrece a tus clientes una experiencia digital moderna y profesional',
+      icon: Sparkles,
+      stat: '98% satisfacción'
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 to-green-800 text-white">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=800&fit=crop&auto=format')"
-          }}
-        ></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <motion.div 
+        ref={heroRef}
+        style={{ opacity, scale }}
+        className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
+      >
+        {/* Animated background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-emerald-500/20 to-transparent rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-blue-500/20 to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center"
           >
+            {/* Badge */}
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-8"
             >
-              <Building2 className="w-10 h-10" />
+              <Sparkles className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm font-medium">La plataforma más completa de Argentina</span>
             </motion.div>
             
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Sistema de Gestión para
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
-                Establecimientos Deportivos
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              Gestiona tu establecimiento
+              <span className="block mt-2 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                de forma inteligente
               </span>
             </h1>
             
-            <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
-              La plataforma más completa para administrar tu establecimiento deportivo. 
-              Control total de reservas, finanzas, personal y mucho más.
+            <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+              Sistema completo de gestión para canchas deportivas. Reservas online, caja digital, 
+              estadísticas en tiempo real y mucho más. <strong className="text-white">Todo en una sola plataforma.</strong>
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
-                href="/establecimientos/demo"
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-8 py-4 rounded-lg font-semibold hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+                href="/establecimientos/registro"
+                className="group bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-8 py-4 rounded-xl font-semibold hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 flex items-center gap-2 hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
-                Solicitar Demo Gratuita
+                Comenzar Gratis
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 href="/establecimientos/login"
-                className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-all duration-200"
+                className="group border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 backdrop-blur-sm transition-all duration-300 flex items-center gap-2"
               >
                 Acceder al Panel
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
+            </div>
+
+            {/* Trust badges */}
+            <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span>Sin tarjeta de crédito</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span>Configuración en 5 minutos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span>Soporte en español</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* Stats Section */}
+      <div className="relative -mt-16 z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-white rounded-2xl shadow-2xl p-8 md:p-12"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="text-center"
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <stat.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">{stat.value}</div>
+                  <div className="text-gray-600 text-sm">{stat.label}</div>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="py-16 bg-white">
+      {/* Benefits Section */}
+      <div className="py-24 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+              ¿Por qué elegir Mis Canchas?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Más que un software, es tu socio estratégico para hacer crecer tu negocio
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {benefits.map((benefit, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="text-center"
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="relative group"
               >
-                <div className="text-3xl font-bold text-blue-600 mb-2">{stat.value}</div>
-                <div className="text-gray-600 text-sm">{stat.label}</div>
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
+                <div className="relative bg-white rounded-2xl p-8 border border-gray-200 hover:border-transparent transition-all duration-300 h-full">
+                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center mb-6">
+                    <benefit.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="text-4xl font-bold text-gray-900 mb-2">{benefit.stat}</div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{benefit.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{benefit.description}</p>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-16">
+      {/* Main Features Section */}
+      <div className="py-24 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Todo lo que necesitás para gestionar tu establecimiento
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              Funcionalidades que transforman tu negocio
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Una solución integral que te permite controlar todos los aspectos de tu negocio deportivo
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+              Todo lo que necesitas para gestionar tu establecimiento de forma profesional
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mainFeatures.map((feature, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="group relative bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700 hover:border-gray-600 transition-all duration-300 hover:scale-105"
               >
-                <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-xl flex items-center justify-center mb-6`}>
-                  <feature.icon className="w-8 h-8 text-white" />
+                <div className={`w-14 h-14 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <feature.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">{feature.description}</p>
+                <div className="space-y-2">
+                  {feature.benefits.map((benefit, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      <span>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* All Features Grid */}
+      <div className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+              Y mucho más...
+            </h2>
+            <p className="text-xl text-gray-600">
+              Todas las herramientas que necesitas en un solo lugar
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {allFeatures.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+                className="group bg-gray-50 rounded-xl p-6 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-cyan-50 transition-all duration-300 border border-gray-200 hover:border-emerald-200 hover:shadow-lg"
+              >
+                <feature.icon className={`w-8 h-8 text-${feature.color}-500 mb-3 group-hover:scale-110 transition-transform duration-300`} />
+                <h4 className="font-semibold text-gray-900 mb-1">{feature.title}</h4>
+                <p className="text-sm text-gray-600">{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -167,48 +380,99 @@ const EstablishmentPage = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 text-white py-24">
+        <div className="absolute inset-0 bg-[url('/assets/pattern.svg')] opacity-10" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-bold mb-4">
-              ¿Listo para transformar tu establecimiento?
+            <Sparkles className="w-16 h-16 mx-auto mb-6 text-yellow-300" />
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+              Comienza a transformar tu establecimiento hoy
             </h2>
-            <p className="text-xl mb-8 opacity-90">
-              Únete a cientos de establecimientos que ya confían en nuestra plataforma
+            <p className="text-xl mb-10 text-emerald-100 max-w-2xl mx-auto">
+              Únete a cientos de establecimientos que ya están creciendo con Mis Canchas. 
+              Sin costos iniciales, sin permanencia.
             </p>
-            <Link
-              href="/establecimientos/registro"
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:shadow-xl transition-all duration-200 inline-flex items-center gap-2"
-            >
-              <Building2 className="w-5 h-5" />
-              Comenzar Ahora - Es Gratis
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/establecimientos/registro"
+                className="group bg-white text-emerald-600 px-8 py-4 rounded-xl font-bold hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
+              >
+                <Zap className="w-5 h-5" />
+                Comenzar Gratis Ahora
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                href="/establecimientos/demo"
+                className="group border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 backdrop-blur-sm transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                Ver Demo en Vivo
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm text-emerald-100">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                <span>Datos seguros y encriptados</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                <span>Activación inmediata</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                <span>Soporte 24/7</span>
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8">
+      <footer className="bg-gray-900 text-gray-400 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-center md:text-left">
-              <p className="text-white font-semibold">Mis Canchas</p>
-              <p className="text-sm">© {new Date().getFullYear()} Todos los derechos reservados</p>
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="w-6 h-6 text-emerald-400" />
+                <span className="text-white font-bold text-lg">Mis Canchas</span>
+              </div>
+              <p className="text-sm leading-relaxed">
+                La plataforma más completa para gestionar establecimientos deportivos en Argentina.
+              </p>
             </div>
-            <div className="flex gap-6 text-sm">
-              <Link href="/privacidad" className="hover:text-white transition-colors">
-                Política de Privacidad
-              </Link>
-              <Link href="/legal" className="hover:text-white transition-colors">
-                Términos y Condiciones
-              </Link>
-              <a href="mailto:soporte@miscanchas.com" className="hover:text-white transition-colors">
-                Contacto
-              </a>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Producto</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/establecimientos" className="hover:text-white transition-colors">Funcionalidades</Link></li>
+                <li><Link href="/establecimientos/demo" className="hover:text-white transition-colors">Demo</Link></li>
+                <li><Link href="/precios" className="hover:text-white transition-colors">Precios</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/nosotros" className="hover:text-white transition-colors">Nosotros</Link></li>
+                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+                <li><a href="mailto:soporte@miscanchas.com" className="hover:text-white transition-colors">Contacto</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/privacidad" className="hover:text-white transition-colors">Privacidad</Link></li>
+                <li><Link href="/terminos" className="hover:text-white transition-colors">Términos</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm">© {new Date().getFullYear()} Mis Canchas. Todos los derechos reservados.</p>
+            <div className="flex gap-4 text-sm">
+              <span className="text-emerald-400">🇦🇷 Hecho en Argentina</span>
             </div>
           </div>
         </div>
