@@ -1,6 +1,19 @@
 'use client';
 
+import { Poppins, Inter } from 'next/font/google';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+
+const poppins = Poppins({
+  weight: ['400', '600', '700', '800'],
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+const inter = Inter({
+  weight: ['400', '500', '600'],
+  subsets: ['latin'],
+  display: 'swap',
+});
 import { 
   Building2, 
   BarChart3, 
@@ -165,7 +178,7 @@ const EstablishmentPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${inter.className}`}>
       {/* Hero Section */}
       <motion.div 
         ref={heroRef}
@@ -224,17 +237,17 @@ const EstablishmentPage = () => {
               className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-8"
             >
               <Sparkles className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium">La plataforma más completa de Argentina</span>
+              <span className={`text-sm font-medium ${inter.className}`}>La plataforma más completa de Argentina</span>
             </motion.div>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+            <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight ${poppins.className}`}>
               Gestiona tu establecimiento
-              <span className="block mt-2 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              <span className={`block mt-2 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent ${poppins.className}`}>
                 de forma inteligente
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+            <p className={`text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed ${inter.className}`}>
               Sistema completo de gestión para canchas deportivas. Reservas online, caja digital, 
               estadísticas en tiempo real y mucho más. <strong className="text-white">Todo en una sola plataforma.</strong>
             </p>
@@ -298,8 +311,8 @@ const EstablishmentPage = () => {
                   <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <stat.icon className="w-6 h-6 text-white" />
                   </div>
-                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                  <div className="text-gray-600 text-sm">{stat.label}</div>
+                  <div className={`text-3xl md:text-4xl font-bold text-gray-900 mb-1 ${poppins.className}`}>{stat.value}</div>
+                  <div className={`text-gray-600 text-sm ${inter.className}`}>{stat.label}</div>
                 </motion.div>
               ))}
             </div>
@@ -316,10 +329,10 @@ const EstablishmentPage = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className={`text-3xl md:text-5xl font-bold text-gray-900 mb-4 ${poppins.className}`}>
               ¿Por qué elegir Mis Canchas?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className={`text-xl text-gray-600 max-w-3xl mx-auto ${inter.className}`}>
               Más que un software, es tu socio estratégico para hacer crecer tu negocio
             </p>
           </motion.div>
@@ -339,9 +352,9 @@ const EstablishmentPage = () => {
                   <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center mb-6">
                     <benefit.icon className="w-7 h-7 text-white" />
                   </div>
-                  <div className="text-4xl font-bold text-gray-900 mb-2">{benefit.stat}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{benefit.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{benefit.description}</p>
+                  <div className={`text-4xl font-bold text-gray-900 mb-2 ${poppins.className}`}>{benefit.stat}</div>
+                  <h3 className={`text-xl font-bold text-gray-900 mb-3 ${poppins.className}`}>{benefit.title}</h3>
+                  <p className={`text-gray-600 leading-relaxed ${inter.className}`}>{benefit.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -358,10 +371,10 @@ const EstablishmentPage = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <h2 className={`text-3xl md:text-5xl font-bold mb-4 ${poppins.className}`}>
               Funcionalidades que transforman tu negocio
             </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+            <p className={`text-xl text-gray-400 max-w-3xl mx-auto ${inter.className}`}>
               Todo lo que necesitas para gestionar tu establecimiento de forma profesional
             </p>
           </motion.div>
@@ -379,13 +392,13 @@ const EstablishmentPage = () => {
                 <div className={`w-14 h-14 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                   <feature.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed">{feature.description}</p>
+                <h3 className={`text-xl font-bold mb-3 ${poppins.className}`}>{feature.title}</h3>
+                <p className={`text-gray-400 mb-6 leading-relaxed ${inter.className}`}>{feature.description}</p>
                 <div className="space-y-2">
                   {feature.benefits.map((benefit, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
                       <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      <span>{benefit}</span>
+                      <span className={inter.className}>{benefit}</span>
                     </div>
                   ))}
                 </div>
@@ -404,10 +417,10 @@ const EstablishmentPage = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className={`text-3xl md:text-5xl font-bold text-gray-900 mb-4 ${poppins.className}`}>
               Y mucho más...
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className={`text-xl text-gray-600 ${inter.className}`}>
               Todas las herramientas que necesitas en un solo lugar
             </p>
           </motion.div>
@@ -423,8 +436,8 @@ const EstablishmentPage = () => {
                 className="group bg-gray-50 rounded-xl p-6 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-cyan-50 transition-all duration-300 border border-gray-200 hover:border-emerald-200 hover:shadow-lg"
               >
                 <feature.icon className={`w-8 h-8 text-${feature.color}-500 mb-3 group-hover:scale-110 transition-transform duration-300`} />
-                <h4 className="font-semibold text-gray-900 mb-1">{feature.title}</h4>
-                <p className="text-sm text-gray-600">{feature.description}</p>
+                <h4 className={`font-semibold text-gray-900 mb-1 ${poppins.className}`}>{feature.title}</h4>
+                <p className={`text-sm text-gray-600 ${inter.className}`}>{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -441,10 +454,10 @@ const EstablishmentPage = () => {
             viewport={{ once: true }}
           >
             <Sparkles className="w-16 h-16 mx-auto mb-6 text-yellow-300" />
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+            <h2 className={`text-3xl md:text-5xl font-bold mb-6 ${poppins.className}`}>
               Comienza a transformar tu establecimiento hoy
             </h2>
-            <p className="text-xl mb-10 text-emerald-100 max-w-2xl mx-auto">
+            <p className={`text-xl mb-10 text-emerald-100 max-w-2xl mx-auto ${inter.className}`}>
               Únete a cientos de establecimientos que ya están creciendo con Mis Canchas. 
               Sin costos iniciales, sin permanencia.
             </p>
@@ -469,15 +482,15 @@ const EstablishmentPage = () => {
             <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm text-emerald-100">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5" />
-                <span>Datos seguros y encriptados</span>
+                <span className={inter.className}>Datos seguros y encriptados</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="w-5 h-5" />
-                <span>Activación inmediata</span>
+                <span className={inter.className}>Activación inmediata</span>
               </div>
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
-                <span>Soporte 24/7</span>
+                <span className={inter.className}>Soporte 24/7</span>
               </div>
             </div>
           </motion.div>
@@ -491,14 +504,14 @@ const EstablishmentPage = () => {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Building2 className="w-6 h-6 text-emerald-400" />
-                <span className="text-white font-bold text-lg">Mis Canchas</span>
+                <span className={`text-white font-bold text-lg ${poppins.className}`}>Mis Canchas</span>
               </div>
-              <p className="text-sm leading-relaxed">
+              <p className={`text-sm leading-relaxed ${inter.className}`}>
                 La plataforma más completa para gestionar establecimientos deportivos en Argentina.
               </p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Producto</h4>
+              <h4 className={`text-white font-semibold mb-4 ${poppins.className}`}>Producto</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/establecimientos" className="hover:text-white transition-colors">Funcionalidades</Link></li>
                 <li><Link href="/establecimientos/demo" className="hover:text-white transition-colors">Demo</Link></li>
@@ -506,7 +519,7 @@ const EstablishmentPage = () => {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Empresa</h4>
+              <h4 className={`text-white font-semibold mb-4 ${poppins.className}`}>Empresa</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/nosotros" className="hover:text-white transition-colors">Nosotros</Link></li>
                 <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
@@ -514,7 +527,7 @@ const EstablishmentPage = () => {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <h4 className={`text-white font-semibold mb-4 ${poppins.className}`}>Legal</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/privacidad" className="hover:text-white transition-colors">Privacidad</Link></li>
                 <li><Link href="/terminos" className="hover:text-white transition-colors">Términos</Link></li>
@@ -522,7 +535,7 @@ const EstablishmentPage = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm">© {new Date().getFullYear()} Mis Canchas. Todos los derechos reservados.</p>
+            <p className={`text-sm ${inter.className}`}>© {new Date().getFullYear()} Mis Canchas. Todos los derechos reservados.</p>
             <div className="flex gap-4 text-sm">
               <span className="text-emerald-400">🇦🇷 Hecho en Argentina</span>
             </div>
