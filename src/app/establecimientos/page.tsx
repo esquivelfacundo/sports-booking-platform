@@ -359,7 +359,7 @@ const EstablishmentPage = () => {
                     <benefit.icon className="w-7 h-7 text-white" />
                   </div>
                   <div className={`text-4xl font-bold text-gray-900 mb-2 ${poppins.className}`}>{benefit.stat}</div>
-                  <h3 className={`text-xl font-bold text-gray-900 mb-3 ${poppins.className}`}>{benefit.title}</h3>
+                  <h3 className={`text-xl font-bold text-gray-900 mb-3 leading-tight ${poppins.className}`}>{benefit.title}</h3>
                   <p className={`text-gray-600 leading-relaxed ${inter.className}`}>{benefit.description}</p>
                 </div>
               </motion.div>
