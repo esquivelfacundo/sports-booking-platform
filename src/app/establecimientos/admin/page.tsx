@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -55,12 +55,19 @@ const AdminDashboard = () => {
     refreshAll 
   } = useEstablishmentAdminContext();
   
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [registrationData, setRegistrationData] = useState<any>(null);
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
   const [userName, setUserName] = useState<string>('');
   const [totalBookings, setTotalBookings] = useState(0);
   const [showMarketingBanner, setShowMarketingBanner] = useState(true);
+  
+  // Greeting calculated once on mount (doesn't need to update every second)
+  const [greeting] = useState(() => {
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 12) return 'Buenos días';
+    if (hour >= 12 && hour < 19) return 'Buenas tardes';
+    return 'Buenas noches';
+  });
 
   const loading = establishmentLoading || adminLoading || statsLoading;
 
@@ -75,7 +82,7 @@ const AdminDashboard = () => {
     }
   }, [establishmentId, loadReservations]);
 
-  // Fetch total bookings for marketing banner
+  // Fetch total bookings for marketing banner - only depends on establishment.id
   useEffect(() => {
     const fetchTotalBookings = async () => {
       if (!establishment?.id) return;
@@ -93,19 +100,12 @@ const AdminDashboard = () => {
           setTotalBookings(data.count || 0);
         }
       } catch (error) {
-        setTotalBookings(adminStats?.todayBookings || 0);
+        // Silently fail, will show 0
       }
     };
 
     fetchTotalBookings();
-  }, [establishment?.id, adminStats?.todayBookings, API_URL]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  }, [establishment?.id, API_URL]); // Removed adminStats dependency to prevent re-fetches
 
   // Load user name from localStorage (only first name for greeting)
   useEffect(() => {
@@ -183,70 +183,82 @@ const AdminDashboard = () => {
     }
   ];
 
-  // Get upcoming reservations for today (next 5 from current time)
-  const today = new Date().toISOString().split('T')[0];
-  const currentTimeStr = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
-  
-  const upcomingReservations = reservations
-    .filter(r => r.date === today && r.time >= currentTimeStr)
-    .sort((a, b) => a.time.localeCompare(b.time))
-    .slice(0, 5)
-    .map(r => ({
-      id: r.id,
-      time: r.time,
-      court: r.court,
-      client: r.clientName,
-      sport: r.court,
-      status: r.status,
-      duration: `${r.duration} min`,
-      price: r.price
-    }));
+  // Memoized: Get upcoming reservations for today (next 5 from current time)
+  const upcomingReservations = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    
+    return reservations
+      .filter(r => r.date === today && r.time >= currentTimeStr)
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .slice(0, 5)
+      .map(r => ({
+        id: r.id,
+        time: r.time,
+        court: r.court,
+        client: r.clientName,
+        sport: r.court,
+        status: r.status,
+        duration: `${r.duration} min`,
+        price: r.price
+      }));
+  }, [reservations]);
 
-  // Get alerts from notifications
-  const alerts = notifications.slice(0, 5).map(n => ({
-    id: n.id,
-    type: n.type === 'booking_confirmed' ? 'success' : 
-          n.type === 'payment_failed' ? 'warning' : 'info',
-    message: n.message,
-    time: n.createdAt || 'hace un momento'
-  }));
+  // Memoized: Get alerts from notifications
+  const alerts = useMemo(() => 
+    notifications.slice(0, 5).map(n => ({
+      id: n.id,
+      type: n.type === 'booking_confirmed' ? 'success' : 
+            n.type === 'payment_failed' ? 'warning' : 'info',
+      message: n.message,
+      time: n.createdAt || 'hace un momento'
+    })),
+  [notifications]);
 
-  // Marketing banner calculations
-  const remainingBookings = Math.max(0, UNLOCK_THRESHOLD - totalBookings);
-  const progress = Math.min(100, (totalBookings / UNLOCK_THRESHOLD) * 100);
-  const isUnlocked = totalBookings >= UNLOCK_THRESHOLD;
+  // Memoized: Marketing banner calculations
+  const { remainingBookings, progress, isUnlocked } = useMemo(() => ({
+    remainingBookings: Math.max(0, UNLOCK_THRESHOLD - totalBookings),
+    progress: Math.min(100, (totalBookings / UNLOCK_THRESHOLD) * 100),
+    isUnlocked: totalBookings >= UNLOCK_THRESHOLD
+  }), [totalBookings, UNLOCK_THRESHOLD]);
 
-  // Generate court status from real data
-  const courtStatus = courts.length > 0 
-    ? courts.map((court) => {
-        // Check if court has a current booking
-        const now = new Date();
-        const currentHour = `${now.getHours().toString().padStart(2, '0')}:00`;
-        const currentBooking = reservations.find(
-          r => r.courtId === court.id && 
-               r.date === today && 
-               r.time <= currentHour && 
-               r.status === 'confirmed'
-        );
-        
-        const sportNames: Record<string, string> = {
-          'futbol5': 'Fútbol 5',
-          'futbol': 'Fútbol 5',
-          'paddle': 'Padel',
-          'tenis': 'Tenis',
-          'basquet': 'Básquet',
-          'voley': 'Vóley',
-          'futbol11': 'Fútbol 11'
-        };
-        
-        return {
-          name: court.name,
-          status: currentBooking ? 'occupied' : (court.isActive ? 'available' : 'maintenance'),
-          sport: sportNames[court.sport] || court.sport,
-          until: currentBooking ? currentBooking.endTime : null
-        };
-      })
-    : [{ name: 'Sin canchas registradas', status: 'available', sport: 'N/A', until: null }];
+  // Memoized: Generate court status from real data
+  const courtStatus = useMemo(() => {
+    const sportNames: Record<string, string> = {
+      'futbol5': 'Fútbol 5',
+      'futbol': 'Fútbol 5',
+      'paddle': 'Padel',
+      'tenis': 'Tenis',
+      'basquet': 'Básquet',
+      'voley': 'Vóley',
+      'futbol11': 'Fútbol 11'
+    };
+    
+    if (courts.length === 0) {
+      return [{ name: 'Sin canchas registradas', status: 'available', sport: 'N/A', until: null }];
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const currentHour = `${now.getHours().toString().padStart(2, '0')}:00`;
+    
+    return courts.map((court) => {
+      const currentBooking = reservations.find(
+        r => r.courtId === court.id && 
+             r.date === today && 
+             r.time <= currentHour && 
+             r.status === 'confirmed'
+      );
+      
+      return {
+        name: court.name,
+        status: currentBooking ? 'occupied' : (court.isActive ? 'available' : 'maintenance'),
+        sport: sportNames[court.sport] || court.sport,
+        until: currentBooking ? currentBooking.endTime : null
+      };
+    });
+  }, [courts, reservations]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -342,12 +354,7 @@ const AdminDashboard = () => {
                 <div>
                   {/* Greeting with user name */}
                   <h1 className="text-xl sm:text-2xl text-gray-900 dark:text-white">
-                    ¡{(() => {
-                      const hour = currentTime.getHours();
-                      if (hour >= 0 && hour < 12) return 'Buenos días';
-                      if (hour >= 12 && hour < 19) return 'Buenas tardes';
-                      return 'Buenas noches';
-                    })()}, <span className="font-bold">{userName || 'Usuario'}</span>!
+                    ¡{greeting}, <span className="font-bold">{userName || 'Usuario'}</span>!
                   </h1>
                     
                   {/* Establishment name */}
@@ -355,7 +362,7 @@ const AdminDashboard = () => {
                     {establishment?.name || 'Panel de Control'}
                   </p>
                 </div>
-                </div>
+              </div>
 
               {/* Right: Action button */}
               <Link 

@@ -245,56 +245,28 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
     }
   }, [establishmentId]);
 
-  // Load stats
+  // Load stats - using optimized backend endpoint
   const loadStats = useCallback(async () => {
     if (!establishmentId) return;
     
     setStatsLoading(true);
     
     try {
-      const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
+      // Use the new optimized stats endpoint instead of fetching all bookings
+      const response = await apiClient.getEstablishmentStats(establishmentId) as any;
       
-      const response = await apiClient.getEstablishmentBookings(establishmentId, { limit: 1000 }) as any;
-      const bookings = response.data || response.bookings || [];
-      
-      const todayBookings = bookings.filter((b: any) => b.date === today);
-      const confirmedBookings = bookings.filter((b: any) => b.status === 'confirmed');
-      const pendingBookings = bookings.filter((b: any) => b.status === 'pending');
-      const cancelledBookings = bookings.filter((b: any) => b.status === 'cancelled');
-      const completedBookings = bookings.filter((b: any) => b.status === 'completed');
-      
-      const todayRevenue = todayBookings
-        .filter((b: any) => b.status === 'completed')
-        .reduce((sum: number, b: any) => sum + (parseFloat(b.totalAmount) || 0), 0);
-      
-      const monthlyRevenue = completedBookings
-        .filter((b: any) => {
-          const bookingDate = new Date(b.date);
-          return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
-        })
-        .reduce((sum: number, b: any) => sum + (parseFloat(b.totalAmount) || 0), 0);
-      
-      const clientIds = new Set<string>();
-      bookings.forEach((b: any) => {
-        if (b.clientId) clientIds.add(b.clientId);
-        else if (b.clientPhone) clientIds.add(`phone:${b.clientPhone}`);
-        else if (b.clientEmail) clientIds.add(`email:${b.clientEmail}`);
-        else if (b.userId) clientIds.add(`user:${b.userId}`);
-      });
-      
-      setStats({
-        todayBookings: todayBookings.length,
-        todayRevenue,
-        monthlyRevenue,
-        totalClients: clientIds.size,
-        occupancyRate: 0,
-        pendingBookings: pendingBookings.length,
-        confirmedBookings: confirmedBookings.length,
-        cancelledBookings: cancelledBookings.length
-      });
+      if (response.success && response.stats) {
+        setStats({
+          todayBookings: response.stats.todayBookings || 0,
+          todayRevenue: response.stats.todayRevenue || 0,
+          monthlyRevenue: response.stats.monthlyRevenue || 0,
+          totalClients: response.stats.totalClients || 0,
+          occupancyRate: response.stats.occupancyRate || 0,
+          pendingBookings: response.stats.pendingBookings || 0,
+          confirmedBookings: response.stats.confirmedBookings || 0,
+          cancelledBookings: response.stats.cancelledBookings || 0
+        });
+      }
     } catch (err) {
       console.error('Error loading stats:', err);
     } finally {

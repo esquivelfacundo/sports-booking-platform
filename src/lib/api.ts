@@ -392,6 +392,16 @@ class ApiClient {
     return this.request(endpoint);
   }
 
+  // Optimized stats endpoint - returns aggregated statistics without fetching all bookings
+  async getEstablishmentStats(establishmentId: string) {
+    return this.request(`/api/bookings/establishment/${establishmentId}/stats`);
+  }
+
+  // Get total booking count for an establishment
+  async getEstablishmentBookingCount(establishmentId: string) {
+    return this.request(`/api/bookings/establishment/${establishmentId}/count`);
+  }
+
   async updateBooking(id: string, data: any) {
     return this.request(`/api/bookings/${id}`, {
       method: 'PUT',
