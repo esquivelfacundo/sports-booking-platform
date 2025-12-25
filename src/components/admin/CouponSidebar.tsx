@@ -125,7 +125,7 @@ export default function CouponSidebar({
 
   const loadSelectedClients = async (clientIds: string[]) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const clientsData: Client[] = [];
       
       for (const clientId of clientIds) {
@@ -152,7 +152,7 @@ export default function CouponSidebar({
 
     setSearchingClients(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(
         `${API_URL}/api/clients/establishment/${establishmentId}?search=${encodeURIComponent(query)}&limit=10`,
         {
@@ -233,7 +233,7 @@ export default function CouponSidebar({
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const url = coupon 
         ? `${API_URL}/api/coupons/${coupon.id}`
         : `${API_URL}/api/coupons`;

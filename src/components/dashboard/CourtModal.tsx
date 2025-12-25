@@ -64,7 +64,7 @@ const CourtModal: React.FC<CourtModalProps> = ({ isOpen, onClose, onSuccess, edi
     console.log('Sending court data:', courtData);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       console.log('Token:', token ? 'exists' : 'missing');
       
       const requestBody = {

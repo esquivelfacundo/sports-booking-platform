@@ -88,7 +88,7 @@ const AdminDashboard = () => {
       if (!establishment?.id) return;
       
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('auth_token');
         const response = await fetch(
           `${API_URL}/api/bookings/establishment/${establishment.id}/count`,
           {

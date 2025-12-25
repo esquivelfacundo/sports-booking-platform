@@ -80,7 +80,7 @@ export default function CuponesPage() {
   const fetchCoupons = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(
         `${API_URL}/api/coupons/establishment/${establishment?.id}?status=${statusFilter}`,
         {
@@ -100,7 +100,7 @@ export default function CuponesPage() {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(
         `${API_URL}/api/coupons/establishment/${establishment?.id}/stats`,
         {
@@ -120,7 +120,7 @@ export default function CuponesPage() {
     if (!confirm('¿Estás seguro de eliminar este cupón?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_URL}/api/coupons/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -138,7 +138,7 @@ export default function CuponesPage() {
 
   const handleToggleActive = async (coupon: Coupon) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       await fetch(`${API_URL}/api/coupons/${coupon.id}`, {
         method: 'PUT',
         headers: {

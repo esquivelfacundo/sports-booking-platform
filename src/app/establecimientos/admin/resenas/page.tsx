@@ -128,7 +128,7 @@ export default function ResenasPage() {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(
         `${API_URL}/api/reviews/establishment/${establishment?.id}/stats`,
         {
@@ -149,7 +149,7 @@ export default function ResenasPage() {
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       let url = `${API_URL}/api/reviews/establishment/${establishment?.id}?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
       
       const response = await fetch(url, {
@@ -174,7 +174,7 @@ export default function ResenasPage() {
 
     setSubmittingResponse(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(
         `${API_URL}/api/reviews/${selectedReview.id}/respond`,
         {

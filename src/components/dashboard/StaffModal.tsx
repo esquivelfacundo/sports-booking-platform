@@ -81,7 +81,7 @@ const StaffModal: React.FC<StaffModalProps> = ({ isOpen, onClose, onSuccess, edi
     };
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/staff`, {
         method: 'POST',
         headers: {
