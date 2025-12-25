@@ -442,17 +442,17 @@ const FinancePage = () => {
                 {breakdown.byPaymentMethod.map((item, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <CreditCard className="h-4 w-4 text-gray-400" />
-                      <span className="text-white">{item.method}</span>
+                      <CreditCard className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-gray-900 dark:text-white">{item.method}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-emerald-400 font-medium">{formatCurrency(item.amount)}</p>
+                      <p className="text-emerald-600 dark:text-emerald-400 font-medium">{formatCurrency(item.amount)}</p>
                       <p className="text-xs text-gray-500">{item.percentage}%</p>
                     </div>
                   </div>
                 ))}
                 {breakdown.byPaymentMethod.length === 0 && (
-                  <p className="text-gray-400 text-center py-4">Sin datos</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-4">Sin datos</p>
                 )}
               </div>
             </div>
@@ -464,10 +464,10 @@ const FinancePage = () => {
                 {breakdown.byCourt.map((item, index) => (
                   <div key={index}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-white">{item.court}</span>
-                      <span className="text-emerald-400">{formatCurrency(item.amount)}</span>
+                      <span className="text-gray-900 dark:text-white">{item.court}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(item.amount)}</span>
                     </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${item.percentage}%` }}
@@ -478,7 +478,7 @@ const FinancePage = () => {
                   </div>
                 ))}
                 {breakdown.byCourt.length === 0 && (
-                  <p className="text-gray-400 text-center py-4">Sin datos</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-4">Sin datos</p>
                 )}
               </div>
             </div>
@@ -488,16 +488,16 @@ const FinancePage = () => {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Por Tipo de Reserva</h3>
               <div className="space-y-3">
                 {breakdown.byType.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-700/50 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                     <div>
-                      <p className="text-white font-medium">{item.type}</p>
-                      <p className="text-xs text-gray-400">{item.count} reservas</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{item.type}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{item.count} reservas</p>
                     </div>
-                    <p className="text-emerald-400 font-semibold">{formatCurrency(item.amount)}</p>
+                    <p className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCurrency(item.amount)}</p>
                   </div>
                 ))}
                 {breakdown.byType.length === 0 && (
-                  <p className="text-gray-400 text-center py-4">Sin datos</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-4">Sin datos</p>
                 )}
               </div>
             </div>

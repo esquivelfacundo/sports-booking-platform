@@ -17,7 +17,7 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
   // Load theme from localStorage on mount
@@ -27,8 +27,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
       setThemeState(savedTheme);
     } else {
-      // Default to dark theme for establishments
-      setThemeState('dark');
+      // Default to light theme, user preference will be saved when they change it
+      setThemeState('light');
     }
   }, []);
 
@@ -58,7 +58,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // Prevent flash of wrong theme
   if (!mounted) {
     return (
-      <div className="dark">
+      <div>
         {children}
       </div>
     );
@@ -76,7 +76,7 @@ export function useTheme() {
   // Return default values if not within ThemeProvider (for SSR/build)
   if (context === undefined) {
     return {
-      theme: 'dark' as Theme,
+      theme: 'light' as Theme,
       setTheme: () => {},
       toggleTheme: () => {}
     };

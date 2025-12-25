@@ -85,8 +85,7 @@ const StockPage = () => {
   const tabs = [
     { id: 'products' as Tab, name: 'Productos', icon: Package },
     { id: 'movements' as Tab, name: 'Movimientos', icon: TrendingUp },
-    { id: 'suppliers' as Tab, name: 'Proveedores', icon: Truck },
-    { id: 'reports' as Tab, name: 'Reportes', icon: DollarSign }
+    { id: 'suppliers' as Tab, name: 'Proveedores', icon: Truck }
   ];
 
   // Header controls based on active tab

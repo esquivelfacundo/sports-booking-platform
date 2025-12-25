@@ -679,9 +679,9 @@ export default function CashRegisterPage() {
             </div>
 
             {/* Últimos movimientos */}
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-400" />
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm dark:shadow-none">
+              <h3 className="text-gray-900 dark:text-white font-semibold mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 Últimos movimientos
               </h3>
               {movementsLoading ? (
@@ -690,14 +690,14 @@ export default function CashRegisterPage() {
                 </div>
               ) : ingresos.length === 0 ? (
                 <div className="text-center py-8">
-                  <DollarSign className="w-8 h-8 mx-auto text-gray-600 mb-2" />
-                  <p className="text-gray-500 text-sm">No hay movimientos registrados todavía</p>
+                  <DollarSign className="w-8 h-8 mx-auto text-gray-400 dark:text-gray-600 mb-2" />
+                  <p className="text-gray-500 dark:text-gray-500 text-sm">No hay movimientos registrados todavía</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-gray-400 border-b border-gray-700">
+                      <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                         <th className="pb-3 font-medium"># Pedido</th>
                         <th className="pb-3 font-medium">Cliente</th>
                         <th className="pb-3 font-medium">Método</th>
@@ -705,7 +705,7 @@ export default function CashRegisterPage() {
                         <th className="pb-3 font-medium">Hora</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-700/50">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
                       {ingresos.slice(0, 10).map((mov) => (
                         <tr 
                           key={mov.id} 
@@ -715,16 +715,16 @@ export default function CashRegisterPage() {
                               setShowOrderDetail(true);
                             }
                           }}
-                          className={`text-gray-300 transition-colors ${mov.order?.id ? 'hover:bg-gray-700/50 cursor-pointer' : 'hover:bg-gray-700/30'}`}
+                          className={`text-gray-700 dark:text-gray-300 transition-colors ${mov.order?.id ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}
                         >
-                          <td className="py-3 text-emerald-400 font-medium">
+                          <td className="py-3 text-emerald-600 dark:text-emerald-400 font-medium">
                             {mov.order?.orderNumber ? `#${mov.order.orderNumber}` : '-'}
                           </td>
                           <td className="py-3">{mov.booking?.guestName || mov.description || '-'}</td>
                           <td className="py-3">
-                            <span className="px-2 py-1 bg-gray-700 rounded text-xs">{getPaymentMethodLabel(mov.paymentMethod)}</span>
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">{getPaymentMethodLabel(mov.paymentMethod)}</span>
                           </td>
-                          <td className="py-3 font-medium text-green-400">+{formatCurrency(mov.amount)}</td>
+                          <td className="py-3 font-medium text-green-600 dark:text-green-400">+{formatCurrency(mov.amount)}</td>
                           <td className="py-3 text-gray-500 text-xs">
                             {new Date(mov.registeredAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                           </td>
@@ -742,11 +742,11 @@ export default function CashRegisterPage() {
             </div>
 
             {/* Acción de cerrar caja */}
-            <div className="bg-gradient-to-r from-red-900/30 to-gray-800 rounded-xl border border-red-700/30 p-5">
+            <div className="bg-gradient-to-r from-red-50 dark:from-red-900/30 to-white dark:to-gray-800 rounded-xl border border-red-200 dark:border-red-700/30 p-5 shadow-sm dark:shadow-none">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h3 className="text-white font-semibold mb-1">¿Finalizar turno?</h3>
-                  <p className="text-gray-400 text-sm">
+                  <h3 className="text-gray-900 dark:text-white font-semibold mb-1">¿Finalizar turno?</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
                     Al cerrar la caja se registrará el efectivo real y se generará el resumen del turno.
                   </p>
                 </div>

@@ -384,10 +384,10 @@ const AnalyticsPage = () => {
             {charts.courtUtilization.map((court, index) => (
               <div key={index}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-white">{court.court}</span>
-                  <span className="text-gray-400">{court.utilization}% • {court.reservations} reservas</span>
+                  <span className="text-gray-900 dark:text-white">{court.court}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{court.utilization}% • {court.reservations} reservas</span>
                 </div>
-                <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${court.utilization}%` }}
@@ -438,7 +438,7 @@ const AnalyticsPage = () => {
                           className={`w-full rounded-t cursor-pointer ${
                             hour.reservations > 0 
                               ? 'bg-gradient-to-t from-orange-600 to-orange-400 hover:from-orange-500 hover:to-orange-300'
-                              : 'bg-gray-700'
+                              : 'bg-gray-200 dark:bg-gray-700'
                           }`}
                         />
                         {/* Tooltip */}
@@ -475,8 +475,8 @@ const AnalyticsPage = () => {
               const width = maxCount > 0 ? (day.count / maxCount) * 100 : 0;
               return (
                 <div key={index} className="flex items-center space-x-3">
-                  <span className="text-gray-400 w-24">{day.name}</span>
-                  <div className="flex-1 h-6 bg-gray-700 rounded-full overflow-hidden">
+                  <span className="text-gray-500 dark:text-gray-400 w-24">{day.name}</span>
+                  <div className="flex-1 h-6 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${width}%` }}
@@ -502,16 +502,16 @@ const AnalyticsPage = () => {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tipos de Reserva</h3>
           <div className="space-y-3">
             {charts.bookingTypes.map((type, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                 <div>
-                  <p className="text-white font-medium">{getBookingTypeLabel(type.type)}</p>
-                  <p className="text-sm text-gray-400">{type.count} reservas ({type.percentage.toFixed(1)}%)</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{getBookingTypeLabel(type.type)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{type.count} reservas ({type.percentage.toFixed(1)}%)</p>
                 </div>
-                <p className="text-emerald-400 font-semibold">{formatCurrency(type.revenue)}</p>
+                <p className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCurrency(type.revenue)}</p>
               </div>
             ))}
             {charts.bookingTypes.length === 0 && (
-              <p className="text-gray-400 text-center py-4">No hay datos</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-4">No hay datos</p>
             )}
           </div>
         </div>
@@ -521,21 +521,21 @@ const AnalyticsPage = () => {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Mejores Clientes</h3>
           <div className="space-y-3">
             {topCustomers.map((customer, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-sm">{index + 1}</span>
                   </div>
                   <div>
-                    <p className="text-white font-medium">{customer.name}</p>
-                    <p className="text-sm text-gray-400">{customer.totalBookings} reservas</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{customer.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{customer.totalBookings} reservas</p>
                   </div>
                 </div>
-                <p className="text-emerald-400 font-semibold">{formatCurrency(customer.totalRevenue)}</p>
+                <p className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCurrency(customer.totalRevenue)}</p>
               </div>
             ))}
             {topCustomers.length === 0 && (
-              <p className="text-gray-400 text-center py-4">No hay datos de clientes</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-4">No hay datos de clientes</p>
             )}
           </div>
         </div>
