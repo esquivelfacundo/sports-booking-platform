@@ -1,5 +1,24 @@
-// API Configuration - Uses environment variable with fallback to localhost
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+// API Configuration - Uses environment variable with smart fallback
+const getApiBaseUrl = () => {
+  // If env var is set, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // In browser, detect if we're in production
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'www.miscanchas.com' || hostname === 'miscanchas.com') {
+      // In production, API is served from same domain via Vercel rewrites
+      return window.location.origin;
+    }
+  }
+  
+  // Default to localhost for development
+  return 'http://localhost:8001';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // API Client class
 class ApiClient {
