@@ -523,27 +523,27 @@ const BookingPage = () => {
 
   // Shared booking form component for all designs
   const BookingForm = ({ compact = false }: { compact?: boolean }) => (
-    <div className={`bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden ${compact ? '' : 'mb-12'}`}>
+    <div className="bg-white dark:bg-gray-900 min-h-full">
       {/* Booking Header with Progress */}
-      <div className="p-4 md:p-6 border-b border-gray-800 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-xl font-bold text-white mb-1">Reservar cancha</h2>
-            <p className="text-gray-400 text-sm">Paso {currentStep} de {TOTAL_STEPS}</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Reservar cancha</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Paso {currentStep} de {TOTAL_STEPS}</p>
           </div>
           <div className="text-right">
-            <div className="text-sm text-gray-400">Total</div>
-            <div className="text-2xl font-bold text-white">${getPrice()}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total</div>
+            <div className="text-xl font-bold text-gray-900 dark:text-white">${getPrice()}</div>
           </div>
         </div>
         <div className="flex gap-2">
           {Array.from({ length: TOTAL_STEPS }).map((_, idx) => (
-            <div key={idx} className={`h-1.5 flex-1 rounded-full transition-all ${idx + 1 <= currentStep ? 'bg-emerald-500' : 'bg-gray-700'}`} />
+            <div key={idx} className={`h-1.5 flex-1 rounded-full transition-all ${idx + 1 <= currentStep ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
           ))}
         </div>
       </div>
 
-      <div className={`p-4 md:p-6 ${compact ? 'max-h-[60vh] overflow-y-auto' : 'min-h-[400px]'}`}>
+      <div className={`p-4 ${compact ? 'max-h-[60vh] overflow-y-auto' : 'min-h-[400px]'}`}>
         <AnimatePresence mode="wait">
           {/* Step 1: Sport Selection */}
           {currentStep === 1 && (
@@ -552,7 +552,7 @@ const BookingPage = () => {
                 <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-emerald-500/20 flex items-center justify-center">
                   <Trophy className="w-6 h-6 text-emerald-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">¿Qué deporte querés jugar?</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">¿Qué deporte querés jugar?</h3>
               </div>
               <div className={`grid ${compact ? 'grid-cols-2 gap-3' : 'grid-cols-2 md:grid-cols-3 gap-4'}`}>
                 {availableSports.map((sport) => {
@@ -561,10 +561,10 @@ const BookingPage = () => {
                   const courtCount = establishment?.courts?.filter(c => c.sport === sport).length || 0;
                   return (
                     <button key={sport} onClick={() => { setSelectedSport(sport); setCurrentStep(2); }}
-                      className={`p-4 rounded-xl border-2 transition-all text-center ${selectedSport === sport ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                      className={`p-4 rounded-xl border-2 transition-all text-center ${selectedSport === sport ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500/50'}`}>
                       <div className="text-3xl mb-2">{icon}</div>
-                      <div className="font-semibold text-white capitalize">{sport}</div>
-                      <div className="text-xs text-gray-400">{courtCount} canchas</div>
+                      <div className="font-semibold text-gray-900 dark:text-white capitalize">{sport}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{courtCount} canchas</div>
                     </button>
                   );
                 })}
@@ -575,25 +575,25 @@ const BookingPage = () => {
           {/* Step 2: Duration */}
           {currentStep === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">¿Cuánto tiempo?</h3></div>
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-900 dark:text-white">¿Cuánto tiempo?</h3></div>
               <div className="grid grid-cols-2 gap-3">
                 {[{ value: 60, label: '1 hora' }, { value: 90, label: '1:30 hs' }, { value: 120, label: '2 horas' }].map((d) => (
                   <button key={d.value} onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(3); }}
-                    className={`p-4 rounded-xl border-2 text-center ${selectedDuration === d.value && !showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
-                    <div className="text-xl font-bold text-white">{d.label}</div>
+                    className={`p-4 rounded-xl border-2 text-center ${selectedDuration === d.value && !showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500/50'}`}>
+                    <div className="text-xl font-bold text-gray-900 dark:text-white">{d.label}</div>
                   </button>
                 ))}
                 <button onClick={() => { setShowCustomDuration(!showCustomDuration); if (!showCustomDuration) setCustomDuration(150); }}
-                  className={`p-4 rounded-xl border-2 text-center ${showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
-                  <div className="text-xl font-bold text-white">Otro</div>
+                  className={`p-4 rounded-xl border-2 text-center ${showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500/50'}`}>
+                  <div className="text-xl font-bold text-gray-900 dark:text-white">Otro</div>
                 </button>
               </div>
               {showCustomDuration && (
-                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-center gap-4 mb-4">
-                    <button onClick={() => setCustomDuration(Math.max(150, customDuration - 30))} disabled={customDuration <= 150} className="w-10 h-10 rounded-lg bg-gray-700 text-white disabled:opacity-50">-</button>
-                    <span className="text-2xl font-bold text-white">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}</span>
-                    <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-10 h-10 rounded-lg bg-gray-700 text-white">+</button>
+                    <button onClick={() => setCustomDuration(Math.max(150, customDuration - 30))} disabled={customDuration <= 150} className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50">-</button>
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}</span>
+                    <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white">+</button>
                   </div>
                   <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(3); }} className="w-full py-2 rounded-lg bg-emerald-500 text-white font-medium">Confirmar</button>
                 </div>
@@ -604,7 +604,7 @@ const BookingPage = () => {
           {/* Step 3: Date + Time (unified like Franco) */}
           {currentStep === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">Fecha y hora</h3></div>
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-900 dark:text-white">Fecha y hora</h3></div>
               
               {/* Date selector - horizontal scroll */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -614,7 +614,7 @@ const BookingPage = () => {
                       className={`flex-shrink-0 flex flex-col items-center p-2 rounded-lg border-2 transition-all min-w-[60px] ${
                         selectedDate === date.value 
                           ? 'bg-emerald-500 border-emerald-500 text-white' 
-                          : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                          : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-emerald-500/50'
                       }`}>
                       <span className="text-[10px] opacity-70 uppercase">{date.dayName}</span>
                       <span className="text-lg font-bold">{date.dayNumber}</span>
@@ -627,14 +627,14 @@ const BookingPage = () => {
               {/* Time slots */}
               {selectedDate && (
                 <div className="mt-4">
-                  <p className="text-sm text-gray-400 mb-3">Horarios disponibles para el {formatSelectedDate()}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Horarios disponibles para el {formatSelectedDate()}</p>
                   {loadingSlots ? (
                     <div className="text-center py-6"><div className="w-8 h-8 mx-auto border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
                   ) : availableSlots.length > 0 ? (
                     <div className="grid grid-cols-4 gap-2">
                       {availableSlots.map((slot) => (
                         <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
-                          className={`py-2 rounded-lg text-sm font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-800/30 text-gray-600 line-through'}`}>
+                          className={`py-2 rounded-lg text-sm font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
                           {slot.time}
                         </button>
                       ))}
@@ -652,20 +652,20 @@ const BookingPage = () => {
           {/* Step 4: Court */}
           {currentStep === 4 && (
             <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">Elegí tu cancha</h3></div>
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-900 dark:text-white">Elegí tu cancha</h3></div>
               {availableCourtsAtTime.length > 0 ? (
                 <div className="space-y-3">
                   {availableCourtsAtTime.map((court) => (
                     <div key={court.id} onClick={() => setSelectedCourt(court)}
-                      className={`p-4 rounded-xl border-2 cursor-pointer ${selectedCourt?.id === court.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                      className={`p-4 rounded-xl border-2 cursor-pointer ${selectedCourt?.id === court.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500/50'}`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-700'}`}>🏟️</div>
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}>🏟️</div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-white">{court.name}</h4>
-                          <p className="text-sm text-gray-400 capitalize">{court.sport} • {court.surface}</p>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">{court.name}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{court.sport} • {court.surface}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-emerald-400">${Math.round(court.pricePerHour * (selectedDuration / 60))}</p>
+                          <p className="text-lg font-bold text-emerald-500">${Math.round(court.pricePerHour * (selectedDuration / 60))}</p>
                         </div>
                       </div>
                     </div>
@@ -677,9 +677,9 @@ const BookingPage = () => {
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-800">
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
           <button onClick={goToPrevStep} disabled={currentStep === 1}
-            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm ${currentStep === 1 ? 'opacity-0' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm ${currentStep === 1 ? 'opacity-0' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
             <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
           {currentStep === 4 && selectedCourt ? (
@@ -794,11 +794,9 @@ const BookingPage = () => {
         </div>
       </header>
 
-      {/* Mobile content */}
-      <div className="lg:hidden">
-        <div className="px-4 py-6">
-          <BookingForm />
-        </div>
+      {/* Mobile content - fullscreen */}
+      <div className="lg:hidden flex-1 bg-gray-50 dark:bg-gray-900">
+        <BookingForm />
       </div>
 
       {/* DESKTOP LAYOUT - Same structure as admin dashboard */}

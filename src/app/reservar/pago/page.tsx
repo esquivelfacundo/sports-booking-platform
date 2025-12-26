@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
+import Link from 'next/link';
 import { 
   CreditCard, 
   Calendar, 
@@ -15,7 +16,13 @@ import {
   ArrowLeft,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Menu,
+  X,
+  Home,
+  Search,
+  Heart,
+  User
 } from 'lucide-react';
 
 function PaymentPageContent() {
@@ -84,6 +91,9 @@ function PaymentPageContent() {
   
   // Selected payment type: 'deposit' or 'full'
   const [paymentType, setPaymentType] = useState<'deposit' | 'full'>('deposit');
+  
+  // Sidebar state for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Format date for display
   const formatDate = (dateStr: string) => {
@@ -274,19 +284,92 @@ function PaymentPageContent() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-950 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Mobile sidebar drawer */}
+      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-white dark:bg-gray-800">
+          <div className="flex h-16 items-center justify-between px-4">
+            <Link href="/" className="flex items-center space-x-3">
+              <img src="/assets/logos/logo-light.svg" alt="Mis Canchas" className="h-10 w-auto dark:hidden" />
+              <img src="/assets/logos/logo-dark.svg" alt="Mis Canchas" className="h-10 w-auto hidden dark:block" />
+            </Link>
+            <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+          <nav className="flex-1 py-4 overflow-y-auto">
+            <div className="px-2 space-y-1">
+              <Link href="/" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Home className="mr-3 h-5 w-5 flex-shrink-0" />
+                Inicio
+              </Link>
+              <Link href="/buscar" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Search className="mr-3 h-5 w-5 flex-shrink-0" />
+                Buscar
+              </Link>
+            </div>
+            <div className="mx-4 my-3 border-t border-gray-200 dark:border-gray-700" />
+            <div className="px-2 space-y-1">
+              <Link href="/dashboard?section=reservations" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Calendar className="mr-3 h-5 w-5 flex-shrink-0" />
+                Mis Reservas
+              </Link>
+              <Link href="/dashboard?section=favorites" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Heart className="mr-3 h-5 w-5 flex-shrink-0" />
+                Favoritos
+              </Link>
+              <Link href="/dashboard/perfil" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <User className="mr-3 h-5 w-5 flex-shrink-0" />
+                Mi Perfil
+              </Link>
+            </div>
+          </nav>
+          {isAuthenticated && user && (
+            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-medium text-white">{user.firstName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.firstName || user.email}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile topbar */}
+      <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+        <div className="flex items-center h-14 px-4">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg mr-2">
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-gray-900 dark:text-white text-sm truncate">Confirmar y pagar</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{establishmentName}</p>
+          </div>
+          <button onClick={() => router.back()} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Desktop Header */}
+        <div className="hidden lg:block mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+            className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Volver</span>
           </button>
-          <h1 className="text-3xl font-bold text-white">Confirmar y pagar</h1>
-          <p className="text-gray-400 mt-1">Completa el pago de la seña para confirmar tu reserva</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Confirmar y pagar</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Completa el pago de la seña para confirmar tu reserva</p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -294,15 +377,15 @@ function PaymentPageContent() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-gray-900 rounded-2xl p-6 border border-gray-800 order-last lg:order-first"
+            className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 order-last lg:order-first"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <CreditCard className="w-5 h-5 text-emerald-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-white">Método de pago</h2>
-                <p className="text-sm text-gray-400">Pago seguro con Mercado Pago</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Método de pago</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Pago seguro con Mercado Pago</p>
               </div>
             </div>
             
@@ -310,7 +393,7 @@ function PaymentPageContent() {
               {/* Payment type selector - only show if full payment is enabled */}
               {fullPaymentInfo.enabled && (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-400 font-medium">Elegí cómo pagar</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Elegí cómo pagar</p>
                   
                   {/* Deposit option */}
                   <button
@@ -319,20 +402,20 @@ function PaymentPageContent() {
                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                       paymentType === 'deposit'
                         ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`font-medium ${paymentType === 'deposit' ? 'text-emerald-400' : 'text-white'}`}>
+                        <p className={`font-medium ${paymentType === 'deposit' ? 'text-emerald-500' : 'text-gray-900 dark:text-white'}`}>
                           Pagar seña ({depositInfo.percent}%)
                         </p>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           Pagás ${depositInfo.totalAmount.toLocaleString('es-AR')} ahora, ${depositInfo.remainingAmount.toLocaleString('es-AR')} en el lugar
                         </p>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        paymentType === 'deposit' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-600'
+                        paymentType === 'deposit' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300 dark:border-gray-600'
                       }`}>
                         {paymentType === 'deposit' && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
@@ -346,20 +429,20 @@ function PaymentPageContent() {
                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                       paymentType === 'full'
                         ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`font-medium ${paymentType === 'full' ? 'text-emerald-400' : 'text-white'}`}>
+                        <p className={`font-medium ${paymentType === 'full' ? 'text-emerald-500' : 'text-gray-900 dark:text-white'}`}>
                           Pago completo
                         </p>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           Pagás ${fullPaymentInfo.totalAmount.toLocaleString('es-AR')} ahora, nada en el lugar
                         </p>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        paymentType === 'full' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-600'
+                        paymentType === 'full' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300 dark:border-gray-600'
                       }`}>
                         {paymentType === 'full' && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
@@ -369,16 +452,16 @@ function PaymentPageContent() {
               )}
               
               {/* Mercado Pago info */}
-              <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-[#009ee3] rounded flex items-center justify-center">
                       <span className="text-white font-bold text-sm">MP</span>
                     </div>
-                    <span className="text-white font-semibold">Mercado Pago</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Mercado Pago</span>
                   </div>
                 </div>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Serás redirigido a Mercado Pago para completar el pago de forma segura. 
                   Podés pagar con tarjeta de crédito, débito o dinero en cuenta.
                 </p>
@@ -435,30 +518,30 @@ function PaymentPageContent() {
             className="space-y-6"
           >
             {/* Reservation details */}
-            <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-              <h3 className="text-lg font-semibold text-white mb-4">Resumen de reserva</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resumen de reserva</h3>
               
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-emerald-400 mt-0.5" />
                   <div>
-                    <p className="text-white font-medium">{establishmentName}</p>
-                    <p className="text-gray-400 text-sm">{courtName} • {sport}</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{establishmentName}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">{courtName} • {sport}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-emerald-400 mt-0.5" />
                   <div>
-                    <p className="text-white font-medium capitalize">{formatDate(date)}</p>
+                    <p className="text-gray-900 dark:text-white font-medium capitalize">{formatDate(date)}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-emerald-400 mt-0.5" />
                   <div>
-                    <p className="text-white font-medium">{time} - {endTime}</p>
-                    <p className="text-gray-400 text-sm">{duration} minutos</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{time} - {endTime}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">{duration} minutos</p>
                   </div>
                 </div>
               </div>
@@ -488,34 +571,34 @@ function PaymentPageContent() {
             )}
             
             {/* Price breakdown */}
-            <div className="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-              <h3 className="text-lg font-semibold text-white mb-4">Detalle del pago</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Detalle del pago</h3>
               
               <div className="space-y-3">
                 {/* Full price */}
-                <div className="flex justify-between text-gray-400">
+                <div className="flex justify-between text-gray-500 dark:text-gray-400">
                   <span>Precio total del turno</span>
                   <span>${price.toLocaleString('es-AR')}</span>
                 </div>
                 
                 {/* Payment section - changes based on selected type */}
-                <div className="border-t border-gray-700 pt-3 mt-3">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
                     {paymentType === 'full' ? 'Pago completo' : `Pago de seña (${depositInfo.percent}%)`}
                   </p>
-                  <div className="flex justify-between text-gray-300">
+                  <div className="flex justify-between text-gray-700 dark:text-gray-300">
                     <span>{paymentType === 'full' ? 'Cancha' : 'Seña'}</span>
                     <span>${(paymentType === 'full' ? price : depositInfo.baseAmount).toLocaleString('es-AR')}</span>
                   </div>
-                  <div className="flex justify-between text-gray-300">
+                  <div className="flex justify-between text-gray-700 dark:text-gray-300">
                     <span>Tarifa de servicio</span>
                     <span className="flex items-center gap-2">
                       {feeDiscount.hasDiscount && (
-                        <span className="line-through text-gray-500">
+                        <span className="line-through text-gray-400 dark:text-gray-500">
                           ${(paymentType === 'full' ? fullPaymentInfo.generalFee : depositInfo.generalFee)?.toLocaleString('es-AR') || feeDiscount.generalFee.toLocaleString('es-AR')}
                         </span>
                       )}
-                      <span className={feeDiscount.hasDiscount ? 'text-emerald-400' : ''}>
+                      <span className={feeDiscount.hasDiscount ? 'text-emerald-500' : ''}>
                         {(paymentType === 'full' ? fullPaymentInfo.fee : depositInfo.fee) === 0 
                           ? '$0' 
                           : `$${(paymentType === 'full' ? fullPaymentInfo.fee : depositInfo.fee).toLocaleString('es-AR')}`
@@ -537,9 +620,9 @@ function PaymentPageContent() {
                 )}
                 
                 {/* Total to pay now */}
-                <div className="border-t border-gray-700 pt-3 flex justify-between">
-                  <span className="text-white font-medium">Total a pagar ahora</span>
-                  <span className="text-emerald-400 font-semibold text-lg">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between">
+                  <span className="text-gray-900 dark:text-white font-medium">Total a pagar ahora</span>
+                  <span className="text-emerald-500 font-semibold text-lg">
                     ${((paymentType === 'full' ? fullPaymentInfo.totalAmount : depositInfo.totalAmount) + (pendingDebt.hasDebt ? pendingDebt.totalDebt : 0)).toLocaleString('es-AR')}
                   </span>
                 </div>
@@ -562,8 +645,8 @@ function PaymentPageContent() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />
                 <div>
-                  <p className="text-emerald-400 font-medium">Cancelación flexible</p>
-                  <p className="text-gray-400 text-sm mt-1">
+                  <p className="text-emerald-500 font-medium">Cancelación flexible</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                     Podés cancelar hasta 24 horas antes y recibir el reembolso completo de la seña.
                   </p>
                 </div>
@@ -579,7 +662,7 @@ function PaymentPageContent() {
 export default function PaymentPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     }>
