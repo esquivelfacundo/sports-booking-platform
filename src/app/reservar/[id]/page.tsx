@@ -698,7 +698,7 @@ const BookingPage = () => {
                 </motion.div>
               )}
 
-              {/* Step 2: Date Selection */}
+              {/* Step 2: Date Selection - Calendar Grid */}
               {currentStep === 2 && (
                 <motion.div
                   key="step2"
@@ -707,7 +707,7 @@ const BookingPage = () => {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <div className="text-center mb-8">
+                  <div className="text-center mb-6">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
                       <Calendar className="w-8 h-8 text-emerald-400" />
                     </div>
@@ -715,7 +715,8 @@ const BookingPage = () => {
                     <p className="text-gray-400">Selecciona la fecha para tu reserva de <span className="capitalize text-emerald-400">{selectedSport}</span></p>
                   </div>
                   
-                  <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide justify-center flex-wrap">
+                  {/* Calendar Grid - 7 columns on desktop, responsive on mobile */}
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2 max-w-3xl mx-auto">
                     {dates.map((date) => (
                       <button
                         key={date.value}
@@ -723,7 +724,7 @@ const BookingPage = () => {
                           setSelectedDate(date.value);
                           setCurrentStep(3);
                         }}
-                        className={`flex-shrink-0 flex flex-col items-center px-5 py-4 rounded-2xl border-2 transition-all min-w-[80px] ${
+                        className={`flex flex-col items-center p-3 md:p-4 rounded-xl border-2 transition-all ${
                           selectedDate === date.value
                             ? 'bg-emerald-500 border-emerald-500 text-white'
                             : date.isWeekend
@@ -731,11 +732,11 @@ const BookingPage = () => {
                             : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
                         }`}
                       >
-                        <span className="text-xs font-medium opacity-70 uppercase">{date.dayName}</span>
-                        <span className="text-2xl font-bold my-1">{date.dayNumber}</span>
-                        <span className="text-xs opacity-70">{date.month}</span>
+                        <span className="text-[10px] md:text-xs font-medium opacity-70 uppercase">{date.dayName}</span>
+                        <span className="text-xl md:text-2xl font-bold my-0.5">{date.dayNumber}</span>
+                        <span className="text-[10px] md:text-xs opacity-70">{date.month}</span>
                         {date.isToday && (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full mt-1 ${
+                          <span className={`text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full mt-1 ${
                             selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'
                           }`}>
                             Hoy
@@ -768,8 +769,7 @@ const BookingPage = () => {
                     {[
                       { value: 60, label: '1 hora' },
                       { value: 90, label: '1:30 hs' },
-                      { value: 120, label: '2 horas' },
-                      { value: 180, label: '3 horas' }
+                      { value: 120, label: '2 horas' }
                     ].map((duration) => (
                       <motion.button
                         key={duration.value}
@@ -777,10 +777,11 @@ const BookingPage = () => {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => {
                           setSelectedDuration(duration.value);
+                          setShowCustomDuration(false);
                           setCurrentStep(4);
                         }}
                         className={`p-6 rounded-2xl border-2 transition-all text-center ${
-                          selectedDuration === duration.value
+                          selectedDuration === duration.value && !showCustomDuration
                             ? 'bg-emerald-500/20 border-emerald-500'
                             : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
                         }`}
@@ -789,7 +790,109 @@ const BookingPage = () => {
                         <div className="text-sm text-gray-400">{duration.value} min</div>
                       </motion.button>
                     ))}
+                    
+                    {/* Custom Duration Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowCustomDuration(!showCustomDuration)}
+                      className={`p-6 rounded-2xl border-2 transition-all text-center ${
+                        showCustomDuration
+                          ? 'bg-emerald-500/20 border-emerald-500'
+                          : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
+                      }`}
+                    >
+                      <div className="text-2xl font-bold text-white mb-1">Otro</div>
+                      <div className="text-sm text-gray-400">Personalizado</div>
+                    </motion.button>
                   </div>
+                  
+                  {/* Custom Duration Picker */}
+                  <AnimatePresence>
+                    {showCustomDuration && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="bg-gray-800 rounded-2xl p-6 max-w-md mx-auto border border-gray-700">
+                          <div className="flex items-center justify-center gap-6 mb-6">
+                            {/* Hours */}
+                            <div className="text-center">
+                              <label className="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Horas</label>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setCustomDuration(Math.max(30, customDuration - 60))}
+                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
+                                >
+                                  -
+                                </button>
+                                <div className="w-16 text-center">
+                                  <span className="text-3xl font-bold text-white">{Math.floor(customDuration / 60)}</span>
+                                </div>
+                                <button
+                                  onClick={() => setCustomDuration(Math.min(480, customDuration + 60))}
+                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <span className="text-2xl text-gray-500 font-bold mt-6">:</span>
+                            
+                            {/* Minutes */}
+                            <div className="text-center">
+                              <label className="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Minutos</label>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    const mins = customDuration % 60;
+                                    const hours = Math.floor(customDuration / 60);
+                                    const newMins = mins === 0 ? 30 : 0;
+                                    setCustomDuration(Math.max(30, hours * 60 + newMins));
+                                  }}
+                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
+                                >
+                                  -
+                                </button>
+                                <div className="w-16 text-center">
+                                  <span className="text-3xl font-bold text-white">{String(customDuration % 60).padStart(2, '0')}</span>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const mins = customDuration % 60;
+                                    const hours = Math.floor(customDuration / 60);
+                                    const newMins = mins === 0 ? 30 : 0;
+                                    const newHours = mins === 30 ? hours + 1 : hours;
+                                    setCustomDuration(Math.min(480, newHours * 60 + newMins));
+                                  }}
+                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-center text-gray-400 text-sm mb-4">
+                            Duración: {Math.floor(customDuration / 60)}h {customDuration % 60 > 0 ? `${customDuration % 60}min` : ''}
+                          </div>
+                          
+                          <button
+                            onClick={() => {
+                              setSelectedDuration(customDuration);
+                              setCurrentStep(4);
+                            }}
+                            className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 transition-all"
+                          >
+                            Confirmar duración
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               )}
 
