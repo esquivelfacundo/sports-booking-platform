@@ -1499,7 +1499,9 @@ const ReservationsPage = () => {
           duration: selectedReservation.duration,
           notes: selectedReservation.notes,
           depositAmount: selectedReservation.depositAmount,
-          depositMethod: selectedReservation.depositMethod
+          depositMethod: selectedReservation.depositMethod,
+          date: selectedReservation.date,
+          startTime: selectedReservation.time
         } : null}
         onUpdate={async (reservationId, data) => {
           try {

@@ -153,9 +153,11 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
 }) => {
   const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
   
-  // Drag and drop state
-  const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ courtId: string; time: string } | null>(null);
+  // Drag and drop state - DISABLED FOR NOW
+  // const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null);
+  // const [dropTarget, setDropTarget] = useState<{ courtId: string; time: string } | null>(null);
+  const draggedBooking = null as Booking | null; // Placeholder to avoid breaking references
+  const dropTarget = null as { courtId: string; time: string } | null; // Placeholder
   
   // Mobile state - selected court index for swipe
   const [mobileCourtIndex, setMobileCourtIndex] = useState(0);
@@ -259,13 +261,13 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     return data;
   }, [bookings, courts, amenities, timeSlots, selectedDate, draggedBooking]);
 
-  // Drag and drop handlers
+  // Drag and drop handlers - DISABLED FOR NOW
+  // TODO: Re-enable when drag and drop functionality is properly implemented
+  /*
   const handleDragStart = useCallback((e: React.DragEvent, booking: Booking) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', booking.id);
     
-    // Hide the original element AFTER the browser captures the drag image
-    // This allows the ghost to appear while the original disappears
     requestAnimationFrame(() => {
       (e.target as HTMLElement).style.opacity = '0';
       setDraggedBooking(booking);
@@ -282,11 +284,9 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    // Check if slot is available (not occupied by another booking)
     const key = `${courtId}-${time}`;
     const slot = slotData[key];
     
-    // Allow drop if slot is empty or if it's the same booking being dragged
     if (!slot?.booking || slot.booking.id === draggedBooking?.id) {
       setDropTarget({ courtId, time });
     }
@@ -300,7 +300,6 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     e.preventDefault();
     
     if (draggedBooking && onBookingMove) {
-      // Check if the new position is valid (not overlapping with other bookings)
       const dateStr = formatDateForComparison(selectedDate);
       const parseTime = (t: string): number => {
         const parts = t.split(':');
@@ -310,23 +309,20 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
       const newStartMinutes = parseTime(time);
       const newEndMinutes = newStartMinutes + draggedBooking.duration;
       
-      // Check for conflicts with other bookings
       const hasConflict = bookings.some(b => {
-        if (b.id === draggedBooking.id) return false; // Skip the booking being moved
+        if (b.id === draggedBooking.id) return false;
         if (b.courtId !== courtId || b.date !== dateStr) return false;
         if (b.status === 'cancelled') return false;
         
         const existingStart = parseTime(b.startTime);
         const existingEnd = existingStart + b.duration;
         
-        // Check for overlap
         return (newStartMinutes < existingEnd && newEndMinutes > existingStart);
       });
       
       if (!hasConflict) {
         onBookingMove(draggedBooking.id, courtId, time);
       } else {
-        // Could show a toast notification here
         console.warn('Cannot move booking: slot is occupied');
       }
     }
@@ -334,6 +330,20 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     setDraggedBooking(null);
     setDropTarget(null);
   }, [draggedBooking, onBookingMove, bookings, selectedDate]);
+  */
+  
+  // Placeholder functions to avoid breaking references
+  const handleDragStart = useCallback((e: React.DragEvent, booking: Booking) => {
+    e.preventDefault();
+  }, []);
+  const handleDragEnd = useCallback((e: React.DragEvent) => {}, []);
+  const handleDragOver = useCallback((e: React.DragEvent, courtId: string, time: string) => {
+    e.preventDefault();
+  }, []);
+  const handleDragLeave = useCallback(() => {}, []);
+  const handleDrop = useCallback((e: React.DragEvent, courtId: string, time: string) => {
+    e.preventDefault();
+  }, []);
 
   // Check if a slot can accept a drop
   const canDropOnSlot = useCallback((courtId: string, time: string): boolean => {
@@ -426,15 +436,16 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     return (
       <div
         key={booking.id}
-        draggable={!isMobile && onBookingMove !== undefined && booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'no_show'}
-        onDragStart={(e) => handleDragStart(e, booking)}
-        onDragEnd={(e) => handleDragEnd(e)}
+        // Drag and drop disabled for now
+        draggable={false}
+        // onDragStart={(e) => handleDragStart(e, booking)}
+        // onDragEnd={(e) => handleDragEnd(e)}
         onClick={() => !isBeingDragged && onBookingClick(booking)}
         className={`
           absolute p-1 text-left select-none group
           ${getStatusColor(booking.status, booking.isRecurring)} border-t-4
           overflow-hidden cursor-pointer
-          ${!isMobile && onBookingMove && booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'no_show' ? 'md:cursor-grab md:active:cursor-grabbing' : ''}
+          /* Drag cursor disabled for now */
         `}
         style={{ 
           top: `${topPosition}px`,
@@ -446,11 +457,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
       >
         {/* Action buttons - show on hover (desktop only) */}
         <div className="absolute top-0 right-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-          {!isMobile && onBookingMove && booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'no_show' && (
-            <div className="p-0.5">
-              <GripVertical className="h-3 w-3 text-white/70" />
-            </div>
-          )}
+          {/* GripVertical icon disabled - drag and drop is disabled for now */}
           {!isMobile && onBookingCancel && booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'no_show' && (
             <button
               onClick={handleCancelClick}

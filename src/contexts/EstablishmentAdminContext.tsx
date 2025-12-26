@@ -390,8 +390,8 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
 
   const refreshAll = useCallback(async () => {
     if (!establishmentId) return;
-    await Promise.all([loadCourts(), loadStats(), loadNotifications()]);
-  }, [establishmentId, loadCourts, loadStats, loadNotifications]);
+    await Promise.all([loadReservations(), loadCourts(), loadStats(), loadNotifications()]);
+  }, [establishmentId, loadReservations, loadCourts, loadStats, loadNotifications]);
 
   // Create court
   const createCourt = useCallback(async (courtData: Partial<AdminCourt>): Promise<boolean> => {

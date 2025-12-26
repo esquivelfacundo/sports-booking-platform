@@ -65,6 +65,8 @@ interface ExistingReservation {
   depositAmount?: number;
   depositMethod?: string;
   bookingType?: string;
+  date?: string;
+  startTime?: string;
 }
 
 interface ExistingBooking {
@@ -143,6 +145,10 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     notes: '',
     selectedAmenityIds: [] as string[],
   });
+  
+  // State for editable date and time (only used in edit mode)
+  const [editDate, setEditDate] = useState<string>('');
+  const [editTime, setEditTime] = useState<string>('');
 
   // State for custom duration
   const [showCustomDuration, setShowCustomDuration] = useState(false);
@@ -221,6 +227,19 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
         } else {
           setShowCustomDuration(false);
         }
+        
+        // Initialize date and time for editing
+        if (editingReservation.date) {
+          setEditDate(editingReservation.date);
+        } else {
+          // Fallback to selectedDate
+          const year = selectedDate.getFullYear();
+          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+          const day = String(selectedDate.getDate()).padStart(2, '0');
+          setEditDate(`${year}-${month}-${day}`);
+        }
+        setEditTime(editingReservation.startTime || selectedTime);
+        
         setClientMode('selected');
         setSelectedClient({
           id: 'existing',
@@ -406,10 +425,23 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
         // Determine if this is a court or amenity booking
         const isAmenityBooking = court.sport === 'amenity';
         
+        // Use edited date/time in edit mode, otherwise use selected values
+        const finalDate = isEditMode && editDate ? editDate : formatDateForAPI(selectedDate);
+        const finalTime = isEditMode && editTime ? editTime : selectedTime;
+        
+        // Calculate end time based on the final start time
+        const calculateFinalEndTime = (): string => {
+          const [hours, minutes] = finalTime.split(':').map(Number);
+          const totalMinutes = hours * 60 + minutes + formData.duration;
+          const endHours = Math.floor(totalMinutes / 60);
+          const endMinutes = totalMinutes % 60;
+          return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+        };
+        
         const bookingData: Record<string, any> = {
-          date: formatDateForAPI(selectedDate),
-          startTime: selectedTime,
-          endTime: calculateEndTime(),
+          date: finalDate,
+          startTime: finalTime,
+          endTime: calculateFinalEndTime(),
           duration: formData.duration,
           totalAmount: calculatePrice(),
           clientName: formData.clientName,
@@ -765,6 +797,34 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* Date and Time - Only in Edit Mode */}
+                {isEditMode && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Fecha
+                      </label>
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Hora
+                      </label>
+                      <input
+                        type="time"
+                        value={editTime}
+                        onChange={(e) => setEditTime(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Duration */}
                 <div>
