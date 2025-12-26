@@ -157,11 +157,24 @@ const BookingPage = () => {
     sessionStorage.setItem(`booking_state_${idOrSlug}`, JSON.stringify(stateToSave));
   }, [selectedDate, selectedCourt, selectedTime, selectedDuration, customDuration, showCustomDuration, selectedSport, currentStep, idOrSlug]);
   
-  // Clear saved state after successful payment redirect
+  // Clear saved state in specific scenarios
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment_success') === 'true') {
+    const hasPaymentParams = urlParams.get('payment_id') || urlParams.get('collection_id');
+    const hasSuccessParam = urlParams.get('payment_success') === 'true';
+    const isFromLogin = urlParams.get('from_login') === 'true';
+    
+    // Clear state if:
+    // 1. Payment was completed (has payment params)
+    // 2. Explicit success parameter
+    // 3. User is coming from somewhere other than login (fresh start)
+    if (hasPaymentParams || hasSuccessParam) {
       sessionStorage.removeItem(`booking_state_${idOrSlug}`);
+    } else if (!isFromLogin && !savedState) {
+      // If no saved state and not from login, ensure we start fresh
+      setCurrentStep(1);
     }
   }, [idOrSlug]);
   

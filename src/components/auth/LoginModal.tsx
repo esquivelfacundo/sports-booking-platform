@@ -54,7 +54,15 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
           }
           localStorage.setItem('user_data', JSON.stringify(data.user));
           localStorage.setItem('user_type', data.user.userType || 'player');
-          window.location.reload();
+          
+          // Add from_login param to preserve booking state
+          const currentUrl = new URL(window.location.href);
+          if (!currentUrl.searchParams.has('from_login')) {
+            currentUrl.searchParams.set('from_login', 'true');
+            window.location.href = currentUrl.toString();
+          } else {
+            window.location.reload();
+          }
         } else {
           setError(data.message || 'Error al iniciar sesión con Google');
         }
@@ -81,6 +89,13 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
       if (success) {
         onClose();
         setFormData({ email: '', password: '' });
+        
+        // Add from_login param to preserve booking state
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.pathname.includes('/reservar/') && !currentUrl.searchParams.has('from_login')) {
+          currentUrl.searchParams.set('from_login', 'true');
+          window.location.href = currentUrl.toString();
+        }
       } else {
         setError('Email o contraseña incorrectos');
       }
