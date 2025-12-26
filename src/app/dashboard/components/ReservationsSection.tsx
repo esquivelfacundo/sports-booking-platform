@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { 
   Calendar, 
   Clock, 
@@ -13,7 +14,9 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Eye,
+  QrCode
 } from 'lucide-react';
 import { usePlayerDashboard } from '@/hooks/usePlayerDashboard';
 
@@ -266,6 +269,13 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
                 
                 {activeTab === 'upcoming' && (
                   <div className="flex space-x-2">
+                    <Link
+                      href={`/reservar/confirmacion/${reservation.id}`}
+                      className="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      Ver QR
+                    </Link>
                     <button 
                       onClick={async () => {
                         if (confirm('¿Estás seguro de que quieres cancelar esta reserva?')) {
@@ -281,6 +291,13 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
                 
                 {activeTab === 'past' && (
                   <div className="flex space-x-2">
+                    <Link
+                      href={`/reservar/confirmacion/${reservation.id}`}
+                      className="flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Ver detalle
+                    </Link>
                     <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm">
                       Reservar de nuevo
                     </button>

@@ -51,9 +51,9 @@ function ConfirmationPageContent() {
       try {
         let booking = null;
         
-        // Try to get booking by ID first
+        // Try to get booking by ID first using public endpoint
         if (bookingId) {
-          const response = await apiClient.get(`/api/bookings/${bookingId}`) as any;
+          const response = await apiClient.get(`/api/bookings/public/${bookingId}`) as any;
           if (response) booking = response;
         }
         

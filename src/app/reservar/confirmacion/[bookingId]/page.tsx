@@ -52,8 +52,8 @@ function ConfirmationPageContent() {
       }
       
       try {
-        // Fetch booking details
-        const response = await apiClient.get(`/api/bookings/${bookingId}`) as any;
+        // Fetch booking details using public endpoint
+        const response = await apiClient.get(`/api/bookings/public/${bookingId}`) as any;
         if (response) {
           setBookingDetails(response);
           
