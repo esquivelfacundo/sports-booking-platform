@@ -538,7 +538,7 @@ export default function IntegrationsPage() {
         <ApiDocsContent />
       ) : (
         <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
           {INTEGRATION_CARDS.map((card, index) => {
             const connected = isConnected(card.id);
             return (
