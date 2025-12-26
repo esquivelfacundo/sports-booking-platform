@@ -115,7 +115,8 @@ class ApiClient {
                             endpoint.includes('/by-payment/') || 
                             endpoint.includes('/by-reference/') ||
                             endpoint.includes('/qr.png') ||
-                            endpoint.includes('/qr?');
+                            endpoint.includes('/qr?') ||
+                            endpoint.match(/\/bookings\/[^\/]+\/qr/);
     
     const config: RequestInit = {
       headers: {
