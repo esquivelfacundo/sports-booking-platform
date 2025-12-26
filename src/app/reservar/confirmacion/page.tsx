@@ -48,26 +48,46 @@ function ConfirmationPageContent() {
   // Fetch booking details using bookingId, paymentId, or external_reference
   useEffect(() => {
     const fetchBookingData = async () => {
+      console.log('[Confirmation] Fetching booking data...', { bookingId, paymentId, externalReference });
+      
       try {
         let booking = null;
         
         // Try to get booking by ID first using public endpoint
         if (bookingId) {
-          const response = await apiClient.get(`/api/bookings/public/${bookingId}`) as any;
-          if (response) booking = response;
+          console.log('[Confirmation] Trying by bookingId:', bookingId);
+          try {
+            const response = await apiClient.get(`/api/bookings/public/${bookingId}`) as any;
+            if (response && response.id) booking = response;
+          } catch (e) {
+            console.log('[Confirmation] bookingId lookup failed:', e);
+          }
         }
         
         // If no bookingId, try to find by payment_id
         if (!booking && paymentId) {
-          const response = await apiClient.get(`/api/bookings/by-payment/${paymentId}`) as any;
-          if (response) booking = response;
+          console.log('[Confirmation] Trying by paymentId:', paymentId);
+          try {
+            const response = await apiClient.get(`/api/bookings/by-payment/${paymentId}`) as any;
+            console.log('[Confirmation] by-payment response:', response);
+            if (response && response.id) booking = response;
+          } catch (e) {
+            console.log('[Confirmation] paymentId lookup failed:', e);
+          }
         }
         
         // If still no booking, try by external_reference (which might be the preference ID)
         if (!booking && externalReference) {
-          const response = await apiClient.get(`/api/bookings/by-reference/${externalReference}`) as any;
-          if (response) booking = response;
+          console.log('[Confirmation] Trying by externalReference:', externalReference);
+          try {
+            const response = await apiClient.get(`/api/bookings/by-reference/${externalReference}`) as any;
+            if (response && response.id) booking = response;
+          } catch (e) {
+            console.log('[Confirmation] externalReference lookup failed:', e);
+          }
         }
+        
+        console.log('[Confirmation] Final booking:', booking);
         
         if (booking) {
           setBookingDetails(booking);
@@ -83,6 +103,8 @@ function ConfirmationPageContent() {
             console.log('Could not fetch QR code:', qrErr);
           }
           setQrLoading(false);
+        } else {
+          console.log('[Confirmation] No booking found with any method');
         }
       } catch (err) {
         console.log('Could not fetch booking data:', err);
