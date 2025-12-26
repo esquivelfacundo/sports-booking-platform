@@ -1255,7 +1255,7 @@ const BookingPage = () => {
               <X className="h-6 w-6" />
             </button>
           </div>
-          <nav className="flex-1 py-4 overflow-y-auto">
+          <nav className="flex-1 py-4 overflow-y-auto flex flex-col">
             <div className="px-2 space-y-1">
               <Link href="/dashboard?section=reservations" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <Calendar className="mr-3 h-5 w-5 flex-shrink-0" />
@@ -1271,10 +1271,13 @@ const BookingPage = () => {
               </Link>
             </div>
             
+            {/* Spacer to push quick access to bottom */}
+            <div className="flex-1" />
+            
             {/* Favorite establishments - Quick access */}
             {userFavorites.length > 0 && (
               <>
-                <div className="mx-4 my-3 border-t border-gray-200 dark:border-gray-700" />
+                <div className="mx-4 mb-3 border-t border-gray-200 dark:border-gray-700" />
                 <div className="px-4 mb-2">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Accesos rápidos</p>
                 </div>
@@ -1376,41 +1379,48 @@ const BookingPage = () => {
             </div>
             
             {/* Navigation */}
-            <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-2 space-y-1">
-              <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <Calendar className="flex-shrink-0 h-5 w-5" />
-                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mis Reservas</span>
-              </Link>
-              <Link href="/dashboard?section=favorites" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <Heart className="flex-shrink-0 h-5 w-5" />
-                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Favoritos</span>
-              </Link>
-              <Link href="/dashboard/perfil" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <User className="flex-shrink-0 h-5 w-5" />
-                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mi Perfil</span>
-              </Link>
+            <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-2">
+              <div className="space-y-1">
+                <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <Calendar className="flex-shrink-0 h-5 w-5" />
+                  <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mis Reservas</span>
+                </Link>
+                <Link href="/dashboard?section=favorites" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <Heart className="flex-shrink-0 h-5 w-5" />
+                  <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Favoritos</span>
+                </Link>
+                <Link href="/dashboard/perfil" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <User className="flex-shrink-0 h-5 w-5" />
+                  <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mi Perfil</span>
+                </Link>
+              </div>
+              
+              {/* Spacer to push quick access to bottom */}
+              <div className="flex-1" />
               
               {/* Favorite establishments - Quick access */}
               {userFavorites.length > 0 && (
                 <>
-                  <div className="mx-3 my-2 border-t border-gray-200 dark:border-gray-700" />
+                  <div className="mx-3 mb-2 border-t border-gray-200 dark:border-gray-700" />
                   <div className={`px-3 mb-1 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Accesos rápidos</p>
                   </div>
-                  {userFavorites.slice(0, 5).map((fav) => (
-                    <Link 
-                      key={fav.id} 
-                      href={`/reservar/${fav.slug}`}
-                      className="group flex items-center px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors"
-                    >
-                      {fav.image ? (
-                        <img src={fav.image} alt="" className="flex-shrink-0 h-5 w-5 rounded object-cover" />
-                      ) : (
-                        <Star className="flex-shrink-0 h-5 w-5 text-emerald-500" />
-                      )}
-                      <span className={`ml-3 text-sm font-medium whitespace-nowrap truncate transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>{fav.name}</span>
-                    </Link>
-                  ))}
+                  <div className="space-y-1">
+                    {userFavorites.slice(0, 5).map((fav) => (
+                      <Link 
+                        key={fav.id} 
+                        href={`/reservar/${fav.slug}`}
+                        className="group flex items-center px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors"
+                      >
+                        {fav.image ? (
+                          <img src={fav.image} alt="" className="flex-shrink-0 h-5 w-5 rounded object-cover" />
+                        ) : (
+                          <Star className="flex-shrink-0 h-5 w-5 text-emerald-500" />
+                        )}
+                        <span className={`ml-3 text-sm font-medium whitespace-nowrap truncate transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>{fav.name}</span>
+                      </Link>
+                    ))}
+                  </div>
                 </>
               )}
             </nav>
