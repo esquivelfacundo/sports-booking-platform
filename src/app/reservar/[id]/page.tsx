@@ -387,10 +387,14 @@ const BookingPage = () => {
   // Fetch user favorites and check if current establishment is favorite
   useEffect(() => {
     const fetchFavorites = async () => {
-      if (!isAuthenticated || !user) return;
+      if (!isAuthenticated || !user) {
+        setUserFavorites([]);
+        setIsFavorite(false);
+        return;
+      }
       try {
         const response = await apiClient.get('/api/users/favorites') as any;
-        if (response.favorites) {
+        if (response && response.favorites) {
           setUserFavorites(response.favorites.map((fav: any) => ({
             id: fav.id || fav.establishmentId,
             name: fav.name || fav.establishmentName,
@@ -402,9 +406,15 @@ const BookingPage = () => {
             fav.id === establishment?.id || fav.establishmentId === establishment?.id
           );
           setIsFavorite(currentIsFavorite);
+        } else {
+          setUserFavorites([]);
+          setIsFavorite(false);
         }
       } catch (err) {
-        console.error('Error fetching favorites:', err);
+        // Silently handle error - user might not have favorites endpoint access
+        console.log('Could not fetch favorites (this is normal if not logged in)');
+        setUserFavorites([]);
+        setIsFavorite(false);
       }
     };
     fetchFavorites();
