@@ -1,5 +1,5 @@
 // API Configuration - Uses environment variable with fallback to localhost
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
 // API Client class
 class ApiClient {
