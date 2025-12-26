@@ -118,19 +118,23 @@ const BookingPage = () => {
   
   // Multi-step form state
   const [currentStep, setCurrentStep] = useState(1);
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 5;
+  
+  // Local state for custom duration to avoid re-renders
+  const [tempCustomDuration, setTempCustomDuration] = useState(150);
   
   // Sidebar state - same as admin dashboard
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha)
+  // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha, 5.Resumen)
   const canGoNext = () => {
     switch (currentStep) {
       case 1: return !!selectedSport;
       case 2: return !!selectedDuration;
       case 3: return !!selectedDate && !!selectedTime;
       case 4: return !!selectedCourt;
+      case 5: return true; // Summary step - always can proceed to payment
       default: return false;
     }
   };
@@ -288,12 +292,16 @@ const BookingPage = () => {
     return slotDateTime > now;
   }, [minAdvanceBookingHours]);
 
-  // Set default date to today
+  // Set default date to today when entering step 3
   useEffect(() => {
-    if (!selectedDate && dates.length > 0) {
-      setSelectedDate(dates[0].value);
+    if (currentStep === 3 && !selectedDate && dates.length > 0) {
+      // Find first non-empty date
+      const firstValidDate = dates.find(d => !d.isEmpty);
+      if (firstValidDate) {
+        setSelectedDate(firstValidDate.value);
+      }
     }
-  }, [dates]);
+  }, [currentStep, dates, selectedDate]);
 
 
   // Fetch availability from backend for all courts (same logic as admin sidebar)
@@ -523,9 +531,9 @@ const BookingPage = () => {
 
   // Shared booking form component for all designs
   const BookingForm = ({ compact = false }: { compact?: boolean }) => (
-    <div className="bg-white dark:bg-gray-900 min-h-full">
+    <div className="bg-white dark:bg-gray-900 flex flex-col h-full min-h-[calc(100vh-56px)] lg:min-h-0 lg:h-auto">
       {/* Booking Header with Progress */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Reservar cancha</h2>
@@ -543,7 +551,8 @@ const BookingPage = () => {
         </div>
       </div>
 
-      <div className={`p-4 ${compact ? 'max-h-[60vh] overflow-y-auto' : 'min-h-[400px]'}`}>
+      {/* Content area - flex-1 to fill available space */}
+      <div className={`p-4 flex-1 overflow-y-auto ${compact ? 'max-h-[60vh]' : ''}`}>
         <AnimatePresence mode="wait">
           {/* Step 1: Sport Selection */}
           {currentStep === 1 && (
@@ -583,7 +592,7 @@ const BookingPage = () => {
                     <div className="text-xl font-bold text-gray-900 dark:text-white">{d.label}</div>
                   </button>
                 ))}
-                <button onClick={() => { setShowCustomDuration(!showCustomDuration); if (!showCustomDuration) setCustomDuration(150); }}
+                <button onClick={() => { setShowCustomDuration(!showCustomDuration); if (!showCustomDuration) setTempCustomDuration(150); }}
                   className={`p-4 rounded-xl border-2 text-center ${showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500/50'}`}>
                   <div className="text-xl font-bold text-gray-900 dark:text-white">Otro</div>
                 </button>
@@ -591,33 +600,33 @@ const BookingPage = () => {
               {showCustomDuration && (
                 <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-center gap-4 mb-4">
-                    <button onClick={() => setCustomDuration(Math.max(150, customDuration - 30))} disabled={customDuration <= 150} className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50">-</button>
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}</span>
-                    <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white">+</button>
+                    <button onClick={() => setTempCustomDuration(Math.max(150, tempCustomDuration - 30))} disabled={tempCustomDuration <= 150} className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50">-</button>
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.floor(tempCustomDuration / 60)}:{String(tempCustomDuration % 60).padStart(2, '0')}</span>
+                    <button onClick={() => setTempCustomDuration(Math.min(480, tempCustomDuration + 30))} className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white">+</button>
                   </div>
-                  <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(3); }} className="w-full py-2 rounded-lg bg-emerald-500 text-white font-medium">Confirmar</button>
+                  <button onClick={() => { setSelectedDuration(tempCustomDuration); setCurrentStep(3); }} className="w-full py-2 rounded-lg bg-emerald-500 text-white font-medium">Confirmar</button>
                 </div>
               )}
             </motion.div>
           )}
 
-          {/* Step 3: Date + Time (unified like Franco) */}
+          {/* Step 3: Date + Time */}
           {currentStep === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-900 dark:text-white">Fecha y hora</h3></div>
               
               {/* Date selector - horizontal scroll */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1">
                 {dates.slice(0, 14).map((date) => (
                   date.isEmpty ? null : (
                     <button key={date.value} onClick={() => setSelectedDate(date.value)}
-                      className={`flex-shrink-0 flex flex-col items-center p-2 rounded-lg border-2 transition-all min-w-[60px] ${
+                      className={`flex-shrink-0 flex flex-col items-center p-2 rounded-lg border-2 transition-all min-w-[56px] ${
                         selectedDate === date.value 
                           ? 'bg-emerald-500 border-emerald-500 text-white' 
                           : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-emerald-500/50'
                       }`}>
                       <span className="text-[10px] opacity-70 uppercase">{date.dayName}</span>
-                      <span className="text-lg font-bold">{date.dayNumber}</span>
+                      <span className="text-base font-bold">{date.dayNumber}</span>
                       <span className="text-[10px] opacity-70">{date.month}</span>
                     </button>
                   )
@@ -634,7 +643,7 @@ const BookingPage = () => {
                     <div className="grid grid-cols-4 gap-2">
                       {availableSlots.map((slot) => (
                         <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
-                          className={`py-2 rounded-lg text-sm font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
+                          className={`py-2 px-1 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
                           {slot.time}
                         </button>
                       ))}
@@ -651,12 +660,12 @@ const BookingPage = () => {
 
           {/* Step 4: Court */}
           {currentStep === 4 && (
-            <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-900 dark:text-white">Elegí tu cancha</h3></div>
               {availableCourtsAtTime.length > 0 ? (
                 <div className="space-y-3">
                   {availableCourtsAtTime.map((court) => (
-                    <div key={court.id} onClick={() => setSelectedCourt(court)}
+                    <div key={court.id} onClick={() => { setSelectedCourt(court); setCurrentStep(5); }}
                       className={`p-4 rounded-xl border-2 cursor-pointer ${selectedCourt?.id === court.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500/50'}`}>
                       <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}>🏟️</div>
@@ -674,17 +683,87 @@ const BookingPage = () => {
               ) : <div className="text-center py-8 text-gray-500">No hay canchas disponibles</div>}
             </motion.div>
           )}
-        </AnimatePresence>
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+          {/* Step 5: Summary */}
+          {currentStep === 5 && selectedCourt && (
+            <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-900 dark:text-white">Resumen de reserva</h3></div>
+              
+              {/* Booking details card */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Establecimiento</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{establishment?.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Trophy className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Cancha</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{selectedCourt.name} • <span className="capitalize">{selectedCourt.sport}</span></p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Fecha</p>
+                    <p className="font-medium text-gray-900 dark:text-white capitalize">{formatSelectedDate()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Horario</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{selectedTime} - {getEndTime()} ({formatDuration()})</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price breakdown */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Precio por hora</span>
+                  <span className="text-gray-700 dark:text-gray-300">${selectedCourt.pricePerHour}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Duración</span>
+                  <span className="text-gray-700 dark:text-gray-300">{formatDuration()}</span>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2 flex justify-between">
+                  <span className="font-semibold text-gray-900 dark:text-white">Total</span>
+                  <span className="font-bold text-emerald-500 text-lg">${getPrice()}</span>
+                </div>
+              </div>
+
+              {/* Cancellation policy */}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-start gap-2">
+                <Shield className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Cancelación flexible</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Podés cancelar hasta 24 horas antes y recibir el reembolso completo.</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation - fixed at bottom on mobile */}
+      <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <div className="flex items-center justify-between">
           <button onClick={goToPrevStep} disabled={currentStep === 1}
-            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm ${currentStep === 1 ? 'opacity-0' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+            className={`flex items-center gap-1 px-4 py-2.5 rounded-lg text-sm font-medium ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
             <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
-          {currentStep === 4 && selectedCourt ? (
-            <button onClick={handleBooking} className="px-6 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500">
-              {!isAuthenticated ? 'Iniciar sesión' : 'Confirmar'}
+          {currentStep === 5 && selectedCourt ? (
+            <button onClick={handleBooking} className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
+              {!isAuthenticated ? 'Iniciar sesión para reservar' : 'Ir a pagar'}
+            </button>
+          ) : currentStep === 4 && selectedCourt ? (
+            <button onClick={() => setCurrentStep(5)} className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500">
+              Continuar
             </button>
           ) : <div />}
         </div>
@@ -693,8 +772,8 @@ const BookingPage = () => {
   );
 
   // Step titles for progress bar (new order)
-  const stepTitles = ['Deporte', 'Duración', 'Fecha y hora', 'Cancha'];
-  const stepIcons = [Trophy, Timer, Calendar, MapPin];
+  const stepTitles = ['Deporte', 'Duración', 'Fecha y hora', 'Cancha', 'Resumen'];
+  const stepIcons = [Trophy, Timer, Calendar, MapPin, Shield];
 
   // Format selected date for display
   const formatSelectedDate = () => {
