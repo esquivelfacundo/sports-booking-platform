@@ -16,6 +16,8 @@ import {
   Calendar,
   Check,
   X,
+  ChevronDown,
+  ChevronUp,
   Wifi,
   Car,
   Coffee,
@@ -131,6 +133,7 @@ const BookingPage = () => {
   const [selectedSport, setSelectedSport] = useState<string>(savedState?.selectedSport || '');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [isEstablishmentInfoExpanded, setIsEstablishmentInfoExpanded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMobileBooking, setShowMobileBooking] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -1961,24 +1964,16 @@ const BookingPage = () => {
 
           {/* Right Sidebar - Booking Summary */}
           <aside className="w-[380px] bg-gray-800 border-l border-gray-700 flex flex-col h-[calc(100vh-120px)] sticky top-14">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700 flex-shrink-0">
-              <h2 className="text-lg font-bold text-white">Resumen de reserva</h2>
-              <button
-                onClick={() => router.push('/buscar')}
-                className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
             {/* Content - Scrollable */}
             <div className="flex-1 overflow-y-auto p-4">
-              {/* Establishment Info */}
-              <div className="bg-gray-700/50 rounded-xl p-4 mb-4 border border-gray-600">
-                <div className="flex items-center gap-3">
+              {/* Establishment Info - Collapsible */}
+              <div className="bg-gray-700/50 rounded-xl border border-gray-600 mb-4">
+                <button
+                  onClick={() => setIsEstablishmentInfoExpanded(!isEstablishmentInfoExpanded)}
+                  className="w-full p-4 flex items-center gap-3 hover:bg-gray-700/30 transition-colors"
+                >
                   <img src={mainImage} alt="" className="w-12 h-12 rounded-xl object-cover" />
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 text-left">
                     <h3 className="font-semibold text-white truncate">{establishment.name}</h3>
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                       <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
@@ -1987,7 +1982,72 @@ const BookingPage = () => {
                       <span className="truncate">{establishment.city}</span>
                     </div>
                   </div>
-                </div>
+                  {isEstablishmentInfoExpanded ? (
+                    <ChevronUp className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+                
+                {/* Expanded Info */}
+                <AnimatePresence>
+                  {isEstablishmentInfoExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 space-y-3 border-t border-gray-600 pt-3">
+                        {/* Address */}
+                        {establishment.address && (
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-gray-300">{establishment.address}</div>
+                          </div>
+                        )}
+                        
+                        {/* Phone */}
+                        {establishment.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <a href={`tel:${establishment.phone}`} className="text-sm text-emerald-400 hover:text-emerald-300">
+                              {establishment.phone}
+                            </a>
+                          </div>
+                        )}
+                        
+                        {/* Opening Hours */}
+                        {establishment.openingHours && (
+                          <div className="flex items-start gap-2">
+                            <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-gray-300">
+                              {typeof establishment.openingHours === 'string' 
+                                ? establishment.openingHours
+                                : 'Ver horarios en el establecimiento'
+                              }
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Google Map */}
+                        {establishment.latitude && establishment.longitude && (
+                          <div className="mt-3 rounded-lg overflow-hidden border border-gray-600">
+                            <iframe
+                              width="100%"
+                              height="200"
+                              frameBorder="0"
+                              style={{ border: 0 }}
+                              src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${establishment.latitude},${establishment.longitude}&zoom=15`}
+                              allowFullScreen
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Booking Details */}
