@@ -40,7 +40,8 @@ interface UseEstablishmentDetailsOptions {
 
 export const useEstablishmentDetails = ({ establishmentId, slug, autoFetch = true }: UseEstablishmentDetailsOptions) => {
   const [establishment, setEstablishment] = useState<EstablishmentDetails | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Start with loading=true if autoFetch is enabled and we have an id/slug to fetch
+  const [loading, setLoading] = useState(autoFetch && !!(establishmentId || slug));
   const [error, setError] = useState<string | null>(null);
 
   const fetchEstablishmentDetails = async (id: string) => {
