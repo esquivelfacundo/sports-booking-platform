@@ -177,41 +177,46 @@ const BookingPage = () => {
   
   const availableCourtsAtTime = getAvailableCourtsAtTime();
 
-  // Generate dates respecting maxAdvanceBookingDays
+  // Generate dates respecting maxAdvanceBookingDays, sorted by week starting Monday
   const generateDates = () => {
     const dates = [];
     const today = new Date();
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    // Day names starting from Monday (index 0 = Monday, 6 = Sunday)
+    const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     
     // Start from today if same day booking is allowed, otherwise tomorrow
     const startDay = allowSameDayBooking ? 0 : 1;
     
-    console.log('[generateDates] allowSameDayBooking:', allowSameDayBooking, 'startDay:', startDay);
+    // Helper to get day index where Monday = 0, Sunday = 6
+    const getMondayBasedDay = (jsDay: number) => jsDay === 0 ? 6 : jsDay - 1;
     
     for (let i = startDay; i < maxAdvanceBookingDays; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      // Use local date format instead of ISO (which uses UTC)
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       const dateValue = `${year}-${month}-${day}`;
+      const mondayBasedDay = getMondayBasedDay(date.getDay());
       
       dates.push({
         value: dateValue,
-        dayName: dayNames[date.getDay()],
+        dayName: dayNames[mondayBasedDay],
         dayNumber: date.getDate(),
         month: monthNames[date.getMonth()],
         isToday: i === startDay,
-        isWeekend: date.getDay() === 0 || date.getDay() === 6
+        isWeekend: date.getDay() === 0 || date.getDay() === 6,
+        sortOrder: mondayBasedDay // For sorting within weeks
       });
-      
-      if (i === startDay) {
-        console.log('[generateDates] First date:', dateValue, 'isToday:', i === startDay);
-      }
     }
-    return dates;
+    
+    // Sort dates to start each week on Monday
+    // Group by week and sort within each week
+    return dates.sort((a, b) => {
+      // First sort by actual date (chronologically)
+      return new Date(a.value).getTime() - new Date(b.value).getTime();
+    });
   };
 
   const dates = generateDates();
@@ -715,8 +720,8 @@ const BookingPage = () => {
                     <p className="text-gray-400">Selecciona la fecha para tu reserva de <span className="capitalize text-emerald-400">{selectedSport}</span></p>
                   </div>
                   
-                  {/* Calendar Grid - 7 columns on desktop, responsive on mobile */}
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2 max-w-3xl mx-auto">
+                  {/* Calendar Grid - 7 columns, full width */}
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2">
                     {dates.map((date) => (
                       <button
                         key={date.value}
@@ -724,7 +729,7 @@ const BookingPage = () => {
                           setSelectedDate(date.value);
                           setCurrentStep(3);
                         }}
-                        className={`flex flex-col items-center p-3 md:p-4 rounded-xl border-2 transition-all ${
+                        className={`relative flex flex-col items-center p-3 md:p-4 rounded-xl border-2 transition-all ${
                           selectedDate === date.value
                             ? 'bg-emerald-500 border-emerald-500 text-white'
                             : date.isWeekend
@@ -732,16 +737,16 @@ const BookingPage = () => {
                             : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
                         }`}
                       >
-                        <span className="text-[10px] md:text-xs font-medium opacity-70 uppercase">{date.dayName}</span>
-                        <span className="text-xl md:text-2xl font-bold my-0.5">{date.dayNumber}</span>
-                        <span className="text-[10px] md:text-xs opacity-70">{date.month}</span>
                         {date.isToday && (
-                          <span className={`text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full mt-1 ${
+                          <span className={`absolute top-1 right-1 text-[7px] md:text-[8px] px-1 py-0.5 rounded ${
                             selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'
                           }`}>
                             Hoy
                           </span>
                         )}
+                        <span className="text-[10px] md:text-xs font-medium opacity-70 uppercase">{date.dayName}</span>
+                        <span className="text-xl md:text-2xl font-bold my-0.5">{date.dayNumber}</span>
+                        <span className="text-[10px] md:text-xs opacity-70">{date.month}</span>
                       </button>
                     ))}
                   </div>
@@ -765,7 +770,7 @@ const BookingPage = () => {
                     <p className="text-gray-400">Selecciona la duración de tu partido</p>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
                       { value: 60, label: '1 hora' },
                       { value: 90, label: '1:30 hs' },
@@ -795,7 +800,12 @@ const BookingPage = () => {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowCustomDuration(!showCustomDuration)}
+                      onClick={() => {
+                        setShowCustomDuration(!showCustomDuration);
+                        if (!showCustomDuration) {
+                          setCustomDuration(150); // Start at 2:30h
+                        }
+                      }}
                       className={`p-6 rounded-2xl border-2 transition-all text-center ${
                         showCustomDuration
                           ? 'bg-emerald-500/20 border-emerald-500'
@@ -807,7 +817,7 @@ const BookingPage = () => {
                     </motion.button>
                   </div>
                   
-                  {/* Custom Duration Picker */}
+                  {/* Custom Duration Picker - Single field with +/- 30min */}
                   <AnimatePresence>
                     {showCustomDuration && (
                       <motion.div
@@ -816,68 +826,28 @@ const BookingPage = () => {
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="bg-gray-800 rounded-2xl p-6 max-w-md mx-auto border border-gray-700">
-                          <div className="flex items-center justify-center gap-6 mb-6">
-                            {/* Hours */}
-                            <div className="text-center">
-                              <label className="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Horas</label>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => setCustomDuration(Math.max(30, customDuration - 60))}
-                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
-                                >
-                                  -
-                                </button>
-                                <div className="w-16 text-center">
-                                  <span className="text-3xl font-bold text-white">{Math.floor(customDuration / 60)}</span>
-                                </div>
-                                <button
-                                  onClick={() => setCustomDuration(Math.min(480, customDuration + 60))}
-                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
-                                >
-                                  +
-                                </button>
-                              </div>
+                        <div className="bg-gray-800 rounded-2xl p-6 max-w-sm mx-auto border border-gray-700">
+                          <div className="flex items-center justify-center gap-4 mb-6">
+                            <button
+                              onClick={() => setCustomDuration(Math.max(150, customDuration - 30))}
+                              disabled={customDuration <= 150}
+                              className="w-12 h-12 rounded-xl bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-2xl font-bold"
+                            >
+                              -
+                            </button>
+                            <div className="text-center min-w-[120px]">
+                              <span className="text-4xl font-bold text-white">
+                                {Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}
+                              </span>
+                              <div className="text-sm text-gray-400 mt-1">horas</div>
                             </div>
-                            
-                            <span className="text-2xl text-gray-500 font-bold mt-6">:</span>
-                            
-                            {/* Minutes */}
-                            <div className="text-center">
-                              <label className="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Minutos</label>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => {
-                                    const mins = customDuration % 60;
-                                    const hours = Math.floor(customDuration / 60);
-                                    const newMins = mins === 0 ? 30 : 0;
-                                    setCustomDuration(Math.max(30, hours * 60 + newMins));
-                                  }}
-                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
-                                >
-                                  -
-                                </button>
-                                <div className="w-16 text-center">
-                                  <span className="text-3xl font-bold text-white">{String(customDuration % 60).padStart(2, '0')}</span>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    const mins = customDuration % 60;
-                                    const hours = Math.floor(customDuration / 60);
-                                    const newMins = mins === 0 ? 30 : 0;
-                                    const newHours = mins === 30 ? hours + 1 : hours;
-                                    setCustomDuration(Math.min(480, newHours * 60 + newMins));
-                                  }}
-                                  className="w-10 h-10 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-colors flex items-center justify-center text-xl font-bold"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-center text-gray-400 text-sm mb-4">
-                            Duración: {Math.floor(customDuration / 60)}h {customDuration % 60 > 0 ? `${customDuration % 60}min` : ''}
+                            <button
+                              onClick={() => setCustomDuration(Math.min(480, customDuration + 30))}
+                              disabled={customDuration >= 480}
+                              className="w-12 h-12 rounded-xl bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-2xl font-bold"
+                            >
+                              +
+                            </button>
                           </div>
                           
                           <button
