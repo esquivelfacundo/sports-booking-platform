@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Home, Search, ArrowLeft, MapPin } from 'lucide-react';
 
+// Custom 404 page for Mis Canchas
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4 overflow-hidden">
