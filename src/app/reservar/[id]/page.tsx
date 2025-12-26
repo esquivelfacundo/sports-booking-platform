@@ -39,7 +39,10 @@ import {
   LogOut,
   Settings,
   User,
-  Bell
+  Bell,
+  Lock,
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
@@ -126,6 +129,42 @@ const BookingPage = () => {
   // Sidebar state - same as admin dashboard
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Payment state (for step 5)
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [isLoadingFee, setIsLoadingFee] = useState(false);
+  const [paymentType, setPaymentType] = useState<'deposit' | 'full'>('deposit');
+  const [depositInfo, setDepositInfo] = useState({
+    required: true,
+    type: 'percentage' as 'percentage' | 'fixed',
+    percent: 50,
+    baseAmount: 0,
+    fee: 0,
+    generalFee: 0,
+    totalAmount: 0,
+    remainingAmount: 0
+  });
+  const [fullPaymentInfo, setFullPaymentInfo] = useState({
+    enabled: false,
+    baseAmount: 0,
+    fee: 0,
+    generalFee: 0,
+    totalAmount: 0,
+    remainingAmount: 0
+  });
+  const [feeDiscount, setFeeDiscount] = useState({
+    hasDiscount: false,
+    generalFeePercent: 10,
+    generalFee: 0,
+    discountPercent: 0,
+    actualFee: 0
+  });
+  const [pendingDebt, setPendingDebt] = useState({
+    hasDebt: false,
+    totalDebt: 0,
+    debts: [] as Array<{ id: string; amount: number; reason: string; description: string }>
+  });
   
   // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha, 5.Resumen)
   const canGoNext = () => {
@@ -434,32 +473,157 @@ const BookingPage = () => {
     return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
   };
 
-  const handleBooking = () => {
+  // Fetch fee and deposit info when entering step 5
+  useEffect(() => {
+    const fetchFeeAndDeposit = async () => {
+      if (currentStep !== 5 || !selectedCourt || !establishment?.id) return;
+      
+      const price = getPrice();
+      if (price <= 0) return;
+      
+      setIsLoadingFee(true);
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+        const clientEmail = user?.email || '';
+        const response = await fetch(`${API_URL}/api/mp/payments/calculate-fee?amount=${price}&establishmentId=${establishment.id}&clientEmail=${encodeURIComponent(clientEmail)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.deposit) {
+            setDepositInfo(data.deposit);
+          }
+          if (data.fullPayment) {
+            setFullPaymentInfo(data.fullPayment);
+          }
+          if (data.pendingDebt) {
+            setPendingDebt(data.pendingDebt);
+          }
+          if (data.feeDiscount) {
+            setFeeDiscount(data.feeDiscount);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching fee and deposit:', err);
+      } finally {
+        setIsLoadingFee(false);
+      }
+    };
+    
+    fetchFeeAndDeposit();
+  }, [currentStep, selectedCourt, establishment?.id, user?.email]);
+
+  // Handle payment - redirect to Mercado Pago
+  const handlePayment = async () => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
       return;
     }
     
-    if (!selectedDate || !selectedTime || !selectedCourt) {
-      alert('Por favor selecciona fecha, cancha y horario');
+    if (!selectedDate || !selectedTime || !selectedCourt || !establishment) {
+      setPaymentError('Datos de reserva incompletos');
       return;
     }
     
-    const bookingParams = new URLSearchParams({
-      establishmentId: establishment?.id || '',
-      establishmentName: establishment?.name || '',
-      courtId: selectedCourt.id,
-      courtName: selectedCourt.name,
-      date: selectedDate,
-      time: selectedTime,
-      endTime: getEndTime(),
-      duration: selectedDuration.toString(),
-      price: getPrice().toString(),
-      sport: selectedCourt.sport || ''
-    });
+    setPaymentError('');
     
-    // Go to payment page first
-    router.push(`/reservar/pago?${bookingParams.toString()}`);
+    const price = getPrice();
+    const isFullPayment = paymentType === 'full';
+    const selectedPaymentInfo = isFullPayment ? fullPaymentInfo : depositInfo;
+    const basePaymentAmount = selectedPaymentInfo.totalAmount;
+    const debtAmount = pendingDebt.hasDebt ? pendingDebt.totalDebt : 0;
+    const paymentAmount = basePaymentAmount + debtAmount;
+    
+    if (paymentAmount <= 0) {
+      setPaymentError('Error: No se pudo calcular el monto a pagar');
+      return;
+    }
+    
+    setIsProcessingPayment(true);
+    
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const token = localStorage.getItem('auth_token');
+      const endTime = getEndTime();
+      
+      let paymentTitle = isFullPayment 
+        ? `Pago completo - ${selectedCourt.name} (${establishment.name})`
+        : `Seña - ${selectedCourt.name} (${establishment.name})`;
+      let paymentDescription = isFullPayment
+        ? `Pago completo - ${formatSelectedDate()} de ${selectedTime} a ${endTime}`
+        : `Seña ${depositInfo.percent}% - ${formatSelectedDate()} de ${selectedTime} a ${endTime}`;
+      
+      if (debtAmount > 0) {
+        paymentTitle += ' + Deuda';
+        paymentDescription += ` + Deuda acumulada: $${debtAmount.toLocaleString('es-AR')}`;
+      }
+      
+      const response = await fetch(`${API_URL}/api/mp/payments/create-split-preference`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          establishmentId: establishment.id,
+          items: [{
+            title: paymentTitle,
+            description: paymentDescription,
+            quantity: 1,
+            unit_price: paymentAmount,
+            currency_id: 'ARS'
+          }],
+          payer: {
+            email: user?.email || '',
+            name: user?.firstName || '',
+            surname: user?.lastName || ''
+          },
+          metadata: {
+            courtId: selectedCourt.id,
+            establishmentId: establishment.id,
+            date: selectedDate,
+            startTime: selectedTime,
+            endTime,
+            duration: selectedDuration,
+            fullPrice: price,
+            paymentType: isFullPayment ? 'full' : 'deposit',
+            depositBaseAmount: isFullPayment ? price : depositInfo.baseAmount,
+            depositFee: selectedPaymentInfo.fee,
+            depositTotal: basePaymentAmount,
+            depositPercent: isFullPayment ? 100 : depositInfo.percent,
+            remainingAmount: selectedPaymentInfo.remainingAmount,
+            debtAmount: debtAmount,
+            debtIds: pendingDebt.debts.map(d => d.id),
+            clientName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (user?.firstName || user?.email || ''),
+            clientEmail: user?.email || '',
+            clientPhone: user?.phone || '',
+            userId: user?.id || ''
+          },
+          back_urls: {
+            success: `${window.location.origin}/reservar/confirmacion?establishmentName=${encodeURIComponent(establishment.name)}&courtName=${encodeURIComponent(selectedCourt.name)}&date=${selectedDate}&time=${selectedTime}&endTime=${endTime}&duration=${selectedDuration}&price=${price}&depositPaid=${paymentAmount}&paymentType=${paymentType}`,
+            failure: `${window.location.origin}/reservar/${idOrSlug}?error=payment_failed`,
+            pending: `${window.location.origin}/reservar/confirmacion?status=pending&establishmentName=${encodeURIComponent(establishment.name)}&courtName=${encodeURIComponent(selectedCourt.name)}&date=${selectedDate}&time=${selectedTime}&endTime=${endTime}`
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear preferencia de pago');
+      }
+      
+      const data = await response.json();
+      const checkoutUrl = data.preference?.initPoint || data.preference?.init_point || data.init_point || data.initPoint;
+      
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error('No se recibió URL de pago');
+      }
+      
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setPaymentError(err.message || 'Error al procesar el pago. Intenta nuevamente.');
+      setIsProcessingPayment(false);
+    }
   };
 
   const getAmenityIcon = (amenity: string) => {
@@ -684,67 +848,197 @@ const BookingPage = () => {
             </motion.div>
           )}
 
-          {/* Step 5: Summary */}
+          {/* Step 5: Summary & Payment */}
           {currentStep === 5 && selectedCourt && (
             <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-900 dark:text-white">Resumen de reserva</h3></div>
+              <div className="text-center mb-2"><h3 className="text-xl font-bold text-gray-900 dark:text-white">Confirmar y pagar</h3></div>
               
               {/* Booking details card */}
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <MapPin className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Establecimiento</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{establishment?.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Establecimiento</p>
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">{establishment?.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Trophy className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Cancha</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedCourt.name} • <span className="capitalize">{selectedCourt.sport}</span></p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancha</p>
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">{selectedCourt.name} • <span className="capitalize">{selectedCourt.sport}</span></p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Fecha</p>
-                    <p className="font-medium text-gray-900 dark:text-white capitalize">{formatSelectedDate()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Horario</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedTime} - {getEndTime()} ({formatDuration()})</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Fecha y hora</p>
+                    <p className="font-medium text-gray-900 dark:text-white text-sm capitalize">{formatSelectedDate()} • {selectedTime} - {getEndTime()}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Price breakdown */}
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Precio por hora</span>
-                  <span className="text-gray-700 dark:text-gray-300">${selectedCourt.pricePerHour}</span>
+              {/* Pending Debt Alert */}
+              {pendingDebt.hasDebt && (
+                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-orange-400 font-medium text-sm">Deuda acumulada</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+                        Tenés una deuda pendiente de <span className="text-orange-400 font-semibold">${pendingDebt.totalDebt.toLocaleString('es-AR')}</span>. Este monto se sumará a tu pago.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Duración</span>
-                  <span className="text-gray-700 dark:text-gray-300">{formatDuration()}</span>
-                </div>
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2 flex justify-between">
-                  <span className="font-semibold text-gray-900 dark:text-white">Total</span>
-                  <span className="font-bold text-emerald-500 text-lg">${getPrice()}</span>
-                </div>
-              </div>
+              )}
 
-              {/* Cancellation policy */}
-              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-start gap-2">
-                <Shield className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Cancelación flexible</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Podés cancelar hasta 24 horas antes y recibir el reembolso completo.</p>
+              {/* Payment type selector */}
+              {isLoadingFee ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
                 </div>
-              </div>
+              ) : (
+                <>
+                  {fullPaymentInfo.enabled && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Elegí cómo pagar</p>
+                      
+                      {/* Deposit option */}
+                      <button type="button" onClick={() => setPaymentType('deposit')}
+                        className={`w-full p-3 rounded-xl border-2 transition-all text-left ${
+                          paymentType === 'deposit'
+                            ? 'border-emerald-500 bg-emerald-500/10'
+                            : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className={`font-medium text-sm ${paymentType === 'deposit' ? 'text-emerald-500' : 'text-gray-900 dark:text-white'}`}>
+                              Pagar seña ({depositInfo.percent}%)
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              ${depositInfo.totalAmount.toLocaleString('es-AR')} ahora, ${depositInfo.remainingAmount.toLocaleString('es-AR')} en el lugar
+                            </p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            paymentType === 'deposit' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300 dark:border-gray-600'
+                          }`}>
+                            {paymentType === 'deposit' && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                        </div>
+                      </button>
+                      
+                      {/* Full payment option */}
+                      <button type="button" onClick={() => setPaymentType('full')}
+                        className={`w-full p-3 rounded-xl border-2 transition-all text-left ${
+                          paymentType === 'full'
+                            ? 'border-emerald-500 bg-emerald-500/10'
+                            : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className={`font-medium text-sm ${paymentType === 'full' ? 'text-emerald-500' : 'text-gray-900 dark:text-white'}`}>
+                              Pago completo
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              ${fullPaymentInfo.totalAmount.toLocaleString('es-AR')} ahora, nada en el lugar
+                            </p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            paymentType === 'full' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300 dark:border-gray-600'
+                          }`}>
+                            {paymentType === 'full' && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Price breakdown */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">Precio del turno</span>
+                      <span className="text-gray-700 dark:text-gray-300">${getPrice().toLocaleString('es-AR')}</span>
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
+                        {paymentType === 'full' ? 'Pago completo' : `Pago de seña (${depositInfo.percent}%)`}
+                      </p>
+                      <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                        <span>{paymentType === 'full' ? 'Cancha' : 'Seña'}</span>
+                        <span>${(paymentType === 'full' ? getPrice() : depositInfo.baseAmount).toLocaleString('es-AR')}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                        <span>Tarifa de servicio</span>
+                        <span className="flex items-center gap-2">
+                          {feeDiscount.hasDiscount && (
+                            <span className="line-through text-gray-400 dark:text-gray-500">
+                              ${(paymentType === 'full' ? fullPaymentInfo.generalFee : depositInfo.generalFee)?.toLocaleString('es-AR') || feeDiscount.generalFee.toLocaleString('es-AR')}
+                            </span>
+                          )}
+                          <span className={feeDiscount.hasDiscount ? 'text-emerald-500' : ''}>
+                            {(paymentType === 'full' ? fullPaymentInfo.fee : depositInfo.fee) === 0 
+                              ? '$0' 
+                              : `$${(paymentType === 'full' ? fullPaymentInfo.fee : depositInfo.fee).toLocaleString('es-AR')}`
+                            }
+                          </span>
+                          {feeDiscount.hasDiscount && feeDiscount.discountPercent === 100 && (
+                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">¡Gratis!</span>
+                          )}
+                        </span>
+                      </div>
+                      {pendingDebt.hasDebt && (
+                        <div className="flex justify-between text-sm text-orange-400">
+                          <span>Deuda acumulada</span>
+                          <span>${pendingDebt.totalDebt.toLocaleString('es-AR')}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-2 flex justify-between">
+                      <span className="font-semibold text-gray-900 dark:text-white">Total a pagar ahora</span>
+                      <span className="font-bold text-emerald-500 text-lg">
+                        ${((paymentType === 'full' ? fullPaymentInfo.totalAmount : depositInfo.totalAmount) + (pendingDebt.hasDebt ? pendingDebt.totalDebt : 0)).toLocaleString('es-AR')}
+                      </span>
+                    </div>
+                    {paymentType !== 'full' && (
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>Restante a pagar en el lugar</span>
+                        <span>${depositInfo.remainingAmount.toLocaleString('es-AR')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mercado Pago info */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 bg-[#009ee3] rounded flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">MP</span>
+                      </div>
+                      <span className="text-gray-900 dark:text-white font-medium text-sm">Mercado Pago</span>
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs">
+                      Serás redirigido a Mercado Pago para completar el pago de forma segura.
+                    </p>
+                  </div>
+
+                  {/* Error message */}
+                  {paymentError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 text-red-400">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                      <span className="text-sm">{paymentError}</span>
+                    </div>
+                  )}
+
+                  {/* Cancellation policy */}
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Cancelación flexible</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Podés cancelar hasta 24 horas antes y recibir el reembolso completo.</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -753,13 +1047,28 @@ const BookingPage = () => {
       {/* Navigation - fixed at bottom on mobile */}
       <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="flex items-center justify-between">
-          <button onClick={goToPrevStep} disabled={currentStep === 1}
+          <button onClick={goToPrevStep} disabled={currentStep === 1 || isProcessingPayment}
             className={`flex items-center gap-1 px-4 py-2.5 rounded-lg text-sm font-medium ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
             <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
           {currentStep === 5 && selectedCourt ? (
-            <button onClick={handleBooking} className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
-              {!isAuthenticated ? 'Iniciar sesión para reservar' : 'Ir a pagar'}
+            <button 
+              onClick={handlePayment} 
+              disabled={isProcessingPayment || isLoadingFee}
+              className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              {isProcessingPayment ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Procesando...
+                </>
+              ) : !isAuthenticated ? (
+                'Iniciar sesión para pagar'
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Pagar con Mercado Pago
+                </>
+              )}
             </button>
           ) : currentStep === 4 && selectedCourt ? (
             <button onClick={() => setCurrentStep(5)} className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500">
