@@ -474,6 +474,10 @@ export default function IntegrationsPage() {
             <div className="space-y-6">
               {getIntegration('OPENAI') ? (
                 <>
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl mb-4">
+                    <h4 className="text-emerald-400 font-medium mb-2">OCR Inteligente para Facturas</h4>
+                    <p className="text-gray-300 text-sm">Utiliza GPT-4 Vision para extraer automáticamente los datos de tus facturas de proveedores.</p>
+                  </div>
                   <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"><div className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-emerald-400" /><div><p className="text-emerald-400 font-medium">API Key configurada</p><p className="text-sm text-gray-400 font-mono">{getIntegration('OPENAI')?.maskedApiKey}</p></div></div></div>
                   <button onClick={handleTestOpenAI} disabled={testing === 'OPENAI'} className="w-full px-4 py-3 bg-emerald-500/20 text-emerald-400 rounded-xl font-medium hover:bg-emerald-500/30 disabled:opacity-50 flex items-center justify-center gap-2">{testing === 'OPENAI' ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}Probar conexión</button>
                   {openaiTestResult && <div className={`p-4 rounded-xl ${openaiTestResult.success ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}><p className={openaiTestResult.success ? 'text-emerald-400' : 'text-red-400'}>{openaiTestResult.message}</p></div>}
@@ -482,6 +486,10 @@ export default function IntegrationsPage() {
                 </>
               ) : (
                 <>
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl mb-4">
+                    <h4 className="text-emerald-400 font-medium mb-2">OCR Inteligente para Facturas</h4>
+                    <p className="text-gray-300 text-sm">Utiliza GPT-4 Vision para extraer automáticamente los datos de tus facturas de proveedores. Simplemente sube una foto o PDF y el sistema extraerá proveedor, productos, cantidades y precios.</p>
+                  </div>
                   <div className="p-4 bg-gray-800 rounded-xl"><div className="flex items-start gap-3"><Shield className="w-5 h-5 text-blue-400 mt-0.5" /><p className="text-gray-300 text-sm">Tu API Key se almacena encriptada.</p></div></div>
                   <div><label className="block text-sm font-medium text-gray-300 mb-2">API Key de OpenAI</label><div className="relative"><input type={showOpenaiKey ? 'text' : 'password'} value={openaiApiKey} onChange={(e) => setOpenaiApiKey(e.target.value)} placeholder="sk-..." className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono pr-12" /><button type="button" onClick={() => setShowOpenaiKey(!showOpenaiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">{showOpenaiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div><a href={card.docsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline mt-2 inline-flex items-center gap-1">Obtener API Key <ExternalLink className="w-3 h-3" /></a></div>
                   <button onClick={handleSaveOpenAI} disabled={saving || !openaiApiKey.trim()} className="w-full px-4 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-2">{saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}Conectar OpenAI</button>
@@ -538,7 +546,7 @@ export default function IntegrationsPage() {
         <ApiDocsContent />
       ) : (
         <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {INTEGRATION_CARDS.map((card, index) => {
             const connected = isConnected(card.id);
             return (
