@@ -110,16 +110,15 @@ const BookingPage = () => {
   
   // Multi-step form state
   const [currentStep, setCurrentStep] = useState(1);
-  const TOTAL_STEPS = 5;
+  const TOTAL_STEPS = 4;
   
-  // Step navigation helpers
+  // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha)
   const canGoNext = () => {
     switch (currentStep) {
       case 1: return !!selectedSport;
-      case 2: return !!selectedDate;
-      case 3: return !!selectedDuration;
-      case 4: return !!selectedTime;
-      case 5: return !!selectedCourt;
+      case 2: return !!selectedDuration;
+      case 3: return !!selectedDate && !!selectedTime;
+      case 4: return !!selectedCourt;
       default: return false;
     }
   };
@@ -561,35 +560,13 @@ const BookingPage = () => {
             </motion.div>
           )}
 
-          {/* Step 2: Date Selection */}
+          {/* Step 2: Duration */}
           {currentStep === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="text-xl font-bold text-white mb-1">¿Qué día?</h3>
-              </div>
-              <div className={`grid ${compact ? 'grid-cols-5 gap-1' : 'grid-cols-7 gap-2'}`}>
-                {dates.map((date) => (
-                  date.isEmpty ? <div key={date.value} className="p-2" /> : (
-                    <button key={date.value} onClick={() => { setSelectedDate(date.value); setCurrentStep(3); }}
-                      className={`relative flex flex-col items-center p-2 rounded-lg border-2 transition-all ${selectedDate === date.value ? 'bg-emerald-500 border-emerald-500 text-white' : date.isWeekend ? 'bg-gray-800/50 border-gray-700 text-gray-300 hover:border-emerald-500/50' : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'}`}>
-                      {date.isToday && <span className={`absolute top-0.5 right-0.5 text-[6px] px-1 rounded ${selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'}`}>Hoy</span>}
-                      <span className="text-[9px] opacity-70 uppercase">{date.dayName}</span>
-                      <span className="text-lg font-bold">{date.dayNumber}</span>
-                      <span className="text-[9px] opacity-70">{date.month}</span>
-                    </button>
-                  )
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 3: Duration */}
-          {currentStep === 3 && (
-            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">¿Cuánto tiempo?</h3></div>
               <div className="grid grid-cols-2 gap-3">
                 {[{ value: 60, label: '1 hora' }, { value: 90, label: '1:30 hs' }, { value: 120, label: '2 horas' }].map((d) => (
-                  <button key={d.value} onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(4); }}
+                  <button key={d.value} onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(3); }}
                     className={`p-4 rounded-xl border-2 text-center ${selectedDuration === d.value && !showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
                     <div className="text-xl font-bold text-white">{d.label}</div>
                   </button>
@@ -606,33 +583,62 @@ const BookingPage = () => {
                     <span className="text-2xl font-bold text-white">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}</span>
                     <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-10 h-10 rounded-lg bg-gray-700 text-white">+</button>
                   </div>
-                  <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(4); }} className="w-full py-2 rounded-lg bg-emerald-500 text-white font-medium">Confirmar</button>
+                  <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(3); }} className="w-full py-2 rounded-lg bg-emerald-500 text-white font-medium">Confirmar</button>
                 </div>
               )}
             </motion.div>
           )}
 
-          {/* Step 4: Time */}
-          {currentStep === 4 && (
-            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">¿A qué hora?</h3></div>
-              {loadingSlots ? (
-                <div className="text-center py-8"><div className="w-8 h-8 mx-auto border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
-              ) : availableSlots.length > 0 ? (
-                <div className={`grid ${compact ? 'grid-cols-4 gap-1' : 'grid-cols-6 gap-2'}`}>
-                  {availableSlots.map((slot) => (
-                    <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(5); } }} disabled={!slot.available}
-                      className={`py-2 rounded-lg text-sm font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-800/30 text-gray-600 line-through'}`}>
-                      {slot.time}
+          {/* Step 3: Date + Time (unified like Franco) */}
+          {currentStep === 3 && (
+            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">Fecha y hora</h3></div>
+              
+              {/* Date selector - horizontal scroll */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                {dates.slice(0, 14).map((date) => (
+                  date.isEmpty ? null : (
+                    <button key={date.value} onClick={() => setSelectedDate(date.value)}
+                      className={`flex-shrink-0 flex flex-col items-center p-2 rounded-lg border-2 transition-all min-w-[60px] ${
+                        selectedDate === date.value 
+                          ? 'bg-emerald-500 border-emerald-500 text-white' 
+                          : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                      }`}>
+                      <span className="text-[10px] opacity-70 uppercase">{date.dayName}</span>
+                      <span className="text-lg font-bold">{date.dayNumber}</span>
+                      <span className="text-[10px] opacity-70">{date.month}</span>
                     </button>
-                  ))}
+                  )
+                ))}
+              </div>
+
+              {/* Time slots */}
+              {selectedDate && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-400 mb-3">Horarios disponibles para el {formatSelectedDate()}</p>
+                  {loadingSlots ? (
+                    <div className="text-center py-6"><div className="w-8 h-8 mx-auto border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
+                  ) : availableSlots.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableSlots.map((slot) => (
+                        <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
+                          className={`py-2 rounded-lg text-sm font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-800/30 text-gray-600 line-through'}`}>
+                          {slot.time}
+                        </button>
+                      ))}
+                    </div>
+                  ) : <div className="text-center py-6 text-gray-500">No hay horarios disponibles</div>}
                 </div>
-              ) : <div className="text-center py-8 text-gray-500">No hay horarios disponibles</div>}
+              )}
+              
+              {!selectedDate && (
+                <p className="text-center text-gray-500 py-4">Seleccioná una fecha para ver los horarios</p>
+              )}
             </motion.div>
           )}
 
-          {/* Step 5: Court */}
-          {currentStep === 5 && (
+          {/* Step 4: Court */}
+          {currentStep === 4 && (
             <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">Elegí tu cancha</h3></div>
               {availableCourtsAtTime.length > 0 ? (
@@ -664,7 +670,7 @@ const BookingPage = () => {
             className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm ${currentStep === 1 ? 'opacity-0' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
             <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
-          {currentStep === 5 && selectedCourt ? (
+          {currentStep === 4 && selectedCourt ? (
             <button onClick={handleBooking} className="px-6 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500">
               {!isAuthenticated ? 'Iniciar sesión' : 'Confirmar'}
             </button>
@@ -674,9 +680,9 @@ const BookingPage = () => {
     </div>
   );
 
-  // Step titles for progress bar
-  const stepTitles = ['Deporte', 'Fecha', 'Duración', 'Hora', 'Cancha'];
-  const stepIcons = [Trophy, Calendar, Timer, Clock, MapPin];
+  // Step titles for progress bar (new order)
+  const stepTitles = ['Deporte', 'Duración', 'Fecha y hora', 'Cancha'];
+  const stepIcons = [Trophy, Timer, Calendar, MapPin];
 
   // Format selected date for display
   const formatSelectedDate = () => {
@@ -808,57 +814,13 @@ const BookingPage = () => {
                   </motion.div>
                 )}
 
-                {/* Step 2: Date Selection */}
+                {/* Step 2: Duration */}
                 {currentStep === 2 && (
                   <motion.div key="d2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Seleccioná la fecha</h2>
-                    <div className="flex items-center gap-2 mb-4">
-                      <button className="p-2 rounded-lg hover:bg-gray-100"><ChevronLeft className="w-5 h-5 text-gray-400" /></button>
-                      <div className="flex-1 grid grid-cols-7 gap-2">
-                        {dates.slice(0, 7).map((date) => (
-                          date.isEmpty ? <div key={date.value} /> : (
-                            <button key={date.value} onClick={() => { setSelectedDate(date.value); setCurrentStep(3); }}
-                              className={`p-3 rounded-xl border-2 text-center transition-all ${
-                                selectedDate === date.value 
-                                  ? 'border-emerald-500 bg-emerald-500 text-white' 
-                                  : 'border-gray-200 hover:border-emerald-300 bg-white'
-                              }`}>
-                              <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.dayName}</div>
-                              <div className={`text-xl font-bold ${selectedDate === date.value ? 'text-white' : 'text-gray-900'}`}>{date.dayNumber}</div>
-                              <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.month}</div>
-                            </button>
-                          )
-                        ))}
-                      </div>
-                      <button className="p-2 rounded-lg hover:bg-gray-100"><ChevronRight className="w-5 h-5 text-gray-400" /></button>
-                    </div>
-                    {/* More dates */}
-                    <div className="grid grid-cols-7 gap-2 mt-4">
-                      {dates.slice(7, 21).map((date) => (
-                        date.isEmpty ? <div key={date.value} /> : (
-                          <button key={date.value} onClick={() => { setSelectedDate(date.value); setCurrentStep(3); }}
-                            className={`p-3 rounded-xl border-2 text-center transition-all ${
-                              selectedDate === date.value 
-                                ? 'border-emerald-500 bg-emerald-500 text-white' 
-                                : 'border-gray-200 hover:border-emerald-300 bg-white'
-                            }`}>
-                            <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.dayName}</div>
-                            <div className={`text-xl font-bold ${selectedDate === date.value ? 'text-white' : 'text-gray-900'}`}>{date.dayNumber}</div>
-                            <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.month}</div>
-                          </button>
-                        )
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 3: Duration */}
-                {currentStep === 3 && (
-                  <motion.div key="d3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                     <h2 className="text-2xl font-bold text-gray-900 mb-6">¿Cuánto tiempo vas a jugar?</h2>
                     <div className="grid grid-cols-2 gap-4">
                       {[{ value: 60, label: '1 hora' }, { value: 90, label: '1:30 hs' }, { value: 120, label: '2 horas' }, { value: 150, label: '2:30 hs' }].map((d) => (
-                        <button key={d.value} onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(4); }}
+                        <button key={d.value} onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(3); }}
                           className={`p-6 rounded-xl border-2 text-center transition-all hover:border-emerald-500 ${
                             selectedDuration === d.value && !showCustomDuration ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white'
                           }`}>
@@ -877,41 +839,71 @@ const BookingPage = () => {
                           <span className="text-3xl font-bold text-gray-900">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')} hs</span>
                           <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 text-xl font-bold hover:bg-gray-50">+</button>
                         </div>
-                        <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(4); }} className="w-full mt-4 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600">Confirmar</button>
+                        <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(3); }} className="w-full mt-4 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600">Confirmar</button>
                       </div>
                     )}
                   </motion.div>
                 )}
 
-                {/* Step 4: Time */}
-                {currentStep === 4 && (
-                  <motion.div key="d4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Horarios disponibles</h2>
-                    <p className="text-gray-500 mb-6">para el {formatSelectedDate()}</p>
-                    {loadingSlots ? (
-                      <div className="flex justify-center py-12"><div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
-                    ) : availableSlots.length > 0 ? (
-                      <div className="grid grid-cols-6 gap-3">
-                        {availableSlots.map((slot) => (
-                          <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(5); } }} disabled={!slot.available}
-                            className={`py-3 px-4 rounded-xl border-2 font-medium transition-all ${
-                              selectedTime === slot.time 
+                {/* Step 3: Date + Time (unified like Franco) */}
+                {currentStep === 3 && (
+                  <motion.div key="d3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Fecha y hora</h2>
+                    
+                    {/* Date selector - horizontal row */}
+                    <div className="flex items-center gap-2 mb-6">
+                      <button className="p-2 rounded-lg hover:bg-gray-100 flex-shrink-0"><ChevronLeft className="w-5 h-5 text-gray-400" /></button>
+                      <div className="flex-1 flex gap-2 overflow-x-auto pb-2">
+                        {dates.slice(0, 7).filter(d => !d.isEmpty).map((date) => (
+                          <button key={date.value} onClick={() => setSelectedDate(date.value)}
+                            className={`flex-shrink-0 p-3 rounded-xl border-2 text-center transition-all min-w-[70px] ${
+                              selectedDate === date.value 
                                 ? 'border-emerald-500 bg-emerald-500 text-white' 
-                                : slot.available 
-                                  ? 'border-gray-200 text-gray-700 hover:border-emerald-300' 
-                                  : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                : 'border-gray-200 hover:border-emerald-300 bg-white'
                             }`}>
-                            {slot.time}
+                            <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.dayName}</div>
+                            <div className={`text-xl font-bold ${selectedDate === date.value ? 'text-white' : 'text-gray-900'}`}>{date.dayNumber}</div>
+                            <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.month}</div>
                           </button>
                         ))}
                       </div>
-                    ) : <div className="text-center py-12 text-gray-500">No hay horarios disponibles para esta fecha</div>}
+                      <button className="p-2 rounded-lg hover:bg-gray-100 flex-shrink-0"><ChevronRight className="w-5 h-5 text-gray-400" /></button>
+                    </div>
+
+                    {/* Time slots */}
+                    {selectedDate && (
+                      <>
+                        <p className="text-gray-500 mb-4">Horarios disponibles para el {formatSelectedDate()}</p>
+                        {loadingSlots ? (
+                          <div className="flex justify-center py-12"><div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
+                        ) : availableSlots.length > 0 ? (
+                          <div className="grid grid-cols-6 gap-3">
+                            {availableSlots.map((slot) => (
+                              <button key={slot.time} onClick={() => { if (slot.available) setSelectedTime(slot.time); }} disabled={!slot.available}
+                                className={`py-3 px-4 rounded-xl border-2 font-medium transition-all ${
+                                  selectedTime === slot.time 
+                                    ? 'border-emerald-500 bg-emerald-500 text-white' 
+                                    : slot.available 
+                                      ? 'border-gray-200 text-gray-700 hover:border-emerald-300' 
+                                      : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                }`}>
+                                {slot.time}
+                              </button>
+                            ))}
+                          </div>
+                        ) : <div className="text-center py-12 text-gray-500">No hay horarios disponibles para esta fecha</div>}
+                      </>
+                    )}
+                    
+                    {!selectedDate && (
+                      <p className="text-center text-gray-400 py-8">Seleccioná una fecha para ver los horarios disponibles</p>
+                    )}
                   </motion.div>
                 )}
 
-                {/* Step 5: Court */}
-                {currentStep === 5 && (
-                  <motion.div key="d5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                {/* Step 4: Court */}
+                {currentStep === 4 && (
+                  <motion.div key="d4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                     <h2 className="text-2xl font-bold text-gray-900 mb-6">Elegí tu cancha</h2>
                     {availableCourtsAtTime.length > 0 ? (
                       <div className="space-y-3">
@@ -995,7 +987,7 @@ const BookingPage = () => {
               className={`px-6 py-3 rounded-xl font-medium border border-gray-300 ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'text-gray-700 hover:bg-gray-50'}`}>
               Volver
             </button>
-            {currentStep === 5 && selectedCourt ? (
+            {currentStep === 4 && selectedCourt ? (
               <button onClick={handleBooking}
                 className="px-8 py-3 rounded-xl font-semibold text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg">
                 Confirmar reserva
