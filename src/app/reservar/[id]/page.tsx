@@ -409,17 +409,17 @@ const BookingPage = () => {
         return;
       }
       try {
-        const response = await apiClient.get('/api/users/favorites') as any;
-        if (response && response.favorites) {
-          setUserFavorites(response.favorites.map((fav: any) => ({
-            id: fav.id || fav.establishmentId,
-            name: fav.name || fav.establishmentName,
+        const response = await apiClient.get('/api/favorites') as any;
+        if (response && response.data) {
+          setUserFavorites(response.data.map((fav: any) => ({
+            id: fav.id,
+            name: fav.name,
             slug: fav.slug || fav.id,
-            image: fav.image || fav.images?.[0]
+            image: fav.images?.[0]
           })));
           // Check if current establishment is in favorites
-          const currentIsFavorite = response.favorites.some((fav: any) => 
-            fav.id === establishment?.id || fav.establishmentId === establishment?.id
+          const currentIsFavorite = response.data.some((fav: any) => 
+            fav.id === establishment?.id
           );
           setIsFavorite(currentIsFavorite);
         } else {
@@ -446,18 +446,19 @@ const BookingPage = () => {
     
     try {
       if (isFavorite) {
-        await apiClient.delete(`/api/users/favorites/${establishment.id}`);
+        await apiClient.delete(`/api/favorites/${establishment.id}`);
         setUserFavorites(prev => prev.filter(f => f.id !== establishment.id));
+        setIsFavorite(false);
       } else {
-        await apiClient.post('/api/users/favorites', { establishmentId: establishment.id });
+        await apiClient.post('/api/favorites', { establishmentId: establishment.id });
         setUserFavorites(prev => [...prev, {
           id: establishment.id,
           name: establishment.name,
           slug: establishment.slug || establishment.id,
           image: establishment.images?.[0]
         }]);
+        setIsFavorite(true);
       }
-      setIsFavorite(!isFavorite);
     } catch (err) {
       console.error('Error toggling favorite:', err);
     }
