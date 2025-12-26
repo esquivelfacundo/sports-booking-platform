@@ -112,6 +112,9 @@ const BookingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const TOTAL_STEPS = 5;
   
+  // Design variant selector (for testing different layouts)
+  const [designVariant, setDesignVariant] = useState<'A' | 'B' | 'C'>('A');
+  
   // Step navigation helpers
   const canGoNext = () => {
     switch (currentStep) {
@@ -510,652 +513,519 @@ const BookingPage = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-950">
-
-      {/* Hero Section */}
-      <section>
-        <div className="relative h-[50vh] md:h-[60vh] overflow-hidden">
-          {/* Main Image */}
-          <div className="absolute inset-0">
-            <img 
-              src={mainImage} 
-              alt={establishment.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
+  // Shared booking form component for all designs
+  const BookingForm = ({ compact = false }: { compact?: boolean }) => (
+    <div className={`bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden ${compact ? '' : 'mb-12'}`}>
+      {/* Booking Header with Progress */}
+      <div className="p-4 md:p-6 border-b border-gray-800 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-xl font-bold text-white mb-1">Reservar cancha</h2>
+            <p className="text-gray-400 text-sm">Paso {currentStep} de {TOTAL_STEPS}</p>
           </div>
-          
-          {/* Gallery thumbnails */}
-          {images.length > 1 && (
-            <div className="absolute bottom-6 right-6 flex gap-2">
-              {images.slice(1, 4).map((img: string, idx: number) => (
-                <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border-2 border-white/20 hover:border-white/50 transition-colors cursor-pointer">
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-              {images.length > 4 && (
-                <div className="w-16 h-16 rounded-lg bg-black/50 backdrop-blur flex items-center justify-center text-white text-sm font-medium cursor-pointer hover:bg-black/70 transition-colors">
-                  +{images.length - 4}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Floating info cards container */}
-          <div className="absolute bottom-6 left-6 right-6">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col lg:flex-row gap-4">
-                {/* Main info card */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="bg-gray-900/90 backdrop-blur-xl rounded-2xl p-5 border border-gray-700 flex-1 lg:max-w-md"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h1 className="text-xl md:text-2xl font-bold text-white mb-1">{establishment.name}</h1>
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="flex items-center gap-1 text-emerald-400">
-                          <Star className="w-4 h-4 fill-current" />
-                          <span className="font-medium">{establishment.rating || '4.5'}</span>
-                        </div>
-                        <span className="text-gray-400">({establishment.reviewCount || 0} reseñas)</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setIsFavorite(!isFavorite)}
-                        className={`p-2 rounded-full transition-all ${isFavorite ? 'bg-red-500/20 text-red-500' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
-                        title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                      >
-                        <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                      </button>
-                      <button 
-                        className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors"
-                        title="Compartir"
-                      >
-                        <Share2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between gap-4 mt-3">
-                    <div className="flex items-center gap-2 text-gray-400 flex-1 min-w-0">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="text-sm truncate">{establishment.address}, {establishment.city}</span>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-xs text-gray-400">desde</div>
-                      <div className="text-xl font-bold text-white">
-                        ${establishment.courts?.[0]?.pricePerHour || 2500}
-                        <span className="text-xs font-normal text-gray-400">/hr</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Quick Info Cards */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="hidden lg:grid grid-cols-4 gap-3 flex-1"
-                >
-                  {[
-                    { icon: Timer, label: 'Canchas', value: `${establishment.courts?.length || 0}` },
-                    { icon: Clock, label: 'Horario', value: '8 - 23hs' },
-                    { icon: Users, label: 'Capacidad', value: 'Hasta 10' },
-                    { icon: CreditCard, label: 'Pago', value: 'Online' },
-                  ].map((item, idx) => (
-                    <div key={idx} className="bg-gray-900/90 backdrop-blur-xl rounded-xl p-3 border border-gray-700 flex flex-col justify-center">
-                      <item.icon className="w-5 h-5 text-emerald-400 mb-1" />
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">{item.label}</div>
-                      <div className="text-white font-semibold text-sm">{item.value}</div>
-                    </div>
-                  ))}
-                </motion.div>
-              </div>
-            </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-400">Total</div>
+            <div className="text-2xl font-bold text-white">${getPrice()}</div>
           </div>
         </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Info - Mobile Only */}
-        <div className="grid grid-cols-4 gap-2 mb-6 lg:hidden">
-          {[
-            { icon: Timer, label: 'Canchas', value: `${establishment.courts?.length || 0}` },
-            { icon: Clock, label: 'Horario', value: '8-23hs' },
-            { icon: Users, label: 'Capacidad', value: '10' },
-            { icon: CreditCard, label: 'Pago', value: 'Online' },
-          ].map((item, idx) => (
-            <div key={idx} className="bg-gray-900 rounded-lg p-2 border border-gray-800 text-center">
-              <item.icon className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-              <div className="text-[9px] text-gray-400 uppercase">{item.label}</div>
-              <div className="text-white font-medium text-xs">{item.value}</div>
-            </div>
+        <div className="flex gap-2">
+          {Array.from({ length: TOTAL_STEPS }).map((_, idx) => (
+            <div key={idx} className={`h-1.5 flex-1 rounded-full transition-all ${idx + 1 <= currentStep ? 'bg-emerald-500' : 'bg-gray-700'}`} />
           ))}
-        </div>
-
-        {/* Booking Section - Multi-Step Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden mb-12"
-        >
-          {/* Booking Header with Progress */}
-          <div className="p-6 border-b border-gray-800 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Reservar cancha</h2>
-                <p className="text-gray-400 text-sm">Paso {currentStep} de {TOTAL_STEPS}</p>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-400">Total</div>
-                <div className="text-3xl font-bold text-white">${getPrice()}</div>
-              </div>
-            </div>
-            {/* Progress Bar */}
-            <div className="flex gap-2">
-              {Array.from({ length: TOTAL_STEPS }).map((_, idx) => (
-                <div 
-                  key={idx} 
-                  className={`h-1.5 flex-1 rounded-full transition-all ${
-                    idx + 1 <= currentStep ? 'bg-emerald-500' : 'bg-gray-700'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="p-6 min-h-[400px]">
-            <AnimatePresence mode="wait">
-              {/* Step 1: Sport Selection */}
-              {currentStep === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                      <Trophy className="w-8 h-8 text-emerald-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">¿Qué deporte querés jugar?</h3>
-                    <p className="text-gray-400">Selecciona el deporte para ver las canchas disponibles</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                    {availableSports.map((sport) => {
-                      const sportIcons: Record<string, string> = {
-                        'futbol': '⚽', 'padel': '🎾', 'paddle': '🎾', 'tenis': '🎾',
-                        'basquet': '🏀', 'voley': '🏐', 'futbol5': '⚽', 'futbol7': '⚽', 'futbol11': '⚽',
-                      };
-                      const icon = sportIcons[sport.toLowerCase()] || '🏟️';
-                      const courtCount = establishment?.courts?.filter(c => c.sport === sport).length || 0;
-                      
-                      return (
-                        <motion.button
-                          key={sport}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setSelectedSport(sport);
-                            setCurrentStep(2);
-                          }}
-                          className={`p-6 rounded-2xl border-2 transition-all text-center ${
-                            selectedSport === sport
-                              ? 'bg-emerald-500/20 border-emerald-500'
-                              : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
-                          }`}
-                        >
-                          <div className="text-4xl mb-3">{icon}</div>
-                          <div className="text-lg font-semibold text-white capitalize">{sport}</div>
-                          <div className="text-sm text-gray-400 mt-1">{courtCount} {courtCount === 1 ? 'cancha' : 'canchas'}</div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 2: Date Selection - Calendar Grid */}
-              {currentStep === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                      <Calendar className="w-8 h-8 text-emerald-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">¿Qué día querés jugar?</h3>
-                    <p className="text-gray-400">Selecciona la fecha para tu reserva de <span className="capitalize text-emerald-400">{selectedSport}</span></p>
-                  </div>
-                  
-                  {/* Calendar Grid - 7 columns, full width */}
-                  <div className="grid grid-cols-7 gap-2">
-                    {dates.map((date) => (
-                      date.isEmpty ? (
-                        <div key={date.value} className="p-3 md:p-4" />
-                      ) : (
-                        <button
-                          key={date.value}
-                          onClick={() => {
-                            setSelectedDate(date.value);
-                            setCurrentStep(3);
-                          }}
-                          className={`relative flex flex-col items-center p-3 md:p-4 rounded-xl border-2 transition-all ${
-                            selectedDate === date.value
-                              ? 'bg-emerald-500 border-emerald-500 text-white'
-                              : date.isWeekend
-                              ? 'bg-gray-800/50 border-gray-700 text-gray-300 hover:border-emerald-500/50'
-                              : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
-                          }`}
-                        >
-                          {date.isToday && (
-                            <span className={`absolute top-1 right-1 text-[7px] md:text-[8px] px-1 py-0.5 rounded ${
-                              selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'
-                            }`}>
-                              Hoy
-                            </span>
-                          )}
-                          <span className="text-[10px] md:text-xs font-medium opacity-70 uppercase">{date.dayName}</span>
-                          <span className="text-xl md:text-2xl font-bold my-0.5">{date.dayNumber}</span>
-                          <span className="text-[10px] md:text-xs opacity-70">{date.month}</span>
-                        </button>
-                      )
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: Duration Selection */}
-              {currentStep === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                      <Timer className="w-8 h-8 text-emerald-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">¿Cuánto tiempo vas a jugar?</h3>
-                    <p className="text-gray-400">Selecciona la duración de tu partido</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                      { value: 60, label: '1 hora' },
-                      { value: 90, label: '1:30 hs' },
-                      { value: 120, label: '2 horas' }
-                    ].map((duration) => (
-                      <motion.button
-                        key={duration.value}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setSelectedDuration(duration.value);
-                          setShowCustomDuration(false);
-                          setCurrentStep(4);
-                        }}
-                        className={`p-6 rounded-2xl border-2 transition-all text-center ${
-                          selectedDuration === duration.value && !showCustomDuration
-                            ? 'bg-emerald-500/20 border-emerald-500'
-                            : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
-                        }`}
-                      >
-                        <div className="text-2xl font-bold text-white mb-1">{duration.label}</div>
-                        <div className="text-sm text-gray-400">{duration.value} min</div>
-                      </motion.button>
-                    ))}
-                    
-                    {/* Custom Duration Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        setShowCustomDuration(!showCustomDuration);
-                        if (!showCustomDuration) {
-                          setCustomDuration(150); // Start at 2:30h
-                        }
-                      }}
-                      className={`p-6 rounded-2xl border-2 transition-all text-center ${
-                        showCustomDuration
-                          ? 'bg-emerald-500/20 border-emerald-500'
-                          : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
-                      }`}
-                    >
-                      <div className="text-2xl font-bold text-white mb-1">Otro</div>
-                      <div className="text-sm text-gray-400">Personalizado</div>
-                    </motion.button>
-                  </div>
-                  
-                  {/* Custom Duration Picker - Single field with +/- 30min */}
-                  <AnimatePresence>
-                    {showCustomDuration && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-gray-800 rounded-2xl p-6 max-w-sm mx-auto border border-gray-700">
-                          <div className="flex items-center justify-center gap-4 mb-6">
-                            <button
-                              onClick={() => setCustomDuration(Math.max(150, customDuration - 30))}
-                              disabled={customDuration <= 150}
-                              className="w-12 h-12 rounded-xl bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-2xl font-bold"
-                            >
-                              -
-                            </button>
-                            <div className="text-center min-w-[120px]">
-                              <span className="text-4xl font-bold text-white">
-                                {Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}
-                              </span>
-                              <div className="text-sm text-gray-400 mt-1">horas</div>
-                            </div>
-                            <button
-                              onClick={() => setCustomDuration(Math.min(480, customDuration + 30))}
-                              disabled={customDuration >= 480}
-                              className="w-12 h-12 rounded-xl bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-2xl font-bold"
-                            >
-                              +
-                            </button>
-                          </div>
-                          
-                          <button
-                            onClick={() => {
-                              setSelectedDuration(customDuration);
-                              setCurrentStep(4);
-                            }}
-                            className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 transition-all"
-                          >
-                            Confirmar duración
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-
-              {/* Step 4: Time Selection */}
-              {currentStep === 4 && (
-                <motion.div
-                  key="step4"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                      <Clock className="w-8 h-8 text-emerald-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">¿A qué hora?</h3>
-                    <p className="text-gray-400">Horarios disponibles para {selectedDate} ({selectedDuration} min)</p>
-                  </div>
-                  
-                  {loadingSlots ? (
-                    <div className="text-center py-10">
-                      <div className="w-10 h-10 mx-auto mb-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-gray-400">Cargando horarios...</p>
-                    </div>
-                  ) : availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-w-3xl mx-auto">
-                      {availableSlots.map((slot: TimeSlot) => (
-                        <button
-                          key={slot.time}
-                          onClick={() => {
-                            if (slot.available) {
-                              setSelectedTime(slot.time);
-                              setCurrentStep(5);
-                            }
-                          }}
-                          disabled={!slot.available}
-                          className={`py-3 px-2 rounded-xl text-sm font-semibold transition-all ${
-                            selectedTime === slot.time
-                              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                              : slot.available
-                              ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
-                              : 'bg-gray-800/30 text-gray-600 cursor-not-allowed line-through'
-                          }`}
-                        >
-                          {slot.time}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-gray-500">
-                      <Clock className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                      <p>No hay horarios disponibles para esta fecha</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {/* Step 5: Court Selection */}
-              {currentStep === 5 && (
-                <motion.div
-                  key="step5"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
-                >
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
-                      <span className="text-3xl">🏟️</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Elegí tu cancha</h3>
-                    <p className="text-gray-400">Canchas disponibles a las {selectedTime}</p>
-                  </div>
-                  
-                  {availableCourtsAtTime.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                      {availableCourtsAtTime.map((court) => (
-                        <motion.div
-                          key={court.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setSelectedCourt(court)}
-                          className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
-                            selectedCourt?.id === court.id 
-                              ? 'bg-emerald-500/20 border-emerald-500' 
-                              : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
-                              selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-700'
-                            }`}>
-                              🏟️
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-white text-lg">{court.name}</h4>
-                              <p className="text-sm text-gray-400 capitalize">{court.sport} • {court.surface}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xl font-bold text-emerald-400">${Math.round(court.pricePerHour * (selectedDuration / 60))}</p>
-                              <p className="text-xs text-gray-500">{selectedDuration} min</p>
-                            </div>
-                          </div>
-                          {selectedCourt?.id === court.id && (
-                            <div className="mt-3 pt-3 border-t border-gray-700 flex items-center justify-center gap-2 text-emerald-400">
-                              <Check className="w-4 h-4" />
-                              <span className="text-sm font-medium">Seleccionada</span>
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-gray-500">
-                      <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                      <p>No hay canchas disponibles en este horario</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-800">
-              <button
-                onClick={goToPrevStep}
-                disabled={currentStep === 1}
-                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${
-                  currentStep === 1
-                    ? 'opacity-0 pointer-events-none'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-                Anterior
-              </button>
-              
-              {/* Selection Summary */}
-              <div className="hidden md:flex items-center gap-3 text-sm">
-                {selectedSport && (
-                  <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-300 capitalize">{selectedSport}</span>
-                )}
-                {selectedDate && (
-                  <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-300">{selectedDate}</span>
-                )}
-                {selectedTime && (
-                  <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-300">{selectedTime}</span>
-                )}
-              </div>
-              
-              {currentStep === 5 && selectedCourt ? (
-                <button
-                  onClick={handleBooking}
-                  className="flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 shadow-lg shadow-emerald-500/25 transition-all"
-                >
-                  {!isAuthenticated ? 'Iniciar sesión' : 'Confirmar reserva'}
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              ) : (
-                <div className="w-32" /> 
-              )}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* About Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Description */}
-          <div>
-            <h2 className="text-xl font-bold text-white mb-4">Sobre el establecimiento</h2>
-            <p className="text-gray-300 leading-relaxed mb-6">
-              {establishment.description || 'Moderno complejo deportivo con instalaciones de primera calidad para disfrutar del deporte con amigos.'}
-            </p>
-            
-            {/* Contact */}
-            <div className="flex flex-wrap gap-3">
-              {establishment.phone && (
-                <a href={`tel:${establishment.phone}`} className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-xl border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors">
-                  <Phone className="w-4 h-4" />
-                  <span className="text-sm">{establishment.phone}</span>
-                </a>
-              )}
-              {establishment.email && (
-                <a href={`mailto:${establishment.email}`} className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-xl border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm">{establishment.email}</span>
-                </a>
-              )}
-              {establishment.website && (
-                <a href={establishment.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-xl border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition-colors">
-                  <Globe className="w-4 h-4" />
-                  <span className="text-sm">Sitio web</span>
-                </a>
-              )}
-            </div>
-          </div>
-
-          {/* Amenities */}
-          {establishment.amenities && establishment.amenities.length > 0 && (
-            <div>
-              <h2 className="text-xl font-bold text-white mb-4">Servicios</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {establishment.amenities.map((amenity, idx) => {
-                  const Icon = getAmenityIcon(amenity);
-                  return (
-                    <div key={idx} className="flex items-center gap-3 p-3 bg-gray-900 rounded-xl border border-gray-800">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-emerald-400" />
-                      </div>
-                      <span className="text-gray-300 text-sm">{amenity}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Map */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4">Ubicación</h2>
-          <div className="h-64 bg-gray-900 rounded-xl border border-gray-800 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-              <p className="text-gray-400 text-sm">{establishment.address}</p>
-              <p className="text-gray-500 text-xs">{establishment.city}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Mobile Floating Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950/90 backdrop-blur-xl border-t border-gray-800 lg:hidden z-40">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-xl font-bold text-white">${getPrice()}</div>
-            <div className="text-xs text-gray-400">
-              {selectedTime ? `${selectedDate} • ${selectedTime}` : 'Selecciona horario'}
-            </div>
-          </div>
-          <button
-            onClick={handleBooking}
-            disabled={!selectedTime || !selectedCourt || !selectedDate}
-            className="px-8 py-3 rounded-xl font-semibold text-white transition-all disabled:opacity-50 bg-gradient-to-r from-emerald-500 to-cyan-500"
-          >
-            Reservar
-          </button>
         </div>
       </div>
 
+      <div className={`p-4 md:p-6 ${compact ? 'max-h-[60vh] overflow-y-auto' : 'min-h-[400px]'}`}>
+        <AnimatePresence mode="wait">
+          {/* Step 1: Sport Selection */}
+          {currentStep === 1 && (
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-emerald-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-1">¿Qué deporte querés jugar?</h3>
+              </div>
+              <div className={`grid ${compact ? 'grid-cols-2 gap-3' : 'grid-cols-2 md:grid-cols-3 gap-4'}`}>
+                {availableSports.map((sport) => {
+                  const sportIcons: Record<string, string> = { 'futbol': '⚽', 'padel': '🎾', 'paddle': '🎾', 'tenis': '🎾', 'basquet': '🏀', 'voley': '🏐' };
+                  const icon = sportIcons[sport.toLowerCase()] || '🏟️';
+                  const courtCount = establishment?.courts?.filter(c => c.sport === sport).length || 0;
+                  return (
+                    <button key={sport} onClick={() => { setSelectedSport(sport); setCurrentStep(2); }}
+                      className={`p-4 rounded-xl border-2 transition-all text-center ${selectedSport === sport ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                      <div className="text-3xl mb-2">{icon}</div>
+                      <div className="font-semibold text-white capitalize">{sport}</div>
+                      <div className="text-xs text-gray-400">{courtCount} canchas</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 2: Date Selection */}
+          {currentStep === 2 && (
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold text-white mb-1">¿Qué día?</h3>
+              </div>
+              <div className={`grid ${compact ? 'grid-cols-5 gap-1' : 'grid-cols-7 gap-2'}`}>
+                {dates.map((date) => (
+                  date.isEmpty ? <div key={date.value} className="p-2" /> : (
+                    <button key={date.value} onClick={() => { setSelectedDate(date.value); setCurrentStep(3); }}
+                      className={`relative flex flex-col items-center p-2 rounded-lg border-2 transition-all ${selectedDate === date.value ? 'bg-emerald-500 border-emerald-500 text-white' : date.isWeekend ? 'bg-gray-800/50 border-gray-700 text-gray-300 hover:border-emerald-500/50' : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'}`}>
+                      {date.isToday && <span className={`absolute top-0.5 right-0.5 text-[6px] px-1 rounded ${selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'}`}>Hoy</span>}
+                      <span className="text-[9px] opacity-70 uppercase">{date.dayName}</span>
+                      <span className="text-lg font-bold">{date.dayNumber}</span>
+                      <span className="text-[9px] opacity-70">{date.month}</span>
+                    </button>
+                  )
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 3: Duration */}
+          {currentStep === 3 && (
+            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">¿Cuánto tiempo?</h3></div>
+              <div className="grid grid-cols-2 gap-3">
+                {[{ value: 60, label: '1 hora' }, { value: 90, label: '1:30 hs' }, { value: 120, label: '2 horas' }].map((d) => (
+                  <button key={d.value} onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(4); }}
+                    className={`p-4 rounded-xl border-2 text-center ${selectedDuration === d.value && !showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                    <div className="text-xl font-bold text-white">{d.label}</div>
+                  </button>
+                ))}
+                <button onClick={() => { setShowCustomDuration(!showCustomDuration); if (!showCustomDuration) setCustomDuration(150); }}
+                  className={`p-4 rounded-xl border-2 text-center ${showCustomDuration ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                  <div className="text-xl font-bold text-white">Otro</div>
+                </button>
+              </div>
+              {showCustomDuration && (
+                <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <button onClick={() => setCustomDuration(Math.max(150, customDuration - 30))} disabled={customDuration <= 150} className="w-10 h-10 rounded-lg bg-gray-700 text-white disabled:opacity-50">-</button>
+                    <span className="text-2xl font-bold text-white">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}</span>
+                    <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-10 h-10 rounded-lg bg-gray-700 text-white">+</button>
+                  </div>
+                  <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(4); }} className="w-full py-2 rounded-lg bg-emerald-500 text-white font-medium">Confirmar</button>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Step 4: Time */}
+          {currentStep === 4 && (
+            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">¿A qué hora?</h3></div>
+              {loadingSlots ? (
+                <div className="text-center py-8"><div className="w-8 h-8 mx-auto border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
+              ) : availableSlots.length > 0 ? (
+                <div className={`grid ${compact ? 'grid-cols-4 gap-1' : 'grid-cols-6 gap-2'}`}>
+                  {availableSlots.map((slot) => (
+                    <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(5); } }} disabled={!slot.available}
+                      className={`py-2 rounded-lg text-sm font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-800/30 text-gray-600 line-through'}`}>
+                      {slot.time}
+                    </button>
+                  ))}
+                </div>
+              ) : <div className="text-center py-8 text-gray-500">No hay horarios disponibles</div>}
+            </motion.div>
+          )}
+
+          {/* Step 5: Court */}
+          {currentStep === 5 && (
+            <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="text-center mb-4"><h3 className="text-xl font-bold text-white">Elegí tu cancha</h3></div>
+              {availableCourtsAtTime.length > 0 ? (
+                <div className="space-y-3">
+                  {availableCourtsAtTime.map((court) => (
+                    <div key={court.id} onClick={() => setSelectedCourt(court)}
+                      className={`p-4 rounded-xl border-2 cursor-pointer ${selectedCourt?.id === court.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-700'}`}>🏟️</div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white">{court.name}</h4>
+                          <p className="text-sm text-gray-400 capitalize">{court.sport} • {court.surface}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-emerald-400">${Math.round(court.pricePerHour * (selectedDuration / 60))}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <div className="text-center py-8 text-gray-500">No hay canchas disponibles</div>}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-800">
+          <button onClick={goToPrevStep} disabled={currentStep === 1}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm ${currentStep === 1 ? 'opacity-0' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+            <ChevronLeft className="w-4 h-4" /> Anterior
+          </button>
+          {currentStep === 5 && selectedCourt ? (
+            <button onClick={handleBooking} className="px-6 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500">
+              {!isAuthenticated ? 'Iniciar sesión' : 'Confirmar'}
+            </button>
+          ) : <div />}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-950">
+      {/* Design Variant Tabs */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-xl border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button onClick={() => router.back()} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-white font-medium hidden sm:block">{establishment.name}</span>
+          </div>
+          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+            {(['A', 'B', 'C'] as const).map((variant) => (
+              <button
+                key={variant}
+                onClick={() => setDesignVariant(variant)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  designVariant === variant
+                    ? 'bg-emerald-500 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Diseño {variant}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2 rounded-lg ${isFavorite ? 'bg-red-500/20 text-red-500' : 'bg-gray-800 text-gray-400'}`}>
+              <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+            <button className="p-2 rounded-lg bg-gray-800 text-gray-400"><Share2 className="w-5 h-5" /></button>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-16">
+        {/* DESIGN A: Two Column Layout (Airbnb style) */}
+        {designVariant === 'A' && (
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+              {/* Left Column - Info */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Gallery */}
+                <div className="grid grid-cols-4 gap-2 rounded-2xl overflow-hidden h-[300px] md:h-[400px]">
+                  <div className="col-span-2 row-span-2">
+                    <img src={mainImage} alt={establishment.name} className="w-full h-full object-cover" />
+                  </div>
+                  {images.slice(1, 5).map((img: string, idx: number) => (
+                    <div key={idx} className="bg-gray-800">
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Info */}
+                <div className="space-y-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-white mb-2">{establishment.name}</h1>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1 text-emerald-400">
+                        <Star className="w-4 h-4 fill-current" />
+                        <span className="font-medium">{establishment.rating || '4.5'}</span>
+                      </div>
+                      <span className="text-gray-400">({establishment.reviewCount || 0} reseñas)</span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-400">{establishment.address}, {establishment.city}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { icon: Timer, label: 'Canchas', value: `${establishment.courts?.length || 0}` },
+                      { icon: Clock, label: 'Horario', value: '8 - 23hs' },
+                      { icon: Users, label: 'Deportes', value: `${availableSports.length}` },
+                      { icon: CreditCard, label: 'Pago', value: 'Online' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
+                        <item.icon className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
+                        <div className="text-xs text-gray-400">{item.label}</div>
+                        <div className="text-white font-semibold text-sm">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-gray-800 pt-4">
+                    <h2 className="text-lg font-semibold text-white mb-2">Sobre el establecimiento</h2>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      {establishment.description || 'Moderno complejo deportivo con instalaciones de primera calidad.'}
+                    </p>
+                  </div>
+
+                  {/* Amenities */}
+                  {establishment.amenities && establishment.amenities.length > 0 && (
+                    <div className="border-t border-gray-800 pt-4">
+                      <h2 className="text-lg font-semibold text-white mb-3">Servicios</h2>
+                      <div className="flex flex-wrap gap-2">
+                        {establishment.amenities.slice(0, 6).map((amenity: string, idx: number) => (
+                          <span key={idx} className="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300">{amenity}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column - Sticky Booking Form */}
+              <div className="lg:col-span-2">
+                <div className="lg:sticky lg:top-24">
+                  <BookingForm compact />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DESIGN B: Compact Hero + Prominent Form */}
+        {designVariant === 'B' && (
+          <div>
+            {/* Compact Hero */}
+            <div className="relative h-[30vh] overflow-hidden">
+              <img src={mainImage} alt={establishment.name} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/50 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <div className="max-w-4xl mx-auto">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{establishment.name}</h1>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1 text-emerald-400">
+                      <Star className="w-4 h-4 fill-current" />
+                      <span>{establishment.rating || '4.5'}</span>
+                    </div>
+                    <span className="text-gray-300">{establishment.address}</span>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-gray-300">{establishment.courts?.length || 0} canchas</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content - Form First */}
+            <div className="max-w-4xl mx-auto px-4 py-8">
+              <BookingForm />
+
+              {/* Secondary Info in Tabs/Accordion */}
+              <div className="mt-8 space-y-4">
+                <details className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden group">
+                  <summary className="p-4 cursor-pointer flex items-center justify-between text-white font-medium">
+                    <span>Sobre el establecimiento</span>
+                    <ChevronRight className="w-5 h-5 transition-transform group-open:rotate-90" />
+                  </summary>
+                  <div className="p-4 pt-0 text-gray-400 text-sm">
+                    {establishment.description || 'Moderno complejo deportivo con instalaciones de primera calidad.'}
+                  </div>
+                </details>
+
+                <details className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden group">
+                  <summary className="p-4 cursor-pointer flex items-center justify-between text-white font-medium">
+                    <span>Servicios y amenities</span>
+                    <ChevronRight className="w-5 h-5 transition-transform group-open:rotate-90" />
+                  </summary>
+                  <div className="p-4 pt-0">
+                    <div className="flex flex-wrap gap-2">
+                      {(establishment.amenities || ['Estacionamiento', 'WiFi', 'Vestuarios']).map((amenity: string, idx: number) => (
+                        <span key={idx} className="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300">{amenity}</span>
+                      ))}
+                    </div>
+                  </div>
+                </details>
+
+                <details className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden group">
+                  <summary className="p-4 cursor-pointer flex items-center justify-between text-white font-medium">
+                    <span>Ubicación</span>
+                    <ChevronRight className="w-5 h-5 transition-transform group-open:rotate-90" />
+                  </summary>
+                  <div className="p-4 pt-0">
+                    <div className="h-40 bg-gray-800 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <MapPin className="w-6 h-6 text-gray-600 mx-auto mb-1" />
+                        <p className="text-gray-400 text-sm">{establishment.address}, {establishment.city}</p>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DESIGN C: Fullscreen Checkout Flow */}
+        {designVariant === 'C' && (
+          <div className="min-h-[calc(100vh-4rem)] flex flex-col">
+            {/* Mini Header with Establishment Info */}
+            <div className="bg-gray-900 border-b border-gray-800 px-4 py-3">
+              <div className="max-w-3xl mx-auto flex items-center gap-4">
+                <img src={mainImage} alt="" className="w-16 h-16 rounded-xl object-cover" />
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg font-bold text-white truncate">{establishment.name}</h1>
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Star className="w-3 h-3 text-emerald-400 fill-current" />
+                    <span>{establishment.rating || '4.5'}</span>
+                    <span>•</span>
+                    <span className="truncate">{establishment.address}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-white">${getPrice()}</div>
+                  <div className="text-xs text-gray-400">total</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Fullscreen Form */}
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="w-full max-w-2xl">
+                <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                  {/* Progress Steps */}
+                  <div className="p-4 border-b border-gray-800">
+                    <div className="flex items-center justify-between">
+                      {['Deporte', 'Fecha', 'Duración', 'Hora', 'Cancha'].map((step, idx) => (
+                        <div key={idx} className="flex items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                            idx + 1 < currentStep ? 'bg-emerald-500 text-white' :
+                            idx + 1 === currentStep ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500' :
+                            'bg-gray-800 text-gray-500'
+                          }`}>
+                            {idx + 1 < currentStep ? <Check className="w-4 h-4" /> : idx + 1}
+                          </div>
+                          {idx < 4 && <div className={`w-8 md:w-16 h-0.5 mx-1 ${idx + 1 < currentStep ? 'bg-emerald-500' : 'bg-gray-700'}`} />}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-gray-500">
+                      {['Deporte', 'Fecha', 'Duración', 'Hora', 'Cancha'].map((step, idx) => (
+                        <span key={idx} className={`${idx + 1 === currentStep ? 'text-emerald-400' : ''}`}>{step}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Form Content */}
+                  <div className="p-6 min-h-[350px]">
+                    <AnimatePresence mode="wait">
+                      {currentStep === 1 && (
+                        <motion.div key="c1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                          <h2 className="text-2xl font-bold text-white text-center">¿Qué deporte querés jugar?</h2>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {availableSports.map((sport) => {
+                              const icons: Record<string, string> = { 'futbol': '⚽', 'padel': '🎾', 'tenis': '🎾', 'basquet': '🏀' };
+                              return (
+                                <button key={sport} onClick={() => { setSelectedSport(sport); setCurrentStep(2); }}
+                                  className={`p-6 rounded-2xl border-2 text-center transition-all ${selectedSport === sport ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                                  <div className="text-4xl mb-2">{icons[sport.toLowerCase()] || '🏟️'}</div>
+                                  <div className="text-lg font-semibold text-white capitalize">{sport}</div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                      {currentStep === 2 && (
+                        <motion.div key="c2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                          <h2 className="text-2xl font-bold text-white text-center">¿Qué día?</h2>
+                          <div className="grid grid-cols-7 gap-2">
+                            {dates.map((date) => (
+                              date.isEmpty ? <div key={date.value} /> : (
+                                <button key={date.value} onClick={() => { setSelectedDate(date.value); setCurrentStep(3); }}
+                                  className={`relative p-3 rounded-xl border-2 text-center ${selectedDate === date.value ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50 text-gray-300'}`}>
+                                  {date.isToday && <span className="absolute top-1 right-1 text-[7px] px-1 bg-emerald-500/20 text-emerald-400 rounded">Hoy</span>}
+                                  <div className="text-xs opacity-70">{date.dayName}</div>
+                                  <div className="text-xl font-bold">{date.dayNumber}</div>
+                                  <div className="text-xs opacity-70">{date.month}</div>
+                                </button>
+                              )
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                      {currentStep === 3 && (
+                        <motion.div key="c3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                          <h2 className="text-2xl font-bold text-white text-center">¿Cuánto tiempo?</h2>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[{ v: 60, l: '1h' }, { v: 90, l: '1:30h' }, { v: 120, l: '2h' }, { v: 150, l: '2:30h' }].map((d) => (
+                              <button key={d.v} onClick={() => { setSelectedDuration(d.v); setCurrentStep(4); }}
+                                className={`p-6 rounded-2xl border-2 ${selectedDuration === d.v ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                                <div className="text-3xl font-bold text-white">{d.l}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                      {currentStep === 4 && (
+                        <motion.div key="c4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                          <h2 className="text-2xl font-bold text-white text-center">¿A qué hora?</h2>
+                          {loadingSlots ? (
+                            <div className="flex justify-center py-12"><div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
+                          ) : (
+                            <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
+                              {availableSlots.map((slot) => (
+                                <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(5); } }} disabled={!slot.available}
+                                  className={`py-3 rounded-xl font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-800/30 text-gray-600 line-through'}`}>
+                                  {slot.time}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                      {currentStep === 5 && (
+                        <motion.div key="c5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                          <h2 className="text-2xl font-bold text-white text-center">Elegí tu cancha</h2>
+                          <div className="space-y-3">
+                            {availableCourtsAtTime.map((court) => (
+                              <div key={court.id} onClick={() => setSelectedCourt(court)}
+                                className={`p-5 rounded-2xl border-2 cursor-pointer flex items-center gap-4 ${selectedCourt?.id === court.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'}`}>
+                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-700'}`}>🏟️</div>
+                                <div className="flex-1">
+                                  <h4 className="text-lg font-semibold text-white">{court.name}</h4>
+                                  <p className="text-sm text-gray-400">{court.sport} • {court.surface}</p>
+                                </div>
+                                <div className="text-xl font-bold text-emerald-400">${Math.round(court.pricePerHour * (selectedDuration / 60))}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-4 border-t border-gray-800 flex items-center justify-between">
+                    <button onClick={goToPrevStep} disabled={currentStep === 1}
+                      className={`px-6 py-3 rounded-xl font-medium ${currentStep === 1 ? 'opacity-0' : 'bg-gray-800 text-white hover:bg-gray-700'}`}>
+                      ← Anterior
+                    </button>
+                    {currentStep === 5 && selectedCourt && (
+                      <button onClick={handleBooking}
+                        className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-lg">
+                        Confirmar reserva →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Modals */}
-      <LoginModal 
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onSwitchToRegister={() => {
-          setShowLoginModal(false);
-          setShowRegisterModal(true);
-        }}
-      />
-      <RegisterModal 
-        isOpen={showRegisterModal}
-        onClose={() => setShowRegisterModal(false)}
-        onSwitchToLogin={() => {
-          setShowRegisterModal(false);
-          setShowLoginModal(true);
-        }}
-      />
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} onSwitchToRegister={() => { setShowLoginModal(false); setShowRegisterModal(true); }} />
+      <RegisterModal isOpen={showRegisterModal} onClose={() => setShowRegisterModal(false)} onSwitchToLogin={() => { setShowRegisterModal(false); setShowLoginModal(true); }} />
     </div>
   );
 };
