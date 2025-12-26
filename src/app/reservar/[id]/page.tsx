@@ -728,54 +728,79 @@ const BookingPage = () => {
         </div>
       </div>
 
-      {/* DESKTOP LAYOUT (Franco style - light theme with sidebar) */}
-      <div className="hidden lg:flex min-h-screen flex-col">
-        {/* Header with Progress Steps */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-6 py-4">
+      {/* DESKTOP LAYOUT - MisCanchas Style */}
+      <div className="hidden lg:flex min-h-screen flex-col bg-gradient-to-br from-gray-50 via-white to-emerald-50/30">
+        {/* Header - MisCanchas branded */}
+        <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-3">
             <div className="flex items-center justify-between">
-              {/* Logo / Back */}
+              {/* Left: Back + Establishment */}
               <div className="flex items-center gap-4">
-                <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
+                <button onClick={() => router.back()} className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-3">
-                  <img src={mainImage} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                  <span className="font-semibold text-gray-900">{establishment.name}</span>
+                  <div className="relative">
+                    <img src={mainImage} alt="" className="w-12 h-12 rounded-xl object-cover shadow-md" />
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="font-bold text-gray-900">{establishment.name}</h1>
+                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <Star className="w-3.5 h-3.5 text-amber-400 fill-current" />
+                      <span>{establishment.rating || '4.5'}</span>
+                      <span className="mx-1">•</span>
+                      <span className="truncate max-w-[200px]">{establishment.address}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Progress Steps */}
-              <div className="flex items-center gap-2">
+              {/* Center: Progress Steps - Pill style */}
+              <div className="flex items-center bg-gray-100 rounded-2xl p-1.5">
                 {stepTitles.map((title, idx) => {
-                  const Icon = stepIcons[idx];
                   const isCompleted = idx + 1 < currentStep;
                   const isCurrent = idx + 1 === currentStep;
                   return (
                     <div key={idx} className="flex items-center">
-                      <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      <button
+                        onClick={() => isCompleted && setCurrentStep(idx + 1)}
+                        disabled={!isCompleted && !isCurrent}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          isCurrent 
+                            ? 'bg-white text-emerald-600 shadow-sm' 
+                            : isCompleted 
+                              ? 'text-emerald-600 hover:bg-white/50 cursor-pointer' 
+                              : 'text-gray-400'
+                        }`}
+                      >
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                           isCompleted ? 'bg-emerald-500 text-white' :
-                          isCurrent ? 'bg-emerald-500 text-white ring-4 ring-emerald-100' :
-                          'bg-gray-100 text-gray-400'
+                          isCurrent ? 'bg-emerald-500 text-white' :
+                          'bg-gray-300 text-white'
                         }`}>
-                          {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                        </div>
-                        <span className={`text-xs mt-1 ${isCurrent ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
-                          {title}
+                          {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                         </span>
-                      </div>
-                      {idx < 4 && (
-                        <div className={`w-12 h-0.5 mx-2 mb-5 ${isCompleted ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                        <span className="hidden xl:inline">{title}</span>
+                      </button>
+                      {idx < 3 && (
+                        <div className={`w-6 h-0.5 mx-1 rounded ${isCompleted ? 'bg-emerald-400' : 'bg-gray-300'}`} />
                       )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Current Step Title */}
-              <div className="text-right">
-                <span className="text-gray-900 font-medium">{stepTitles[currentStep - 1]}</span>
+              {/* Right: Actions */}
+              <div className="flex items-center gap-2">
+                <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2.5 rounded-xl transition-all ${isFavorite ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-400 hover:text-red-500'}`}>
+                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                </button>
+                <button className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                  <Share2 className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </div>
@@ -784,30 +809,42 @@ const BookingPage = () => {
         {/* Main Content */}
         <div className="flex-1 flex">
           {/* Left Side - Form Content */}
-          <main className="flex-1 bg-white">
-            <div className="max-w-4xl mx-auto px-8 py-8">
+          <main className="flex-1">
+            <div className="max-w-3xl mx-auto px-8 py-10">
               <AnimatePresence mode="wait">
                 {/* Step 1: Sport Selection */}
                 {currentStep === 1 && (
                   <motion.div key="d1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Elegí tu deporte</h2>
-                    <div className="space-y-3">
+                    <div className="text-center mb-8">
+                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 1 de 4</span>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-2">¿Qué deporte vas a jugar?</h2>
+                      <p className="text-gray-500">Seleccioná el deporte para ver las canchas disponibles</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                       {availableSports.map((sport) => {
                         const sportIcons: Record<string, string> = { 'futbol': '⚽', 'padel': '🎾', 'paddle': '🎾', 'tenis': '🎾', 'basquet': '🏀', 'voley': '🏐' };
                         const icon = sportIcons[sport.toLowerCase()] || '🏟️';
                         const courtCount = establishment?.courts?.filter(c => c.sport === sport).length || 0;
                         return (
-                          <button key={sport} onClick={() => { setSelectedSport(sport); setCurrentStep(2); }}
-                            className={`w-full p-5 rounded-xl border-2 text-left flex items-center gap-4 transition-all hover:border-emerald-500 ${
-                              selectedSport === sport ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white'
+                          <motion.button 
+                            key={sport} 
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => { setSelectedSport(sport); setCurrentStep(2); }}
+                            className={`group relative p-6 rounded-2xl border-2 text-center transition-all overflow-hidden ${
+                              selectedSport === sport 
+                                ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-lg shadow-emerald-100' 
+                                : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-md'
                             }`}>
-                            <span className="text-3xl">{icon}</span>
-                            <div className="flex-1">
-                              <div className="font-semibold text-gray-900 capitalize">{sport}</div>
-                              <div className="text-sm text-gray-500">{courtCount} canchas disponibles</div>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                          </button>
+                            <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform">{icon}</div>
+                            <div className="font-bold text-gray-900 capitalize text-lg mb-1">{sport}</div>
+                            <div className="text-sm text-gray-500">{courtCount} canchas</div>
+                            {selectedSport === sport && (
+                              <div className="absolute top-3 right-3 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                                <Check className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                          </motion.button>
                         );
                       })}
                     </div>
@@ -817,187 +854,362 @@ const BookingPage = () => {
                 {/* Step 2: Duration */}
                 {currentStep === 2 && (
                   <motion.div key="d2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">¿Cuánto tiempo vas a jugar?</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[{ value: 60, label: '1 hora' }, { value: 90, label: '1:30 hs' }, { value: 120, label: '2 horas' }, { value: 150, label: '2:30 hs' }].map((d) => (
-                        <button key={d.value} onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(3); }}
-                          className={`p-6 rounded-xl border-2 text-center transition-all hover:border-emerald-500 ${
-                            selectedDuration === d.value && !showCustomDuration ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white'
+                    <div className="text-center mb-8">
+                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 2 de 4</span>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-2">¿Cuánto tiempo vas a jugar?</h2>
+                      <p className="text-gray-500">Elegí la duración de tu reserva</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      {[{ value: 60, label: '1 hora', popular: false }, { value: 90, label: '1:30 hs', popular: true }, { value: 120, label: '2 horas', popular: false }, { value: 150, label: '2:30 hs', popular: false }].map((d) => (
+                        <motion.button 
+                          key={d.value} 
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => { setSelectedDuration(d.value); setShowCustomDuration(false); setCurrentStep(3); }}
+                          className={`relative p-6 rounded-2xl border-2 text-center transition-all ${
+                            selectedDuration === d.value && !showCustomDuration 
+                              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-lg shadow-emerald-100' 
+                              : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-md'
                           }`}>
+                          {d.popular && (
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-amber-400 text-amber-900 text-xs font-bold rounded-full">Popular</span>
+                          )}
+                          <Timer className={`w-8 h-8 mx-auto mb-2 ${selectedDuration === d.value ? 'text-emerald-500' : 'text-gray-300'}`} />
                           <div className="text-2xl font-bold text-gray-900">{d.label}</div>
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                     <button onClick={() => { setShowCustomDuration(!showCustomDuration); if (!showCustomDuration) setCustomDuration(180); }}
-                      className={`w-full mt-4 p-4 rounded-xl border-2 text-center ${showCustomDuration ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'}`}>
-                      <span className="text-gray-600">Otra duración</span>
+                      className={`w-full p-4 rounded-2xl border-2 border-dashed text-center transition-all ${showCustomDuration ? 'border-emerald-500 bg-emerald-50' : 'border-gray-300 hover:border-emerald-300'}`}>
+                      <span className="text-gray-600 font-medium">⏱️ Personalizar duración</span>
                     </button>
                     {showCustomDuration && (
-                      <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-200">
-                        <div className="flex items-center justify-center gap-6">
-                          <button onClick={() => setCustomDuration(Math.max(150, customDuration - 30))} className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 text-xl font-bold hover:bg-gray-50">-</button>
-                          <span className="text-3xl font-bold text-gray-900">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')} hs</span>
-                          <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-12 h-12 rounded-full bg-white border border-gray-300 text-gray-600 text-xl font-bold hover:bg-gray-50">+</button>
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-4 p-6 bg-white rounded-2xl border-2 border-emerald-200 shadow-lg"
+                      >
+                        <div className="flex items-center justify-center gap-6 mb-6">
+                          <button onClick={() => setCustomDuration(Math.max(150, customDuration - 30))} className="w-14 h-14 rounded-2xl bg-gray-100 text-gray-600 text-2xl font-bold hover:bg-gray-200 transition-colors">-</button>
+                          <div className="text-center">
+                            <span className="text-4xl font-bold text-gray-900">{Math.floor(customDuration / 60)}:{String(customDuration % 60).padStart(2, '0')}</span>
+                            <div className="text-sm text-gray-500 mt-1">horas</div>
+                          </div>
+                          <button onClick={() => setCustomDuration(Math.min(480, customDuration + 30))} className="w-14 h-14 rounded-2xl bg-gray-100 text-gray-600 text-2xl font-bold hover:bg-gray-200 transition-colors">+</button>
                         </div>
-                        <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(3); }} className="w-full mt-4 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600">Confirmar</button>
-                      </div>
+                        <button onClick={() => { setSelectedDuration(customDuration); setCurrentStep(3); }} className="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-md">
+                          Confirmar duración
+                        </button>
+                      </motion.div>
                     )}
                   </motion.div>
                 )}
 
-                {/* Step 3: Date + Time (unified like Franco) */}
+                {/* Step 3: Date + Time - MisCanchas style */}
                 {currentStep === 3 && (
                   <motion.div key="d3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Fecha y hora</h2>
+                    <div className="text-center mb-8">
+                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 3 de 4</span>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-2">¿Cuándo querés jugar?</h2>
+                      <p className="text-gray-500">Elegí el día y horario de tu reserva</p>
+                    </div>
                     
-                    {/* Date selector - horizontal row */}
-                    <div className="flex items-center gap-2 mb-6">
-                      <button className="p-2 rounded-lg hover:bg-gray-100 flex-shrink-0"><ChevronLeft className="w-5 h-5 text-gray-400" /></button>
-                      <div className="flex-1 flex gap-2 overflow-x-auto pb-2">
-                        {dates.slice(0, 7).filter(d => !d.isEmpty).map((date) => (
-                          <button key={date.value} onClick={() => setSelectedDate(date.value)}
-                            className={`flex-shrink-0 p-3 rounded-xl border-2 text-center transition-all min-w-[70px] ${
+                    {/* Date selector - card style */}
+                    <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-emerald-500" />
+                          Seleccioná el día
+                        </h3>
+                        <div className="flex gap-1">
+                          <button className="p-1.5 rounded-lg hover:bg-gray-100"><ChevronLeft className="w-4 h-4 text-gray-400" /></button>
+                          <button className="p-1.5 rounded-lg hover:bg-gray-100"><ChevronRight className="w-4 h-4 text-gray-400" /></button>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {dates.slice(0, 10).filter(d => !d.isEmpty).map((date) => (
+                          <motion.button 
+                            key={date.value} 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setSelectedDate(date.value)}
+                            className={`flex-shrink-0 p-3 rounded-xl text-center transition-all min-w-[72px] ${
                               selectedDate === date.value 
-                                ? 'border-emerald-500 bg-emerald-500 text-white' 
-                                : 'border-gray-200 hover:border-emerald-300 bg-white'
+                                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-200' 
+                                : date.isToday
+                                  ? 'bg-emerald-50 border-2 border-emerald-200 hover:border-emerald-400'
+                                  : 'bg-gray-50 hover:bg-gray-100'
                             }`}>
-                            <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.dayName}</div>
+                            <div className={`text-[10px] font-medium uppercase ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.dayName}</div>
                             <div className={`text-xl font-bold ${selectedDate === date.value ? 'text-white' : 'text-gray-900'}`}>{date.dayNumber}</div>
-                            <div className={`text-xs ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.month}</div>
-                          </button>
+                            <div className={`text-[10px] ${selectedDate === date.value ? 'text-emerald-100' : 'text-gray-400'}`}>{date.month}</div>
+                            {date.isToday && !selectedDate && (
+                              <span className="text-[8px] text-emerald-600 font-bold">HOY</span>
+                            )}
+                          </motion.button>
                         ))}
                       </div>
-                      <button className="p-2 rounded-lg hover:bg-gray-100 flex-shrink-0"><ChevronRight className="w-5 h-5 text-gray-400" /></button>
                     </div>
 
                     {/* Time slots */}
                     {selectedDate && (
-                      <>
-                        <p className="text-gray-500 mb-4">Horarios disponibles para el {formatSelectedDate()}</p>
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm"
+                      >
+                        <h3 className="font-semibold text-gray-700 flex items-center gap-2 mb-4">
+                          <Clock className="w-4 h-4 text-emerald-500" />
+                          Horarios disponibles
+                          <span className="text-sm font-normal text-gray-400">• {formatSelectedDate()}</span>
+                        </h3>
                         {loadingSlots ? (
-                          <div className="flex justify-center py-12"><div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
+                          <div className="flex justify-center py-8">
+                            <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                          </div>
                         ) : availableSlots.length > 0 ? (
-                          <div className="grid grid-cols-6 gap-3">
+                          <div className="grid grid-cols-5 gap-2">
                             {availableSlots.map((slot) => (
-                              <button key={slot.time} onClick={() => { if (slot.available) setSelectedTime(slot.time); }} disabled={!slot.available}
-                                className={`py-3 px-4 rounded-xl border-2 font-medium transition-all ${
+                              <motion.button 
+                                key={slot.time} 
+                                whileHover={slot.available ? { scale: 1.05 } : {}}
+                                whileTap={slot.available ? { scale: 0.95 } : {}}
+                                onClick={() => { if (slot.available) setSelectedTime(slot.time); }} 
+                                disabled={!slot.available}
+                                className={`py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
                                   selectedTime === slot.time 
-                                    ? 'border-emerald-500 bg-emerald-500 text-white' 
+                                    ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md' 
                                     : slot.available 
-                                      ? 'border-gray-200 text-gray-700 hover:border-emerald-300' 
-                                      : 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                      ? 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700' 
+                                      : 'bg-gray-100 text-gray-300 cursor-not-allowed line-through'
                                 }`}>
                                 {slot.time}
-                              </button>
+                              </motion.button>
                             ))}
                           </div>
-                        ) : <div className="text-center py-12 text-gray-500">No hay horarios disponibles para esta fecha</div>}
-                      </>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                              <Clock className="w-8 h-8 text-gray-300" />
+                            </div>
+                            <p className="text-gray-500">No hay horarios disponibles para esta fecha</p>
+                          </div>
+                        )}
+                      </motion.div>
                     )}
                     
                     {!selectedDate && (
-                      <p className="text-center text-gray-400 py-8">Seleccioná una fecha para ver los horarios disponibles</p>
+                      <div className="bg-gray-50 rounded-2xl p-8 text-center border-2 border-dashed border-gray-200">
+                        <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-gray-500">Seleccioná una fecha para ver los horarios disponibles</p>
+                      </div>
                     )}
                   </motion.div>
                 )}
 
-                {/* Step 4: Court */}
+                {/* Step 4: Court - MisCanchas style */}
                 {currentStep === 4 && (
                   <motion.div key="d4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Elegí tu cancha</h2>
+                    <div className="text-center mb-8">
+                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 4 de 4</span>
+                      <h2 className="text-3xl font-bold text-gray-900 mb-2">Elegí tu cancha</h2>
+                      <p className="text-gray-500">Seleccioná la cancha que más te guste</p>
+                    </div>
                     {availableCourtsAtTime.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {availableCourtsAtTime.map((court) => (
-                          <button key={court.id} onClick={() => setSelectedCourt(court)}
-                            className={`w-full p-5 rounded-xl border-2 text-left flex items-center gap-4 transition-all hover:border-emerald-500 ${
-                              selectedCourt?.id === court.id ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white'
+                          <motion.button 
+                            key={court.id} 
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            onClick={() => setSelectedCourt(court)}
+                            className={`w-full p-5 rounded-2xl border-2 text-left flex items-center gap-4 transition-all ${
+                              selectedCourt?.id === court.id 
+                                ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-white shadow-lg shadow-emerald-100' 
+                                : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-md'
                             }`}>
-                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-100'}`}>
-                              🏟️
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all ${
+                              selectedCourt?.id === court.id ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg' : 'bg-gray-100'
+                            }`}>
+                              {selectedCourt?.id === court.id ? '✓' : '🏟️'}
                             </div>
                             <div className="flex-1">
-                              <div className="font-semibold text-gray-900">{court.name}</div>
-                              <div className="text-sm text-gray-500 capitalize">{court.sport} • {court.surface}</div>
+                              <div className="font-bold text-gray-900 text-lg">{court.name}</div>
+                              <div className="text-sm text-gray-500 capitalize flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full text-xs">{court.sport}</span>
+                                <span>•</span>
+                                <span>{court.surface}</span>
+                                {court.isIndoor && <span className="text-emerald-600">• Techada</span>}
+                              </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-xl font-bold text-emerald-600">${Math.round(court.pricePerHour * (selectedDuration / 60))}</div>
+                              <div className="text-2xl font-bold text-emerald-600">${Math.round(court.pricePerHour * (selectedDuration / 60))}</div>
+                              <div className="text-xs text-gray-400">por {formatDuration()}</div>
                             </div>
-                          </button>
+                          </motion.button>
                         ))}
                       </div>
-                    ) : <div className="text-center py-12 text-gray-500">No hay canchas disponibles en este horario</div>}
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                          <MapPin className="w-10 h-10 text-gray-300" />
+                        </div>
+                        <p className="text-gray-500">No hay canchas disponibles en este horario</p>
+                        <button onClick={() => setCurrentStep(3)} className="mt-4 text-emerald-600 font-medium hover:underline">
+                          ← Elegir otro horario
+                        </button>
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </main>
 
-          {/* Right Sidebar - Booking Summary */}
-          <aside className="w-80 bg-gray-50 border-l border-gray-200 flex flex-col">
+          {/* Right Sidebar - MisCanchas Ticket Style */}
+          <aside className="w-96 bg-gradient-to-b from-gray-50 to-gray-100 border-l border-gray-200 flex flex-col">
             <div className="flex-1 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Detalles de la reserva</h3>
-              
+              {/* Ticket Header */}
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-t-2xl p-4 text-white -mx-6 -mt-6 mb-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-emerald-100 text-xs font-medium">Tu reserva en</div>
+                    <div className="font-bold text-lg">{establishment.name}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-emerald-100 text-sm">
+                  <Star className="w-3.5 h-3.5 fill-current text-amber-300" />
+                  <span>{establishment.rating || '4.5'}</span>
+                  <span className="mx-1">•</span>
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span className="truncate">{establishment.city}</span>
+                </div>
+              </div>
+
+              {/* Ticket Details */}
               <div className="space-y-4">
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Establecimiento:</div>
-                  <div className="font-medium text-gray-900">{establishment.name}</div>
+                {/* Sport */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedSport ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedSport ? 'bg-emerald-100' : 'bg-gray-200'}`}>
+                    {selectedSport ? (
+                      <span className="text-xl">{{'futbol': '⚽', 'padel': '🎾', 'tenis': '🎾', 'basquet': '🏀'}[selectedSport.toLowerCase()] || '🏟️'}</span>
+                    ) : (
+                      <Trophy className="w-5 h-5 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400 font-medium">Deporte</div>
+                    <div className={`font-semibold capitalize ${selectedSport ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {selectedSport || 'Sin seleccionar'}
+                    </div>
+                  </div>
+                  {selectedSport && <Check className="w-5 h-5 text-emerald-500" />}
                 </div>
-                
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Deporte:</div>
-                  <div className="font-medium text-gray-900 capitalize">{selectedSport || '-'}</div>
+
+                {/* Duration */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedDuration ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedDuration ? 'bg-emerald-100' : 'bg-gray-200'}`}>
+                    <Timer className={`w-5 h-5 ${selectedDuration ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400 font-medium">Duración</div>
+                    <div className={`font-semibold ${selectedDuration ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {formatDuration()}
+                    </div>
+                  </div>
+                  {selectedDuration && <Check className="w-5 h-5 text-emerald-500" />}
                 </div>
-                
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Fecha:</div>
-                  <div className="font-medium text-gray-900 capitalize">{formatSelectedDate()}</div>
+
+                {/* Date & Time */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedDate && selectedTime ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedDate ? 'bg-emerald-100' : 'bg-gray-200'}`}>
+                    <Calendar className={`w-5 h-5 ${selectedDate ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400 font-medium">Fecha y hora</div>
+                    <div className={`font-semibold capitalize ${selectedDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {selectedDate ? formatSelectedDate() : 'Sin seleccionar'}
+                    </div>
+                    {selectedTime && <div className="text-sm text-emerald-600 font-medium">{selectedTime} hs</div>}
+                  </div>
+                  {selectedDate && selectedTime && <Check className="w-5 h-5 text-emerald-500" />}
                 </div>
-                
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Duración:</div>
-                  <div className="font-medium text-gray-900">{formatDuration()}</div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Hora:</div>
-                  <div className="font-medium text-gray-900">{selectedTime || '-'}</div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-gray-500 mb-1">Cancha:</div>
-                  <div className="font-medium text-gray-900">{selectedCourt?.name || '-'}</div>
+
+                {/* Court */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedCourt ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedCourt ? 'bg-emerald-100' : 'bg-gray-200'}`}>
+                    <span className="text-xl">{selectedCourt ? '🏟️' : '🏟️'}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400 font-medium">Cancha</div>
+                    <div className={`font-semibold ${selectedCourt ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {selectedCourt?.name || 'Sin seleccionar'}
+                    </div>
+                    {selectedCourt && <div className="text-xs text-gray-500 capitalize">{selectedCourt.surface}</div>}
+                  </div>
+                  {selectedCourt && <Check className="w-5 h-5 text-emerald-500" />}
                 </div>
               </div>
             </div>
 
-            {/* Total & Actions */}
-            <div className="p-6 border-t border-gray-200 bg-white">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-gray-600">Total:</span>
-                <span className="text-2xl font-bold text-gray-900">${getPrice()}</span>
+            {/* Total - Ticket Footer */}
+            <div className="p-6 bg-white border-t border-gray-200 rounded-b-2xl mx-2 mb-2 shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-500">Subtotal</span>
+                <span className="text-gray-900">${getPrice()}</span>
+              </div>
+              <div className="flex items-center justify-between mb-4 pb-4 border-b border-dashed border-gray-200">
+                <span className="text-gray-500">Seña online</span>
+                <span className="text-gray-900">$0</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-bold text-gray-900">Total a pagar</span>
+                <span className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">
+                  ${getPrice()}
+                </span>
               </div>
             </div>
           </aside>
         </div>
 
-        {/* Footer with Navigation */}
-        <footer className="bg-white border-t border-gray-200 px-6 py-4">
+        {/* Footer with Navigation - MisCanchas style */}
+        <footer className="bg-white/80 backdrop-blur-xl border-t border-gray-200 px-6 py-4 sticky bottom-0">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <button onClick={goToPrevStep} disabled={currentStep === 1}
-              className={`px-6 py-3 rounded-xl font-medium border border-gray-300 ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'text-gray-700 hover:bg-gray-50'}`}>
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              <ChevronLeft className="w-4 h-4" />
               Volver
             </button>
-            {currentStep === 4 && selectedCourt ? (
-              <button onClick={handleBooking}
-                className="px-8 py-3 rounded-xl font-semibold text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg">
-                Confirmar reserva
-              </button>
-            ) : (
-              <button onClick={goToNextStep} disabled={!canGoNext()}
-                className={`px-8 py-3 rounded-xl font-semibold text-white ${canGoNext() ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gray-300 cursor-not-allowed'}`}>
-                Continuar
-              </button>
-            )}
+            
+            <div className="flex items-center gap-4">
+              {/* Progress indicator */}
+              <div className="hidden md:flex items-center gap-1">
+                {[1, 2, 3, 4].map((step) => (
+                  <div key={step} className={`w-2 h-2 rounded-full transition-all ${step <= currentStep ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                ))}
+              </div>
+              
+              {currentStep === 4 && selectedCourt ? (
+                <button onClick={handleBooking}
+                  className="flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200 transition-all">
+                  <Check className="w-5 h-5" />
+                  Confirmar reserva
+                </button>
+              ) : (
+                <button onClick={goToNextStep} disabled={!canGoNext()}
+                  className={`flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-white transition-all ${
+                    canGoNext() 
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200' 
+                      : 'bg-gray-300 cursor-not-allowed'
+                  }`}>
+                  Continuar
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              )}
+            </div>
           </div>
         </footer>
       </div>
