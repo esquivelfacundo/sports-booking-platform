@@ -208,19 +208,24 @@ export function usePlayerDashboard() {
   const getUpcomingBookings = useCallback(() => {
     const now = new Date();
     return bookings.filter(b => 
-      new Date(b.date) >= now && b.status !== 'cancelled'
+      (b.status === 'confirmed' || b.status === 'in_progress') &&
+      new Date(b.date) >= now
     ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [bookings]);
 
   const getPastBookings = useCallback(() => {
-    const now = new Date();
     return bookings.filter(b => 
-      new Date(b.date) < now || b.status === 'completed'
+      b.status === 'completed'
     ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [bookings]);
 
   const getCancelledBookings = useCallback(() => {
     return bookings.filter(b => b.status === 'cancelled')
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [bookings]);
+
+  const getNoShowBookings = useCallback(() => {
+    return bookings.filter(b => b.status === 'no_show')
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [bookings]);
 
@@ -236,6 +241,7 @@ export function usePlayerDashboard() {
     upcomingBookings: getUpcomingBookings(),
     pastBookings: getPastBookings(),
     cancelledBookings: getCancelledBookings(),
+    noShowBookings: getNoShowBookings(),
     
     // Actions
     cancelBooking,

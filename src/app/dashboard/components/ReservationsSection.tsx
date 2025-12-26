@@ -33,7 +33,8 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
   const { 
     upcomingBookings, 
     pastBookings, 
-    cancelledBookings, 
+    cancelledBookings,
+    noShowBookings, 
     stats,
     loading,
     cancelBooking 
@@ -64,17 +65,21 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
   const reservations = {
     upcoming: upcomingBookings.map(transformBooking),
     past: pastBookings.map(transformBooking),
-    cancelled: cancelledBookings.map(transformBooking)
+    cancelled: cancelledBookings.map(transformBooking),
+    noShow: noShowBookings.map(transformBooking)
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'confirmed':
+      case 'in_progress':
         return <CheckCircle className="w-5 h-5 text-emerald-400" />;
       case 'completed':
         return <CheckCircle className="w-5 h-5 text-blue-400" />;
       case 'cancelled':
         return <XCircle className="w-5 h-5 text-red-400" />;
+      case 'no_show':
+        return <AlertCircle className="w-5 h-5 text-orange-400" />;
       default:
         return <AlertCircle className="w-5 h-5 text-yellow-400" />;
     }
@@ -84,10 +89,14 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
     switch (status) {
       case 'confirmed':
         return 'Confirmada';
+      case 'in_progress':
+        return 'En curso';
       case 'completed':
         return 'Completada';
       case 'cancelled':
         return 'Cancelada';
+      case 'no_show':
+        return 'No asistió';
       default:
         return 'Pendiente';
     }
@@ -96,11 +105,14 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
+      case 'in_progress':
         return 'text-emerald-400 bg-emerald-400/10';
       case 'completed':
         return 'text-blue-400 bg-blue-400/10';
       case 'cancelled':
         return 'text-red-400 bg-red-400/10';
+      case 'no_show':
+        return 'text-orange-400 bg-orange-400/10';
       default:
         return 'text-yellow-400 bg-yellow-400/10';
     }
@@ -109,7 +121,8 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
   const tabs = [
     { id: 'upcoming', name: 'Próximas', count: reservations.upcoming.length },
     { id: 'past', name: 'Pasadas', count: reservations.past.length },
-    { id: 'cancelled', name: 'Canceladas', count: reservations.cancelled.length }
+    { id: 'cancelled', name: 'Canceladas', count: reservations.cancelled.length },
+    { id: 'noShow', name: 'No asistidas', count: reservations.noShow.length }
   ];
 
   const currentReservations = reservations[activeTab as keyof typeof reservations] || [];
@@ -317,13 +330,15 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
           >
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              No hay reservas {activeTab === 'upcoming' ? 'próximas' : activeTab === 'past' ? 'pasadas' : 'canceladas'}
+              No hay reservas {activeTab === 'upcoming' ? 'próximas' : activeTab === 'past' ? 'pasadas' : activeTab === 'noShow' ? 'no asistidas' : 'canceladas'}
             </h3>
             <p className="text-gray-500">
               {activeTab === 'upcoming' 
                 ? 'Cuando hagas una reserva, aparecerá aquí.'
                 : activeTab === 'past'
                 ? 'Tus reservas completadas aparecerán aquí.'
+                : activeTab === 'noShow'
+                ? 'Las reservas donde no asististe aparecerán aquí.'
                 : 'Las reservas canceladas aparecerán aquí.'
               }
             </p>
