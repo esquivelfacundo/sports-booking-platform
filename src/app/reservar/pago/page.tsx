@@ -228,9 +228,9 @@ function PaymentPageContent() {
             userId: user?.id || ''
           },
           back_urls: {
-            success: `${window.location.origin}/reservar/confirmacion?establishmentName=${encodeURIComponent(establishmentName)}&courtName=${encodeURIComponent(courtName)}&date=${date}&time=${time}&endTime=${endTime}&duration=${duration}&price=${price}&depositPaid=${paymentAmount}&paymentType=${paymentType}`,
+            success: `${window.location.origin}/reservar/confirmacion`,
             failure: `${window.location.origin}/reservar/pago?${searchParams.toString()}&error=payment_failed`,
-            pending: `${window.location.origin}/reservar/confirmacion?status=pending&establishmentName=${encodeURIComponent(establishmentName)}&courtName=${encodeURIComponent(courtName)}&date=${date}&time=${time}&endTime=${endTime}`
+            pending: `${window.location.origin}/reservar/confirmacion?status=pending`
           }
         })
       });

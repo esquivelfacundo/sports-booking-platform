@@ -702,9 +702,9 @@ const BookingPage = () => {
             userId: user?.id || ''
           },
           back_urls: {
-            success: `${window.location.origin}/reservar/confirmacion?establishmentName=${encodeURIComponent(establishment.name)}&courtName=${encodeURIComponent(selectedCourt.name)}&date=${selectedDate}&time=${selectedTime}&endTime=${endTime}&duration=${selectedDuration}&price=${price}&depositPaid=${paymentAmount}&paymentType=${paymentType}`,
+            success: `${window.location.origin}/reservar/confirmacion`,
             failure: `${window.location.origin}/reservar/${idOrSlug}?error=payment_failed`,
-            pending: `${window.location.origin}/reservar/confirmacion?status=pending&establishmentName=${encodeURIComponent(establishment.name)}&courtName=${encodeURIComponent(selectedCourt.name)}&date=${selectedDate}&time=${selectedTime}&endTime=${endTime}`
+            pending: `${window.location.origin}/reservar/confirmacion?status=pending`
           }
         })
       });

@@ -1,17 +1,15 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
   CheckCircle, 
   Calendar, 
   Clock, 
   MapPin, 
   Share2,
-  Download,
   Home,
   CalendarPlus,
   Loader2,
@@ -32,7 +30,8 @@ import { apiClient } from '@/lib/api';
 
 function ConfirmationPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
+  const bookingId = params.bookingId as string;
   const { user, isAuthenticated } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,51 +39,27 @@ function ConfirmationPageContent() {
   const [qrLoading, setQrLoading] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
-  // Get booking details from URL params
-  const bookingId = searchParams.get('bookingId') || '';
-  const paymentId = searchParams.get('payment_id') || searchParams.get('collection_id') || '';
-  const externalReference = searchParams.get('external_reference') || '';
-  const establishmentName = searchParams.get('establishmentName') || '';
-  const courtName = searchParams.get('courtName') || '';
-  const date = searchParams.get('date') || '';
-  const time = searchParams.get('time') || '';
-  const endTime = searchParams.get('endTime') || '';
-  const duration = parseInt(searchParams.get('duration') || '60');
-  const price = parseInt(searchParams.get('price') || '0');
-  const depositPaid = parseInt(searchParams.get('depositPaid') || '0');
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch booking details using bookingId, paymentId, or external_reference
+  // Fetch booking details using bookingId
   useEffect(() => {
     const fetchBookingData = async () => {
+      if (!bookingId) {
+        setError('No se encontró el ID de reserva');
+        setLoading(false);
+        return;
+      }
+      
       try {
-        let booking = null;
-        
-        // Try to get booking by ID first
-        if (bookingId) {
-          const response = await apiClient.get(`/api/bookings/${bookingId}`) as any;
-          if (response) booking = response;
-        }
-        
-        // If no bookingId, try to find by payment_id
-        if (!booking && paymentId) {
-          const response = await apiClient.get(`/api/bookings/by-payment/${paymentId}`) as any;
-          if (response) booking = response;
-        }
-        
-        // If still no booking, try by external_reference (which might be the preference ID)
-        if (!booking && externalReference) {
-          const response = await apiClient.get(`/api/bookings/by-reference/${externalReference}`) as any;
-          if (response) booking = response;
-        }
-        
-        if (booking) {
-          setBookingDetails(booking);
+        // Fetch booking details
+        const response = await apiClient.get(`/api/bookings/${bookingId}`) as any;
+        if (response) {
+          setBookingDetails(response);
           
           // Fetch QR code
           setQrLoading(true);
           try {
-            const qrResponse = await apiClient.get(`/api/bookings/${booking.id}/qr?format=dataurl`) as any;
+            const qrResponse = await apiClient.get(`/api/bookings/${bookingId}/qr?format=dataurl`) as any;
             if (qrResponse && qrResponse.qr) {
               setQrCode(qrResponse.qr);
             }
@@ -93,17 +68,18 @@ function ConfirmationPageContent() {
           }
           setQrLoading(false);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.log('Could not fetch booking data:', err);
+        setError('No se pudo cargar la reserva');
       } finally {
         setLoading(false);
       }
     };
     
     // Small delay to allow webhook to process the payment and create booking
-    const timer = setTimeout(fetchBookingData, 1500);
+    const timer = setTimeout(fetchBookingData, 500);
     return () => clearTimeout(timer);
-  }, [bookingId, paymentId, externalReference]);
+  }, [bookingId]);
 
   const sidebarItems = [
     { id: 'overview', name: 'Resumen', icon: BarChart3, href: '/dashboard' },
@@ -113,16 +89,15 @@ function ConfirmationPageContent() {
     { id: 'settings', name: 'Configuración', icon: Settings, href: '/dashboard?section=settings' }
   ];
   
-  // Get display values - prefer fetched data over URL params
-  const displayEstablishment = bookingDetails?.court?.establishment?.name || bookingDetails?.establishment?.name || establishmentName;
-  const displayCourt = bookingDetails?.court?.name || courtName;
-  const displayDate = bookingDetails?.date || date;
-  const displayTime = bookingDetails?.startTime || time;
-  const displayEndTime = bookingDetails?.endTime || endTime;
-  const displayDuration = bookingDetails?.duration || duration;
-  const displayPrice = bookingDetails?.totalAmount || price;
-  const displayDeposit = bookingDetails?.depositAmount || depositPaid;
-  const displayBookingCode = bookingDetails?.id || bookingId;
+  // Get display values from fetched data
+  const displayEstablishment = bookingDetails?.court?.establishment?.name || bookingDetails?.establishment?.name || '';
+  const displayCourt = bookingDetails?.court?.name || '';
+  const displayDate = bookingDetails?.date || '';
+  const displayTime = bookingDetails?.startTime || '';
+  const displayEndTime = bookingDetails?.endTime || '';
+  const displayDuration = bookingDetails?.duration || 60;
+  const displayPrice = bookingDetails?.totalAmount || 0;
+  const displayDeposit = bookingDetails?.depositAmount || 0;
 
   // Format date for display
   const formatDate = (dateStr: string) => {
@@ -138,6 +113,7 @@ function ConfirmationPageContent() {
   
   // Add to calendar (Google Calendar)
   const addToCalendar = () => {
+    if (!displayDate || !displayTime || !displayEndTime) return;
     const startDateTime = new Date(`${displayDate}T${displayTime}:00`);
     const endDateTime = new Date(`${displayDate}T${displayEndTime}:00`);
     
@@ -175,7 +151,23 @@ function ConfirmationPageContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto" />
+          <p className="text-gray-500 mt-3">Cargando reserva...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Link href="/dashboard?section=reservations" className="text-emerald-500 hover:underline">
+            Ver mis reservas
+          </Link>
+        </div>
       </div>
     );
   }
@@ -359,7 +351,7 @@ function ConfirmationPageContent() {
                     <div>
                       <p className="text-gray-500 text-sm">Código de reserva</p>
                       <p className="text-gray-900 font-mono text-xl font-bold">
-                        {displayBookingCode ? displayBookingCode.slice(0, 8).toUpperCase() : 'XXXXXXXX'}
+                        {bookingId ? bookingId.slice(0, 8).toUpperCase() : 'XXXXXXXX'}
                       </p>
                     </div>
                     <div className="px-3 py-1 bg-emerald-100 rounded-full">
