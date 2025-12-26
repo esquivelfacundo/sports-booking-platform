@@ -51,6 +51,7 @@ import {
 } from 'lucide-react';
 import PhoneInput from '@/components/ui/PhoneInput';
 import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete';
+import { ARGENTINA_PROVINCES } from '@/constants/argentina';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
@@ -894,64 +895,77 @@ const ConfigurationPage = () => {
             />
           </div>
         </div>
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
-            <MapPin className="w-4 h-4 inline mr-1" />
-            Dirección
-          </label>
-          <GooglePlacesAutocomplete
-            value={config.address}
-            onChange={(value) => {
-              setConfig(prev => ({ ...prev, address: value }));
-              setUnsavedChanges(true);
-            }}
-            onPlaceSelect={(place) => {
-              if (place.formatted_address) {
-                setConfig(prev => ({ ...prev, address: place.formatted_address }));
-              }
-              
-              // Extract city and coordinates
-              if (place.address_components) {
-                place.address_components.forEach((component: any) => {
-                  if (component.types.includes('locality')) {
-                    setConfig(prev => ({ ...prev, city: component.long_name }));
-                  }
-                });
-              }
-              
-              if (place.geometry && place.geometry.location) {
-                setConfig(prev => ({
-                  ...prev,
-                  latitude: place.geometry.location.lat(),
-                  longitude: place.geometry.location.lng()
-                }));
-              }
-              
-              setUnsavedChanges(true);
-            }}
-            placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
-            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
-            types={['address']}
-          />
-          {config.latitude && config.longitude && (
-            <p className="text-emerald-400 text-xs mt-2">
-              📍 Coordenadas: {config.latitude}, {config.longitude}
-            </p>
-          )}
-        </div>
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Ciudad</label>
-          <input
-            type="text"
-            value={config.city}
-            onChange={(e) => {
-              setConfig(prev => ({ ...prev, city: e.target.value }));
-              setUnsavedChanges(true);
-            }}
-            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
-            placeholder="Buenos Aires"
-            suppressHydrationWarning={true}
-          />
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+              <MapPin className="w-4 h-4 inline mr-1" />
+              Dirección
+            </label>
+            <GooglePlacesAutocomplete
+              value={config.address}
+              onChange={(value) => {
+                setConfig(prev => ({ ...prev, address: value }));
+                setUnsavedChanges(true);
+              }}
+              onPlaceSelect={(place) => {
+                if (place.formatted_address) {
+                  setConfig(prev => ({ ...prev, address: place.formatted_address }));
+                }
+                
+                // Extract province and coordinates
+                if (place.address_components) {
+                  place.address_components.forEach((component: any) => {
+                    if (component.types.includes('administrative_area_level_1')) {
+                      // Map province name to code
+                      const province = ARGENTINA_PROVINCES.find(p => 
+                        p.name.toLowerCase().includes(component.long_name.toLowerCase()) ||
+                        component.long_name.toLowerCase().includes(p.name.toLowerCase())
+                      );
+                      if (province) {
+                        setConfig(prev => ({ ...prev, city: province.name }));
+                      }
+                    }
+                  });
+                }
+                
+                if (place.geometry && place.geometry.location) {
+                  setConfig(prev => ({
+                    ...prev,
+                    latitude: place.geometry.location.lat(),
+                    longitude: place.geometry.location.lng()
+                  }));
+                }
+                
+                setUnsavedChanges(true);
+              }}
+              placeholder="Ej: Av. Corrientes 1234"
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+              types={['address']}
+            />
+            {config.latitude && config.longitude && (
+              <p className="text-emerald-400 text-xs mt-2">
+                📍 Coordenadas: {config.latitude}, {config.longitude}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Provincia</label>
+            <select
+              value={config.city}
+              onChange={(e) => {
+                setConfig(prev => ({ ...prev, city: e.target.value }));
+                setUnsavedChanges(true);
+              }}
+              className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">Selecciona una provincia</option>
+              {ARGENTINA_PROVINCES.map((province) => (
+                <option key={province.code} value={province.name}>
+                  {province.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Descripción</label>
