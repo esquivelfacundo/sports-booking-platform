@@ -110,6 +110,13 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
+    // Check if this is a public endpoint (no auth required)
+    const isPublicEndpoint = endpoint.includes('/public/') || 
+                            endpoint.includes('/by-payment/') || 
+                            endpoint.includes('/by-reference/') ||
+                            endpoint.includes('/qr.png') ||
+                            endpoint.includes('/qr?');
+    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -120,8 +127,8 @@ class ApiClient {
       ...options,
     };
 
-    // Add auth token if available (only in browser environment)
-    if (typeof window !== 'undefined') {
+    // Add auth token if available (only in browser environment and not public endpoint)
+    if (typeof window !== 'undefined' && !isPublicEndpoint) {
       const token = localStorage.getItem('auth_token');
       if (token) {
         config.headers = {
@@ -142,8 +149,8 @@ class ApiClient {
         const errorData = await response.json().catch(() => ({}));
         console.error('API error response:', errorData);
         
-        // Handle 401 Unauthorized - try to refresh token
-        if (response.status === 401 && retryOnUnauthorized && !endpoint.includes('/auth/')) {
+        // Handle 401 Unauthorized - try to refresh token (but not for public endpoints)
+        if (response.status === 401 && retryOnUnauthorized && !endpoint.includes('/auth/') && !isPublicEndpoint) {
           console.log('ApiClient: Token expired, attempting refresh...');
           const refreshed = await this.tryRefreshToken();
           
@@ -156,6 +163,11 @@ class ApiClient {
             this.redirectToLogin();
             throw new Error('Session expired. Please login again.');
           }
+        }
+        
+        // For public endpoints, don't redirect on 401, just throw error
+        if (isPublicEndpoint && response.status === 401) {
+          throw new Error('Unauthorized access to public endpoint');
         }
         
         throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
