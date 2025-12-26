@@ -1527,7 +1527,7 @@ const BookingPage = () => {
                             key={court.id} 
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
-                            onClick={() => setSelectedCourt(court)}
+                            onClick={() => { setSelectedCourt(court); setCurrentStep(5); }}
                             className={`w-full p-5 rounded-2xl border-2 text-left flex items-center gap-4 transition-all ${
                               selectedCourt?.id === court.id 
                                 ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-white shadow-lg shadow-emerald-100' 
@@ -1567,114 +1567,381 @@ const BookingPage = () => {
                     )}
                   </motion.div>
                 )}
+
+                {/* Step 5: Summary & Payment (Desktop) */}
+                {currentStep === 5 && selectedCourt && (
+                  <motion.div key="d5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                    <p className="text-gray-500 mb-6">Revisá los datos y completá el pago</p>
+                    
+                    {/* Booking Summary Card */}
+                    <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                        Resumen de tu reserva
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                          <MapPin className="w-5 h-5 text-emerald-500" />
+                          <div>
+                            <p className="text-xs text-gray-400">Establecimiento</p>
+                            <p className="font-medium text-gray-900">{establishment?.name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                          <Trophy className="w-5 h-5 text-emerald-500" />
+                          <div>
+                            <p className="text-xs text-gray-400">Cancha</p>
+                            <p className="font-medium text-gray-900">{selectedCourt.name} • <span className="capitalize">{selectedCourt.sport}</span></p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                          <Calendar className="w-5 h-5 text-emerald-500" />
+                          <div>
+                            <p className="text-xs text-gray-400">Fecha y hora</p>
+                            <p className="font-medium text-gray-900 capitalize">{formatSelectedDate()} • {selectedTime} - {getEndTime()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pending Debt Alert */}
+                    {pendingDebt.hasDebt && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-6">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-orange-700 font-medium">Deuda acumulada</p>
+                            <p className="text-orange-600 text-sm mt-1">
+                              Tenés una deuda pendiente de <span className="font-semibold">${pendingDebt.totalDebt.toLocaleString('es-AR')}</span>. Este monto se sumará a tu pago.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Payment Type Selector */}
+                    {isLoadingFee ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                      </div>
+                    ) : (
+                      <>
+                        {fullPaymentInfo.enabled && (
+                          <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+                            <h3 className="font-semibold text-gray-900 mb-4">Elegí cómo pagar</h3>
+                            <div className="space-y-3">
+                              <button type="button" onClick={() => setPaymentType('deposit')}
+                                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                                  paymentType === 'deposit'
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className={`font-semibold ${paymentType === 'deposit' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                                      Pagar seña ({depositInfo.percent}%)
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      ${depositInfo.totalAmount.toLocaleString('es-AR')} ahora, ${depositInfo.remainingAmount.toLocaleString('es-AR')} en el lugar
+                                    </p>
+                                  </div>
+                                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                    paymentType === 'deposit' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                                  }`}>
+                                    {paymentType === 'deposit' && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                                  </div>
+                                </div>
+                              </button>
+                              
+                              <button type="button" onClick={() => setPaymentType('full')}
+                                className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                                  paymentType === 'full'
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className={`font-semibold ${paymentType === 'full' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                                      Pago completo
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      ${fullPaymentInfo.totalAmount.toLocaleString('es-AR')} ahora, nada en el lugar
+                                    </p>
+                                  </div>
+                                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                    paymentType === 'full' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                                  }`}>
+                                    {paymentType === 'full' && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Price Breakdown */}
+                        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+                          <h3 className="font-semibold text-gray-900 mb-4">Detalle del pago</h3>
+                          <div className="space-y-3">
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Precio del turno</span>
+                              <span className="text-gray-900">${getPrice().toLocaleString('es-AR')}</span>
+                            </div>
+                            <div className="border-t border-gray-100 pt-3">
+                              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                                {paymentType === 'full' ? 'Pago completo' : `Pago de seña (${depositInfo.percent}%)`}
+                              </p>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">{paymentType === 'full' ? 'Cancha' : 'Seña'}</span>
+                                <span className="text-gray-900">${(paymentType === 'full' ? getPrice() : depositInfo.baseAmount).toLocaleString('es-AR')}</span>
+                              </div>
+                              <div className="flex justify-between text-sm mt-1">
+                                <span className="text-gray-600">Tarifa de servicio</span>
+                                <span className="flex items-center gap-2">
+                                  {feeDiscount.hasDiscount && (
+                                    <span className="line-through text-gray-400">
+                                      ${(paymentType === 'full' ? fullPaymentInfo.generalFee : depositInfo.generalFee)?.toLocaleString('es-AR') || feeDiscount.generalFee.toLocaleString('es-AR')}
+                                    </span>
+                                  )}
+                                  <span className={feeDiscount.hasDiscount ? 'text-emerald-600' : 'text-gray-900'}>
+                                    {(paymentType === 'full' ? fullPaymentInfo.fee : depositInfo.fee) === 0 
+                                      ? '$0' 
+                                      : `$${(paymentType === 'full' ? fullPaymentInfo.fee : depositInfo.fee).toLocaleString('es-AR')}`
+                                    }
+                                  </span>
+                                  {feeDiscount.hasDiscount && feeDiscount.discountPercent === 100 && (
+                                    <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">¡Gratis!</span>
+                                  )}
+                                </span>
+                              </div>
+                              {pendingDebt.hasDebt && (
+                                <div className="flex justify-between text-sm mt-1 text-orange-600">
+                                  <span>Deuda acumulada</span>
+                                  <span>${pendingDebt.totalDebt.toLocaleString('es-AR')}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="border-t border-gray-200 pt-3 flex justify-between">
+                              <span className="font-semibold text-gray-900">Total a pagar ahora</span>
+                              <span className="font-bold text-emerald-600 text-xl">
+                                ${((paymentType === 'full' ? fullPaymentInfo.totalAmount : depositInfo.totalAmount) + (pendingDebt.hasDebt ? pendingDebt.totalDebt : 0)).toLocaleString('es-AR')}
+                              </span>
+                            </div>
+                            {paymentType !== 'full' && (
+                              <div className="flex justify-between text-sm text-gray-500">
+                                <span>Restante a pagar en el lugar</span>
+                                <span>${depositInfo.remainingAmount.toLocaleString('es-AR')}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Mercado Pago Info */}
+                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 mb-6">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 bg-[#009ee3] rounded-xl flex items-center justify-center">
+                              <span className="text-white font-bold text-sm">MP</span>
+                            </div>
+                            <span className="text-gray-900 font-semibold">Mercado Pago</span>
+                          </div>
+                          <p className="text-gray-500 text-sm">
+                            Serás redirigido a Mercado Pago para completar el pago de forma segura.
+                          </p>
+                        </div>
+
+                        {/* Error message */}
+                        {paymentError && (
+                          <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-600 mb-6">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            <span>{paymentError}</span>
+                          </div>
+                        )}
+
+                        {/* Cancellation Policy */}
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-medium text-emerald-700">Cancelación flexible</p>
+                            <p className="text-sm text-emerald-600">Podés cancelar hasta 24 horas antes y recibir el reembolso completo.</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
           </main>
 
-          {/* Right Sidebar - MisCanchas Ticket Style */}
-          <aside className="w-96 bg-gradient-to-b from-gray-50 to-gray-100 border-l border-gray-200 flex flex-col">
-            <div className="flex-1 p-6">
-              {/* Ticket Header */}
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-t-2xl p-4 text-white -mx-6 -mt-6 mb-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Trophy className="w-6 h-6" />
+          {/* Right Sidebar - Dashboard Style */}
+          <aside className="w-[420px] bg-gray-800 border-l border-gray-700 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h2 className="text-lg font-bold text-white">Resumen de reserva</h2>
+              <button
+                onClick={() => router.push('/buscar')}
+                className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Progress steps */}
+            <div className="px-4 py-3 border-b border-gray-700 overflow-x-auto">
+              <div className="flex items-center justify-between min-w-max">
+                {stepTitles.map((title, index) => {
+                  const isCompleted = index + 1 < currentStep;
+                  const isCurrent = index + 1 === currentStep;
+                  const StepIcon = stepIcons[index];
+                  
+                  return (
+                    <React.Fragment key={index}>
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`
+                            w-8 h-8 rounded-full flex items-center justify-center transition-colors
+                            ${isCompleted ? 'bg-emerald-500 text-white' : ''}
+                            ${isCurrent ? 'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500' : ''}
+                            ${!isCompleted && !isCurrent ? 'bg-gray-700 text-gray-400' : ''}
+                          `}
+                        >
+                          {isCompleted ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <StepIcon className="h-4 w-4" />
+                          )}
+                        </div>
+                        <span className={`text-xs mt-1 whitespace-nowrap ${isCurrent ? 'text-emerald-400' : 'text-gray-500'}`}>
+                          {title}
+                        </span>
+                      </div>
+                      {index < stepTitles.length - 1 && (
+                        <div
+                          className={`flex-1 h-0.5 mx-1 min-w-[16px] ${
+                            index + 1 < currentStep ? 'bg-emerald-500' : 'bg-gray-700'
+                          }`}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {/* Establishment Info */}
+              <div className="bg-gray-700/50 rounded-xl p-4 mb-4 border border-gray-600">
+                <div className="flex items-center gap-3">
+                  <img src={mainImage} alt="" className="w-12 h-12 rounded-xl object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-white truncate">{establishment.name}</h3>
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+                      <span>{establishment.rating || '4.5'}</span>
+                      <span>•</span>
+                      <span className="truncate">{establishment.city}</span>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-emerald-100 text-xs font-medium">Tu reserva en</div>
-                    <div className="font-bold text-lg">{establishment.name}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 text-emerald-100 text-sm">
-                  <Star className="w-3.5 h-3.5 fill-current text-amber-300" />
-                  <span>{establishment.rating || '4.5'}</span>
-                  <span className="mx-1">•</span>
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span className="truncate">{establishment.city}</span>
                 </div>
               </div>
 
-              {/* Ticket Details */}
-              <div className="space-y-4">
+              {/* Booking Details */}
+              <div className="space-y-3">
                 {/* Sport */}
-                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedSport ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedSport ? 'bg-emerald-100' : 'bg-gray-200'}`}>
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedSport ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-700/30 border border-gray-700'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedSport ? 'bg-emerald-500/20' : 'bg-gray-700'}`}>
                     {selectedSport ? (
                       <span className="text-xl">{{'futbol': '⚽', 'padel': '🎾', 'tenis': '🎾', 'basquet': '🏀'}[selectedSport.toLowerCase()] || '🏟️'}</span>
                     ) : (
-                      <Trophy className="w-5 h-5 text-gray-400" />
+                      <Trophy className="w-5 h-5 text-gray-500" />
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-gray-400 font-medium">Deporte</div>
-                    <div className={`font-semibold capitalize ${selectedSport ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <div className="text-xs text-gray-500 font-medium">Deporte</div>
+                    <div className={`font-semibold capitalize ${selectedSport ? 'text-white' : 'text-gray-500'}`}>
                       {selectedSport || 'Sin seleccionar'}
                     </div>
                   </div>
-                  {selectedSport && <Check className="w-5 h-5 text-emerald-500" />}
+                  {selectedSport && <Check className="w-5 h-5 text-emerald-400" />}
                 </div>
 
                 {/* Duration */}
-                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedDuration ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedDuration ? 'bg-emerald-100' : 'bg-gray-200'}`}>
-                    <Timer className={`w-5 h-5 ${selectedDuration ? 'text-emerald-600' : 'text-gray-400'}`} />
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedDuration ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-700/30 border border-gray-700'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedDuration ? 'bg-emerald-500/20' : 'bg-gray-700'}`}>
+                    <Timer className={`w-5 h-5 ${selectedDuration ? 'text-emerald-400' : 'text-gray-500'}`} />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-gray-400 font-medium">Duración</div>
-                    <div className={`font-semibold ${selectedDuration ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <div className="text-xs text-gray-500 font-medium">Duración</div>
+                    <div className={`font-semibold ${selectedDuration ? 'text-white' : 'text-gray-500'}`}>
                       {formatDuration()}
                     </div>
                   </div>
-                  {selectedDuration && <Check className="w-5 h-5 text-emerald-500" />}
+                  {selectedDuration && <Check className="w-5 h-5 text-emerald-400" />}
                 </div>
 
                 {/* Date & Time */}
-                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedDate && selectedTime ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedDate ? 'bg-emerald-100' : 'bg-gray-200'}`}>
-                    <Calendar className={`w-5 h-5 ${selectedDate ? 'text-emerald-600' : 'text-gray-400'}`} />
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedDate && selectedTime ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-700/30 border border-gray-700'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedDate ? 'bg-emerald-500/20' : 'bg-gray-700'}`}>
+                    <Calendar className={`w-5 h-5 ${selectedDate ? 'text-emerald-400' : 'text-gray-500'}`} />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-gray-400 font-medium">Fecha y hora</div>
-                    <div className={`font-semibold capitalize ${selectedDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <div className="text-xs text-gray-500 font-medium">Fecha y hora</div>
+                    <div className={`font-semibold capitalize ${selectedDate ? 'text-white' : 'text-gray-500'}`}>
                       {selectedDate ? formatSelectedDate() : 'Sin seleccionar'}
                     </div>
-                    {selectedTime && <div className="text-sm text-emerald-600 font-medium">{selectedTime} hs</div>}
+                    {selectedTime && <div className="text-sm text-emerald-400 font-medium">{selectedTime} - {getEndTime()}</div>}
                   </div>
-                  {selectedDate && selectedTime && <Check className="w-5 h-5 text-emerald-500" />}
+                  {selectedDate && selectedTime && <Check className="w-5 h-5 text-emerald-400" />}
                 </div>
 
                 {/* Court */}
-                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedCourt ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedCourt ? 'bg-emerald-100' : 'bg-gray-200'}`}>
-                    <span className="text-xl">{selectedCourt ? '🏟️' : '🏟️'}</span>
+                <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${selectedCourt ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-700/30 border border-gray-700'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedCourt ? 'bg-emerald-500/20' : 'bg-gray-700'}`}>
+                    <span className="text-xl">🏟️</span>
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-gray-400 font-medium">Cancha</div>
-                    <div className={`font-semibold ${selectedCourt ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <div className="text-xs text-gray-500 font-medium">Cancha</div>
+                    <div className={`font-semibold ${selectedCourt ? 'text-white' : 'text-gray-500'}`}>
                       {selectedCourt?.name || 'Sin seleccionar'}
                     </div>
-                    {selectedCourt && <div className="text-xs text-gray-500 capitalize">{selectedCourt.surface}</div>}
+                    {selectedCourt && <div className="text-xs text-gray-400 capitalize">{selectedCourt.surface}</div>}
                   </div>
-                  {selectedCourt && <Check className="w-5 h-5 text-emerald-500" />}
+                  {selectedCourt && <Check className="w-5 h-5 text-emerald-400" />}
                 </div>
               </div>
             </div>
 
-            {/* Total - Ticket Footer */}
-            <div className="p-6 bg-white border-t border-gray-200 rounded-b-2xl mx-2 mb-2 shadow-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-500">Subtotal</span>
-                <span className="text-gray-900">${getPrice()}</span>
-              </div>
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-dashed border-gray-200">
-                <span className="text-gray-500">Seña online</span>
-                <span className="text-gray-900">$0</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-gray-900">Total a pagar</span>
-                <span className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">
-                  ${getPrice()}
-                </span>
+            {/* Footer - Price Summary */}
+            <div className="p-4 border-t border-gray-700">
+              <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-400">Precio del turno</span>
+                  <span className="text-white">${getPrice().toLocaleString('es-AR')}</span>
+                </div>
+                {currentStep === 5 && (
+                  <>
+                    <div className="flex items-center justify-between mb-2 text-sm">
+                      <span className="text-gray-400">{paymentType === 'full' ? 'Pago completo' : `Seña (${depositInfo.percent}%)`}</span>
+                      <span className="text-white">${(paymentType === 'full' ? fullPaymentInfo.totalAmount : depositInfo.totalAmount).toLocaleString('es-AR')}</span>
+                    </div>
+                    {paymentType !== 'full' && (
+                      <div className="flex items-center justify-between mb-2 text-sm">
+                        <span className="text-gray-400">Restante en el lugar</span>
+                        <span className="text-gray-300">${depositInfo.remainingAmount.toLocaleString('es-AR')}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="border-t border-gray-600 pt-3 mt-3 flex items-center justify-between">
+                  <span className="font-semibold text-white">Total a pagar</span>
+                  <span className="text-2xl font-bold text-emerald-400">
+                    ${currentStep === 5 
+                      ? ((paymentType === 'full' ? fullPaymentInfo.totalAmount : depositInfo.totalAmount) + (pendingDebt.hasDebt ? pendingDebt.totalDebt : 0)).toLocaleString('es-AR')
+                      : getPrice().toLocaleString('es-AR')
+                    }
+                  </span>
+                </div>
               </div>
             </div>
           </aside>
@@ -1683,18 +1950,37 @@ const BookingPage = () => {
         {/* Footer with Navigation */}
         <footer className="bg-white border-t border-gray-200 px-6 py-3 sticky bottom-0">
           <div className="flex items-center justify-between">
-            <button onClick={goToPrevStep} disabled={currentStep === 1}
+            <button onClick={goToPrevStep} disabled={currentStep === 1 || isProcessingPayment}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               <ChevronLeft className="w-4 h-4" />
               Volver
             </button>
             
             <div className="flex items-center gap-3">
-              {currentStep === 4 && selectedCourt ? (
-                <button onClick={handleBooking}
+              {currentStep === 5 && selectedCourt ? (
+                <button 
+                  onClick={handlePayment}
+                  disabled={isProcessingPayment || isLoadingFee}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : !isAuthenticated ? (
+                    'Iniciar sesión para pagar'
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5" />
+                      Pagar con Mercado Pago
+                    </>
+                  )}
+                </button>
+              ) : currentStep === 4 && selectedCourt ? (
+                <button onClick={() => setCurrentStep(5)}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200 transition-all">
-                  <Check className="w-5 h-5" />
-                  Confirmar reserva
+                  Continuar
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               ) : (
                 <button onClick={goToNextStep} disabled={!canGoNext()}
