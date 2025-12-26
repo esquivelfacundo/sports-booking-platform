@@ -663,6 +663,9 @@ function ConfirmationPageContent() {
   }
 }
 
+// Force dynamic rendering for this page (no static generation)
+export const dynamic = 'force-dynamic';
+
 export default function ConfirmationPage() {
   return (
     <Suspense fallback={
