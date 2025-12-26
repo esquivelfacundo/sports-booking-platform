@@ -537,8 +537,7 @@ export default function IntegrationsPage() {
       {activeTab === 'docs' ? (
         <ApiDocsContent />
       ) : (
-        <div className="min-h-screen p-6">
-          <div className="max-w-6xl mx-auto">
+        <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {INTEGRATION_CARDS.map((card, index) => {
             const connected = isConnected(card.id);
@@ -563,7 +562,6 @@ export default function IntegrationsPage() {
           })}
         </div>
 
-      </div>
       <AnimatePresence>
         {sidebarOpen && (
           <>

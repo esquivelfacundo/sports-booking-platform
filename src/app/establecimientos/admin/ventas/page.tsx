@@ -323,8 +323,7 @@ const VentasPage = () => {
       {/* Render controls in header via portal */}
       {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
       
-      <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="p-6">
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -570,7 +569,6 @@ const VentasPage = () => {
             </>
           )}
         </div>
-      </div>
 
       {/* Direct Sale Sidebar */}
       <DirectSaleSidebar

@@ -244,8 +244,7 @@ const StockPage = () => {
       {/* Render controls in header via portal */}
       {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
       
-      <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="p-6">
           {/* Tab Content */}
           <motion.div
             key={activeTab}
@@ -290,7 +289,6 @@ const StockPage = () => {
             )}
           </motion.div>
         </div>
-      </div>
     </>
   );
 };

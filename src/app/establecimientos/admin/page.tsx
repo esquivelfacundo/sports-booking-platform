@@ -287,8 +287,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-6">
         {/* Registration Success Banner */}
         {showRegistrationSuccess && registrationData && (
           <motion.div
@@ -573,7 +572,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 
