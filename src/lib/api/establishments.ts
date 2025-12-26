@@ -1,6 +1,22 @@
 import { EstablishmentRegistration } from '@/types/establishment';
 
-const API_BASE_URL = 'http://localhost:3001';
+// API Configuration - Uses environment variable with smart fallback
+const getApiBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'www.miscanchas.com' || hostname === 'miscanchas.com') {
+      return window.location.origin;
+    }
+  }
+  
+  return 'http://localhost:8001';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface EstablishmentRegistrationResponse {
   success: boolean;
