@@ -63,7 +63,7 @@ export function usePlayerDashboard() {
     
     try {
       const response = await apiClient.getBookings({ userId: user.id }) as any;
-      const bookingsData = response?.data || response || [];
+      const bookingsData = response?.bookings || response?.data || response || [];
       
       // Ensure bookingsData is an array
       if (!Array.isArray(bookingsData)) {
