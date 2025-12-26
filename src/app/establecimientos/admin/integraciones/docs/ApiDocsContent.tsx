@@ -53,8 +53,8 @@ export default function ApiDocsContent() {
       color: 'purple',
       items: [
         { id: 'openai-intro', title: 'Configuración' },
-        { id: 'openai-assistant', title: 'Asistente IA' },
-        { id: 'openai-prompts', title: 'Prompts del Sistema' },
+        { id: 'openai-ocr', title: 'OCR de Facturas' },
+        { id: 'openai-usage', title: 'Uso y Ejemplos' },
       ]
     },
     {
@@ -532,23 +532,22 @@ print(response.json())`} />
             <div className="space-y-6">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">OpenAI - Configuración</h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                La integración con OpenAI permite que tu bot de WhatsApp responda de forma inteligente a las consultas de los clientes usando GPT-4.
+                La integración con OpenAI utiliza GPT-4 Vision para extraer automáticamente los datos de tus facturas de proveedores mediante OCR inteligente.
               </p>
 
               <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <h3 className="text-purple-900 dark:text-purple-400 font-medium mb-2">Requisitos</h3>
                 <ul className="text-sm text-purple-800 dark:text-purple-300 space-y-1">
                   <li>• Cuenta en OpenAI (platform.openai.com)</li>
-                  <li>• API Key de OpenAI</li>
+                  <li>• API Key de OpenAI con acceso a GPT-4 Vision</li>
                   <li>• Créditos disponibles en tu cuenta</li>
                 </ul>
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-gray-900 dark:text-white font-medium">Variables de entorno requeridas:</h3>
+                <h3 className="text-gray-900 dark:text-white font-medium">Configuración en el sistema:</h3>
                 <CodeBlock code={`OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-OPENAI_MODEL=gpt-4-turbo-preview
-OPENAI_MAX_TOKENS=500`} />
+OPENAI_MODEL=gpt-4-vision-preview`} />
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
@@ -559,100 +558,99 @@ OPENAI_MAX_TOKENS=500`} />
                   <li>Ve a <strong>API Keys</strong> en el menú lateral</li>
                   <li>Haz clic en <strong>Create new secret key</strong></li>
                   <li>Copia la clave y guárdala de forma segura</li>
+                  <li>Asegúrate de tener acceso a GPT-4 Vision en tu cuenta</li>
                 </ol>
               </div>
             </div>
           )}
 
-          {activeSection === 'openai-assistant' && (
+          {activeSection === 'openai-ocr' && (
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">OpenAI - Asistente IA</h2>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">OpenAI - OCR de Facturas</h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                El asistente de IA está configurado para responder consultas sobre tu establecimiento, disponibilidad de canchas, precios y realizar reservas.
+                El sistema utiliza GPT-4 Vision para analizar imágenes o PDFs de facturas y extraer automáticamente toda la información relevante para el ingreso de stock.
               </p>
 
               <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
-                <h3 className="text-gray-900 dark:text-white font-medium mb-3">Capacidades del asistente</h3>
+                <h3 className="text-gray-900 dark:text-white font-medium mb-3">Datos extraídos automáticamente</h3>
                 <ul className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
-                  <li>• Responder preguntas sobre horarios y disponibilidad</li>
-                  <li>• Informar precios de las canchas</li>
-                  <li>• Guiar al cliente en el proceso de reserva</li>
-                  <li>• Responder preguntas frecuentes</li>
-                  <li>• Manejar múltiples idiomas</li>
+                  <li>• <strong>Proveedor:</strong> Nombre y datos del proveedor</li>
+                  <li>• <strong>Productos:</strong> Nombre y descripción de cada producto</li>
+                  <li>• <strong>Cantidades:</strong> Unidades de cada producto</li>
+                  <li>• <strong>Precios:</strong> Precio unitario y total por producto</li>
+                  <li>• <strong>Fecha:</strong> Fecha de la factura</li>
+                  <li>• <strong>Número de factura:</strong> Identificador de la factura</li>
                 </ul>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-gray-900 dark:text-white font-medium">Ejemplo de conversación:</h3>
-                <CodeBlock code={`Usuario: Hola, quiero reservar una cancha de fútbol para mañana
-
-Asistente: ¡Hola! Con gusto te ayudo a reservar. 
-Tenemos disponibles las siguientes canchas de fútbol:
-
-- Cancha 1 (Fútbol 5): $5000/hora
-- Cancha 3 (Fútbol 7): $7000/hora
-
-¿Para qué horario te gustaría reservar?
-
-Usuario: A las 19:00 la cancha 1
-
-Asistente: Perfecto. La Cancha 1 está disponible mañana 
-a las 19:00. ¿Por cuánto tiempo? (60, 90 o 120 minutos)
-
-Usuario: 60 minutos
-
-Asistente: Excelente. Para confirmar la reserva necesito:
-- Tu nombre completo
-- Tu número de teléfono
-
-Usuario: Juan Pérez, 3794123456
-
-Asistente: ¡Listo! Tu reserva ha sido confirmada:
-📅 Fecha: 24/12/2025
-⏰ Horario: 19:00 - 20:00
-⚽ Cancha: Cancha 1 (Fútbol 5)
-💰 Total: $5000
-
-¡Te esperamos!`} />
+              <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <h3 className="text-purple-900 dark:text-purple-400 font-medium mb-2">Formatos soportados</h3>
+                <ul className="text-sm text-purple-800 dark:text-purple-300 space-y-1">
+                  <li>• Imágenes: JPG, PNG, WEBP</li>
+                  <li>• Documentos: PDF</li>
+                  <li>• Calidad mínima recomendada: 300 DPI</li>
+                  <li>• Tamaño máximo: 20 MB</li>
+                </ul>
               </div>
             </div>
           )}
 
-          {activeSection === 'openai-prompts' && (
+          {activeSection === 'openai-usage' && (
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">OpenAI - Prompts del Sistema</h2>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">OpenAI - Uso y Ejemplos</h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                El comportamiento del asistente se configura mediante prompts del sistema que definen su personalidad y conocimientos.
+                El OCR de facturas se utiliza en el módulo de Stock cuando ingresas nuevos productos desde una factura de proveedor.
               </p>
 
-              <div className="space-y-2">
-                <h3 className="text-gray-900 dark:text-white font-medium">Prompt base del sistema:</h3>
-                <CodeBlock code={`Eres un asistente virtual para {nombre_establecimiento}, 
-un complejo deportivo ubicado en {ciudad}.
-
-Tu rol es:
-- Ayudar a los clientes a hacer reservas de canchas
-- Informar sobre disponibilidad, precios y horarios
-- Responder preguntas frecuentes sobre el establecimiento
-- Ser amable, profesional y conciso
-
-Información del establecimiento:
-- Horario: {horario_apertura} a {horario_cierre}
-- Canchas disponibles: {lista_canchas}
-- Métodos de pago: Efectivo, MercadoPago
-
-Reglas:
-- Solo puedes hacer reservas para fechas futuras
-- Verifica disponibilidad antes de confirmar
-- Solicita nombre y teléfono para confirmar reservas
-- Si no sabes algo, indica que contacten al establecimiento`} />
+              <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+                <h3 className="text-gray-900 dark:text-white font-medium mb-3">Cómo usar el OCR</h3>
+                <ol className="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-300 text-sm">
+                  <li>Ve a <strong>Stock → Movimientos → Ingreso de Stock</strong></li>
+                  <li>Haz clic en <strong>"Cargar desde factura"</strong></li>
+                  <li>Sube una foto o PDF de la factura</li>
+                  <li>El sistema procesará la imagen y extraerá los datos automáticamente</li>
+                  <li>Revisa y confirma los datos extraídos</li>
+                  <li>Los productos se agregarán al stock automáticamente</li>
+                </ol>
               </div>
 
-              <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <h3 className="text-yellow-900 dark:text-yellow-400 font-medium mb-2">Personalización</h3>
-                <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                  El prompt se personaliza automáticamente con la información de tu establecimiento. Puedes modificar el tono y las reglas desde el panel de administración.
-                </p>
+              <div className="space-y-2">
+                <h3 className="text-gray-900 dark:text-white font-medium">Ejemplo de respuesta del OCR:</h3>
+                <CodeBlock code={`{
+  "proveedor": {
+    "nombre": "Distribuidora Deportes SA",
+    "cuit": "30-12345678-9"
+  },
+  "factura": {
+    "numero": "0001-00012345",
+    "fecha": "2025-12-20"
+  },
+  "productos": [
+    {
+      "nombre": "Pelota de Fútbol N°5",
+      "cantidad": 10,
+      "precio_unitario": 15000,
+      "precio_total": 150000
+    },
+    {
+      "nombre": "Red para Arco",
+      "cantidad": 2,
+      "precio_unitario": 45000,
+      "precio_total": 90000
+    }
+  ],
+  "total": 240000
+}`} />
+              </div>
+
+              <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <h3 className="text-purple-900 dark:text-purple-400 font-medium mb-2">Consejos para mejores resultados</h3>
+                <ul className="text-sm text-purple-800 dark:text-purple-300 space-y-1">
+                  <li>• Asegúrate de que la imagen esté bien iluminada y enfocada</li>
+                  <li>• Evita sombras o reflejos sobre el texto</li>
+                  <li>• Si es un PDF, asegúrate de que sea legible</li>
+                  <li>• Revisa siempre los datos extraídos antes de confirmar</li>
+                </ul>
               </div>
             </div>
           )}
