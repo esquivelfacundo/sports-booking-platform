@@ -465,9 +465,9 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
             className="fixed inset-0 flex items-start justify-center pt-[10vh] sm:pt-[15vh] z-[101] pointer-events-none"
             onKeyDown={handleKeyNavigation}
           >
-            <div className="w-full max-w-xl mx-4 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden pointer-events-auto">
+            <div className="w-full max-w-xl mx-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden pointer-events-auto">
               {/* Header / Search Input */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-700">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 {mode === 'search' ? (
                   <button
                     onClick={() => {
@@ -475,12 +475,12 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                       setSearchQuery('');
                       setSearchResults([]);
                     }}
-                    className="p-1 text-gray-400 hover:text-white transition-colors"
+                    className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 ) : (
-                  <Search className="w-5 h-5 text-gray-400" />
+                  <Search className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 )}
                 <input
                   ref={inputRef}
@@ -488,10 +488,10 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={mode === 'search' ? 'Buscar por nombre, teléfono o email...' : 'Escribe un comando o busca...'}
-                  className="flex-1 bg-transparent text-white placeholder-gray-500 outline-none text-sm"
+                  className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none text-sm"
                 />
                 <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <kbd className="px-1.5 py-0.5 bg-gray-800 rounded text-gray-400">esc</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-gray-500 dark:text-gray-400">esc</kbd>
                   <span>para cerrar</span>
                 </div>
               </div>
@@ -514,10 +514,10 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                               setIsOpen(false);
                               router.push(page.path);
                             }}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-gray-300 hover:bg-gray-800"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                           >
-                            <div className="p-2 rounded-lg bg-gray-800">
-                              <MapPin className="w-4 h-4 text-gray-400" />
+                            <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                              <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                             </div>
                             <div className="flex-1 text-left">
                               <p className="text-sm font-medium">{page.label}</p>
@@ -525,7 +525,7 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                             </div>
                           </button>
                         ))}
-                        <div className="my-2 border-t border-gray-700" />
+                        <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
                       </>
                     )}
                     
@@ -539,14 +539,14 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                         onMouseEnter={() => setSelectedIndex(index)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                           selectedIndex === index 
-                            ? 'bg-emerald-600/20 text-white' 
-                            : 'text-gray-300 hover:bg-gray-800'
+                            ? 'bg-emerald-600/20 text-gray-900 dark:text-white' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                         }`}
                       >
                         <div className={`p-2 rounded-lg ${
                           selectedIndex === index 
                             ? 'bg-emerald-600/30' 
-                            : 'bg-gray-800'
+                            : 'bg-gray-100 dark:bg-gray-800'
                         }`}>
                           <item.icon className={`w-4 h-4 ${
                             selectedIndex === index 
@@ -558,7 +558,7 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                           <p className="text-sm font-medium">{item.label}</p>
                           <p className="text-xs text-gray-500">{item.description}</p>
                         </div>
-                        <kbd className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-400">
+                        <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-500 dark:text-gray-400">
                           {item.shortcut}
                         </kbd>
                       </button>
@@ -569,7 +569,7 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                   <div className="p-2">
                     {/* Status filter pills */}
                     {searchResults.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 px-2 pb-3 mb-2 border-b border-gray-700">
+                      <div className="flex flex-wrap gap-1.5 px-2 pb-3 mb-2 border-b border-gray-200 dark:border-gray-700">
                         {statusFilters.map((filter) => (
                           <button
                             key={filter.value || 'all'}
@@ -579,7 +579,7 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                                 ? filter.value === null 
                                   ? 'bg-white/10 text-white border-white/20'
                                   : filter.color
-                                : 'bg-gray-800/50 text-gray-400 border-gray-700 hover:bg-gray-700'
+                                : 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
                             }`}
                           >
                             {filter.label}
@@ -634,13 +634,13 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                                   className={`w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-colors ${
                                     selectedIndex === globalIndex 
                                       ? 'bg-emerald-600/20' 
-                                      : 'hover:bg-gray-800'
+                                      : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                                   }`}
                                 >
                                   <div className={`p-2 rounded-lg ${
                                     selectedIndex === globalIndex 
                                       ? 'bg-emerald-600/30' 
-                                      : 'bg-gray-800'
+                                      : 'bg-gray-100 dark:bg-gray-800'
                                   }`}>
                                     <Calendar className={`w-4 h-4 ${
                                       selectedIndex === globalIndex 
@@ -650,7 +650,7 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                                   </div>
                                   <div className="flex-1 text-left min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm font-medium text-white truncate">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                         {clientName}
                                       </p>
                                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${getStatusColor(booking.status)}`}>
@@ -695,7 +695,7 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                         {/* Past bookings divider and list */}
                         {pastBookings.length > 0 && (
                           <>
-                            <div className="px-2 py-2 mt-2 border-t border-gray-700">
+                            <div className="px-2 py-2 mt-2 border-t border-gray-200 dark:border-gray-700">
                               <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Reservas pasadas ({pastBookings.length})
                               </span>
@@ -715,13 +715,13 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                                   className={`w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-colors opacity-70 ${
                                     selectedIndex === globalIndex 
                                       ? 'bg-emerald-600/20 opacity-100' 
-                                      : 'hover:bg-gray-800 hover:opacity-100'
+                                      : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:opacity-100'
                                   }`}
                                 >
                                   <div className={`p-2 rounded-lg ${
                                     selectedIndex === globalIndex 
                                       ? 'bg-emerald-600/30' 
-                                      : 'bg-gray-800'
+                                      : 'bg-gray-100 dark:bg-gray-800'
                                   }`}>
                                     <Calendar className={`w-4 h-4 ${
                                       selectedIndex === globalIndex 
@@ -731,7 +731,7 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
                                   </div>
                                   <div className="flex-1 text-left min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm font-medium text-white truncate">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                         {clientName}
                                       </p>
                                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${getStatusColor(booking.status)}`}>
@@ -787,14 +787,14 @@ const CommandMenu: React.FC<CommandMenuProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="px-4 py-2 border-t border-gray-700 flex items-center justify-between text-xs text-gray-500">
+              <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs text-gray-500">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-gray-800 rounded">↑↓</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">↑↓</kbd>
                     navegar
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-gray-800 rounded">↵</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">↵</kbd>
                     seleccionar
                   </span>
                 </div>
