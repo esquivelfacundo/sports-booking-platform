@@ -204,29 +204,27 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
         </motion.div>
       </div>
 
-      {/* Tabs - only show if no external tab is provided */}
-      {!externalActiveTab && (
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl mb-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setInternalActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-all duration-200 ${
-                activeTab === tab.id
-                  ? 'bg-white text-emerald-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <span className="font-medium">{tab.name}</span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                activeTab === tab.id ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-200 text-gray-600'
-              }`}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-xl mb-6">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setInternalActiveTab(tab.id)}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-all duration-200 ${
+              activeTab === tab.id
+                ? 'bg-white text-emerald-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <span className="font-medium">{tab.name}</span>
+            <span className={`text-xs px-2 py-1 rounded-full ${
+              activeTab === tab.id ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-200 text-gray-600'
+            }`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
 
       {/* Reservations List */}
       <div className="space-y-4">
