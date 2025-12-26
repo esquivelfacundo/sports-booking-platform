@@ -32,8 +32,16 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Trophy
+  Trophy,
+  Menu,
+  Home,
+  Search,
+  LogOut,
+  Settings,
+  User,
+  Bell
 } from 'lucide-react';
+import Link from 'next/link';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
 interface TimeSlot {
@@ -728,83 +736,139 @@ const BookingPage = () => {
         </div>
       </div>
 
-      {/* DESKTOP LAYOUT - MisCanchas Style */}
-      <div className="hidden lg:flex min-h-screen flex-col bg-gradient-to-br from-gray-50 via-white to-emerald-50/30">
-        {/* Header - MisCanchas branded */}
-        <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-6 py-3">
-            <div className="flex items-center justify-between">
-              {/* Left: Back + Establishment */}
-              <div className="flex items-center gap-4">
-                <button onClick={() => router.back()} className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <img src={mainImage} alt="" className="w-12 h-12 rounded-xl object-cover shadow-md" />
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
+      {/* DESKTOP LAYOUT - Same structure as admin dashboard */}
+      <div className="hidden lg:block min-h-screen bg-gray-50">
+        {/* Desktop sidebar - collapsible with hover */}
+        <div 
+          className="fixed inset-y-0 left-0 flex flex-col transition-[width] duration-200 ease-out z-40 w-16 hover:w-52 group/sidebar"
+        >
+          <div className="flex flex-col flex-grow bg-white pt-4 pb-4 overflow-hidden shadow-lg relative">
+            {/* Logo section */}
+            <div className="flex items-center flex-shrink-0 px-3 h-12">
+              <Link href="/" className="w-full flex items-center justify-start">
+                <img 
+                  src="/assets/logos/favicon-light.svg"
+                  alt="Mis Canchas" 
+                  className="h-10 w-auto group-hover/sidebar:hidden"
+                />
+                <img 
+                  src="/assets/logos/logo-light.svg"
+                  alt="Mis Canchas" 
+                  className="h-10 w-auto hidden group-hover/sidebar:block"
+                />
+              </Link>
+            </div>
+            
+            {/* Navigation */}
+            <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-2 space-y-1">
+              <Link href="/" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <Home className="flex-shrink-0 h-5 w-5" />
+                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Inicio</span>
+              </Link>
+              <Link href="/buscar" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <Search className="flex-shrink-0 h-5 w-5" />
+                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Buscar</span>
+              </Link>
+              
+              <div className="mx-3 my-2 border-t border-gray-200" />
+              
+              <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <Calendar className="flex-shrink-0 h-5 w-5" />
+                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Mis Reservas</span>
+              </Link>
+              <Link href="/dashboard?section=favorites" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <Heart className="flex-shrink-0 h-5 w-5" />
+                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Favoritos</span>
+              </Link>
+              <Link href="/dashboard/perfil" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+                <User className="flex-shrink-0 h-5 w-5" />
+                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Mi Perfil</span>
+              </Link>
+            </nav>
+            
+            {/* User info at bottom */}
+            {isAuthenticated && user && (
+              <div className="flex-shrink-0 border-t border-gray-200 p-3">
+                <div className="flex items-center">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
                   </div>
-                  <div>
-                    <h1 className="font-bold text-gray-900">{establishment.name}</h1>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <Star className="w-3.5 h-3.5 text-amber-400 fill-current" />
-                      <span>{establishment.rating || '4.5'}</span>
-                      <span className="mx-1">•</span>
-                      <span className="truncate max-w-[200px]">{establishment.address}</span>
-                    </div>
+                  <div className="flex-1 min-w-0 ml-3 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
 
-              {/* Center: Progress Steps - Pill style */}
-              <div className="flex items-center bg-gray-100 rounded-2xl p-1.5">
-                {stepTitles.map((title, idx) => {
-                  const isCompleted = idx + 1 < currentStep;
-                  const isCurrent = idx + 1 === currentStep;
-                  return (
-                    <div key={idx} className="flex items-center">
-                      <button
-                        onClick={() => isCompleted && setCurrentStep(idx + 1)}
-                        disabled={!isCompleted && !isCurrent}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                          isCurrent 
-                            ? 'bg-white text-emerald-600 shadow-sm' 
-                            : isCompleted 
-                              ? 'text-emerald-600 hover:bg-white/50 cursor-pointer' 
-                              : 'text-gray-400'
-                        }`}
-                      >
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                          isCompleted ? 'bg-emerald-500 text-white' :
-                          isCurrent ? 'bg-emerald-500 text-white' :
-                          'bg-gray-300 text-white'
-                        }`}>
-                          {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
-                        </span>
-                        <span className="hidden xl:inline">{title}</span>
-                      </button>
-                      {idx < 3 && (
-                        <div className={`w-6 h-0.5 mx-1 rounded ${isCompleted ? 'bg-emerald-400' : 'bg-gray-300'}`} />
-                      )}
+        {/* Main content with sidebar offset */}
+        <div className="pl-16 flex flex-col min-h-screen">
+          {/* Top navigation bar */}
+          <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+            <div className="w-full px-4">
+              <div className="flex items-center h-14">
+                {/* Establishment info */}
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img src={mainImage} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" />
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                  <div>
+                    <h1 className="font-semibold text-gray-900 text-sm">{establishment.name}</h1>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Star className="w-3 h-3 text-amber-400 fill-current" />
+                      <span>{establishment.rating || '4.5'}</span>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Right: Actions */}
-              <div className="flex items-center gap-2">
-                <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2.5 rounded-xl transition-all ${isFavorite ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-400 hover:text-red-500'}`}>
-                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                </button>
-                <button className="p-2.5 rounded-xl bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                  <Share2 className="w-5 h-5" />
-                </button>
+                {/* Center: Progress Steps */}
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="flex items-center bg-gray-100 rounded-2xl p-1">
+                    {stepTitles.map((title, idx) => {
+                      const isCompleted = idx + 1 < currentStep;
+                      const isCurrent = idx + 1 === currentStep;
+                      return (
+                        <div key={idx} className="flex items-center">
+                          <button
+                            onClick={() => isCompleted && setCurrentStep(idx + 1)}
+                            disabled={!isCompleted && !isCurrent}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                              isCurrent ? 'bg-white text-emerald-600 shadow-sm' : isCompleted ? 'text-emerald-600 hover:bg-white/50 cursor-pointer' : 'text-gray-400'
+                            }`}
+                          >
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                              isCompleted || isCurrent ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'
+                            }`}>
+                              {isCompleted ? <Check className="w-3 h-3" /> : idx + 1}
+                            </span>
+                            <span>{title}</span>
+                          </button>
+                          {idx < 3 && <div className={`w-4 h-0.5 mx-0.5 rounded ${isCompleted ? 'bg-emerald-400' : 'bg-gray-300'}`} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right: Step title + Actions */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">{stepTitles[currentStep - 1]}</span>
+                  <div className="h-4 w-px bg-gray-200" />
+                  <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2 rounded-lg transition-all ${isFavorite ? 'bg-red-50 text-red-500' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'}`}>
+                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+                  </button>
+                  <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
         {/* Main Content */}
         <div className="flex-1 flex">
@@ -815,11 +879,7 @@ const BookingPage = () => {
                 {/* Step 1: Sport Selection */}
                 {currentStep === 1 && (
                   <motion.div key="d1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <div className="text-center mb-8">
-                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 1 de 4</span>
-                      <h2 className="text-3xl font-bold text-gray-900 mb-2">¿Qué deporte vas a jugar?</h2>
-                      <p className="text-gray-500">Seleccioná el deporte para ver las canchas disponibles</p>
-                    </div>
+                    <p className="text-gray-500 mb-6">Seleccioná el deporte para ver las canchas disponibles</p>
                     <div className="grid grid-cols-2 gap-4">
                       {availableSports.map((sport) => {
                         const sportIcons: Record<string, string> = { 'futbol': '⚽', 'padel': '🎾', 'paddle': '🎾', 'tenis': '🎾', 'basquet': '🏀', 'voley': '🏐' };
@@ -854,11 +914,7 @@ const BookingPage = () => {
                 {/* Step 2: Duration */}
                 {currentStep === 2 && (
                   <motion.div key="d2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <div className="text-center mb-8">
-                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 2 de 4</span>
-                      <h2 className="text-3xl font-bold text-gray-900 mb-2">¿Cuánto tiempo vas a jugar?</h2>
-                      <p className="text-gray-500">Elegí la duración de tu reserva</p>
-                    </div>
+                    <p className="text-gray-500 mb-6">Elegí la duración de tu reserva</p>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       {[{ value: 60, label: '1 hora', popular: false }, { value: 90, label: '1:30 hs', popular: true }, { value: 120, label: '2 horas', popular: false }, { value: 150, label: '2:30 hs', popular: false }].map((d) => (
                         <motion.button 
@@ -905,14 +961,10 @@ const BookingPage = () => {
                   </motion.div>
                 )}
 
-                {/* Step 3: Date + Time - MisCanchas style */}
+                {/* Step 3: Date + Time */}
                 {currentStep === 3 && (
                   <motion.div key="d3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <div className="text-center mb-8">
-                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 3 de 4</span>
-                      <h2 className="text-3xl font-bold text-gray-900 mb-2">¿Cuándo querés jugar?</h2>
-                      <p className="text-gray-500">Elegí el día y horario de tu reserva</p>
-                    </div>
+                    <p className="text-gray-500 mb-6">Elegí el día y horario de tu reserva</p>
                     
                     {/* Date selector - card style */}
                     <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-6 shadow-sm">
@@ -1007,14 +1059,10 @@ const BookingPage = () => {
                   </motion.div>
                 )}
 
-                {/* Step 4: Court - MisCanchas style */}
+                {/* Step 4: Court */}
                 {currentStep === 4 && (
                   <motion.div key="d4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                    <div className="text-center mb-8">
-                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-full mb-3">Paso 4 de 4</span>
-                      <h2 className="text-3xl font-bold text-gray-900 mb-2">Elegí tu cancha</h2>
-                      <p className="text-gray-500">Seleccioná la cancha que más te guste</p>
-                    </div>
+                    <p className="text-gray-500 mb-6">Seleccioná la cancha que más te guste</p>
                     {availableCourtsAtTime.length > 0 ? (
                       <div className="space-y-4">
                         {availableCourtsAtTime.map((court) => (
@@ -1175,32 +1223,25 @@ const BookingPage = () => {
           </aside>
         </div>
 
-        {/* Footer with Navigation - MisCanchas style */}
-        <footer className="bg-white/80 backdrop-blur-xl border-t border-gray-200 px-6 py-4 sticky bottom-0">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Footer with Navigation */}
+        <footer className="bg-white border-t border-gray-200 px-6 py-3 sticky bottom-0">
+          <div className="flex items-center justify-between">
             <button onClick={goToPrevStep} disabled={currentStep === 1}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               <ChevronLeft className="w-4 h-4" />
               Volver
             </button>
             
-            <div className="flex items-center gap-4">
-              {/* Progress indicator */}
-              <div className="hidden md:flex items-center gap-1">
-                {[1, 2, 3, 4].map((step) => (
-                  <div key={step} className={`w-2 h-2 rounded-full transition-all ${step <= currentStep ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                ))}
-              </div>
-              
+            <div className="flex items-center gap-3">
               {currentStep === 4 && selectedCourt ? (
                 <button onClick={handleBooking}
-                  className="flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200 transition-all">
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200 transition-all">
                   <Check className="w-5 h-5" />
                   Confirmar reserva
                 </button>
               ) : (
                 <button onClick={goToNextStep} disabled={!canGoNext()}
-                  className={`flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-white transition-all ${
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white transition-all ${
                     canGoNext() 
                       ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200' 
                       : 'bg-gray-300 cursor-not-allowed'
@@ -1212,6 +1253,7 @@ const BookingPage = () => {
             </div>
           </div>
         </footer>
+        </div>
       </div>
 
       {/* Modals */}
