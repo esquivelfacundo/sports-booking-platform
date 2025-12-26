@@ -132,7 +132,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold text-gray-900">
           Mi Perfil
         </h1>
         {!isEditing ? (
@@ -154,7 +154,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
             </button>
             <button
               onClick={handleCancel}
-              className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors"
             >
               <X className="w-4 h-4" />
               <span>Cancelar</span>
@@ -169,7 +169,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+            className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
           >
             {/* Avatar Section */}
             <div className="flex items-center space-x-6 mb-8">
@@ -201,7 +201,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
               </div>
               <div>
                 <div className="flex items-center space-x-3 mb-2">
-                  <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
                   {user?.isPhoneVerified && (
                     <div className="flex items-center space-x-1 bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-sm border border-emerald-500/30">
                       <Shield className="w-3 h-3" />
@@ -209,11 +209,11 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                     </div>
                   )}
                 </div>
-                <p className="text-gray-400">{user?.level || 'Jugador'}</p>
+                <p className="text-gray-500">{user?.level || 'Jugador'}</p>
                 <div className="flex items-center mt-2">
                   <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                  <span className="text-white">{user?.stats?.rating || 0}</span>
-                  <span className="text-gray-400 ml-2">
+                  <span className="text-gray-900">{user?.stats?.rating || 0}</span>
+                  <span className="text-gray-500 ml-2">
                     ({user?.stats?.reviewsReceived || 0} reseñas)
                   </span>
                 </div>
@@ -224,7 +224,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Nombre completo
                   </label>
                   {isEditing ? (
@@ -233,18 +233,18 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   ) : (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
-                      <User className="w-5 h-5 text-gray-400" />
-                      <span className="text-white">{user?.name || 'No especificado'}</span>
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <User className="w-5 h-5 text-gray-500" />
+                      <span className="text-gray-900">{user?.name || 'No especificado'}</span>
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Email
                   </label>
                   {isEditing ? (
@@ -253,18 +253,18 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   ) : (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
-                      <Mail className="w-5 h-5 text-gray-400" />
-                      <span className="text-white">{user?.email || 'No especificado'}</span>
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <Mail className="w-5 h-5 text-gray-500" />
+                      <span className="text-gray-900">{user?.email || 'No especificado'}</span>
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
                     Teléfono
                   </label>
                   {isEditing ? (
@@ -273,22 +273,22 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   ) : (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
-                      <Phone className="w-5 h-5 text-gray-400" />
-                      <span className="text-white">{user?.phone || 'No especificado'}</span>
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <Phone className="w-5 h-5 text-gray-500" />
+                      <span className="text-gray-900">{user?.phone || 'No especificado'}</span>
                     </div>
                   )}
                 </div>
 
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
-                    <label className="block text-sm font-medium text-gray-300">
+                    <label className="block text-sm font-medium text-gray-600">
                       Fecha de Nacimiento
                     </label>
-                    <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded-full">Privado</span>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Privado</span>
                   </div>
                   {isEditing ? (
                     <input
@@ -296,12 +296,12 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                       name="birthDate"
                       value={formData.birthDate}
                       onChange={handleInputChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   ) : (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
-                      <Calendar className="w-5 h-5 text-gray-400" />
-                      <span className="text-white">
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <Calendar className="w-5 h-5 text-gray-500" />
+                      <span className="text-gray-900">
                         {user?.birthDate ? new Date(user.birthDate).toLocaleDateString('es-AR') : 'No especificada'}
                       </span>
                     </div>
@@ -311,7 +311,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
 
               {/* Ubicación - Full Width */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-600 mb-2">
                   Ubicación
                 </label>
                 {isEditing ? (
@@ -328,7 +328,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                       value={formData.city}
                       onChange={handleInputChange}
                       placeholder="Ciudad"
-                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                      className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                     <input
                       type="text"
@@ -336,18 +336,18 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                       value={formData.postalCode}
                       onChange={handleInputChange}
                       placeholder="Código Postal"
-                      className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                      className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
-                    <MapPin className="w-5 h-5 text-gray-400" />
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <MapPin className="w-5 h-5 text-gray-500" />
                     <div className="flex flex-col space-y-1">
-                      <span className="text-white">
+                      <span className="text-gray-900">
                         {user?.city && user?.province ? `${user.city}, ${user.province}` : 'No especificado'}
                       </span>
                       {user?.postalCode && (
-                        <span className="text-sm text-gray-400">CP: {user.postalCode}</span>
+                        <span className="text-sm text-gray-500">CP: {user.postalCode}</span>
                       )}
                     </div>
                   </div>
@@ -355,7 +355,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-600 mb-2">
                   Biografía
                 </label>
                 {isEditing ? (
@@ -364,12 +364,12 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                     value={formData.bio}
                     onChange={handleInputChange}
                     rows={4}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 resize-none"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
                     placeholder="Cuéntanos sobre ti..."
                   />
                 ) : (
-                  <div className="p-3 bg-gray-700 rounded-lg">
-                    <span className="text-white">
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-gray-900">
                       {user?.bio || 'No hay biografía disponible'}
                     </span>
                   </div>
@@ -384,34 +384,34 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+            className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
           >
-            <h3 className="text-lg font-semibold text-white mb-4">Estadísticas</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Trophy className="w-5 h-5 text-emerald-400" />
-                  <span className="text-gray-300">Partidos</span>
+                  <span className="text-gray-600">Partidos</span>
                 </div>
-                <span className="text-white font-semibold">
+                <span className="text-gray-900 font-semibold">
                   {user?.stats?.totalGames || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Calendar className="w-5 h-5 text-blue-400" />
-                  <span className="text-gray-300">Reservas</span>
+                  <span className="text-gray-600">Reservas</span>
                 </div>
-                <span className="text-white font-semibold">
+                <span className="text-gray-900 font-semibold">
                   {user?.stats?.totalReservations || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Users className="w-5 h-5 text-purple-400" />
-                  <span className="text-gray-300">Amigos</span>
+                  <span className="text-gray-600">Amigos</span>
                 </div>
-                <span className="text-white font-semibold">
+                <span className="text-gray-900 font-semibold">
                   {user?.stats?.friendsCount || 0}
                 </span>
               </div>
@@ -422,10 +422,10 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+            className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">Deportes</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Deportes</h3>
             </div>
             
             {!isEditing ? (
@@ -470,7 +470,7 @@ const ProfileSection = ({ user, updateProfile }: ProfileSectionProps) => {
                     );
                   })
                 ) : (
-                  <p className="text-gray-400 text-center py-8">No hay deportes configurados</p>
+                  <p className="text-gray-500 text-center py-8">No hay deportes configurados</p>
                 )}
               </div>
             ) : (

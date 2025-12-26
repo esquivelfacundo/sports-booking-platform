@@ -32,10 +32,10 @@ const FavoritesSection: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-colors"
+      className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 hover:shadow-md transition-all"
     >
       <div className="relative">
-        <div className="h-40 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
+        <div className="h-40 bg-gradient-to-br from-emerald-100 to-cyan-100 flex items-center justify-center">
           <Trophy className="w-12 h-12 text-emerald-400" />
         </div>
         <button 
@@ -52,17 +52,17 @@ const FavoritesSection: React.FC = () => {
       
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="text-lg font-semibold text-white">{item.establishmentName}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{item.establishmentName}</h3>
           {item.rating > 0 && (
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
-              <span className="text-white text-sm">{item.rating.toFixed(1)}</span>
+              <span className="text-gray-900 text-sm">{item.rating.toFixed(1)}</span>
             </div>
           )}
         </div>
         
         {item.location && (
-          <div className="flex items-center space-x-2 text-gray-400 text-sm mb-3">
+          <div className="flex items-center space-x-2 text-gray-500 text-sm mb-3">
             <MapPin className="w-4 h-4" />
             <span>{item.location}</span>
           </div>
@@ -80,7 +80,7 @@ const FavoritesSection: React.FC = () => {
         
         <div className="flex items-center justify-between">
           {item.priceRange && (
-            <span className="text-emerald-400 font-semibold text-sm">{item.priceRange}</span>
+            <span className="text-emerald-600 font-semibold text-sm">{item.priceRange}</span>
           )}
           <Link 
             href={`/reservar/${item.establishmentId}`}
@@ -104,7 +104,7 @@ const FavoritesSection: React.FC = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold text-gray-900">
           Mis Favoritos
         </h1>
         <div className="flex items-center space-x-4">
@@ -115,19 +115,19 @@ const FavoritesSection: React.FC = () => {
               placeholder="Buscar favoritos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-emerald-500"
+              className="bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
             />
           </div>
-          <div className="flex items-center bg-gray-800 border border-gray-700 rounded-lg p-1">
+          <div className="flex items-center bg-gray-100 border border-gray-200 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded ${viewMode === 'list' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`p-2 rounded ${viewMode === 'list' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <List className="w-4 h-4" />
             </button>
@@ -140,12 +140,12 @@ const FavoritesSection: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Total Favoritos</p>
-              <p className="text-2xl font-bold text-white">{stats.totalFavorites}</p>
+              <p className="text-gray-500 text-sm">Total Favoritos</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalFavorites}</p>
             </div>
             <Heart className="w-8 h-8 text-red-400" />
           </div>
@@ -155,12 +155,12 @@ const FavoritesSection: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm">Establecimientos Guardados</p>
-              <p className="text-2xl font-bold text-white">{filteredFavorites.length}</p>
+              <p className="text-gray-500 text-sm">Establecimientos Guardados</p>
+              <p className="text-2xl font-bold text-gray-900">{filteredFavorites.length}</p>
             </div>
             <MapPin className="w-8 h-8 text-emerald-400" />
           </div>
@@ -184,8 +184,8 @@ const FavoritesSection: React.FC = () => {
           animate={{ opacity: 1 }}
           className="text-center py-12"
         >
-          <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-400 mb-2">
+          <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">
             No tienes favoritos guardados
           </h3>
           <p className="text-gray-500 mb-4">

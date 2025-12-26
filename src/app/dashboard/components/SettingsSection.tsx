@@ -20,9 +20,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const SettingsSection: React.FC = () => {
+interface SettingsSectionProps {
+  activeTab?: string;
+}
+
+const SettingsSection: React.FC<SettingsSectionProps> = ({ activeTab: externalActiveTab }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('notifications');
+  const [internalActiveTab, setInternalActiveTab] = useState('notifications');
+  const activeTab = externalActiveTab || internalActiveTab;
   const [settings, setSettings] = useState({
     notifications: {
       emailNotifications: true,
@@ -76,7 +81,7 @@ const SettingsSection: React.FC = () => {
   const renderNotificationsTab = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Notificaciones por Email</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Notificaciones por Email</h3>
         <div className="space-y-3">
           {[
             { key: 'emailNotifications', label: 'Recibir notificaciones por email', desc: 'Notificaciones generales del sistema' },
@@ -85,15 +90,15 @@ const SettingsSection: React.FC = () => {
             { key: 'friendRequests', label: 'Solicitudes de amistad', desc: 'Nuevas solicitudes de conexión' },
             { key: 'promotionalEmails', label: 'Emails promocionales', desc: 'Ofertas y promociones especiales' },
           ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div>
-                <p className="text-white font-medium">{label}</p>
-                <p className="text-gray-400 text-sm">{desc}</p>
+                <p className="text-gray-900 font-medium">{label}</p>
+                <p className="text-gray-500 text-sm">{desc}</p>
               </div>
               <button
                 onClick={() => updateSetting('notifications', key, !settings.notifications[key as keyof typeof settings.notifications])}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.notifications[key as keyof typeof settings.notifications] ? 'bg-emerald-500' : 'bg-gray-600'
+                  settings.notifications[key as keyof typeof settings.notifications] ? 'bg-emerald-500' : 'bg-gray-300'
                 }`}
               >
                 <span
@@ -108,21 +113,21 @@ const SettingsSection: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Notificaciones Push</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Notificaciones Push</h3>
         <div className="space-y-3">
           {[
             { key: 'pushNotifications', label: 'Notificaciones push', desc: 'Notificaciones en tiempo real' },
             { key: 'smsNotifications', label: 'Notificaciones SMS', desc: 'Mensajes de texto importantes' },
           ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div>
-                <p className="text-white font-medium">{label}</p>
-                <p className="text-gray-400 text-sm">{desc}</p>
+                <p className="text-gray-900 font-medium">{label}</p>
+                <p className="text-gray-500 text-sm">{desc}</p>
               </div>
               <button
                 onClick={() => updateSetting('notifications', key, !settings.notifications[key as keyof typeof settings.notifications])}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.notifications[key as keyof typeof settings.notifications] ? 'bg-emerald-500' : 'bg-gray-600'
+                  settings.notifications[key as keyof typeof settings.notifications] ? 'bg-emerald-500' : 'bg-gray-300'
                 }`}
               >
                 <span
@@ -141,12 +146,12 @@ const SettingsSection: React.FC = () => {
   const renderPrivacyTab = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Visibilidad del Perfil</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Visibilidad del Perfil</h3>
         <div className="space-y-3">
           <select
             value={settings.privacy.profileVisibility}
             onChange={(e) => updateSetting('privacy', 'profileVisibility', e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             <option value="public">Público - Visible para todos</option>
             <option value="friends">Amigos - Solo mis amigos</option>
@@ -156,7 +161,7 @@ const SettingsSection: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Información Visible</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Visible</h3>
         <div className="space-y-3">
           {[
             { key: 'showLocation', label: 'Mostrar ubicación', desc: 'Tu ciudad y provincia' },
@@ -165,15 +170,15 @@ const SettingsSection: React.FC = () => {
             { key: 'showStats', label: 'Mostrar estadísticas', desc: 'Partidos jugados y rating' },
             { key: 'allowFriendRequests', label: 'Permitir solicitudes de amistad', desc: 'Otros usuarios pueden enviarte solicitudes' },
           ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div>
-                <p className="text-white font-medium">{label}</p>
-                <p className="text-gray-400 text-sm">{desc}</p>
+                <p className="text-gray-900 font-medium">{label}</p>
+                <p className="text-gray-500 text-sm">{desc}</p>
               </div>
               <button
                 onClick={() => updateSetting('privacy', key, !settings.privacy[key as keyof typeof settings.privacy])}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  settings.privacy[key as keyof typeof settings.privacy] ? 'bg-emerald-500' : 'bg-gray-600'
+                  settings.privacy[key as keyof typeof settings.privacy] ? 'bg-emerald-500' : 'bg-gray-300'
                 }`}
               >
                 <span
@@ -195,7 +200,7 @@ const SettingsSection: React.FC = () => {
         <h3 className="text-lg font-semibold text-white mb-4">Apariencia</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tema</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Tema</label>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { value: 'dark', label: 'Oscuro', icon: Moon },
@@ -221,14 +226,14 @@ const SettingsSection: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Región y Formato</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Región y Formato</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Idioma</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Idioma</label>
             <select
               value={settings.preferences.language}
               onChange={(e) => updateSetting('preferences', 'language', e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="es">Español</option>
               <option value="en">English</option>
@@ -237,11 +242,11 @@ const SettingsSection: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Zona Horaria</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Zona Horaria</label>
             <select
               value={settings.preferences.timezone}
               onChange={(e) => updateSetting('preferences', 'timezone', e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="America/Argentina/Buenos_Aires">Buenos Aires (GMT-3)</option>
               <option value="America/Sao_Paulo">São Paulo (GMT-3)</option>
@@ -253,11 +258,11 @@ const SettingsSection: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Moneda</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">Moneda</label>
               <select
                 value={settings.preferences.currency}
                 onChange={(e) => updateSetting('preferences', 'currency', e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="ARS">ARS - Peso Argentino</option>
                 <option value="USD">USD - Dólar</option>
@@ -267,11 +272,11 @@ const SettingsSection: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Distancia</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">Distancia</label>
               <select
                 value={settings.preferences.distanceUnit}
                 onChange={(e) => updateSetting('preferences', 'distanceUnit', e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="km">Kilómetros</option>
                 <option value="mi">Millas</option>
@@ -329,13 +334,13 @@ const SettingsSection: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4">Sesión</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Sesión</h3>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Tiempo de inactividad (minutos)</label>
+          <label className="block text-sm font-medium text-gray-600 mb-2">Tiempo de inactividad (minutos)</label>
           <select
             value={settings.security.sessionTimeout}
             onChange={(e) => updateSetting('security', 'sessionTimeout', parseInt(e.target.value))}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             <option value={15}>15 minutos</option>
             <option value={30}>30 minutos</option>
@@ -403,7 +408,7 @@ const SettingsSection: React.FC = () => {
             <Trash2 className="w-5 h-5" />
             <span>Eliminar Cuenta</span>
           </button>
-          <p className="text-gray-400 text-sm text-center">
+          <p className="text-gray-500 text-sm text-center">
             Esta acción no se puede deshacer. Se eliminarán todos tus datos permanentemente.
           </p>
         </div>
@@ -428,58 +433,30 @@ const SettingsSection: React.FC = () => {
     }
   };
 
+  // If external tab is provided, render without internal navigation
+  if (externalActiveTab) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        {renderTabContent()}
+      </div>
+    );
+  }
+
+  // Fallback with internal navigation (for standalone use)
   return (
-    <div className="bg-gray-900">
+    <div>
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <h1 className="text-3xl font-bold text-white mb-1">Configuración</h1>
-          <p className="text-gray-400 text-sm">Personaliza tu experiencia en la plataforma</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Configuración</h1>
+          <p className="text-gray-500 text-sm">Personaliza tu experiencia en la plataforma</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar de navegación */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-1"
-          >
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-              <nav className="space-y-2">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                        activeTab === tab.id
-                          ? 'bg-emerald-500 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          </motion.div>
-
-          {/* Contenido principal */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-3"
-          >
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-              {renderTabContent()}
-            </div>
-          </motion.div>
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          {renderTabContent()}
         </div>
       </div>
     </div>

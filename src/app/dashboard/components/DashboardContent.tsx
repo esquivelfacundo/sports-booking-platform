@@ -38,6 +38,8 @@ const DashboardContent = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userFavorites, setUserFavorites] = useState<Array<{ id: string; name: string; slug: string; image?: string }>>([]);
+  const [activeSubTab, setActiveSubTab] = useState('notifications');
+  const [reservationsTab, setReservationsTab] = useState('upcoming');
   const { 
     stats, 
     upcomingBookings, 
@@ -123,11 +125,11 @@ const DashboardContent = () => {
       case 'profile':
         return <ProfileSection user={user} updateProfile={updateProfile} />;
       case 'reservations':
-        return <ReservationsSection />;
+        return <ReservationsSection activeTab={reservationsTab} />;
       case 'favorites':
         return <FavoritesSection />;
       case 'settings':
-        return <SettingsSection />;
+        return <SettingsSection activeTab={activeSubTab} />;
       default:
         return (
           <div className="space-y-4 sm:space-y-5">
@@ -540,11 +542,59 @@ const DashboardContent = () => {
           <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
             <div className="w-full px-6">
               <div className="flex items-center justify-between h-14">
-                {/* Left: Title */}
-                <div className="flex items-center gap-3">
+                {/* Left: Title and Tabs */}
+                <div className="flex items-center gap-6">
                   <h1 className="text-lg font-semibold text-gray-900">
                     {sidebarItems.find(i => i.id === activeSection)?.name || 'Dashboard'}
                   </h1>
+                  
+                  {/* Settings sub-tabs */}
+                  {activeSection === 'settings' && (
+                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                      {[
+                        { id: 'notifications', label: 'Notificaciones' },
+                        { id: 'privacy', label: 'Privacidad' },
+                        { id: 'preferences', label: 'Preferencias' },
+                        { id: 'security', label: 'Seguridad' },
+                        { id: 'account', label: 'Cuenta' },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveSubTab(tab.id)}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                            activeSubTab === tab.id
+                              ? 'bg-white text-emerald-600 shadow-sm'
+                              : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Reservations sub-tabs */}
+                  {activeSection === 'reservations' && (
+                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                      {[
+                        { id: 'upcoming', label: 'Próximas' },
+                        { id: 'past', label: 'Pasadas' },
+                        { id: 'cancelled', label: 'Canceladas' },
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setReservationsTab(tab.id)}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                            reservationsTab === tab.id
+                              ? 'bg-white text-emerald-600 shadow-sm'
+                              : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Right: Actions */}
