@@ -120,6 +120,9 @@ const BookingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const TOTAL_STEPS = 4;
   
+  // Sidebar collapsed state - collapsed by default (same as admin)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  
   // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha)
   const canGoNext = () => {
     switch (currentStep) {
@@ -738,23 +741,23 @@ const BookingPage = () => {
 
       {/* DESKTOP LAYOUT - Same structure as admin dashboard */}
       <div className="hidden lg:block min-h-screen bg-gray-50">
-        {/* Desktop sidebar - collapsible with hover */}
+        {/* Desktop sidebar - collapsible with hover (same as admin) */}
         <div 
-          className="fixed inset-y-0 left-0 flex flex-col transition-[width] duration-200 ease-out z-40 w-16 hover:w-52 group/sidebar"
+          className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col transition-[width] duration-200 ease-out z-40 ${
+            sidebarCollapsed ? 'lg:w-16' : 'lg:w-52'
+          }`}
+          onMouseEnter={() => setSidebarCollapsed(false)}
+          onMouseLeave={() => setSidebarCollapsed(true)}
         >
           <div className="flex flex-col flex-grow bg-white pt-4 pb-4 overflow-hidden shadow-lg relative">
-            {/* Logo section */}
-            <div className="flex items-center flex-shrink-0 px-3 h-12">
-              <Link href="/" className="w-full flex items-center justify-start">
+            {/* Logo section - same as admin dashboard */}
+            <div className="flex items-center flex-shrink-0 px-3 h-12 transition-none">
+              <Link href="/" className="w-full flex items-center justify-start transition-none">
                 <img 
-                  src="/assets/logos/favicon-light.svg"
+                  src={sidebarCollapsed ? '/assets/logos/favicon-light.svg' : '/assets/logos/logo-light.svg'}
                   alt="Mis Canchas" 
-                  className="h-10 w-auto group-hover/sidebar:hidden"
-                />
-                <img 
-                  src="/assets/logos/logo-light.svg"
-                  alt="Mis Canchas" 
-                  className="h-10 w-auto hidden group-hover/sidebar:block"
+                  className="h-10 w-auto transition-none"
+                  style={{ transition: 'none' }}
                 />
               </Link>
             </div>
@@ -763,26 +766,26 @@ const BookingPage = () => {
             <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-2 space-y-1">
               <Link href="/" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
                 <Home className="flex-shrink-0 h-5 w-5" />
-                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Inicio</span>
+                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Inicio</span>
               </Link>
               <Link href="/buscar" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
                 <Search className="flex-shrink-0 h-5 w-5" />
-                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Buscar</span>
+                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Buscar</span>
               </Link>
               
               <div className="mx-3 my-2 border-t border-gray-200" />
               
               <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
                 <Calendar className="flex-shrink-0 h-5 w-5" />
-                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Mis Reservas</span>
+                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mis Reservas</span>
               </Link>
               <Link href="/dashboard?section=favorites" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
                 <Heart className="flex-shrink-0 h-5 w-5" />
-                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Favoritos</span>
+                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Favoritos</span>
               </Link>
               <Link href="/dashboard/perfil" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
                 <User className="flex-shrink-0 h-5 w-5" />
-                <span className="ml-3 text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Mi Perfil</span>
+                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mi Perfil</span>
               </Link>
             </nav>
             
@@ -793,7 +796,7 @@ const BookingPage = () => {
                   <div className="h-9 w-9 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
                   </div>
-                  <div className="flex-1 min-w-0 ml-3 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">
+                  <div className={`flex-1 min-w-0 ml-3 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
                     <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
@@ -804,7 +807,7 @@ const BookingPage = () => {
         </div>
 
         {/* Main content with sidebar offset */}
-        <div className="pl-16 flex flex-col min-h-screen">
+        <div className={`flex flex-col min-h-screen transition-[padding] duration-200 ease-out ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-52'}`}>
           {/* Top navigation bar */}
           <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
             <div className="w-full px-4">
