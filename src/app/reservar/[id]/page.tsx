@@ -177,9 +177,17 @@ const BookingPage = () => {
   
   const availableCourtsAtTime = getAvailableCourtsAtTime();
 
-  // Generate dates respecting maxAdvanceBookingDays, sorted by week starting Monday
+  // Generate dates respecting maxAdvanceBookingDays, with proper calendar alignment
   const generateDates = () => {
-    const dates = [];
+    const dates: Array<{
+      value: string;
+      dayName: string;
+      dayNumber: number;
+      month: string;
+      isToday: boolean;
+      isWeekend: boolean;
+      isEmpty?: boolean;
+    }> = [];
     const today = new Date();
     // Day names starting from Monday (index 0 = Monday, 6 = Sunday)
     const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -191,6 +199,25 @@ const BookingPage = () => {
     // Helper to get day index where Monday = 0, Sunday = 6
     const getMondayBasedDay = (jsDay: number) => jsDay === 0 ? 6 : jsDay - 1;
     
+    // Get the first date
+    const firstDate = new Date(today);
+    firstDate.setDate(today.getDate() + startDay);
+    const firstDayOfWeek = getMondayBasedDay(firstDate.getDay());
+    
+    // Add empty cells for days before the first date (to align with Monday start)
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      dates.push({
+        value: `empty-${i}`,
+        dayName: dayNames[i],
+        dayNumber: 0,
+        month: '',
+        isToday: false,
+        isWeekend: false,
+        isEmpty: true
+      });
+    }
+    
+    // Add actual dates
     for (let i = startDay; i < maxAdvanceBookingDays; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
@@ -206,17 +233,11 @@ const BookingPage = () => {
         dayNumber: date.getDate(),
         month: monthNames[date.getMonth()],
         isToday: i === startDay,
-        isWeekend: date.getDay() === 0 || date.getDay() === 6,
-        sortOrder: mondayBasedDay // For sorting within weeks
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
       });
     }
     
-    // Sort dates to start each week on Monday
-    // Group by week and sort within each week
-    return dates.sort((a, b) => {
-      // First sort by actual date (chronologically)
-      return new Date(a.value).getTime() - new Date(b.value).getTime();
-    });
+    return dates;
   };
 
   const dates = generateDates();
@@ -721,33 +742,37 @@ const BookingPage = () => {
                   </div>
                   
                   {/* Calendar Grid - 7 columns, full width */}
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-2">
                     {dates.map((date) => (
-                      <button
-                        key={date.value}
-                        onClick={() => {
-                          setSelectedDate(date.value);
-                          setCurrentStep(3);
-                        }}
-                        className={`relative flex flex-col items-center p-3 md:p-4 rounded-xl border-2 transition-all ${
-                          selectedDate === date.value
-                            ? 'bg-emerald-500 border-emerald-500 text-white'
-                            : date.isWeekend
-                            ? 'bg-gray-800/50 border-gray-700 text-gray-300 hover:border-emerald-500/50'
-                            : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
-                        }`}
-                      >
-                        {date.isToday && (
-                          <span className={`absolute top-1 right-1 text-[7px] md:text-[8px] px-1 py-0.5 rounded ${
-                            selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'
-                          }`}>
-                            Hoy
-                          </span>
-                        )}
-                        <span className="text-[10px] md:text-xs font-medium opacity-70 uppercase">{date.dayName}</span>
-                        <span className="text-xl md:text-2xl font-bold my-0.5">{date.dayNumber}</span>
-                        <span className="text-[10px] md:text-xs opacity-70">{date.month}</span>
-                      </button>
+                      date.isEmpty ? (
+                        <div key={date.value} className="p-3 md:p-4" />
+                      ) : (
+                        <button
+                          key={date.value}
+                          onClick={() => {
+                            setSelectedDate(date.value);
+                            setCurrentStep(3);
+                          }}
+                          className={`relative flex flex-col items-center p-3 md:p-4 rounded-xl border-2 transition-all ${
+                            selectedDate === date.value
+                              ? 'bg-emerald-500 border-emerald-500 text-white'
+                              : date.isWeekend
+                              ? 'bg-gray-800/50 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                              : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                          }`}
+                        >
+                          {date.isToday && (
+                            <span className={`absolute top-1 right-1 text-[7px] md:text-[8px] px-1 py-0.5 rounded ${
+                              selectedDate === date.value ? 'bg-white/20' : 'bg-emerald-500/20 text-emerald-400'
+                            }`}>
+                              Hoy
+                            </span>
+                          )}
+                          <span className="text-[10px] md:text-xs font-medium opacity-70 uppercase">{date.dayName}</span>
+                          <span className="text-xl md:text-2xl font-bold my-0.5">{date.dayNumber}</span>
+                          <span className="text-[10px] md:text-xs opacity-70">{date.month}</span>
+                        </button>
+                      )
                     ))}
                   </div>
                 </motion.div>
