@@ -50,6 +50,7 @@ import {
   Power
 } from 'lucide-react';
 import PhoneInput from '@/components/ui/PhoneInput';
+import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
@@ -200,6 +201,9 @@ const ConfigurationPage = () => {
     logo: establishment?.logo || '',
     description: establishment?.description || '',
     address: establishment?.address || '',
+    city: establishment?.city || '',
+    latitude: establishment?.latitude || null,
+    longitude: establishment?.longitude || null,
     phone: establishment?.phone || '',
     email: establishment?.email || '',
     website: '',
@@ -355,6 +359,9 @@ const ConfigurationPage = () => {
         logo: establishment.logo || '',
         description: establishment.description || '',
         address: establishment.address || '',
+        city: establishment.city || '',
+        latitude: establishment.latitude || null,
+        longitude: establishment.longitude || null,
         phone: establishment.phone || '',
         email: establishment.email || '',
         // Load schedule/opening hours from establishment
@@ -687,6 +694,9 @@ const ConfigurationPage = () => {
         logo: config.logo,
         description: config.description,
         address: config.address,
+        city: config.city,
+        latitude: config.latitude,
+        longitude: config.longitude,
         phone: config.phone,
         email: config.email,
         // Include schedule/opening hours
@@ -885,15 +895,61 @@ const ConfigurationPage = () => {
           </div>
         </div>
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Dirección</label>
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+            <MapPin className="w-4 h-4 inline mr-1" />
+            Dirección
+          </label>
+          <GooglePlacesAutocomplete
+            value={config.address}
+            onChange={(value) => {
+              setConfig(prev => ({ ...prev, address: value }));
+              setUnsavedChanges(true);
+            }}
+            onPlaceSelect={(place) => {
+              if (place.formatted_address) {
+                setConfig(prev => ({ ...prev, address: place.formatted_address }));
+              }
+              
+              // Extract city and coordinates
+              if (place.address_components) {
+                place.address_components.forEach((component: any) => {
+                  if (component.types.includes('locality')) {
+                    setConfig(prev => ({ ...prev, city: component.long_name }));
+                  }
+                });
+              }
+              
+              if (place.geometry && place.geometry.location) {
+                setConfig(prev => ({
+                  ...prev,
+                  latitude: place.geometry.location.lat(),
+                  longitude: place.geometry.location.lng()
+                }));
+              }
+              
+              setUnsavedChanges(true);
+            }}
+            placeholder="Ej: Av. Corrientes 1234, Buenos Aires"
+            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+            types={['address']}
+          />
+          {config.latitude && config.longitude && (
+            <p className="text-emerald-400 text-xs mt-2">
+              📍 Coordenadas: {config.latitude}, {config.longitude}
+            </p>
+          )}
+        </div>
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Ciudad</label>
           <input
             type="text"
-            value={config.address}
+            value={config.city}
             onChange={(e) => {
-              setConfig(prev => ({ ...prev, address: e.target.value }));
+              setConfig(prev => ({ ...prev, city: e.target.value }));
               setUnsavedChanges(true);
             }}
             className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+            placeholder="Buenos Aires"
             suppressHydrationWarning={true}
           />
         </div>
