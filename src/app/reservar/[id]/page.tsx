@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -105,23 +105,65 @@ const BookingPage = () => {
     autoFetch: true
   }) as { establishment: EstablishmentData | null; loading: boolean; error: string | null };
 
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string>('');
-  const [selectedDuration, setSelectedDuration] = useState<number>(60);
-  const [customDuration, setCustomDuration] = useState<number>(60);
-  const [showCustomDuration, setShowCustomDuration] = useState(false);
-  const [selectedSport, setSelectedSport] = useState<string>('');
+  // Helper to get saved booking state from sessionStorage
+  const getSavedBookingState = () => {
+    if (typeof window === 'undefined') return null;
+    const saved = sessionStorage.getItem(`booking_state_${idOrSlug}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  // Initialize state from sessionStorage if available
+  const savedState = getSavedBookingState();
+  
+  const [selectedDate, setSelectedDate] = useState<string>(savedState?.selectedDate || '');
+  const [selectedCourt, setSelectedCourt] = useState<Court | null>(savedState?.selectedCourt || null);
+  const [selectedTime, setSelectedTime] = useState<string>(savedState?.selectedTime || '');
+  const [selectedDuration, setSelectedDuration] = useState<number>(savedState?.selectedDuration || 60);
+  const [customDuration, setCustomDuration] = useState<number>(savedState?.customDuration || 60);
+  const [showCustomDuration, setShowCustomDuration] = useState(savedState?.showCustomDuration || false);
+  const [selectedSport, setSelectedSport] = useState<string>(savedState?.selectedSport || '');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMobileBooking, setShowMobileBooking] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [userFavorites, setUserFavorites] = useState<Array<{ id: string; name: string; slug: string; image?: string }>>([]);
   
   // Multi-step form state
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(savedState?.currentStep || 1);
   const TOTAL_STEPS = 5;
+  
+  // Save booking state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stateToSave = {
+      selectedDate,
+      selectedCourt,
+      selectedTime,
+      selectedDuration,
+      customDuration,
+      showCustomDuration,
+      selectedSport,
+      currentStep
+    };
+    sessionStorage.setItem(`booking_state_${idOrSlug}`, JSON.stringify(stateToSave));
+  }, [selectedDate, selectedCourt, selectedTime, selectedDuration, customDuration, showCustomDuration, selectedSport, currentStep, idOrSlug]);
+  
+  // Clear saved state after successful payment redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment_success') === 'true') {
+      sessionStorage.removeItem(`booking_state_${idOrSlug}`);
+    }
+  }, [idOrSlug]);
   
   // Local state for custom duration to avoid re-renders
   const [tempCustomDuration, setTempCustomDuration] = useState(150);
@@ -342,6 +384,58 @@ const BookingPage = () => {
     }
   }, [currentStep, dates, selectedDate]);
 
+  // Fetch user favorites and check if current establishment is favorite
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!isAuthenticated || !user) return;
+      try {
+        const response = await apiClient.get('/api/users/favorites') as any;
+        if (response.favorites) {
+          setUserFavorites(response.favorites.map((fav: any) => ({
+            id: fav.id || fav.establishmentId,
+            name: fav.name || fav.establishmentName,
+            slug: fav.slug || fav.id,
+            image: fav.image || fav.images?.[0]
+          })));
+          // Check if current establishment is in favorites
+          const currentIsFavorite = response.favorites.some((fav: any) => 
+            fav.id === establishment?.id || fav.establishmentId === establishment?.id
+          );
+          setIsFavorite(currentIsFavorite);
+        }
+      } catch (err) {
+        console.error('Error fetching favorites:', err);
+      }
+    };
+    fetchFavorites();
+  }, [isAuthenticated, user, establishment?.id]);
+
+  // Toggle favorite status
+  const toggleFavorite = async () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (!establishment?.id) return;
+    
+    try {
+      if (isFavorite) {
+        await apiClient.delete(`/api/users/favorites/${establishment.id}`);
+        setUserFavorites(prev => prev.filter(f => f.id !== establishment.id));
+      } else {
+        await apiClient.post('/api/users/favorites', { establishmentId: establishment.id });
+        setUserFavorites(prev => [...prev, {
+          id: establishment.id,
+          name: establishment.name,
+          slug: establishment.slug || establishment.id,
+          image: establishment.images?.[0]
+        }]);
+      }
+      setIsFavorite(!isFavorite);
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   // Fetch availability from backend for all courts (same logic as admin sidebar)
   const fetchAvailability = useCallback(async () => {
@@ -1116,17 +1210,6 @@ const BookingPage = () => {
           </div>
           <nav className="flex-1 py-4 overflow-y-auto">
             <div className="px-2 space-y-1">
-              <Link href="/" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Home className="mr-3 h-5 w-5 flex-shrink-0" />
-                Inicio
-              </Link>
-              <Link href="/buscar" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Search className="mr-3 h-5 w-5 flex-shrink-0" />
-                Buscar
-              </Link>
-            </div>
-            <div className="mx-4 my-3 border-t border-gray-200 dark:border-gray-700" />
-            <div className="px-2 space-y-1">
               <Link href="/dashboard?section=reservations" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <Calendar className="mr-3 h-5 w-5 flex-shrink-0" />
                 Mis Reservas
@@ -1140,6 +1223,35 @@ const BookingPage = () => {
                 Mi Perfil
               </Link>
             </div>
+            
+            {/* Favorite establishments - Quick access */}
+            {userFavorites.length > 0 && (
+              <>
+                <div className="mx-4 my-3 border-t border-gray-200 dark:border-gray-700" />
+                <div className="px-4 mb-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Accesos rápidos</p>
+                </div>
+                <div className="px-2 space-y-1">
+                  {userFavorites.slice(0, 5).map((fav) => (
+                    <Link 
+                      key={fav.id} 
+                      href={`/reservar/${fav.slug}`} 
+                      onClick={() => setSidebarOpen(false)} 
+                      className="group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {fav.image ? (
+                        <img src={fav.image} alt="" className="mr-3 h-6 w-6 rounded-md object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="mr-3 h-6 w-6 rounded-md bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center flex-shrink-0">
+                          <Star className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                      )}
+                      <span className="truncate">{fav.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
           </nav>
           {/* User info at bottom of mobile sidebar */}
           {isAuthenticated && user && (
@@ -1172,7 +1284,7 @@ const BookingPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2 rounded-lg ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}>
+            <button onClick={toggleFavorite} className={`p-2 rounded-lg ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}>
               <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
             </button>
             <button className="p-2 rounded-lg text-gray-400">
@@ -1218,17 +1330,6 @@ const BookingPage = () => {
             
             {/* Navigation */}
             <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-2 space-y-1">
-              <Link href="/" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <Home className="flex-shrink-0 h-5 w-5" />
-                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Inicio</span>
-              </Link>
-              <Link href="/buscar" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <Search className="flex-shrink-0 h-5 w-5" />
-                <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Buscar</span>
-              </Link>
-              
-              <div className="mx-3 my-2 border-t border-gray-200 dark:border-gray-700" />
-              
               <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Calendar className="flex-shrink-0 h-5 w-5" />
                 <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mis Reservas</span>
@@ -1241,6 +1342,30 @@ const BookingPage = () => {
                 <User className="flex-shrink-0 h-5 w-5" />
                 <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mi Perfil</span>
               </Link>
+              
+              {/* Favorite establishments - Quick access */}
+              {userFavorites.length > 0 && (
+                <>
+                  <div className="mx-3 my-2 border-t border-gray-200 dark:border-gray-700" />
+                  <div className={`px-3 mb-1 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Accesos rápidos</p>
+                  </div>
+                  {userFavorites.slice(0, 5).map((fav) => (
+                    <Link 
+                      key={fav.id} 
+                      href={`/reservar/${fav.slug}`}
+                      className="group flex items-center px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    >
+                      {fav.image ? (
+                        <img src={fav.image} alt="" className="flex-shrink-0 h-5 w-5 rounded object-cover" />
+                      ) : (
+                        <Star className="flex-shrink-0 h-5 w-5 text-emerald-500" />
+                      )}
+                      <span className={`ml-3 text-sm font-medium whitespace-nowrap truncate transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>{fav.name}</span>
+                    </Link>
+                  ))}
+                </>
+              )}
             </nav>
             
             {/* User info at bottom */}
@@ -1316,7 +1441,7 @@ const BookingPage = () => {
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-600 dark:text-gray-400">{stepTitles[currentStep - 1]}</span>
                   <div className="h-4 w-px bg-gray-200 dark:bg-gray-600" />
-                  <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2 rounded-lg transition-all ${isFavorite ? 'bg-red-50 dark:bg-red-500/20 text-red-500' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+                  <button onClick={toggleFavorite} className={`p-2 rounded-lg transition-all ${isFavorite ? 'bg-red-50 dark:bg-red-500/20 text-red-500' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                     <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
                   </button>
                   <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
