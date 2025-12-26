@@ -207,10 +207,25 @@ export function usePlayerDashboard() {
   // Get bookings by status
   const getUpcomingBookings = useCallback(() => {
     const now = new Date();
-    return bookings.filter(b => 
-      (b.status === 'confirmed' || b.status === 'in_progress') &&
-      new Date(b.date) >= now
-    ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const today = now.toISOString().split('T')[0];
+    
+    return bookings.filter(b => {
+      if (b.status !== 'confirmed' && b.status !== 'in_progress') return false;
+      
+      const bookingDate = b.date;
+      
+      // If booking is in the future, include it
+      if (bookingDate > today) return true;
+      
+      // If booking is today, check if the time hasn't passed yet
+      if (bookingDate === today) {
+        const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS
+        const bookingEndTime = b.endTime || b.startTime;
+        return bookingEndTime > currentTime;
+      }
+      
+      return false;
+    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [bookings]);
 
   const getPastBookings = useCallback(() => {

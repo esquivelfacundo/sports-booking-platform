@@ -120,7 +120,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
 
   const tabs = [
     { id: 'upcoming', name: 'Próximas', count: reservations.upcoming.length },
-    { id: 'past', name: 'Pasadas', count: reservations.past.length },
+    { id: 'past', name: 'Completadas', count: reservations.past.length },
     { id: 'cancelled', name: 'Canceladas', count: reservations.cancelled.length },
     { id: 'noShow', name: 'No asistidas', count: reservations.noShow.length }
   ];
