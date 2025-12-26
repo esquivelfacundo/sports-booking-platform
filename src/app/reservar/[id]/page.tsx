@@ -120,8 +120,9 @@ const BookingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const TOTAL_STEPS = 4;
   
-  // Sidebar collapsed state - collapsed by default (same as admin)
+  // Sidebar state - same as admin dashboard
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha)
   const canGoNext = () => {
@@ -711,36 +712,97 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 lg:bg-white">
-      {/* MOBILE LAYOUT (Design B style - dark theme) */}
-      <div className="lg:hidden bg-gray-950 min-h-screen">
-        {/* Compact Hero */}
-        <div className="relative h-[25vh] overflow-hidden">
-          <img src={mainImage} alt={establishment.name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/50 to-transparent" />
-          <button onClick={() => router.back()} className="absolute top-4 left-4 p-2 rounded-full bg-black/30 backdrop-blur text-white">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h1 className="text-xl font-bold text-white mb-1">{establishment.name}</h1>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex items-center gap-1 text-emerald-400">
-                <Star className="w-3 h-3 fill-current" />
-                <span>{establishment.rating || '4.5'}</span>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Mobile sidebar drawer */}
+      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-white dark:bg-gray-800">
+          <div className="flex h-16 items-center justify-between px-4">
+            <Link href="/" className="flex items-center space-x-3">
+              <img src="/assets/logos/logo-light.svg" alt="Mis Canchas" className="h-10 w-auto dark:hidden" />
+              <img src="/assets/logos/logo-dark.svg" alt="Mis Canchas" className="h-10 w-auto hidden dark:block" />
+            </Link>
+            <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+          <nav className="flex-1 py-4 overflow-y-auto">
+            <div className="px-2 space-y-1">
+              <Link href="/" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Home className="mr-3 h-5 w-5 flex-shrink-0" />
+                Inicio
+              </Link>
+              <Link href="/buscar" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Search className="mr-3 h-5 w-5 flex-shrink-0" />
+                Buscar
+              </Link>
+            </div>
+            <div className="mx-4 my-3 border-t border-gray-200 dark:border-gray-700" />
+            <div className="px-2 space-y-1">
+              <Link href="/dashboard?section=reservations" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Calendar className="mr-3 h-5 w-5 flex-shrink-0" />
+                Mis Reservas
+              </Link>
+              <Link href="/dashboard?section=favorites" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Heart className="mr-3 h-5 w-5 flex-shrink-0" />
+                Favoritos
+              </Link>
+              <Link href="/dashboard/perfil" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <User className="mr-3 h-5 w-5 flex-shrink-0" />
+                Mi Perfil
+              </Link>
+            </div>
+          </nav>
+          {/* User info at bottom of mobile sidebar */}
+          {isAuthenticated && user && (
+            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                </div>
               </div>
-              <span className="text-gray-300 text-xs">{establishment.address}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile topbar */}
+      <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+        <div className="flex items-center h-14 px-4">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg mr-2">
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <img src={mainImage} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{establishment.name}</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{stepTitles[currentStep - 1]}</p>
             </div>
           </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2 rounded-lg ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}>
+              <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+            <button className="p-2 rounded-lg text-gray-400">
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+      </header>
 
-        {/* Mobile Form */}
+      {/* Mobile content */}
+      <div className="lg:hidden">
         <div className="px-4 py-6">
           <BookingForm />
         </div>
       </div>
 
       {/* DESKTOP LAYOUT - Same structure as admin dashboard */}
-      <div className="hidden lg:block min-h-screen bg-gray-50">
+      <div className="hidden lg:block min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Desktop sidebar - collapsible with hover (same as admin) */}
         <div 
           className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col transition-[width] duration-200 ease-out z-40 ${
@@ -749,14 +811,20 @@ const BookingPage = () => {
           onMouseEnter={() => setSidebarCollapsed(false)}
           onMouseLeave={() => setSidebarCollapsed(true)}
         >
-          <div className="flex flex-col flex-grow bg-white pt-4 pb-4 overflow-hidden shadow-lg relative">
+          <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 pt-4 pb-4 overflow-hidden shadow-lg dark:shadow-none relative">
             {/* Logo section - same as admin dashboard */}
             <div className="flex items-center flex-shrink-0 px-3 h-12 transition-none">
               <Link href="/" className="w-full flex items-center justify-start transition-none">
                 <img 
                   src={sidebarCollapsed ? '/assets/logos/favicon-light.svg' : '/assets/logos/logo-light.svg'}
                   alt="Mis Canchas" 
-                  className="h-10 w-auto transition-none"
+                  className="h-10 w-auto transition-none dark:hidden"
+                  style={{ transition: 'none' }}
+                />
+                <img 
+                  src={sidebarCollapsed ? '/assets/logos/favicon-dark.svg' : '/assets/logos/logo-dark.svg'}
+                  alt="Mis Canchas" 
+                  className="h-10 w-auto transition-none hidden dark:block"
                   style={{ transition: 'none' }}
                 />
               </Link>
@@ -764,26 +832,26 @@ const BookingPage = () => {
             
             {/* Navigation */}
             <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-2 space-y-1">
-              <Link href="/" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+              <Link href="/" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Home className="flex-shrink-0 h-5 w-5" />
                 <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Inicio</span>
               </Link>
-              <Link href="/buscar" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+              <Link href="/buscar" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Search className="flex-shrink-0 h-5 w-5" />
                 <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Buscar</span>
               </Link>
               
-              <div className="mx-3 my-2 border-t border-gray-200" />
+              <div className="mx-3 my-2 border-t border-gray-200 dark:border-gray-700" />
               
-              <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+              <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Calendar className="flex-shrink-0 h-5 w-5" />
                 <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mis Reservas</span>
               </Link>
-              <Link href="/dashboard?section=favorites" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+              <Link href="/dashboard?section=favorites" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <Heart className="flex-shrink-0 h-5 w-5" />
                 <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Favoritos</span>
               </Link>
-              <Link href="/dashboard/perfil" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+              <Link href="/dashboard/perfil" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <User className="flex-shrink-0 h-5 w-5" />
                 <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mi Perfil</span>
               </Link>
@@ -791,14 +859,14 @@ const BookingPage = () => {
             
             {/* User info at bottom */}
             {isAuthenticated && user && (
-              <div className="flex-shrink-0 border-t border-gray-200 p-3">
+              <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-3">
                 <div className="flex items-center">
                   <div className="h-9 w-9 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className={`flex-1 min-w-0 ml-3 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                   </div>
                 </div>
               </div>
@@ -809,7 +877,7 @@ const BookingPage = () => {
         {/* Main content with sidebar offset */}
         <div className={`flex flex-col min-h-screen transition-[padding] duration-200 ease-out ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-52'}`}>
           {/* Top navigation bar */}
-          <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
             <div className="w-full px-4">
               <div className="flex items-center h-14">
                 {/* Establishment info */}
@@ -821,8 +889,8 @@ const BookingPage = () => {
                     </div>
                   </div>
                   <div>
-                    <h1 className="font-semibold text-gray-900 text-sm">{establishment.name}</h1>
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <h1 className="font-semibold text-gray-900 dark:text-white text-sm">{establishment.name}</h1>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                       <Star className="w-3 h-3 text-amber-400 fill-current" />
                       <span>{establishment.rating || '4.5'}</span>
                     </div>
@@ -831,7 +899,7 @@ const BookingPage = () => {
 
                 {/* Center: Progress Steps */}
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="flex items-center bg-gray-100 rounded-2xl p-1">
+                  <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-2xl p-1">
                     {stepTitles.map((title, idx) => {
                       const isCompleted = idx + 1 < currentStep;
                       const isCurrent = idx + 1 === currentStep;
@@ -841,17 +909,17 @@ const BookingPage = () => {
                             onClick={() => isCompleted && setCurrentStep(idx + 1)}
                             disabled={!isCompleted && !isCurrent}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                              isCurrent ? 'bg-white text-emerald-600 shadow-sm' : isCompleted ? 'text-emerald-600 hover:bg-white/50 cursor-pointer' : 'text-gray-400'
+                              isCurrent ? 'bg-white dark:bg-gray-600 text-emerald-600 dark:text-emerald-400 shadow-sm' : isCompleted ? 'text-emerald-600 dark:text-emerald-400 hover:bg-white/50 dark:hover:bg-gray-600/50 cursor-pointer' : 'text-gray-400'
                             }`}
                           >
                             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                              isCompleted || isCurrent ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'
+                              isCompleted || isCurrent ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-500 text-white'
                             }`}>
                               {isCompleted ? <Check className="w-3 h-3" /> : idx + 1}
                             </span>
                             <span>{title}</span>
                           </button>
-                          {idx < 3 && <div className={`w-4 h-0.5 mx-0.5 rounded ${isCompleted ? 'bg-emerald-400' : 'bg-gray-300'}`} />}
+                          {idx < 3 && <div className={`w-4 h-0.5 mx-0.5 rounded ${isCompleted ? 'bg-emerald-400' : 'bg-gray-300 dark:bg-gray-500'}`} />}
                         </div>
                       );
                     })}
@@ -860,12 +928,12 @@ const BookingPage = () => {
 
                 {/* Right: Step title + Actions */}
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">{stepTitles[currentStep - 1]}</span>
-                  <div className="h-4 w-px bg-gray-200" />
-                  <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2 rounded-lg transition-all ${isFavorite ? 'bg-red-50 text-red-500' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100'}`}>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{stepTitles[currentStep - 1]}</span>
+                  <div className="h-4 w-px bg-gray-200 dark:bg-gray-600" />
+                  <button onClick={() => setIsFavorite(!isFavorite)} className={`p-2 rounded-lg transition-all ${isFavorite ? 'bg-red-50 dark:bg-red-500/20 text-red-500' : 'text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                     <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
                   </button>
-                  <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                  <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>

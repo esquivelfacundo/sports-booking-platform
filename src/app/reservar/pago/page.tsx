@@ -290,11 +290,11 @@ function PaymentPageContent() {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Payment Section */}
+          {/* Payment Section - order-last on mobile so it appears after booking summary */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-gray-900 rounded-2xl p-6 border border-gray-800"
+            className="bg-gray-900 rounded-2xl p-6 border border-gray-800 order-last lg:order-first"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
