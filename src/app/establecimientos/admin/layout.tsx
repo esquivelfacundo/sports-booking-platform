@@ -69,11 +69,21 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   // Check if user is staff (has isStaff flag)
   const isStaff = user?.isStaff === true;
 
-  // Authentication guard and staff redirect
+  // Check if user is a player (not allowed in establishment admin)
+  const isPlayerOnly = user?.userType === 'player' && !user?.isStaff;
+
+  // Authentication guard and role-based redirect
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       console.log('AdminLayout: User not authenticated, redirecting to login');
       router.push('/establecimientos/login');
+      return;
+    }
+
+    // Redirect player users to 404 - they shouldn't access establishment routes
+    if (!isLoading && isAuthenticated && isPlayerOnly) {
+      console.log('AdminLayout: Player user trying to access establishment admin, redirecting to 404');
+      router.push('/404');
       return;
     }
 
@@ -87,7 +97,7 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
         router.push('/establecimientos/admin/reservas');
       }
     }
-  }, [isAuthenticated, isLoading, router, isStaffOnly, pathname]);
+  }, [isAuthenticated, isLoading, router, isStaffOnly, isPlayerOnly, pathname]);
 
   // Check if user has PIN configured
   useEffect(() => {
