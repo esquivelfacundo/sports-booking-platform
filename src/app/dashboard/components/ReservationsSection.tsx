@@ -129,79 +129,136 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+      {/* Header - Mobile optimized */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
           Mis Reservas
         </h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
+        
+        {/* Search bar - Full width on mobile */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+          <div className="relative flex-1">
             <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
               placeholder="Buscar reservas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+              className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
             />
           </div>
           <button
             onClick={() => setFilterOpen(!filterOpen)}
-            className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+            className="flex items-center justify-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors shadow-sm sm:w-auto"
           >
             <Filter className="w-4 h-4" />
             <span>Filtros</span>
             <ChevronDown className="w-4 h-4" />
           </button>
         </div>
+        
+        {/* Tabs - Only visible on mobile (hidden on desktop as they're in topbar) */}
+        <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setInternalActiveTab(tab.id)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <span className="font-medium">{tab.name}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                activeTab === tab.id ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-600'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total Reservas</p>
+      {/* Stats Cards - Horizontal scroll on mobile, grid on desktop */}
+      <div className="mb-8">
+        <div className="flex lg:grid lg:grid-cols-5 gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-w-[160px] snap-start flex-shrink-0"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <Calendar className="w-6 h-6 text-emerald-400" />
+              </div>
+              <p className="text-gray-500 text-xs mb-1">Total Reservas</p>
               <p className="text-2xl font-bold text-gray-900">
-                {reservations.upcoming.length + reservations.past.length + reservations.cancelled.length}
+                {reservations.upcoming.length + reservations.past.length + reservations.cancelled.length + reservations.noShow.length}
               </p>
             </div>
-            <Calendar className="w-8 h-8 text-emerald-400" />
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Próximas</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-w-[160px] snap-start flex-shrink-0"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <Clock className="w-6 h-6 text-blue-400" />
+              </div>
+              <p className="text-gray-500 text-xs mb-1">Próximas</p>
               <p className="text-2xl font-bold text-gray-900">{reservations.upcoming.length}</p>
             </div>
-            <Clock className="w-8 h-8 text-blue-400" />
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Completadas</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-w-[160px] snap-start flex-shrink-0"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <Trophy className="w-6 h-6 text-purple-400" />
+              </div>
+              <p className="text-gray-500 text-xs mb-1">Completadas</p>
               <p className="text-2xl font-bold text-gray-900">{reservations.past.length}</p>
             </div>
-            <Trophy className="w-8 h-8 text-purple-400" />
-          </div>
-        </motion.div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-w-[160px] snap-start flex-shrink-0"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <XCircle className="w-6 h-6 text-red-400" />
+              </div>
+              <p className="text-gray-500 text-xs mb-1">Canceladas</p>
+              <p className="text-2xl font-bold text-gray-900">{reservations.cancelled.length}</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-w-[160px] snap-start flex-shrink-0"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <AlertCircle className="w-6 h-6 text-orange-400" />
+              </div>
+              <p className="text-gray-500 text-xs mb-1">No asistidas</p>
+              <p className="text-2xl font-bold text-gray-900">{reservations.noShow.length}</p>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       {/* Reservations List */}
@@ -213,89 +270,107 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-gray-300 hover:shadow-md transition-all"
+              className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 hover:border-gray-300 hover:shadow-md transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{reservation.facility}</h3>
-                    <span className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${getStatusColor(reservation.status)}`}>
-                      {getStatusIcon(reservation.status)}
-                      <span>{getStatusText(reservation.status)}</span>
-                    </span>
-                  </div>
-                  <p className="text-gray-500 mb-2">{reservation.court}</p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <div className="flex items-center space-x-1">
-                      <Trophy className="w-4 h-4" />
-                      <span>{reservation.sport}</span>
-                    </div>
-                    {reservation.location && (
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="w-4 h-4" />
-                        <span>{reservation.location}</span>
-                      </div>
-                    )}
-                  </div>
+              {/* Nombre del establecimiento */}
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{reservation.facility}</h3>
+              
+              {/* Cancha - Deporte - Ubicación */}
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-2">
+                <span className="font-medium">{reservation.court}</span>
+                <span className="text-gray-400">•</span>
+                <div className="flex items-center gap-1">
+                  <Trophy className="w-4 h-4" />
+                  <span>{reservation.sport}</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-emerald-600 mb-1">{reservation.price}</p>
-                  <p className="text-sm text-gray-500">{reservation.duration}</p>
+                {reservation.location && (
+                  <>
+                    <span className="text-gray-400">•</span>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      <span>{reservation.location}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {/* Estado - Monto - Duración */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${getStatusColor(reservation.status)}`}>
+                  {getStatusIcon(reservation.status)}
+                  <span>{getStatusText(reservation.status)}</span>
+                </span>
+                <span className="text-emerald-600 font-bold text-lg">{reservation.price}</span>
+                <span className="text-gray-500 text-sm">{reservation.duration}</span>
+              </div>
+              
+              {/* Divider */}
+              <div className="border-t border-gray-200 my-4"></div>
+              
+              {/* Fecha - Hora */}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>{reservation.date}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  <span>{reservation.time}</span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>{reservation.date}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{reservation.time}</span>
-                  </div>
+              {/* Botones de acción */}
+              {activeTab === 'upcoming' && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Link
+                    href={`/reservar/confirmacion/${reservation.id}`}
+                    className="flex items-center justify-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    Ver QR
+                  </Link>
+                  <button 
+                    onClick={async () => {
+                      if (confirm('¿Estás seguro de que quieres cancelar esta reserva?')) {
+                        await cancelBooking(reservation.id);
+                      }
+                    }}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    Cancelar
+                  </button>
                 </div>
-                
-                {activeTab === 'upcoming' && (
-                  <div className="flex space-x-2">
-                    <Link
-                      href={`/reservar/confirmacion/${reservation.id}`}
-                      className="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm"
-                    >
-                      <QrCode className="w-4 h-4" />
-                      Ver QR
-                    </Link>
-                    <button 
-                      onClick={async () => {
-                        if (confirm('¿Estás seguro de que quieres cancelar esta reserva?')) {
-                          await cancelBooking(reservation.id);
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                )}
-                
-                {activeTab === 'past' && (
-                  <div className="flex space-x-2">
-                    <Link
-                      href={`/reservar/confirmacion/${reservation.id}`}
-                      className="flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Ver detalle
-                    </Link>
-                    <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm">
-                      Reservar de nuevo
-                    </button>
-                    <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm">
-                      Calificar
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
+              
+              {activeTab === 'past' && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Link
+                    href={`/reservar/confirmacion/${reservation.id}`}
+                    className="flex items-center justify-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Ver detalle
+                  </Link>
+                  <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm font-medium">
+                    Reservar de nuevo
+                  </button>
+                  <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium">
+                    Calificar
+                  </button>
+                </div>
+              )}
+              
+              {(activeTab === 'cancelled' || activeTab === 'noShow') && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Link
+                    href={`/reservar/confirmacion/${reservation.id}`}
+                    className="flex items-center justify-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Ver detalle
+                  </Link>
+                </div>
+              )}
             </motion.div>
           ))
         ) : (
