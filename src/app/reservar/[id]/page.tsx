@@ -421,6 +421,7 @@ const BookingPage = () => {
   const images = getImages();
   const mainImage = images[0] || '/assets/default-card.png';
 
+  // Show loader while loading
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
@@ -429,7 +430,8 @@ const BookingPage = () => {
     );
   }
 
-  if (error || !establishment) {
+  // Only show error if loading is complete and there's an error
+  if (!loading && (error || !establishment)) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
         <div className="text-center max-w-md">
@@ -453,32 +455,6 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      {/* Secondary Header - Below main navbar */}
-      <div className="sticky top-16 z-40 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
-              <h1 className="text-white font-medium truncate max-w-xs">{establishment.name}</h1>
-              <div className="flex items-center gap-1 text-emerald-400">
-                <Star className="w-4 h-4 fill-current" />
-                <span className="text-sm">{establishment.rating || '4.5'}</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setIsFavorite(!isFavorite)}
-                className={`p-2 rounded-full transition-all ${isFavorite ? 'bg-red-500/20 text-red-500' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
-              >
-                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-              </button>
-              <button className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors">
-                <Share2 className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Hero Section */}
       <section>
@@ -521,7 +497,7 @@ const BookingPage = () => {
                   className="bg-gray-900/90 backdrop-blur-xl rounded-2xl p-5 border border-gray-700 flex-1 lg:max-w-md"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="flex-1">
                       <h1 className="text-xl md:text-2xl font-bold text-white mb-1">{establishment.name}</h1>
                       <div className="flex items-center gap-3 text-sm">
                         <div className="flex items-center gap-1 text-emerald-400">
@@ -531,18 +507,35 @@ const BookingPage = () => {
                         <span className="text-gray-400">({establishment.reviewCount || 0} reseñas)</span>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setIsFavorite(!isFavorite)}
+                        className={`p-2 rounded-full transition-all ${isFavorite ? 'bg-red-500/20 text-red-500' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                        title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                      >
+                        <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                      </button>
+                      <button 
+                        className="p-2 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                        title="Compartir"
+                      >
+                        <Share2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between gap-4 mt-3">
+                    <div className="flex items-center gap-2 text-gray-400 flex-1 min-w-0">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm truncate">{establishment.address}, {establishment.city}</span>
+                    </div>
+                    <div className="text-right flex-shrink-0">
                       <div className="text-xs text-gray-400">desde</div>
                       <div className="text-xl font-bold text-white">
                         ${establishment.courts?.[0]?.pricePerHour || 2500}
                         <span className="text-xs font-normal text-gray-400">/hr</span>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 mt-3 text-gray-400">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm truncate">{establishment.address}, {establishment.city}</span>
                   </div>
                 </motion.div>
 
