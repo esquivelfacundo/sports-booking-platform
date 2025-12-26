@@ -585,8 +585,9 @@ const DashboardContent = () => {
                     <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
                       {[
                         { id: 'upcoming', label: 'Próximas' },
-                        { id: 'past', label: 'Pasadas' },
+                        { id: 'past', label: 'Completadas' },
                         { id: 'cancelled', label: 'Canceladas' },
+                        { id: 'noShow', label: 'No asistidas' },
                       ].map((tab) => (
                         <button
                           key={tab.id}
