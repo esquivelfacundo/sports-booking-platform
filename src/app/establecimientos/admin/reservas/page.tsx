@@ -39,8 +39,10 @@ import {
   MessageSquare,
   Save,
   X,
-  CalendarX
+  CalendarX,
+  RepeatIcon
 } from 'lucide-react';
+import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
 import { apiClient } from '@/lib/api';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
@@ -899,6 +901,15 @@ const ReservationsPage = () => {
       >
         <RefreshCw className="h-4 w-4" />
       </button>
+
+      {/* Turnos Fijos Button */}
+      <Link 
+        href="/establecimientos/admin/turnos-fijos"
+        className="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+      >
+        <RepeatIcon className="h-4 w-4" />
+        <span className="hidden sm:inline">Turnos Fijos</span>
+      </Link>
 
       {/* New Reservation Button */}
       <button 

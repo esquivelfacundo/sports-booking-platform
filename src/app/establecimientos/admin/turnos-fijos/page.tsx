@@ -1,0 +1,842 @@
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { useEstablishmentAdminContext } from '@/contexts/EstablishmentAdminContext';
+import { apiClient } from '@/lib/api';
+import { useToast } from '@/contexts/ToastContext';
+import { 
+  RepeatIcon, 
+  Plus, 
+  Search, 
+  Filter,
+  Calendar,
+  Clock,
+  User,
+  Phone,
+  DollarSign,
+  ChevronRight,
+  Trash2,
+  Edit,
+  Eye,
+  X,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Pause,
+  Play,
+  MoreVertical,
+  CalendarDays,
+  MapPin,
+  Hash,
+  CreditCard,
+  ArrowRight,
+  RefreshCw
+} from 'lucide-react';
+import Link from 'next/link';
+
+interface RecurringGroup {
+  id: string;
+  establishmentId: string;
+  clientId: string;
+  clientName: string;
+  courtId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  sport: string;
+  totalWeeks: number;
+  completedOccurrences: number;
+  cancelledOccurrences: number;
+  pricePerBooking: string;
+  totalPrice: string;
+  status: 'active' | 'paused' | 'cancelled' | 'completed';
+  paymentStatus: 'pending' | 'partial' | 'paid';
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  primaryCourt?: {
+    id: string;
+    name: string;
+    sport: string;
+  };
+  client?: {
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+  };
+  createdByUser?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+interface RecurringBooking {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  recurringSequence: number;
+  recurringPaymentStatus: string;
+  court?: {
+    id: string;
+    name: string;
+  };
+  payments?: any[];
+}
+
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+export default function TurnosFijosPage() {
+  const { establishment } = useEstablishment();
+  const { courts, refreshAll } = useEstablishmentAdminContext();
+  const { showSuccess, showError } = useToast();
+
+  const [loading, setLoading] = useState(true);
+  const [groups, setGroups] = useState<RecurringGroup[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<RecurringGroup | null>(null);
+  const [groupBookings, setGroupBookings] = useState<RecurringBooking[]>([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'cancelled' | 'completed'>('all');
+  const [courtFilter, setCourtFilter] = useState<string>('all');
+  
+  // Modals
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelType, setCancelType] = useState<'single' | 'from_date' | 'all_pending'>('single');
+  const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<RecurringBooking | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+
+  // Fetch recurring groups
+  useEffect(() => {
+    if (establishment?.id) {
+      fetchGroups();
+    }
+  }, [establishment?.id, statusFilter]);
+
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('auth_token');
+      const url = statusFilter === 'all' 
+        ? `${API_URL}/api/recurring-bookings?establishmentId=${establishment?.id}`
+        : `${API_URL}/api/recurring-bookings?establishmentId=${establishment?.id}&status=${statusFilter}`;
+      
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setGroups(data.groups || []);
+      }
+    } catch (error) {
+      console.error('Error fetching recurring groups:', error);
+      showError('Error al cargar los turnos fijos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch group details with bookings
+  const fetchGroupDetails = async (groupId: string) => {
+    try {
+      setLoadingBookings(true);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_URL}/api/recurring-bookings/${groupId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setGroupBookings(data.bookings || []);
+      }
+    } catch (error) {
+      console.error('Error fetching group details:', error);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  // Handle cancel recurring
+  const handleCancelRecurring = async () => {
+    if (!selectedGroup) return;
+    
+    setIsCancelling(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const body: any = {
+        cancelType: cancelType,
+        reason: cancelReason
+      };
+      
+      if (cancelType === 'single' && selectedBookingForCancel) {
+        body.bookingId = selectedBookingForCancel.id;
+      } else if (cancelType === 'from_date' && selectedBookingForCancel) {
+        body.bookingId = selectedBookingForCancel.id;
+        body.fromDate = selectedBookingForCancel.date;
+      }
+      
+      const response = await fetch(`${API_URL}/api/recurring-bookings/${selectedGroup.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showSuccess(data.message || 'Turnos cancelados exitosamente');
+        setShowCancelModal(false);
+        setCancelReason('');
+        setSelectedBookingForCancel(null);
+        
+        // Refresh data
+        await fetchGroups();
+        if (selectedGroup) {
+          await fetchGroupDetails(selectedGroup.id);
+        }
+        refreshAll();
+      } else {
+        throw new Error(data.error || 'Error al cancelar');
+      }
+    } catch (error: any) {
+      console.error('Error cancelling:', error);
+      showError(error.message || 'Error al cancelar los turnos');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Filter groups
+  const filteredGroups = useMemo(() => {
+    let filtered = [...groups];
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(g => 
+        g.clientName?.toLowerCase().includes(query) ||
+        g.client?.name?.toLowerCase().includes(query) ||
+        g.client?.phone?.includes(query) ||
+        g.primaryCourt?.name?.toLowerCase().includes(query)
+      );
+    }
+    
+    if (courtFilter !== 'all') {
+      filtered = filtered.filter(g => g.courtId === courtFilter);
+    }
+    
+    return filtered;
+  }, [groups, searchQuery, courtFilter]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const active = groups.filter(g => g.status === 'active').length;
+    const paused = groups.filter(g => g.status === 'paused').length;
+    const totalRevenue = groups.reduce((sum, g) => sum + parseFloat(g.totalPrice || '0'), 0);
+    const pendingPayments = groups.filter(g => g.paymentStatus !== 'paid').length;
+    return { active, paused, totalRevenue, pendingPayments };
+  }, [groups]);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <span className="px-2 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-400">Activo</span>;
+      case 'paused':
+        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400">Pausado</span>;
+      case 'cancelled':
+        return <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">Cancelado</span>;
+      case 'completed':
+        return <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">Completado</span>;
+      default:
+        return <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">{status}</span>;
+    }
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <span className="px-2 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-400">Pagado</span>;
+      case 'partial':
+        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-400">Parcial</span>;
+      case 'pending':
+        return <span className="px-2 py-1 text-xs rounded-full bg-orange-500/20 text-orange-400">Pendiente</span>;
+      default:
+        return null;
+    }
+  };
+
+  const formatCurrency = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0
+    }).format(num);
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('es-AR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (time: string) => {
+    return time?.substring(0, 5) || '';
+  };
+
+  const openGroupDetails = async (group: RecurringGroup) => {
+    setSelectedGroup(group);
+    setShowDetailsModal(true);
+    await fetchGroupDetails(group.id);
+  };
+
+  const openCancelModal = (group: RecurringGroup, booking?: RecurringBooking) => {
+    setSelectedGroup(group);
+    setSelectedBookingForCancel(booking || null);
+    setCancelType(booking ? 'single' : 'all_pending');
+    setShowCancelModal(true);
+  };
+
+  if (loading && groups.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <RepeatIcon className="w-7 h-7 text-purple-500" />
+            Turnos Fijos
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Gestiona las reservas recurrentes de tus clientes
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchGroups}
+            className="p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title="Actualizar"
+          >
+            <RefreshCw className="w-5 h-5 text-gray-500" />
+          </button>
+          <Link
+            href="/establecimientos/admin/reservas"
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="hidden sm:inline">Nuevo Turno Fijo</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.active}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Activos</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-yellow-500/10 rounded-lg flex items-center justify-center">
+              <Pause className="w-5 h-5 text-yellow-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.paused}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Pausados</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-purple-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Valor total</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pendingPayments}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Pagos pendientes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por cliente, teléfono o cancha..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white"
+          />
+        </div>
+        
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white"
+        >
+          <option value="all">Todos los estados</option>
+          <option value="active">Activos</option>
+          <option value="paused">Pausados</option>
+          <option value="cancelled">Cancelados</option>
+          <option value="completed">Completados</option>
+        </select>
+        
+        <select
+          value={courtFilter}
+          onChange={(e) => setCourtFilter(e.target.value)}
+          className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white"
+        >
+          <option value="all">Todas las canchas</option>
+          {courts.map(court => (
+            <option key={court.id} value={court.id}>{court.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Groups List */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {filteredGroups.length === 0 ? (
+          <div className="p-8 text-center">
+            <RepeatIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400 mb-2">No hay turnos fijos</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              Los turnos fijos se crean desde la grilla de reservas
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredGroups.map((group) => (
+              <div 
+                key={group.id} 
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  {/* Main Info */}
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <RepeatIcon className="w-6 h-6 text-purple-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {group.client?.name || group.clientName || 'Sin cliente'}
+                        </span>
+                        {getStatusBadge(group.status)}
+                        {getPaymentStatusBadge(group.paymentStatus)}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {group.primaryCourt?.name || 'Sin cancha'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {DAY_NAMES[group.dayOfWeek]}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {formatTime(group.startTime)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress */}
+                  <div className="hidden md:block text-center px-4">
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {group.completedOccurrences}/{group.totalWeeks}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Turnos</p>
+                  </div>
+
+                  {/* Price */}
+                  <div className="hidden md:block text-center px-4">
+                    <p className="text-lg font-bold text-emerald-500">
+                      {formatCurrency(group.pricePerBooking)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Por turno</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openGroupDetails(group)}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Ver detalles"
+                    >
+                      <Eye className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                    </button>
+                    {group.status === 'active' && (
+                      <button
+                        onClick={() => openCancelModal(group)}
+                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        title="Cancelar"
+                      >
+                        <Trash2 className="w-5 h-5 text-red-400 hover:text-red-500" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Details Modal */}
+      <AnimatePresence>
+        {showDetailsModal && selectedGroup && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                      <RepeatIcon className="w-6 h-6 text-purple-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        Turno Fijo - {selectedGroup.client?.name || selectedGroup.clientName}
+                      </h2>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {selectedGroup.primaryCourt?.name} • {DAY_NAMES[selectedGroup.dayOfWeek]} {formatTime(selectedGroup.startTime)}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{selectedGroup.totalWeeks}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total turnos</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-emerald-500">{selectedGroup.completedOccurrences}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completados</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-red-400">{selectedGroup.cancelledOccurrences}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancelados</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
+                    <p className="text-2xl font-bold text-purple-500">{formatCurrency(selectedGroup.totalPrice)}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Valor total</p>
+                  </div>
+                </div>
+
+                {/* Client Info */}
+                {selectedGroup.client && (
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Cliente</h3>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
+                        <User className="w-6 h-6 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{selectedGroup.client.name}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                          {selectedGroup.client.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3.5 h-3.5" />
+                              {selectedGroup.client.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bookings List */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Turnos ({groupBookings.length})
+                  </h3>
+                  {loadingBookings ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {groupBookings.map((booking) => {
+                        const isPast = new Date(booking.date) < new Date(new Date().toDateString());
+                        const isCancelled = booking.status === 'cancelled';
+                        
+                        return (
+                          <div 
+                            key={booking.id}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              isCancelled 
+                                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                                : isPast 
+                                  ? 'bg-gray-50 dark:bg-gray-700/30 border-gray-200 dark:border-gray-700' 
+                                  : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-mono text-gray-400">#{booking.recurringSequence}</span>
+                              <span className={`font-medium ${isCancelled ? 'text-red-500 line-through' : 'text-gray-900 dark:text-white'}`}>
+                                {formatDate(booking.date)}
+                              </span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isCancelled ? (
+                                <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">Cancelado</span>
+                              ) : isPast ? (
+                                <span className="px-2 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-400">Completado</span>
+                              ) : (
+                                <>
+                                  <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">Próximo</span>
+                                  <button
+                                    onClick={() => openCancelModal(selectedGroup, booking)}
+                                    className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                                    title="Cancelar este turno"
+                                  >
+                                    <XCircle className="w-4 h-4 text-red-400" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                >
+                  Cerrar
+                </button>
+                {selectedGroup.status === 'active' && (
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      openCancelModal(selectedGroup);
+                    }}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Cancelar turno fijo
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Cancel Modal */}
+      <AnimatePresence>
+        {showCancelModal && selectedGroup && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 space-y-6"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Cancelar Turno Fijo
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {selectedGroup.client?.name || selectedGroup.clientName}
+                  </p>
+                </div>
+              </div>
+
+              {/* Cancel Type Selection */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  ¿Qué deseas cancelar?
+                </label>
+                
+                {selectedBookingForCancel && (
+                  <button
+                    onClick={() => setCancelType('single')}
+                    className={`w-full p-4 rounded-xl border text-left transition-colors ${
+                      cancelType === 'single'
+                        ? 'border-red-500 bg-red-500/10'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded-full border-2 ${cancelType === 'single' ? 'border-red-500 bg-red-500' : 'border-gray-400'}`} />
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">Solo este turno</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatDate(selectedBookingForCancel.date)} - {formatTime(selectedBookingForCancel.startTime)}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+                
+                <button
+                  onClick={() => setCancelType('from_date')}
+                  className={`w-full p-4 rounded-xl border text-left transition-colors ${
+                    cancelType === 'from_date'
+                      ? 'border-red-500 bg-red-500/10'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full border-2 ${cancelType === 'from_date' ? 'border-red-500 bg-red-500' : 'border-gray-400'}`} />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Este y todos los siguientes</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Cancela desde {selectedBookingForCancel ? formatDate(selectedBookingForCancel.date) : 'hoy'} en adelante
+                      </p>
+                    </div>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => setCancelType('all_pending')}
+                  className={`w-full p-4 rounded-xl border text-left transition-colors ${
+                    cancelType === 'all_pending'
+                      ? 'border-red-500 bg-red-500/10'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full border-2 ${cancelType === 'all_pending' ? 'border-red-500 bg-red-500' : 'border-gray-400'}`} />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Todos los turnos pendientes</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Cancela todos los turnos futuros de este turno fijo
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
+                  Motivo (opcional)
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Ej: Cambio de horario, viaje, etc..."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-red-500 resize-none"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelReason('');
+                    setSelectedBookingForCancel(null);
+                  }}
+                  disabled={isCancelling}
+                  className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                >
+                  Volver
+                </button>
+                <button
+                  onClick={handleCancelRecurring}
+                  disabled={isCancelling}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {isCancelling ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Cancelando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Confirmar
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
