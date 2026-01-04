@@ -171,22 +171,24 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   const handleToggleOpen = async () => {
     if (!establishment || isTogglingOpen) return;
     
-    const newStatus = !establishment.isOpen;
+    const newStatus = establishment.isOpen === false ? true : false;
     const actionText = newStatus ? 'abrir' : 'cerrar';
     
-    requestPin(async () => {
-      setIsTogglingOpen(true);
-      try {
-        await updateEstablishment({ isOpen: newStatus });
-      } catch (error) {
-        console.error('Error toggling establishment status:', error);
-      } finally {
-        setIsTogglingOpen(false);
-      }
-    }, { 
-      title: `${newStatus ? 'Abrir' : 'Cerrar'} establecimiento`, 
-      description: `Ingresa tu PIN para ${actionText} el establecimiento` 
-    });
+    // Confirm action
+    if (!confirm(`¿Estás seguro que deseas ${actionText} el establecimiento?`)) {
+      return;
+    }
+    
+    setIsTogglingOpen(true);
+    try {
+      await updateEstablishment({ isOpen: newStatus });
+      console.log('Establishment status updated to:', newStatus);
+    } catch (error) {
+      console.error('Error toggling establishment status:', error);
+      alert('Error al cambiar el estado del establecimiento');
+    } finally {
+      setIsTogglingOpen(false);
+    }
   };
 
   // Sidebar collapsed state - collapsed by default
