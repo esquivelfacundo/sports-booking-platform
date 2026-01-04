@@ -30,6 +30,7 @@ interface TimeSlot {
 
 interface Facility {
   id: string;
+  slug?: string;
   name: string;
   sport: string;
   location: string;
@@ -96,6 +97,7 @@ const SearchContent = () => {
     if (establishments.length > 0) {
       const convertedFacilities = establishments.map(est => ({
         id: est.id,
+        slug: est.slug,
         name: est.name,
         sport: est.sports[0] === 'futbol5' ? 'Fútbol 5' :
                est.sports[0] === 'paddle' ? 'Padel' :

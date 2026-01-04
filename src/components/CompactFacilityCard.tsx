@@ -14,6 +14,7 @@ interface TimeSlot {
 
 interface Facility {
   id: string;
+  slug?: string;
   name: string;
   sport: string;
   location: string;
@@ -196,7 +197,7 @@ const CompactFacilityCard = ({ facility, onReserve, onTimeSlotSelect, onLoginReq
         {/* Reservar Button */}
         <button 
           onClick={() => {
-            window.location.href = `/reservar/${facility.id}`;
+            window.location.href = `/reservar/${facility.slug || facility.id}`;
           }}
           className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2.5 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl"
         >

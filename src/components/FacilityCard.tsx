@@ -23,6 +23,7 @@ interface Court {
 interface FacilityCardProps {
   facility: {
     id: string;
+    slug?: string;
     name: string;
     sport: string;
     location: string;
@@ -226,7 +227,7 @@ const FacilityCard = ({ facility, onReserve, onBookingClick, onTimeSlotSelect, o
           {/* Reservar Button */}
           <button 
             onClick={() => {
-              window.location.href = `/reservar/${facility.id}`;
+              window.location.href = `/reservar/${facility.slug || facility.id}`;
             }}
             className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-3 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 font-semibold text-base shadow-lg hover:shadow-xl"
           >
