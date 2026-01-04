@@ -44,7 +44,8 @@ import {
   Bell,
   Lock,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
