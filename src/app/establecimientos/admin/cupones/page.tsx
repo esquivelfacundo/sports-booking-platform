@@ -56,6 +56,8 @@ interface CouponStats {
   topCoupons: Array<{ id: string; code: string; name: string; usageCount: number }>;
 }
 
+const UNLOCK_THRESHOLD = 2000; // Reservas necesarias para desbloquear
+
 export default function CuponesPage() {
   const { establishment } = useEstablishment();
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ export default function CuponesPage() {
   const [stats, setStats] = useState<CouponStats | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
+  const [totalBookings, setTotalBookings] = useState(0);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,8 +77,29 @@ export default function CuponesPage() {
     if (establishment?.id) {
       fetchCoupons();
       fetchStats();
+      fetchTotalBookings();
     }
   }, [establishment?.id, statusFilter]);
+
+  const fetchTotalBookings = async () => {
+    if (!establishment?.id) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(
+        `${API_URL}/api/bookings/establishment/${establishment.id}/count`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setTotalBookings(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching total bookings:', error);
+    }
+  };
 
   const fetchCoupons = async () => {
     try {
@@ -223,8 +247,46 @@ export default function CuponesPage() {
     return { label: 'Activo', color: 'text-emerald-400 bg-emerald-400/10' };
   };
 
+  const isUnlocked = totalBookings >= UNLOCK_THRESHOLD;
+  const progress = Math.min((totalBookings / UNLOCK_THRESHOLD) * 100, 100);
+
   return (
     <div className="p-6 space-y-6">
+      {/* Unlock Banner */}
+      {!isUnlocked && (
+        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-700 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Ticket className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Desbloquea el Sistema de Cupones
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Alcanza {UNLOCK_THRESHOLD.toLocaleString()} reservas para activar cupones de descuento y promociones.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Progreso: {totalBookings.toLocaleString()} / {UNLOCK_THRESHOLD.toLocaleString()} reservas
+                  </span>
+                  <span className="font-semibold text-purple-600 dark:text-purple-400">
+                    {progress.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                  <div 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-2.5 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -233,7 +295,12 @@ export default function CuponesPage() {
         </div>
         <button
           onClick={openCreateSidebar}
-          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl transition-colors"
+          disabled={!isUnlocked}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-colors ${
+            isUnlocked
+              ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+              : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+          }`}
         >
           <Plus className="w-5 h-5" />
           Nuevo Cupón
