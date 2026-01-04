@@ -165,6 +165,9 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   
+  // Current time indicator state (only for today)
+  const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null);
+  
   // Detect mobile screen
   useEffect(() => {
     const checkMobile = () => {
@@ -174,6 +177,48 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+  
+  // Calculate current time position (only for today)
+  useEffect(() => {
+    const updateCurrentTimePosition = () => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const selectedDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      
+      // Only show indicator if selected date is today
+      if (selectedDay.getTime() !== today.getTime()) {
+        setCurrentTimePosition(null);
+        return;
+      }
+      
+      // Calculate position based on current time
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTotalMinutes = currentHours * 60 + currentMinutes;
+      const startTotalMinutes = startHour * 60;
+      
+      // Only show if current time is within grid range
+      if (currentTotalMinutes < startTotalMinutes || currentTotalMinutes >= endHour * 60) {
+        setCurrentTimePosition(null);
+        return;
+      }
+      
+      // Calculate position: each slot is 30 minutes and 33px (slotHeight)
+      const minutesFromStart = currentTotalMinutes - startTotalMinutes;
+      const slotHeight = 33;
+      const position = (minutesFromStart / 30) * slotHeight;
+      
+      setCurrentTimePosition(position);
+    };
+    
+    // Update immediately
+    updateCurrentTimePosition();
+    
+    // Update every minute
+    const interval = setInterval(updateCurrentTimePosition, 60000);
+    
+    return () => clearInterval(interval);
+  }, [selectedDate, startHour, endHour]);
   
   // Handle swipe gestures
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -660,6 +705,21 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                   })}
                 </div>
               ))}
+
+              {/* Current time indicator - red line for today */}
+              {currentTimePosition !== null && (
+                <div
+                  className="absolute left-0 right-0 z-20 pointer-events-none"
+                  style={{ top: `${currentTimePosition}px` }}
+                >
+                  <div className="relative">
+                    {/* Red circle on the left */}
+                    <div className="absolute -left-1 -top-1.5 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 shadow-lg" />
+                    {/* Red line across the grid */}
+                    <div className="h-0.5 bg-red-500 shadow-lg" />
+                  </div>
+                </div>
+              )}
 
               {/* Booking overlays - positioned absolutely */}
               {isMobile ? (
