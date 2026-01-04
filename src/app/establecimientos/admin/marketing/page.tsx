@@ -22,7 +22,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-const UNLOCK_THRESHOLD = 200; // Reservas necesarias para desbloquear
+const UNLOCK_THRESHOLD = 2000; // Reservas necesarias para desbloquear
 
 const MarketingPage = () => {
   const { establishment, loading } = useEstablishment();

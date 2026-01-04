@@ -72,7 +72,7 @@ const AdminDashboard = () => {
   const loading = establishmentLoading || adminLoading || statsLoading;
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
-  const UNLOCK_THRESHOLD = 200;
+  const UNLOCK_THRESHOLD = 2000;
 
   // Load today's reservations when establishment is available
   useEffect(() => {
