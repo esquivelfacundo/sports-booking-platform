@@ -26,7 +26,8 @@ import {
   Plug,
   Star,
   Megaphone,
-  Ticket
+  Ticket,
+  Power
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -48,8 +49,9 @@ interface AdminLayoutProps {
 }
 
 const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
-  const { establishment } = useEstablishment();
+  const { establishment, updateEstablishment } = useEstablishment();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const [isTogglingOpen, setIsTogglingOpen] = useState(false);
   const { notifications, stats, markNotificationRead } = useEstablishmentAdminContext();
   const { requestPin, PinModal } = usePinConfirmation();
   const { theme } = useTheme();
@@ -163,6 +165,28 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
     requestPin(() => {
       router.push('/establecimientos/admin/configuracion');
     }, { title: 'Acceder a configuración', description: 'Ingresa tu PIN para continuar' });
+  };
+
+  // Toggle establishment open/closed status
+  const handleToggleOpen = async () => {
+    if (!establishment || isTogglingOpen) return;
+    
+    const newStatus = !establishment.isOpen;
+    const actionText = newStatus ? 'abrir' : 'cerrar';
+    
+    requestPin(async () => {
+      setIsTogglingOpen(true);
+      try {
+        await updateEstablishment({ isOpen: newStatus });
+      } catch (error) {
+        console.error('Error toggling establishment status:', error);
+      } finally {
+        setIsTogglingOpen(false);
+      }
+    }, { 
+      title: `${newStatus ? 'Abrir' : 'Cerrar'} establecimiento`, 
+      description: `Ingresa tu PIN para ${actionText} el establecimiento` 
+    });
   };
 
   // Sidebar collapsed state - collapsed by default
@@ -649,6 +673,23 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
 
               {/* Right side actions - always visible */}
               <div className="flex items-center space-x-1 ml-4">
+                {/* Open/Close Toggle */}
+                <button
+                  onClick={handleToggleOpen}
+                  disabled={isTogglingOpen}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                    establishment?.isOpen !== false
+                      ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/30'
+                      : 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30'
+                  }`}
+                  title={establishment?.isOpen !== false ? 'Establecimiento abierto - Click para cerrar' : 'Establecimiento cerrado - Click para abrir'}
+                >
+                  <Power className={`h-4 w-4 ${isTogglingOpen ? 'animate-pulse' : ''}`} />
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {establishment?.isOpen !== false ? 'Abierto' : 'Cerrado'}
+                  </span>
+                </button>
+
                 {/* Theme Toggle */}
                 <ThemeToggle />
 

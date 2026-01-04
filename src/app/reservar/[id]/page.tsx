@@ -90,6 +90,8 @@ interface EstablishmentData {
   maxAdvanceBookingDays?: number;
   minAdvanceBookingHours?: number;
   allowSameDayBooking?: boolean;
+  // Open/Closed status
+  isOpen?: boolean;
 }
 
 const BookingPage = () => {
@@ -1265,6 +1267,84 @@ const BookingPage = () => {
     const mins = selectedDuration % 60;
     return mins > 0 ? `${hours}:${String(mins).padStart(2, '0')} hs` : `${hours} hora${hours > 1 ? 's' : ''}`;
   };
+
+  // Closed establishment overlay
+  if (establishment && establishment.isOpen === false) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"
+        >
+          {/* Header with establishment image */}
+          <div className="relative h-40 bg-gradient-to-br from-red-500 to-orange-500">
+            {mainImage && (
+              <img src={mainImage} alt={establishment.name} className="w-full h-full object-cover opacity-30" />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                <AlertCircle className="w-10 h-10 text-white" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Content */}
+          <div className="p-6 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Establecimiento Temporalmente Cerrado
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <span className="font-semibold text-gray-900 dark:text-white">{establishment.name}</span> no está aceptando reservas en este momento. Por favor, intenta nuevamente más tarde.
+            </p>
+            
+            {/* Contact info if available */}
+            {(establishment.phone || establishment.email) && (
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">¿Necesitas contactarlos?</p>
+                <div className="flex flex-col gap-2">
+                  {establishment.phone && (
+                    <a 
+                      href={`tel:${establishment.phone}`}
+                      className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      <Phone className="w-4 h-4" />
+                      {establishment.phone}
+                    </a>
+                  )}
+                  {establishment.email && (
+                    <a 
+                      href={`mailto:${establishment.email}`}
+                      className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {establishment.email}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link 
+                href="/buscar"
+                className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors text-center"
+              >
+                Buscar otras canchas
+              </Link>
+              <button 
+                onClick={() => window.location.reload()}
+                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-colors"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

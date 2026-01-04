@@ -61,6 +61,8 @@ interface EstablishmentData {
   noShowPenaltyPercentage?: number;
   // Deposit payment deadline
   depositPaymentDeadlineHours?: number;
+  // Open/Closed status
+  isOpen?: boolean;
 }
 
 interface EstablishmentContextType {
@@ -620,6 +622,9 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
       
       // Deposit payment deadline
       if (data.depositPaymentDeadlineHours !== undefined) updatePayload.depositPaymentDeadlineHours = data.depositPaymentDeadlineHours;
+      
+      // Open/Closed status
+      if (data.isOpen !== undefined) updatePayload.isOpen = data.isOpen;
       
       // Only include phone if it's a valid format (strip non-numeric for validation)
       if (data.phone) {
