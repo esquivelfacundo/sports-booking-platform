@@ -193,118 +193,15 @@ const CompactFacilityCard = ({ facility, onReserve, onTimeSlotSelect, onLoginReq
           <span className="text-xs truncate">{facility.location}</span>
         </div>
 
-        {/* Sport type */}
-        <div className="mb-2">
-          <span className="text-xs font-medium text-emerald-400 uppercase tracking-wide bg-emerald-500/10 px-2 py-1 rounded-full">
-            {getSportName(facility.sport)}
-          </span>
-        </div>
-
-        {/* Time Slots Carousel */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-1">
-              <Clock className="w-3 h-3 text-gray-400" />
-              <span className="text-xs text-gray-400">Disponibles</span>
-            </div>
-            <span className="text-xs text-emerald-400">
-              desde ${facility.priceFrom || facility.price}
-            </span>
-          </div>
-          
-          <div className="relative">
-            {/* Scroll buttons */}
-            {canScrollLeft && (
-              <button
-                onClick={() => scroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-900/80 backdrop-blur-sm rounded-full p-0.5 hover:bg-gray-900 transition-all duration-200 border border-gray-600"
-              >
-                <ChevronLeft className="w-2.5 h-2.5 text-white" />
-              </button>
-            )}
-            
-            {canScrollRight && (
-              <button
-                onClick={() => scroll('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-900/80 backdrop-blur-sm rounded-full p-0.5 hover:bg-gray-900 transition-all duration-200 border border-gray-600"
-              >
-                <ChevronRight className="w-2.5 h-2.5 text-white" />
-              </button>
-            )}
-            
-            {/* Time slots carousel */}
-            <div 
-              ref={scrollRef}
-              className="flex space-x-1.5 overflow-x-auto scrollbar-hide pb-1"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              {availableSlots.slice(0, 6).map((slot, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      onLoginRequired?.();
-                    } else {
-                      onTimeSlotSelect?.(facility, slot);
-                    }
-                  }}
-                  className="flex-shrink-0 bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-md border border-emerald-500/30 hover:bg-emerald-500/30 hover:border-emerald-500/50 transition-all duration-200 text-xs font-medium min-w-[50px] text-center"
-                >
-                  {slot.time}
-                </motion.button>
-              ))}
-              
-              {availableSlots.length === 0 && (
-                <div className="text-xs text-gray-500 py-1">
-                  Sin horarios
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Price and Buttons */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-baseline space-x-1">
-              <span className="text-lg font-semibold text-white">
-                ${facility.priceFrom || facility.price}
-              </span>
-              <span className="text-xs text-gray-400">desde</span>
-            </div>
-            <div className="text-xs text-gray-400">
-              {availableSlots.length} slots
-            </div>
-          </div>
-          <div className="space-y-2">
-            <button 
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onLoginRequired?.();
-                } else {
-                  onReserve();
-                }
-              }}
-              className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-1.5 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 font-medium text-sm shadow-lg hover:shadow-xl"
-            >
-              Reservar
-            </button>
-            <button 
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onLoginRequired?.();
-                } else {
-                  window.location.href = `/reservar/${facility.id}`;
-                }
-              }}
-              className="w-full border border-gray-600 text-gray-300 px-3 py-1.5 rounded-xl hover:bg-gray-700 hover:text-white hover:border-gray-500 transition-all duration-200 font-medium text-sm"
-            >
-              Ver detalle
-            </button>
-          </div>
-        </div>
+        {/* Reservar Button */}
+        <button 
+          onClick={() => {
+            window.location.href = `/reservar/${facility.id}`;
+          }}
+          className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2.5 rounded-xl hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl"
+        >
+          Reservar
+        </button>
       </div>
     </motion.div>
   );
