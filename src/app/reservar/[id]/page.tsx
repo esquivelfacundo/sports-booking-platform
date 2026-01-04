@@ -96,7 +96,7 @@ const BookingPage = () => {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const idOrSlug = params.id as string;
   
   // Check if it's a UUID or a slug
