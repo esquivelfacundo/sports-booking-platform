@@ -1300,7 +1300,7 @@ const BookingPage = () => {
             
             {/* Contact info if available */}
             {(establishment.phone || establishment.email) && (
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">¿Necesitas contactarlos?</p>
                 <div className="flex flex-col gap-2">
                   {establishment.phone && (
@@ -1324,22 +1324,6 @@ const BookingPage = () => {
                 </div>
               </div>
             )}
-            
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link 
-                href="/buscar"
-                className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors text-center"
-              >
-                Buscar otras canchas
-              </Link>
-              <button 
-                onClick={() => window.location.reload()}
-                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-colors"
-              >
-                Reintentar
-              </button>
-            </div>
           </div>
         </motion.div>
       </div>
