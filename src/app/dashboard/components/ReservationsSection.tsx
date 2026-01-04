@@ -22,11 +22,20 @@ import { usePlayerDashboard } from '@/hooks/usePlayerDashboard';
 
 interface ReservationsSectionProps {
   activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: externalActiveTab }) => {
+const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: externalActiveTab, onTabChange }) => {
   const [internalActiveTab, setInternalActiveTab] = useState('upcoming');
   const activeTab = externalActiveTab || internalActiveTab;
+  
+  const handleTabChange = (tab: string) => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setInternalActiveTab(tab);
+    }
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   
@@ -162,7 +171,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ activeTab: ex
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setInternalActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-emerald-600 text-white shadow-sm'

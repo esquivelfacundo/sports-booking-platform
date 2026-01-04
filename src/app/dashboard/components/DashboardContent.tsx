@@ -17,7 +17,8 @@ import {
   Menu,
   X,
   Star,
-  Bell
+  Bell,
+  LogOut
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,7 +32,7 @@ import FavoritesSection from './FavoritesSection';
 import SettingsSection from './SettingsSection';
 
 const DashboardContent = () => {
-  const { user, updateProfile, isAuthenticated } = useAuth();
+  const { user, updateProfile, isAuthenticated, logout } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
@@ -132,7 +133,7 @@ const DashboardContent = () => {
       case 'profile':
         return <ProfileSection user={user} updateProfile={updateProfile} />;
       case 'reservations':
-        return <ReservationsSection activeTab={reservationsTab} />;
+        return <ReservationsSection activeTab={reservationsTab} onTabChange={setReservationsTab} />;
       case 'favorites':
         return <FavoritesSection />;
       case 'settings':
@@ -294,55 +295,6 @@ const DashboardContent = () => {
                   )}
                 </motion.div>
 
-                {/* Quick Actions */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm"
-                >
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Acciones Rápidas</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <Link
-                      href="/buscar"
-                      className="flex items-center space-x-3 p-3 sm:p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
-                    >
-                      <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-5 h-5 text-emerald-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Buscar Canchas</p>
-                        <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Encuentra tu próximo partido</p>
-                      </div>
-                    </Link>
-
-                    <button
-                      onClick={() => setActiveSection('reservations')}
-                      className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors text-left"
-                    >
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Mis Reservas</p>
-                        <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Ver historial completo</p>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveSection('favorites')}
-                      className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors text-left"
-                    >
-                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Heart className="w-5 h-5 text-red-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Mis Favoritos</p>
-                        <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Lugares guardados</p>
-                      </div>
-                    </button>
-                  </div>
-                </motion.div>
               </>
             )}
           </div>
@@ -417,14 +369,23 @@ const DashboardContent = () => {
           {/* User info at bottom of mobile sidebar */}
           {user && (
             <div className="flex-shrink-0 border-t border-gray-200 p-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                </div>
+                <button
+                  onClick={() => { logout(); setSidebarOpen(false); }}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
             </div>
           )}
@@ -529,14 +490,23 @@ const DashboardContent = () => {
             {/* User info at bottom */}
             {user && (
               <div className="flex-shrink-0 border-t border-gray-200 p-3">
-                <div className="flex items-center">
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className={`flex-1 min-w-0 ml-3 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+                      <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
                   </div>
-                  <div className={`flex-1 min-w-0 ml-3 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                  </div>
+                  <button
+                    onClick={logout}
+                    className={`p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}
+                    title="Cerrar sesión"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )}

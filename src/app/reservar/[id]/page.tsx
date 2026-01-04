@@ -568,14 +568,39 @@ const BookingPage = () => {
     setAvailableSlots(slots);
   };
 
+  // Track if we're restoring from login to avoid resetting selections
+  const [isRestoringFromLogin, setIsRestoringFromLogin] = useState(false);
+  
+  // Detect if coming back from login and need to restore slots
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromLogin = urlParams.get('from_login') === 'true';
+    
+    if (isFromLogin && savedState?.selectedDate && savedState?.selectedTime) {
+      setIsRestoringFromLogin(true);
+      // Clean up the URL param
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('from_login');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, []);
+  
   // Update slots when date, duration, or sport changes
   useEffect(() => {
     if (selectedDate && selectedDuration && establishment?.courts?.length) {
-      setSelectedTime('');
-      setSelectedCourt(null);
+      // Only reset time/court if NOT restoring from login
+      if (!isRestoringFromLogin) {
+        setSelectedTime('');
+        setSelectedCourt(null);
+      } else {
+        // After first fetch when restoring, clear the flag
+        setIsRestoringFromLogin(false);
+      }
       fetchAvailability();
     }
-  }, [selectedDate, selectedDuration, selectedSport, fetchAvailability]);
+  }, [selectedDate, selectedDuration, selectedSport, fetchAvailability, isRestoringFromLogin]);
 
   const getPrice = () => {
     if (!selectedCourt) return 0;
@@ -1257,6 +1282,10 @@ const BookingPage = () => {
           </div>
           <nav className="flex-1 py-4 overflow-y-auto flex flex-col">
             <div className="px-2 space-y-1">
+              <Link href="/dashboard" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <BarChart3 className="mr-3 h-5 w-5 flex-shrink-0" />
+                Resumen
+              </Link>
               <Link href="/dashboard?section=reservations" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <Calendar className="mr-3 h-5 w-5 flex-shrink-0" />
                 Mis Reservas
@@ -1265,9 +1294,13 @@ const BookingPage = () => {
                 <Heart className="mr-3 h-5 w-5 flex-shrink-0" />
                 Favoritos
               </Link>
-              <Link href="/dashboard/perfil" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Link href="/dashboard?section=profile" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <User className="mr-3 h-5 w-5 flex-shrink-0" />
                 Mi Perfil
+              </Link>
+              <Link href="/dashboard?section=settings" onClick={() => setSidebarOpen(false)} className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
+                Configuración
               </Link>
             </div>
             
@@ -1306,14 +1339,23 @@ const BookingPage = () => {
           {/* User info at bottom of mobile sidebar */}
           {isAuthenticated && user && (
             <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                </div>
+                <button
+                  onClick={() => { logout(); setSidebarOpen(false); }}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
             </div>
           )}
@@ -1381,6 +1423,10 @@ const BookingPage = () => {
             {/* Navigation */}
             <nav className="mt-6 flex-1 flex flex-col overflow-y-auto overflow-x-hidden px-2">
               <div className="space-y-1">
+                <Link href="/dashboard" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <BarChart3 className="flex-shrink-0 h-5 w-5" />
+                  <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Resumen</span>
+                </Link>
                 <Link href="/dashboard?section=reservations" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <Calendar className="flex-shrink-0 h-5 w-5" />
                   <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mis Reservas</span>
@@ -1389,9 +1435,13 @@ const BookingPage = () => {
                   <Heart className="flex-shrink-0 h-5 w-5" />
                   <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Favoritos</span>
                 </Link>
-                <Link href="/dashboard/perfil" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <Link href="/dashboard?section=profile" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <User className="flex-shrink-0 h-5 w-5" />
                   <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Mi Perfil</span>
+                </Link>
+                <Link href="/dashboard?section=settings" className="group flex items-center px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors">
+                  <Settings className="flex-shrink-0 h-5 w-5" />
+                  <span className={`ml-3 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>Configuración</span>
                 </Link>
               </div>
               
@@ -1428,14 +1478,23 @@ const BookingPage = () => {
             {/* User info at bottom */}
             {isAuthenticated && user && (
               <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-3">
-                <div className="flex items-center">
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-white">{user.name?.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className={`flex-1 min-w-0 ml-3 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                    </div>
                   </div>
-                  <div className={`flex-1 min-w-0 ml-3 transition-opacity duration-200 ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                  </div>
+                  <button
+                    onClick={logout}
+                    className={`p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all ${sidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}
+                    title="Cerrar sesión"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             )}
