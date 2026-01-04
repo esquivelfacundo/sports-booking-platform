@@ -602,7 +602,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                           hasBooking 
                             ? '' 
                             : isPast
-                              ? 'bg-gray-100 dark:bg-gray-800/50'
+                              ? 'bg-gray-200 dark:bg-gray-700/80'
                               : draggedBooking 
                                 ? canDrop 
                                   ? isDropTarget 
@@ -626,11 +626,6 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                             +
                           </span>
                         )}
-                        {isPast && !hasBooking && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-full h-[1px] bg-gray-300 dark:bg-gray-600/50 rotate-[-15deg]" />
-                          </div>
-                        )}
                       </div>
                     );
                   })}
@@ -650,7 +645,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                           hasBooking
                             ? ''
                             : isPast
-                              ? 'bg-gray-100 dark:bg-gray-800/50'
+                              ? 'bg-gray-200 dark:bg-gray-700/80'
                               : 'hover:bg-purple-100 dark:hover:bg-purple-500/20 cursor-pointer group'
                         }`}
                         onClick={() => isClickable && onSlotClick(amenity.id, time, selectedDate)}
@@ -659,11 +654,6 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                           <span className="opacity-0 group-hover:opacity-100 text-xs text-purple-600 dark:text-purple-400 transition-opacity absolute inset-0 flex items-center justify-center">
                             + Reservar
                           </span>
-                        )}
-                        {isPast && !hasBooking && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-full h-[1px] bg-gray-300 dark:bg-gray-600/50 rotate-[-15deg]" />
-                          </div>
                         )}
                       </div>
                     );

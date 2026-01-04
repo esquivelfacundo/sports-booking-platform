@@ -116,9 +116,7 @@ const ImmersiveAuthScreen: React.FC<ImmersiveAuthScreenProps> = ({ defaultMode =
     setError('');
 
     try {
-      console.log('ImmersiveAuthScreen: Attempting login with:', { email: loginData.email, password: '***' });
       const success = await login(loginData);
-      console.log('ImmersiveAuthScreen: Login result:', success);
       if (!success) {
         setError('Credenciales inválidas. Verifica tu email y contraseña.');
       }

@@ -139,15 +139,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
-      console.log('AuthContext: Attempting login with credentials:', { email: credentials.email, password: '***' });
-      
       // FIRST: Try the API client login
       try {
         const loginResponse = await apiClient.login(credentials) as any;
-        console.log('AuthContext: API response:', loginResponse);
         
         if (loginResponse.success && loginResponse.user && loginResponse.token) {
-          console.log('AuthContext: API login successful, storing token');
           // Store the token
           localStorage.setItem('auth_token', loginResponse.token);
           localStorage.setItem('user_data', JSON.stringify(loginResponse.user));
@@ -169,7 +165,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Check if API returned tokens in different format
         if (loginResponse.tokens && loginResponse.tokens.accessToken) {
-          console.log('AuthContext: API login successful with tokens format');
           // Store tokens
           localStorage.setItem('auth_token', loginResponse.tokens.accessToken);
           if (loginResponse.tokens.refreshToken) {
@@ -216,24 +211,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return true;
         }
       } catch (apiError) {
-        console.log('AuthContext: API login failed:', apiError);
+        // API login failed, will try fallback
       }
-      
-      console.log('AuthContext: API login failed, checking localStorage fallback');
       
       // FALLBACK: check if there's a registered establishment with these credentials
       const establishmentData = localStorage.getItem('establishment_registration');
-      console.log('AuthContext: Checking localStorage fallback, data exists:', !!establishmentData);
       if (establishmentData) {
         try {
           const establishment = JSON.parse(establishmentData);
           const representative = establishment.representative;
-          console.log('AuthContext: Representative data:', { email: representative?.email, hasPassword: !!representative?.password });
           
           if (representative && 
               representative.email === credentials.email && 
               representative.password === credentials.password) {
-            console.log('AuthContext: localStorage credentials match!');
             
             // Create user object from representative data
             const representativeUser = {
@@ -299,7 +289,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
 
-      console.log('AuthContext: No valid credentials found');
       return false;
     } catch (error) {
       console.error('Login error:', error);

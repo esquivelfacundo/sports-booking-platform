@@ -144,6 +144,11 @@ export const TournamentProvider = ({ children }: TournamentProviderProps) => {
 
   // Load tournaments from API
   const loadTournaments = useCallback(async () => {
+    // Don't fetch if user just logged out (no token)
+    if (typeof window !== 'undefined' && !localStorage.getItem('auth_token')) {
+      return;
+    }
+    
     try {
       const response = await apiClient.getTournaments() as any;
       const tournamentsData = response.data || response || [];

@@ -90,6 +90,9 @@ interface Reservation {
   createdAt: string;
   notes?: string;
   isRecurring?: boolean;
+  recurringGroupId?: string;
+  recurringSequence?: number;
+  recurringPaymentStatus?: string;
   depositAmount?: number;
   initialDeposit?: number;
   depositPercent?: number;
@@ -230,6 +233,17 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
   const [showPrintSection, setShowPrintSection] = useState(false);
   const [showPendingWarning, setShowPendingWarning] = useState(false);
   
+  // Recurring booking group state
+  const [recurringGroup, setRecurringGroup] = useState<any>(null);
+  const [recurringBookings, setRecurringBookings] = useState<any[]>([]);
+  const [loadingRecurringGroup, setLoadingRecurringGroup] = useState(false);
+  const [showRecurringDetails, setShowRecurringDetails] = useState(false);
+  const [showCancelRecurringModal, setShowCancelRecurringModal] = useState(false);
+  const [cancelRecurringType, setCancelRecurringType] = useState<'single' | 'all_pending'>('single');
+  const [cancelRecurringReason, setCancelRecurringReason] = useState('');
+  const [isCancellingRecurring, setIsCancellingRecurring] = useState(false);
+  const [pendingBookingsForCancel, setPendingBookingsForCancel] = useState<any[]>([]);
+  
   // Toast notifications
   const { showSuccess, showError, showWarning, showPaymentNotification } = useToast();
 
@@ -247,6 +261,9 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     setConsumptions([]);
     setConsumptionsTotal(0);
     setOrderNumber(null);
+    setRecurringGroup(null);
+    setRecurringBookings([]);
+    setShowRecurringDetails(false);
     
     if (reservation?.id && isOpen) {
       loadPayments(reservation.id);
@@ -257,8 +274,28 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
       if (estId) {
         loadPaymentMethods(estId);
       }
+      // Load recurring group if this is a recurring booking
+      if (reservation.recurringGroupId) {
+        loadRecurringGroup(reservation.recurringGroupId);
+      }
     }
   }, [reservation?.id, isOpen]);
+
+  // Load recurring booking group details
+  const loadRecurringGroup = async (groupId: string) => {
+    setLoadingRecurringGroup(true);
+    try {
+      const response = await apiClient.getRecurringBookingGroup(groupId) as any;
+      if (response.success) {
+        setRecurringGroup(response.group);
+        setRecurringBookings(response.bookings || []);
+      }
+    } catch (error) {
+      console.error('Error loading recurring group:', error);
+    } finally {
+      setLoadingRecurringGroup(false);
+    }
+  };
 
   const loadOrderNumber = async (bookingId: string) => {
     // Only try to load order number if reservation has orders
@@ -268,6 +305,57 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     }
     // Otherwise, don't make the API call - order doesn't exist yet
     setOrderNumber(null);
+  };
+
+  // Open cancel recurring modal and load pending bookings
+  const handleOpenCancelRecurringModal = async () => {
+    if (!reservation?.recurringGroupId) return;
+    
+    try {
+      const response = await apiClient.getRecurringPendingBookings(reservation.recurringGroupId) as any;
+      if (response.success) {
+        setPendingBookingsForCancel(response.pendingBookings || []);
+      }
+    } catch (error) {
+      console.error('Error loading pending bookings:', error);
+    }
+    setShowCancelRecurringModal(true);
+  };
+
+  // Handle recurring booking cancellation
+  const handleCancelRecurring = async () => {
+    if (!reservation?.recurringGroupId) return;
+    
+    setIsCancellingRecurring(true);
+    try {
+      const response = await apiClient.cancelRecurringBooking(reservation.recurringGroupId, {
+        cancelType: cancelRecurringType,
+        bookingId: cancelRecurringType === 'single' ? reservation.id : undefined,
+        reason: cancelRecurringReason
+      }) as any;
+      
+      if (response.success) {
+        showSuccess(
+          cancelRecurringType === 'single' 
+            ? 'Turno cancelado exitosamente' 
+            : `${response.cancelledBookings?.length || 0} turnos cancelados`
+        );
+        setShowCancelRecurringModal(false);
+        setCancelRecurringReason('');
+        // Refresh the view
+        if (onStatusChanged) {
+          onStatusChanged(reservation.id, 'cancelled');
+        }
+        onClose();
+      } else {
+        throw new Error(response.error || 'Error al cancelar');
+      }
+    } catch (error: any) {
+      console.error('Error cancelling recurring booking:', error);
+      showError('Error al cancelar el turno fijo');
+    } finally {
+      setIsCancellingRecurring(false);
+    }
   };
 
   // Load products when in fullscreen mode (products column is always visible)
@@ -1393,6 +1481,86 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                 </div>
               </div>
 
+              {/* Recurring Booking (Turno Fijo) Info */}
+              {reservation.recurringGroupId && recurringGroup && (
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                      🔄 Turno Fijo
+                    </h3>
+                    <button
+                      onClick={() => setShowRecurringDetails(!showRecurringDetails)}
+                      className="text-xs text-blue-400 hover:text-blue-300"
+                    >
+                      {showRecurringDetails ? 'Ocultar' : 'Ver detalles'}
+                    </button>
+                  </div>
+                  
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Turno</span>
+                      <span className="text-white font-medium">
+                        #{reservation.recurringSequence} de {recurringGroup.totalOccurrences}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Pagados</span>
+                      <span className={recurringGroup.paidBookingsCount >= (reservation.recurringSequence || 0) ? 'text-emerald-400' : 'text-yellow-400'}>
+                        {recurringGroup.paidBookingsCount} de {recurringGroup.totalOccurrences}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Total pagado</span>
+                      <span className="text-emerald-400 font-medium">
+                        ${parseFloat(recurringGroup.totalPaid || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {showRecurringDetails && (
+                    <div className="mt-3 pt-3 border-t border-blue-500/30">
+                      <p className="text-xs text-gray-400 mb-2">Próximos turnos:</p>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {recurringBookings
+                          .filter(b => new Date(b.date) >= new Date())
+                          .slice(0, 5)
+                          .map((booking: any, idx: number) => (
+                            <div key={booking.id} className="flex justify-between text-xs">
+                              <span className={booking.id === reservation.id ? 'text-blue-400 font-medium' : 'text-gray-300'}>
+                                {new Date(booking.date + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                              </span>
+                              <span className={
+                                booking.recurringPaymentStatus === 'paid' ? 'text-emerald-400' :
+                                booking.recurringPaymentStatus === 'paid_in_advance' ? 'text-emerald-400' :
+                                'text-yellow-400'
+                              }>
+                                {booking.recurringPaymentStatus === 'paid' || booking.recurringPaymentStatus === 'paid_in_advance' ? '✓ Pagado' : '○ Pendiente'}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                      
+                      {/* Cancel recurring button */}
+                      <button
+                        onClick={handleOpenCancelRecurringModal}
+                        className="mt-3 w-full py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/30"
+                      >
+                        Cancelar turno fijo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {loadingRecurringGroup && reservation.recurringGroupId && (
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                  <div className="flex items-center justify-center gap-2 text-blue-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Cargando turno fijo...</span>
+                  </div>
+                </div>
+              )}
+
               {/* Booking Details */}
               <div className="bg-gray-700/50 rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Reserva</h3>
@@ -2035,7 +2203,122 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     </AnimatePresence>
   );
 
-  return createPortal(sidebarContent, document.body);
+  // Cancel Recurring Modal
+  const cancelRecurringModal = showCancelRecurringModal && (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700 shadow-2xl"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-red-500/20 rounded-lg">
+            <AlertTriangle className="h-6 w-6 text-red-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-white">Cancelar Turno Fijo</h3>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400">¿Qué deseas cancelar?</label>
+            <div className="space-y-2">
+              <button
+                onClick={() => setCancelRecurringType('single')}
+                className={`w-full p-3 rounded-lg border text-left transition-colors ${
+                  cancelRecurringType === 'single'
+                    ? 'border-red-500 bg-red-500/10 text-white'
+                    : 'border-gray-600 bg-gray-700/50 text-gray-300 hover:border-gray-500'
+                }`}
+              >
+                <div className="font-medium">Solo este turno</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  {reservation && new Date(reservation.date + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setCancelRecurringType('all_pending')}
+                className={`w-full p-3 rounded-lg border text-left transition-colors ${
+                  cancelRecurringType === 'all_pending'
+                    ? 'border-red-500 bg-red-500/10 text-white'
+                    : 'border-gray-600 bg-gray-700/50 text-gray-300 hover:border-gray-500'
+                }`}
+              >
+                <div className="font-medium">Todos los turnos pendientes</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  {pendingBookingsForCancel.length} turnos serán cancelados
+                </div>
+              </button>
+            </div>
+          </div>
+          
+          {cancelRecurringType === 'all_pending' && pendingBookingsForCancel.length > 0 && (
+            <div className="bg-gray-700/50 rounded-lg p-3 max-h-32 overflow-y-auto">
+              <p className="text-xs text-gray-400 mb-2">Turnos a cancelar:</p>
+              <div className="space-y-1">
+                {pendingBookingsForCancel.map((booking: any) => (
+                  <div key={booking.id} className="flex justify-between text-xs">
+                    <span className="text-gray-300">
+                      {new Date(booking.date + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </span>
+                    <span className={booking.paymentStatus === 'paid' ? 'text-emerald-400' : 'text-yellow-400'}>
+                      {booking.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div>
+            <label className="text-sm text-gray-400 block mb-2">Motivo (opcional)</label>
+            <textarea
+              value={cancelRecurringReason}
+              onChange={(e) => setCancelRecurringReason(e.target.value)}
+              placeholder="Ej: Cambio de horario del cliente..."
+              rows={2}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500 resize-none"
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              setShowCancelRecurringModal(false);
+              setCancelRecurringReason('');
+            }}
+            disabled={isCancellingRecurring}
+            className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+          >
+            Volver
+          </button>
+          <button
+            onClick={handleCancelRecurring}
+            disabled={isCancellingRecurring}
+            className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            {isCancellingRecurring ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Cancelando...</span>
+              </>
+            ) : (
+              <span>Confirmar cancelación</span>
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  return (
+    <>
+      {createPortal(sidebarContent, document.body)}
+      {showCancelRecurringModal && createPortal(cancelRecurringModal, document.body)}
+    </>
+  );
 };
 
 export default ReservationDetailsSidebar;

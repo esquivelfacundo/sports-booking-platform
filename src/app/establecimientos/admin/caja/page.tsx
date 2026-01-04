@@ -720,7 +720,7 @@ export default function CashRegisterPage() {
                           <td className="py-3 text-emerald-600 dark:text-emerald-400 font-medium">
                             {mov.order?.orderNumber ? `#${mov.order.orderNumber}` : '-'}
                           </td>
-                          <td className="py-3">{mov.booking?.guestName || mov.description || '-'}</td>
+                          <td className="py-3">{mov.booking?.clientName || mov.description || '-'}</td>
                           <td className="py-3">
                             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">{getPaymentMethodLabel(mov.paymentMethod)}</span>
                           </td>

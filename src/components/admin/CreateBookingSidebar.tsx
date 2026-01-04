@@ -146,6 +146,9 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     selectedAmenityIds: [] as string[],
   });
   
+  // Recurring booking (Turno Fijo) state
+  const [recurringWeeks, setRecurringWeeks] = useState(8);
+  
   // State for editable date and time (only used in edit mode)
   const [editDate, setEditDate] = useState<string>('');
   const [editTime, setEditTime] = useState<string>('');
@@ -438,6 +441,43 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
           return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
         };
         
+        // Use new recurring booking API for turnos fijos (non-amenity only)
+        if (formData.isRecurring && !isAmenityBooking && establishment?.id) {
+          const response = await apiClient.createRecurringBooking({
+            establishmentId: establishment.id,
+            courtId: court.id,
+            clientId: selectedClient?.id !== 'existing' ? selectedClient?.id : undefined,
+            clientName: formData.clientName,
+            clientPhone: formData.clientPhone,
+            clientEmail: formData.clientEmail || undefined,
+            startDate: finalDate,
+            startTime: finalTime,
+            duration: formData.duration,
+            sport: court.sport,
+            bookingType: formData.bookingType,
+            totalWeeks: recurringWeeks,
+            pricePerBooking: calculatePrice(),
+            notes: formData.notes || `Turno fijo - ${formData.depositMethod}`,
+            initialPayment: formData.depositAmount > 0 ? {
+              amount: formData.depositAmount,
+              method: formData.depositMethod
+            } : undefined
+          }) as any;
+          
+          if (response.success) {
+            alert(`Turno fijo creado con ${response.bookings?.length || recurringWeeks} reservas`);
+            // Just close - the recurring booking was already created via API
+            // Don't call onSuccess as it would try to create another booking
+            onClose();
+            // Force page refresh to show new bookings
+            window.location.reload();
+          } else {
+            throw new Error(response.error || 'Error al crear turno fijo');
+          }
+          return;
+        }
+        
+        // Regular booking flow
         const bookingData: Record<string, any> = {
           date: finalDate,
           startTime: finalTime,
@@ -448,14 +488,13 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
           clientPhone: formData.clientPhone,
           clientEmail: formData.clientEmail,
           bookingType: formData.bookingType,
-          isRecurring: formData.isRecurring,
+          isRecurring: false,
           depositAmount: formData.depositAmount,
           depositMethod: formData.depositMethod,
           notes: formData.notes,
-          status: 'confirmed', // Admin-created bookings are auto-confirmed
+          status: 'confirmed',
         };
         
-        // Set courtId or amenityId based on booking type
         if (isAmenityBooking) {
           bookingData.amenityId = court.id;
         } else {
@@ -484,7 +523,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     // Use PIN validation if available
     if (requestPin) {
       requestPin(executeSubmit, { 
-        title: isEditMode ? 'Editar reserva' : 'Crear reserva', 
+        title: isEditMode ? 'Editar reserva' : formData.isRecurring ? 'Crear turno fijo' : 'Crear reserva', 
         description: 'Ingresa tu PIN para confirmar' 
       });
     } else {
@@ -763,17 +802,72 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
                 </div>
 
                 {/* Recurring */}
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="isRecurring"
-                    checked={formData.isRecurring}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isRecurring: e.target.checked }))}
-                    className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
-                  />
-                  <label htmlFor="isRecurring" className="text-sm text-gray-300">
-                    Turno fijo (se repite semanalmente)
-                  </label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="isRecurring"
+                      checked={formData.isRecurring}
+                      onChange={(e) => setFormData(prev => ({ ...prev, isRecurring: e.target.checked }))}
+                      className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <label htmlFor="isRecurring" className="text-sm text-gray-300">
+                      Turno fijo (se repite semanalmente)
+                    </label>
+                  </div>
+                  
+                  {/* Recurring weeks selector */}
+                  {formData.isRecurring && (
+                    <div className="ml-7 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-3">
+                      <label className="block text-sm font-medium text-blue-300">
+                        Cantidad de semanas
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="4"
+                          max="24"
+                          value={recurringWeeks}
+                          onChange={(e) => setRecurringWeeks(Number(e.target.value))}
+                          className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        />
+                        <span className="text-blue-300 font-medium min-w-[60px] text-right">
+                          {recurringWeeks} sem.
+                        </span>
+                      </div>
+                      
+                      {/* Upcoming dates preview */}
+                      <div className="bg-gray-800/50 rounded-lg p-2 max-h-40 overflow-y-auto">
+                        <p className="text-xs text-gray-400 mb-2 sticky top-0 bg-gray-800/90 py-1">
+                          📅 Fechas del turno fijo:
+                        </p>
+                        <div className="space-y-1">
+                          {Array.from({ length: recurringWeeks }).map((_, idx) => {
+                            const bookingDate = new Date(selectedDate);
+                            bookingDate.setDate(bookingDate.getDate() + (idx * 7));
+                            const isFirst = idx === 0;
+                            return (
+                              <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-gray-700/50 last:border-0">
+                                <span className={isFirst ? 'text-blue-400 font-medium' : 'text-gray-300'}>
+                                  {idx + 1}. {bookingDate.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                </span>
+                                <span className="text-gray-400">
+                                  {selectedTime}hs
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between text-xs pt-2 border-t border-blue-500/30">
+                        <span className="text-gray-400">Total:</span>
+                        <span className="text-blue-300 font-medium">
+                          {recurringWeeks} turnos = ${(calculatePrice() * recurringWeeks).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Booking Type */}

@@ -10,6 +10,8 @@ import { ToastProvider } from '@/contexts/ToastContext';
 import { CashRegisterProvider } from '@/contexts/CashRegisterContext';
 import ClientLayout from "@/components/ClientLayout";
 import GoogleAuthProviderWrapper from '@/components/providers/GoogleAuthProvider';
+import RateLimitNotifier from '@/components/RateLimitNotifier';
+import { SWRProvider } from '@/lib/swr-config';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,23 +37,26 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.variable} antialiased`}>
         <GoogleAuthProviderWrapper>
-          <AuthProvider>
-            <SuperAdminProvider>
-              <EstablishmentProvider>
-                <TournamentProvider>
-                  <MobileSearchModalProvider>
-                    <CashRegisterProvider>
-                      <ToastProvider>
-                        <ClientLayout>
-                          {children}
-                        </ClientLayout>
-                      </ToastProvider>
-                    </CashRegisterProvider>
-                  </MobileSearchModalProvider>
-                </TournamentProvider>
-              </EstablishmentProvider>
-            </SuperAdminProvider>
-          </AuthProvider>
+          <SWRProvider>
+            <AuthProvider>
+              <SuperAdminProvider>
+                <EstablishmentProvider>
+                  <TournamentProvider>
+                    <MobileSearchModalProvider>
+                      <CashRegisterProvider>
+                        <ToastProvider>
+                          <RateLimitNotifier />
+                          <ClientLayout>
+                            {children}
+                          </ClientLayout>
+                        </ToastProvider>
+                      </CashRegisterProvider>
+                    </MobileSearchModalProvider>
+                  </TournamentProvider>
+                </EstablishmentProvider>
+              </SuperAdminProvider>
+            </AuthProvider>
+          </SWRProvider>
         </GoogleAuthProviderWrapper>
       </body>
     </html>

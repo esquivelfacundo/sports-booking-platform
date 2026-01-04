@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import useSWR, { mutate } from 'swr';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
@@ -27,59 +26,6 @@ const mapSurface = (surface?: string): string => {
     'outdoor': 'outdoor',
   };
   return surface ? (surfaceMap[surface] || 'synthetic') : 'synthetic';
-};
-
-// SWR fetchers for different data types
-const courtsFetcher = async (key: string): Promise<AdminCourt[]> => {
-  const establishmentId = key.split('establishmentId=')[1];
-  if (!establishmentId) return [];
-  const response = await apiClient.getCourts(establishmentId) as any;
-  const courtsData = response.data || response.courts || [];
-  return courtsData.map((court: any) => ({
-    id: court.id,
-    name: court.name,
-    sport: court.sport,
-    pricePerHour: parseFloat(court.pricePerHour) || 0,
-    pricePerHour90: court.pricePerHour90 ? parseFloat(court.pricePerHour90) : undefined,
-    pricePerHour120: court.pricePerHour120 ? parseFloat(court.pricePerHour120) : undefined,
-    isActive: court.isActive !== false,
-    description: court.description,
-    images: court.images,
-    surface: court.surface,
-    covered: court.covered,
-    lighting: court.lighting,
-    features: court.features
-  }));
-};
-
-const statsFetcher = async (key: string): Promise<AdminStats> => {
-  const establishmentId = key.split('establishmentId=')[1];
-  if (!establishmentId) return {
-    todayBookings: 0, todayRevenue: 0, monthlyRevenue: 0, totalClients: 0,
-    occupancyRate: 0, pendingBookings: 0, confirmedBookings: 0, cancelledBookings: 0
-  };
-  const response = await apiClient.getEstablishmentStats(establishmentId) as any;
-  if (response.success && response.stats) {
-    return {
-      todayBookings: response.stats.todayBookings || 0,
-      todayRevenue: response.stats.todayRevenue || 0,
-      monthlyRevenue: response.stats.monthlyRevenue || 0,
-      totalClients: response.stats.totalClients || 0,
-      occupancyRate: response.stats.occupancyRate || 0,
-      pendingBookings: response.stats.pendingBookings || 0,
-      confirmedBookings: response.stats.confirmedBookings || 0,
-      cancelledBookings: response.stats.cancelledBookings || 0
-    };
-  }
-  return {
-    todayBookings: 0, todayRevenue: 0, monthlyRevenue: 0, totalClients: 0,
-    occupancyRate: 0, pendingBookings: 0, confirmedBookings: 0, cancelledBookings: 0
-  };
-};
-
-const notificationsFetcher = async (): Promise<AdminNotification[]> => {
-  const response = await apiClient.getNotifications() as any;
-  return response.data || response.notifications || [];
 };
 
 interface EstablishmentAdminContextType {
@@ -121,18 +67,6 @@ interface EstablishmentAdminContextType {
 
 const EstablishmentAdminContext = createContext<EstablishmentAdminContextType | undefined>(undefined);
 
-// Default stats object
-const defaultStats: AdminStats = {
-  todayBookings: 0,
-  todayRevenue: 0,
-  monthlyRevenue: 0,
-  totalClients: 0,
-  occupancyRate: 0,
-  pendingBookings: 0,
-  confirmedBookings: 0,
-  cancelledBookings: 0
-};
-
 export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const { establishment } = useEstablishment();
@@ -140,54 +74,45 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
   // State - establishmentId now derived from EstablishmentContext when possible
   const [establishmentId, setEstablishmentId] = useState<string | null>(null);
   const [reservations, setReservations] = useState<AdminReservation[]>([]);
+  const [courts, setCourts] = useState<AdminCourt[]>([]);
+  const [stats, setStats] = useState<AdminStats>({
+    todayBookings: 0,
+    todayRevenue: 0,
+    monthlyRevenue: 0,
+    totalClients: 0,
+    occupancyRate: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    cancelledBookings: 0
+  });
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   
-  // Loading states for reservations (still managed manually due to dynamic filters)
+  // Loading states
+  const [loading, setLoading] = useState(false);
   const [reservationsLoading, setReservationsLoading] = useState(false);
+  const [courtsLoading, setCourtsLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // SWR keys
-  const courtsKey = establishmentId ? `courts?establishmentId=${establishmentId}` : null;
-  const statsKey = establishmentId ? `stats?establishmentId=${establishmentId}` : null;
-  const notificationsKey = establishmentId ? 'notifications' : null;
-
-  // SWR hooks for cached data
-  const { 
-    data: courts = [], 
-    isLoading: courtsLoading,
-    mutate: mutateCourts 
-  } = useSWR<AdminCourt[]>(courtsKey, courtsFetcher, {
-    revalidateOnFocus: false,
-    dedupingInterval: 10000,
-    keepPreviousData: true,
-  });
-
-  const { 
-    data: stats = defaultStats, 
-    isLoading: statsLoading,
-    mutate: mutateStats 
-  } = useSWR<AdminStats>(statsKey, statsFetcher, {
-    refreshInterval: 60000, // Refresh every minute
-    revalidateOnFocus: true,
-    keepPreviousData: true,
-  });
-
-  const { 
-    data: notifications = [], 
-    mutate: mutateNotifications 
-  } = useSWR<AdminNotification[]>(notificationsKey, notificationsFetcher, {
-    refreshInterval: 30000, // Refresh every 30 seconds
-    revalidateOnFocus: true,
-    keepPreviousData: true,
-  });
-
-  // Combined loading state
-  const loading = courtsLoading || statsLoading;
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   // Reset state when user logs out
   useEffect(() => {
     if (!isAuthenticated || !user) {
       setEstablishmentId(null);
       setReservations([]);
+      setCourts([]);
+      setStats({
+        todayBookings: 0,
+        todayRevenue: 0,
+        monthlyRevenue: 0,
+        totalClients: 0,
+        occupancyRate: 0,
+        pendingBookings: 0,
+        confirmedBookings: 0,
+        cancelledBookings: 0
+      });
+      setNotifications([]);
+      setInitialDataLoaded(false);
       return;
     }
 
@@ -278,23 +203,83 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
     }
   }, [establishmentId]);
 
-  // Load courts - now triggers SWR revalidation
+  // Load courts
   const loadCourts = useCallback(async () => {
     if (!establishmentId) return;
-    await mutateCourts();
-  }, [establishmentId, mutateCourts]);
+    
+    setCourtsLoading(true);
+    
+    try {
+      const response = await apiClient.getCourts(establishmentId) as any;
+      const courtsData = response.data || response.courts || [];
+      
+      const transformedCourts: AdminCourt[] = courtsData.map((court: any) => ({
+        id: court.id,
+        name: court.name,
+        sport: court.sport,
+        pricePerHour: parseFloat(court.pricePerHour) || 0,
+        pricePerHour90: court.pricePerHour90 ? parseFloat(court.pricePerHour90) : undefined,
+        pricePerHour120: court.pricePerHour120 ? parseFloat(court.pricePerHour120) : undefined,
+        isActive: court.isActive !== false,
+        description: court.description,
+        images: court.images,
+        surface: court.surface,
+        covered: court.covered,
+        lighting: court.lighting,
+        features: court.features
+      }));
+      
+      setCourts(transformedCourts);
+    } catch (err) {
+      console.error('Error loading courts:', err);
+      setError('Error al cargar canchas');
+      setCourts([]);
+    } finally {
+      setCourtsLoading(false);
+    }
+  }, [establishmentId]);
 
-  // Load stats - now triggers SWR revalidation
+  // Load stats - using optimized backend endpoint
   const loadStats = useCallback(async () => {
     if (!establishmentId) return;
-    await mutateStats();
-  }, [establishmentId, mutateStats]);
+    
+    setStatsLoading(true);
+    
+    try {
+      // Use the new optimized stats endpoint instead of fetching all bookings
+      const response = await apiClient.getEstablishmentStats(establishmentId) as any;
+      
+      if (response.success && response.stats) {
+        setStats({
+          todayBookings: response.stats.todayBookings || 0,
+          todayRevenue: response.stats.todayRevenue || 0,
+          monthlyRevenue: response.stats.monthlyRevenue || 0,
+          totalClients: response.stats.totalClients || 0,
+          occupancyRate: response.stats.occupancyRate || 0,
+          pendingBookings: response.stats.pendingBookings || 0,
+          confirmedBookings: response.stats.confirmedBookings || 0,
+          cancelledBookings: response.stats.cancelledBookings || 0
+        });
+      }
+    } catch (err) {
+      console.error('Error loading stats:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [establishmentId]);
 
-  // Load notifications - now triggers SWR revalidation
+  // Load notifications
   const loadNotifications = useCallback(async () => {
     if (!establishmentId) return;
-    await mutateNotifications();
-  }, [establishmentId, mutateNotifications]);
+    
+    try {
+      const response = await apiClient.getNotifications() as any;
+      const notificationsData = response.data || response.notifications || [];
+      setNotifications(notificationsData);
+    } catch (err) {
+      console.error('Error loading notifications:', err);
+    }
+  }, [establishmentId]);
 
   // Reservation actions
   const confirmReservation = useCallback(async (id: string): Promise<boolean> => {
@@ -397,16 +382,11 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
   const markNotificationRead = useCallback(async (notificationId: string) => {
     try {
       await apiClient.markNotificationRead(notificationId);
-      // Optimistically update the cache
-      mutateNotifications(
-        (current: AdminNotification[] | undefined) => 
-          current?.map((n: AdminNotification) => n.id === notificationId ? { ...n, isRead: true } : n) || [],
-        { revalidate: false }
-      );
+      setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n));
     } catch (err) {
       console.error('Error marking notification read:', err);
     }
-  }, [mutateNotifications]);
+  }, []);
 
   const refreshAll = useCallback(async () => {
     if (!establishmentId) return;
@@ -468,8 +448,16 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
     }
   }, [loadCourts]);
 
-  // Note: Initial data loading is now handled automatically by SWR
-  // when the establishment ID becomes available (via the SWR keys)
+  // Load initial data when establishment ID is available
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (establishmentId && !initialDataLoaded) {
+        await Promise.all([loadCourts(), loadStats(), loadNotifications()]);
+        setInitialDataLoaded(true);
+      }
+    };
+    loadInitialData();
+  }, [establishmentId, initialDataLoaded, loadCourts, loadStats, loadNotifications]);
 
   return (
     <EstablishmentAdminContext.Provider value={{

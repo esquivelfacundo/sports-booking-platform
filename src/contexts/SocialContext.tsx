@@ -183,6 +183,12 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
 
   // Load matches from API
   const loadMatches = useCallback(async () => {
+    // Don't fetch if user just logged out (no token)
+    if (typeof window !== 'undefined' && !localStorage.getItem('auth_token')) {
+      setSocialState(prev => ({ ...prev, matches: [] }));
+      return;
+    }
+    
     try {
       const response = await apiClient.getMatches({ status: 'open' }) as any;
       const matchesData = response.data || response || [];

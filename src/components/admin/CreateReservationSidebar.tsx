@@ -520,26 +520,37 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     return slotTime <= now;
   };
 
-  // Check availability for recurring bookings
+  // Check availability for recurring bookings (Turnos Fijos)
   const checkAvailability = async () => {
-    if (!isRecurring || !selectedCourt || !selectedTime) return;
+    if (!isRecurring || !selectedCourt || !selectedTime || !establishmentId) return;
     
     setIsCheckingAvailability(true);
     try {
-      const dates = getRecurringDates();
       const response = await apiClient.checkRecurringAvailability({
+        establishmentId,
         courtId: selectedCourt,
-        dates,
+        startDate: selectedDate,
         startTime: selectedTime,
         duration: selectedDuration,
-        sport: selectedSport
+        totalWeeks: recurringCount,
+        sport: selectedSport !== 'amenity' ? selectedSport : undefined
       }) as any;
       
-      setAvailabilityResults(response.results || []);
-      setHasConflicts(response.summary?.conflicts > 0);
+      // Transform response to our format
+      const results = (response.availability || []).map((item: any) => ({
+        date: item.date,
+        available: item.primaryCourt?.available ?? true,
+        conflict: item.primaryCourt?.conflictWith,
+        alternatives: item.alternatives || [],
+        selectedCourt: item.selectedCourt,
+        isSkipped: item.isSkipped || false,
+        resolved: item.primaryCourt?.available || item.selectedCourt !== null
+      }));
+      
+      setAvailabilityResults(results);
+      setHasConflicts(response.summary?.unavailable > 0 || response.summary?.needsAlternative > 0);
     } catch (err) {
       console.error('Error checking availability:', err);
-      // If check fails, allow to proceed but warn
       setAvailabilityResults([]);
       setHasConflicts(false);
     } finally {
@@ -622,79 +633,119 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Get all dates (single or recurring)
-      const dates = getRecurringDates();
-      let successCount = 0;
-      let errorCount = 0;
       const isAmenityBooking = selectedSport === 'amenity';
+      const pricePerBooking = calculatePrice();
       
-      for (const date of dates) {
-        try {
-          // Check if there's an override for this date
-          const override = dateOverrides.get(date);
-          const bookingItemId = override?.courtId || selectedCourt;
-          const bookingTime = override?.time || selectedTime;
-          const bookingEndTime = calculateEndTime(bookingTime, selectedDuration);
-          
-          // Get the correct item (court or amenity) for price calculation
-          let totalAmount = 0;
-          if (isAmenityBooking) {
-            const bookingAmenity = bookableAmenities.find(a => a.id === bookingItemId);
-            if (bookingAmenity) {
-              totalAmount = selectedDuration === 90 ? (bookingAmenity.pricePerHour90 || bookingAmenity.pricePerHour * 1.5) :
-                selectedDuration === 120 ? (bookingAmenity.pricePerHour120 || bookingAmenity.pricePerHour * 2) :
-                bookingAmenity.pricePerHour;
-            }
-          } else {
-            const bookingCourt = courts.find(c => c.id === bookingItemId);
-            if (bookingCourt) {
-              totalAmount = selectedDuration === 90 ? (bookingCourt.pricePerHour90 || bookingCourt.pricePerHour * 1.5) :
-                selectedDuration === 120 ? (bookingCourt.pricePerHour120 || bookingCourt.pricePerHour * 2) :
-                bookingCourt.pricePerHour;
-            }
-          }
-          
-          if (totalAmount === 0) {
-            totalAmount = calculatePrice();
-          }
-          
-          // Build booking data - send courtId OR amenityId based on type
-          const bookingData: any = {
-            date: date,
-            startTime: bookingTime,
-            endTime: bookingEndTime,
-            duration: selectedDuration,
-            totalAmount: totalAmount,
-            clientName: playerName,
-            clientPhone: playerPhone,
-            clientEmail: playerEmail || undefined,
-            paymentType: 'full',
-            depositAmount: depositAmount,
-            depositMethod: depositAmount > 0 ? paymentMethod : undefined,
-            notes: `Método de pago: ${PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label || paymentMethod}${override ? ` (Alternativa: ${override.time !== selectedTime ? 'horario diferente' : 'cancha diferente'})` : ''}`,
-          };
-          
-          // Add courtId or amenityId based on booking type
-          if (isAmenityBooking) {
-            bookingData.amenityId = bookingItemId;
-          } else {
-            bookingData.courtId = bookingItemId;
-          }
-          
-          // Create booking via API
-          await apiClient.createBooking(bookingData);
-          successCount++;
-        } catch (err: any) {
-          console.error(`Error creating reservation for ${date}:`, err);
-          console.error('Error details:', err.message);
-          errorCount++;
+      // Use new recurring booking system for turnos fijos
+      if (isRecurring && !isAmenityBooking) {
+        // Build date configurations from availability results and overrides
+        const dateConfigurations = availabilityResults
+          .filter(r => !r.isSkipped)
+          .map(r => {
+            const override = dateOverrides.get(r.date);
+            return {
+              date: r.date,
+              courtId: override?.courtId || r.selectedCourt?.id || selectedCourt,
+              skip: r.isSkipped || false
+            };
+          });
+        
+        // Create recurring booking group
+        const response = await apiClient.createRecurringBooking({
+          establishmentId,
+          courtId: selectedCourt,
+          clientId: selectedClient?.id,
+          clientName: playerName,
+          clientPhone: playerPhone,
+          clientEmail: playerEmail || undefined,
+          startDate: selectedDate,
+          startTime: selectedTime,
+          duration: selectedDuration,
+          sport: selectedSport,
+          bookingType: 'normal',
+          totalWeeks: recurringCount,
+          pricePerBooking,
+          notes: `Turno fijo - ${PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label || paymentMethod}`,
+          dateConfigurations,
+          initialPayment: depositAmount > 0 ? {
+            amount: depositAmount,
+            method: paymentMethod
+          } : undefined
+        }) as any;
+        
+        if (response.success) {
+          alert(`Turno fijo creado exitosamente con ${response.bookings?.length || recurringCount} reservas`);
+        } else {
+          throw new Error(response.error || 'Error al crear turno fijo');
         }
-      }
-      
-      if (errorCount > 0 && successCount > 0) {
-        alert(`Se crearon ${successCount} reservas. ${errorCount} fallaron.`);
-      } else if (errorCount > 0) {
-        alert('Error al crear las reservas. Por favor intenta de nuevo.');
+      } else {
+        // Regular booking flow (single or amenity)
+        const dates = getRecurringDates();
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const date of dates) {
+          try {
+            const override = dateOverrides.get(date);
+            const bookingItemId = override?.courtId || selectedCourt;
+            const bookingTime = override?.time || selectedTime;
+            const bookingEndTime = calculateEndTime(bookingTime, selectedDuration);
+            
+            let totalAmount = 0;
+            if (isAmenityBooking) {
+              const bookingAmenity = bookableAmenities.find(a => a.id === bookingItemId);
+              if (bookingAmenity) {
+                totalAmount = selectedDuration === 90 ? (bookingAmenity.pricePerHour90 || bookingAmenity.pricePerHour * 1.5) :
+                  selectedDuration === 120 ? (bookingAmenity.pricePerHour120 || bookingAmenity.pricePerHour * 2) :
+                  bookingAmenity.pricePerHour;
+              }
+            } else {
+              const bookingCourt = courts.find(c => c.id === bookingItemId);
+              if (bookingCourt) {
+                totalAmount = selectedDuration === 90 ? (bookingCourt.pricePerHour90 || bookingCourt.pricePerHour * 1.5) :
+                  selectedDuration === 120 ? (bookingCourt.pricePerHour120 || bookingCourt.pricePerHour * 2) :
+                  bookingCourt.pricePerHour;
+              }
+            }
+            
+            if (totalAmount === 0) {
+              totalAmount = pricePerBooking;
+            }
+            
+            const bookingData: any = {
+              date: date,
+              startTime: bookingTime,
+              endTime: bookingEndTime,
+              duration: selectedDuration,
+              totalAmount: totalAmount,
+              clientName: playerName,
+              clientPhone: playerPhone,
+              clientEmail: playerEmail || undefined,
+              paymentType: 'full',
+              depositAmount: depositAmount,
+              depositMethod: depositAmount > 0 ? paymentMethod : undefined,
+              notes: `Método de pago: ${PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label || paymentMethod}`,
+            };
+            
+            if (isAmenityBooking) {
+              bookingData.amenityId = bookingItemId;
+            } else {
+              bookingData.courtId = bookingItemId;
+            }
+            
+            await apiClient.createBooking(bookingData);
+            successCount++;
+          } catch (err: any) {
+            console.error(`Error creating reservation for ${date}:`, err);
+            errorCount++;
+          }
+        }
+        
+        if (errorCount > 0 && successCount > 0) {
+          alert(`Se crearon ${successCount} reservas. ${errorCount} fallaron.`);
+        } else if (errorCount > 0) {
+          alert('Error al crear las reservas. Por favor intenta de nuevo.');
+        }
       }
       
       onReservationCreated();
@@ -929,21 +980,19 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">Cantidad de reservas</label>
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => setRecurringCount(Math.max(2, recurringCount - 1))}
-                        className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-white"
-                      >
-                        -
-                      </button>
-                      <span className="text-white font-medium w-12 text-center">{recurringCount}</span>
-                      <button
-                        onClick={() => setRecurringCount(Math.min(12, recurringCount + 1))}
-                        className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-white"
-                      >
-                        +
-                      </button>
+                    <label className="block text-sm text-gray-400 mb-2">Cantidad de semanas</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="4"
+                        max="24"
+                        value={recurringCount}
+                        onChange={(e) => setRecurringCount(Number(e.target.value))}
+                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                      />
+                      <span className="text-blue-300 font-medium min-w-[60px] text-right">
+                        {recurringCount} sem.
+                      </span>
                     </div>
                   </div>
 
@@ -951,14 +1000,28 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
                   <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                     <div className="flex items-center space-x-2 mb-2">
                       <CalendarRange className="h-4 w-4 text-blue-400" />
-                      <span className="text-blue-400 text-sm font-medium">Fechas programadas</span>
+                      <span className="text-blue-400 text-sm font-medium">📅 Fechas del turno fijo:</span>
                     </div>
-                    <div className="text-xs text-gray-300 space-y-1 max-h-24 overflow-y-auto">
-                      {getRecurringDates().map((date, index) => (
-                        <div key={date}>
-                          {index + 1}. {formatDate(date)}
-                        </div>
-                      ))}
+                    <div className="text-xs space-y-1 max-h-40 overflow-y-auto">
+                      {getRecurringDates().map((date, index) => {
+                        const isFirst = index === 0;
+                        return (
+                          <div key={date} className="flex justify-between items-center py-1 border-b border-gray-700/50 last:border-0">
+                            <span className={isFirst ? 'text-blue-400 font-medium' : 'text-gray-300'}>
+                              {index + 1}. {formatDate(date)}
+                            </span>
+                            <span className="text-gray-400">
+                              {selectedTime || '--:--'}hs
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between text-xs pt-2 mt-2 border-t border-blue-500/30">
+                      <span className="text-gray-400">Total:</span>
+                      <span className="text-blue-300 font-medium">
+                        {recurringCount} turnos = ${(calculatePrice() * recurringCount).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 </motion.div>

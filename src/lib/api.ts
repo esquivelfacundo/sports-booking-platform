@@ -20,14 +20,53 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Rate limit error class for specific handling
+export class RateLimitError extends Error {
+  retryAfter: number;
+  
+  constructor(message: string, retryAfter: number = 60) {
+    super(message);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+  }
+}
+
+// Event emitter for rate limit notifications
+type RateLimitListener = (retryAfter: number, attemptNumber: number) => void;
+const rateLimitListeners: Set<RateLimitListener> = new Set();
+
+export const onRateLimitHit = (listener: RateLimitListener) => {
+  rateLimitListeners.add(listener);
+  return () => rateLimitListeners.delete(listener);
+};
+
+const notifyRateLimitHit = (retryAfter: number, attemptNumber: number) => {
+  rateLimitListeners.forEach(listener => listener(retryAfter, attemptNumber));
+};
+
 // API Client class
 class ApiClient {
   private baseURL: string;
   private isRefreshing: boolean = false;
   private refreshPromise: Promise<boolean> | null = null;
+  
+  // Rate limit retry configuration
+  private readonly maxRetries: number = 3;
+  private readonly baseDelayMs: number = 1000; // 1 second base delay
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+  }
+  
+  // Exponential backoff delay calculator
+  private getRetryDelay(attemptNumber: number): number {
+    // Exponential backoff: 1s, 2s, 4s, etc.
+    return this.baseDelayMs * Math.pow(2, attemptNumber);
+  }
+  
+  // Sleep utility
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   // Redirect to appropriate login page based on user type
@@ -106,7 +145,8 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    retryOnUnauthorized: boolean = true
+    retryOnUnauthorized: boolean = true,
+    rateLimitRetryCount: number = 0
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
@@ -171,6 +211,30 @@ class ApiClient {
           throw new Error('Unauthorized access to public endpoint');
         }
         
+        // Handle 429 Too Many Requests - retry with exponential backoff
+        if (response.status === 429) {
+          const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+          
+          if (rateLimitRetryCount < this.maxRetries) {
+            const delayMs = this.getRetryDelay(rateLimitRetryCount);
+            console.log(`ApiClient: Rate limited. Retry ${rateLimitRetryCount + 1}/${this.maxRetries} after ${delayMs}ms`);
+            
+            // Notify listeners about rate limit hit
+            notifyRateLimitHit(retryAfter, rateLimitRetryCount + 1);
+            
+            await this.sleep(delayMs);
+            return this.request<T>(endpoint, options, retryOnUnauthorized, rateLimitRetryCount + 1);
+          } else {
+            // Max retries reached, throw specific error
+            console.error('ApiClient: Rate limit max retries reached');
+            notifyRateLimitHit(retryAfter, rateLimitRetryCount + 1);
+            throw new RateLimitError(
+              errorData.error || 'Demasiadas solicitudes. Por favor, espera un momento.',
+              retryAfter
+            );
+          }
+        }
+        
         throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
       }
 
@@ -230,15 +294,11 @@ class ApiClient {
   }
 
   async login(credentials: { email: string; password: string }) {
-    console.log('ApiClient: Making login request to:', `${this.baseURL}/api/auth/login`);
-    console.log('ApiClient: Login credentials:', { email: credentials.email, password: '***' });
-    
     const response = await this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
     
-    console.log('ApiClient: Login response:', response);
     return response;
   }
 
@@ -1581,6 +1641,78 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ bookingId, phoneNumber }),
     });
+  }
+
+  // ==================== RECURRING BOOKINGS (TURNOS FIJOS) ====================
+  async getRecurringBookingGroups(params: { establishmentId: string; status?: string; clientId?: string }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+    return this.request(`/api/recurring-bookings?${queryParams.toString()}`);
+  }
+
+  async getRecurringBookingGroup(groupId: string) {
+    return this.request(`/api/recurring-bookings/${groupId}`);
+  }
+
+  async checkRecurringAvailability(data: {
+    establishmentId: string;
+    courtId: string;
+    startDate: string;
+    startTime: string;
+    duration: number;
+    totalWeeks: number;
+    sport?: string;
+  }) {
+    return this.request('/api/recurring-bookings/check-availability', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createRecurringBooking(data: {
+    establishmentId: string;
+    courtId: string;
+    clientId?: string;
+    clientName?: string;
+    clientPhone?: string;
+    clientEmail?: string;
+    startDate: string;
+    startTime: string;
+    duration: number;
+    sport?: string;
+    bookingType?: string;
+    totalWeeks: number;
+    pricePerBooking: number;
+    notes?: string;
+    dateConfigurations?: Array<{ date: string; courtId?: string; skip?: boolean }>;
+    initialPayment?: { amount: number; method: string };
+  }) {
+    return this.request('/api/recurring-bookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async payRecurringBooking(groupId: string, data: { amount?: number; method: string; bookingId?: string }) {
+    return this.request(`/api/recurring-bookings/${groupId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cancelRecurringBooking(groupId: string, data: { cancelType: 'single' | 'all_pending'; bookingId?: string; reason?: string }) {
+    return this.request(`/api/recurring-bookings/${groupId}`, {
+      method: 'DELETE',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getRecurringPendingBookings(groupId: string) {
+    return this.request(`/api/recurring-bookings/${groupId}/pending-bookings`);
   }
 }
 
