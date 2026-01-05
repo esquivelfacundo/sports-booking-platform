@@ -308,9 +308,9 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
     }
   }, []);
 
-  const cancelReservation = useCallback(async (id: string): Promise<boolean> => {
+  const cancelReservation = useCallback(async (id: string, reason: string = 'Cancelado por administrador'): Promise<boolean> => {
     try {
-      await apiClient.updateBooking(id, { status: 'cancelled' });
+      await apiClient.updateBooking(id, { status: 'cancelled', cancellationReason: reason });
       setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'cancelled' as const } : r));
       return true;
     } catch (err) {

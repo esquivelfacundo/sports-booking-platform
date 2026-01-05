@@ -359,7 +359,7 @@ const ReservationsPage = () => {
     
     setIsSaving(true);
     try {
-      // Update reservation via API - only status and notes are allowed by backend
+      // Update reservation via API - send all allowed fields
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/bookings/${selectedReservation.id}`, {
         method: 'PUT',
         headers: {
@@ -368,7 +368,10 @@ const ReservationsPage = () => {
         },
         body: JSON.stringify({
           status: reservationData.status,
-          notes: reservationData.notes || ''
+          notes: reservationData.notes || '',
+          date: reservationData.date,
+          startTime: reservationData.time,
+          courtId: reservationData.court
         })
       });
       
@@ -443,7 +446,7 @@ const ReservationsPage = () => {
     setIsSaving(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/bookings/${selectedReservation.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
@@ -456,14 +459,15 @@ const ReservationsPage = () => {
       });
       
       if (response.ok) {
-        alert('Reserva movida exitosamente');
+        showSuccess('Reserva movida', 'La reserva fue movida exitosamente');
         refreshAll();
       } else {
-        throw new Error('Error moving reservation');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error moving reservation');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error moving reservation:', err);
-      alert('Error al mover la reserva');
+      showError('Error al mover', err.message || 'No se pudo mover la reserva');
     } finally {
       setIsSaving(false);
       setShowMoveModal(false);
@@ -483,7 +487,7 @@ const ReservationsPage = () => {
     setIsSaving(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/bookings/${selectedReservation.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
@@ -492,14 +496,15 @@ const ReservationsPage = () => {
       });
       
       if (response.ok) {
-        alert('Notas guardadas exitosamente');
+        showSuccess('Notas guardadas', 'Las notas fueron actualizadas');
         refreshAll();
       } else {
-        throw new Error('Error saving notes');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error saving notes');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving notes:', err);
-      alert('Error al guardar las notas');
+      showError('Error al guardar', err.message || 'No se pudieron guardar las notas');
     } finally {
       setIsSaving(false);
       setShowNotesModal(false);
@@ -1232,13 +1237,6 @@ const ReservationsPage = () => {
                           <MoveHorizontal className="h-4 w-4" />
                         </button>
                         <button 
-                          onClick={() => handleDuplicateReservation(reservation)}
-                          className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-400/10 rounded transition-colors"
-                          title="Duplicar reserva"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                        <button 
                           onClick={() => handleOpenNotes(reservation)}
                           className={`p-1.5 hover:bg-orange-400/10 rounded transition-colors ${
                             reservation.notes ? 'text-orange-400' : 'text-gray-500 hover:text-orange-400'
@@ -1574,24 +1572,24 @@ const ReservationsPage = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col"
+              className="fixed top-0 right-0 h-full w-full max-w-lg bg-gray-900 shadow-2xl z-50 flex flex-col"
             >
               {/* Header */}
-              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="p-5 border-b border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                    <Edit className="w-5 h-5 text-emerald-500" />
+                  <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                    <Edit className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Editar Reserva</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{selectedReservation.clientName}</p>
+                    <h2 className="text-lg font-bold text-white">Editar Reserva</h2>
+                    <p className="text-sm text-gray-400">{selectedReservation.clientName}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
 
@@ -1616,7 +1614,7 @@ const ReservationsPage = () => {
               }} className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Nombre del Cliente *
                     </label>
                     <input
@@ -1624,12 +1622,12 @@ const ReservationsPage = () => {
                       name="clientName"
                       required
                       defaultValue={selectedReservation.clientName}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Email *
                     </label>
                     <input
@@ -1637,12 +1635,12 @@ const ReservationsPage = () => {
                       name="clientEmail"
                       required
                       defaultValue={selectedReservation.clientEmail}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Teléfono *
                     </label>
                     <input
@@ -1650,19 +1648,19 @@ const ReservationsPage = () => {
                       name="clientPhone"
                       required
                       defaultValue={selectedReservation.clientPhone}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Cancha *
                     </label>
                     <select
                       name="court"
                       required
                       defaultValue={selectedReservation.courtId}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     >
                       {adminCourts.filter(c => c.isActive).map(court => (
                         <option key={court.id} value={court.id}>
@@ -1673,7 +1671,7 @@ const ReservationsPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Fecha *
                     </label>
                     <input
@@ -1681,12 +1679,12 @@ const ReservationsPage = () => {
                       name="date"
                       required
                       defaultValue={selectedReservation.date}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Hora *
                     </label>
                     <input
@@ -1694,19 +1692,19 @@ const ReservationsPage = () => {
                       name="time"
                       required
                       defaultValue={selectedReservation.time}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Duración (minutos) *
                     </label>
                     <select
                       name="duration"
                       required
                       defaultValue={selectedReservation.duration}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     >
                       <option value="60">60 minutos</option>
                       <option value="90">90 minutos</option>
@@ -1715,7 +1713,7 @@ const ReservationsPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Precio (ARS) *
                     </label>
                     <input
@@ -1724,19 +1722,19 @@ const ReservationsPage = () => {
                       required
                       min="0"
                       defaultValue={selectedReservation.price}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Estado *
                     </label>
                     <select
                       name="status"
                       required
                       defaultValue={selectedReservation.status}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     >
                       <option value="pending">Pendiente</option>
                       <option value="confirmed">Confirmada</option>
@@ -1746,14 +1744,14 @@ const ReservationsPage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Estado de Pago *
                     </label>
                     <select
                       name="paymentStatus"
                       required
                       defaultValue={selectedReservation.paymentStatus}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     >
                       <option value="pending">Pendiente</option>
                       <option value="paid">Pagado</option>
@@ -1763,24 +1761,24 @@ const ReservationsPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Notas
                   </label>
                   <textarea
                     name="notes"
                     rows={3}
                     defaultValue={selectedReservation.notes || ''}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="Notas adicionales sobre la reserva..."
                   />
                 </div>
 
                 {/* Footer */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-3 pt-4 border-t border-gray-700">
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                    className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1836,17 +1834,17 @@ const ReservationsPage = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col"
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900 shadow-2xl z-50 flex flex-col"
             >
               {/* Header */}
-              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="p-5 border-b border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center">
-                    <MoveHorizontal className="w-5 h-5 text-cyan-500" />
+                  <div className="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                    <MoveHorizontal className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Mover Reserva</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Cambiar fecha, hora o cancha</p>
+                    <h2 className="text-lg font-bold text-white">Mover Reserva</h2>
+                    <p className="text-sm text-gray-400">Cambiar fecha, hora o cancha</p>
                   </div>
                 </div>
                 <button
@@ -1854,22 +1852,22 @@ const ReservationsPage = () => {
                     setShowMoveModal(false);
                     setSelectedReservation(null);
                   }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 {/* Current Reservation Info */}
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Reserva actual</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">{selectedReservation.clientName}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                <div className="p-4 bg-gray-800 rounded-xl border border-gray-700">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Reserva actual</p>
+                  <p className="font-semibold text-white">{selectedReservation.clientName}</p>
+                  <p className="text-sm text-gray-300 mt-1">
                     {new Date(selectedReservation.date).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} a las {selectedReservation.time}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{selectedReservation.court}</p>
+                  <p className="text-sm text-gray-400">{selectedReservation.court}</p>
                 </div>
 
                 <form id="move-form" onSubmit={(e) => {
@@ -1882,7 +1880,7 @@ const ReservationsPage = () => {
                   );
                 }} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Nueva Fecha
                     </label>
                     <input
@@ -1890,12 +1888,12 @@ const ReservationsPage = () => {
                       name="newDate"
                       required
                       defaultValue={selectedReservation.date}
-                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Nueva Hora
                     </label>
                     <input
@@ -1903,18 +1901,18 @@ const ReservationsPage = () => {
                       name="newTime"
                       required
                       defaultValue={selectedReservation.time}
-                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Nueva Cancha (opcional)
                     </label>
                     <select
                       name="newCourt"
                       defaultValue=""
-                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                     >
                       <option value="">Mantener cancha actual</option>
                       {adminCourts.filter(c => c.isActive).map(court => (
@@ -1928,14 +1926,14 @@ const ReservationsPage = () => {
               </div>
 
               {/* Footer */}
-              <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <div className="p-5 border-t border-gray-700 flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowMoveModal(false);
                     setSelectedReservation(null);
                   }}
-                  className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1973,17 +1971,17 @@ const ReservationsPage = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col"
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900 shadow-2xl z-50 flex flex-col"
             >
               {/* Header */}
-              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="p-5 border-b border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-orange-500" />
+                  <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-orange-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Notas de Reserva</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Notas internas del staff</p>
+                    <h2 className="text-lg font-bold text-white">Notas de Reserva</h2>
+                    <p className="text-sm text-gray-400">Notas internas del staff</p>
                   </div>
                 </div>
                 <button
@@ -1991,25 +1989,25 @@ const ReservationsPage = () => {
                     setShowNotesModal(false);
                     setSelectedReservation(null);
                   }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 {/* Reservation Info */}
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                  <p className="font-semibold text-gray-900 dark:text-white">{selectedReservation.clientName}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                <div className="p-4 bg-gray-800 rounded-xl border border-gray-700">
+                  <p className="font-semibold text-white">{selectedReservation.clientName}</p>
+                  <p className="text-sm text-gray-300 mt-1">
                     {new Date(selectedReservation.date).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} a las {selectedReservation.time}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{selectedReservation.court}</p>
+                  <p className="text-sm text-gray-400">{selectedReservation.court}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Notas internas
                   </label>
                   <textarea
@@ -2017,23 +2015,23 @@ const ReservationsPage = () => {
                     onChange={(e) => setEditingNotes(e.target.value)}
                     rows={8}
                     placeholder="Agregar notas sobre esta reserva..."
-                    className="w-full px-3 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                    className="w-full px-3 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  <p className="text-xs text-gray-400 mt-2">
                     Estas notas son solo visibles para el staff del establecimiento.
                   </p>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <div className="p-5 border-t border-gray-700 flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowNotesModal(false);
                     setSelectedReservation(null);
                   }}
-                  className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
