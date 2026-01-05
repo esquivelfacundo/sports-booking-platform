@@ -976,7 +976,7 @@ const BookingPage = () => {
                     <div className="grid grid-cols-4 gap-2">
                       {availableSlots.map((slot) => (
                         <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
-                          className={`py-2 px-1 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
+                          className={`py-2 px-1 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
                           {slot.time}
                         </button>
                       ))}
@@ -1813,7 +1813,7 @@ const BookingPage = () => {
                                   selectedTime === slot.time 
                                     ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md' 
                                     : slot.available 
-                                      ? 'bg-gray-50 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700' 
+                                      ? 'bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/30 border border-emerald-500/30' 
                                       : 'bg-gray-100 text-gray-300 cursor-not-allowed line-through'
                                 }`}>
                                 {slot.time}
