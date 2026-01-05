@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useEstablishmentAdminContext } from '@/contexts/EstablishmentAdminContext';
@@ -280,8 +281,10 @@ export default function TurnosFijosPage() {
     }
   };
 
-  const formatCurrency = (amount: number | string) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
+    if (amount === null || amount === undefined) return '$ 0';
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(num)) return '$ 0';
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
@@ -492,7 +495,7 @@ export default function TurnosFijosPage() {
                   {/* Progress */}
                   <div className="hidden md:block text-center px-4">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {group.completedOccurrences}/{group.totalWeeks}
+                      {group.completedOccurrences || 0}/{group.totalWeeks || 0}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Turnos</p>
                   </div>
@@ -531,186 +534,210 @@ export default function TurnosFijosPage() {
         )}
       </div>
 
-      {/* Details Modal */}
-      <AnimatePresence>
-        {showDetailsModal && selectedGroup && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
-            >
-              {/* Header */}
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
+      {/* Details Sidebar */}
+      {showDetailsModal && selectedGroup && createPortal(
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            onClick={() => setShowDetailsModal(false)}
+          />
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col"
+          >
+            {/* Header */}
+            <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                  <RepeatIcon className="w-5 h-5 text-purple-500" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {selectedGroup.client?.name || selectedGroup.clientName || 'Turno Fijo'}
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {selectedGroup.primaryCourt?.name} • {DAY_NAMES[selectedGroup.dayOfWeek]} {formatTime(selectedGroup.startTime)}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{groupBookings.length || selectedGroup.totalWeeks || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Total turnos</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-emerald-500">
+                    {groupBookings.filter(b => new Date(b.date) < new Date() && b.status !== 'cancelled').length || selectedGroup.completedOccurrences || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completados</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-red-400">
+                    {groupBookings.filter(b => b.status === 'cancelled').length || selectedGroup.cancelledOccurrences || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Cancelados</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-purple-500">{formatCurrency(selectedGroup.totalPrice || (parseFloat(selectedGroup.pricePerBooking || '0') * (selectedGroup.totalWeeks || 0)))}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Valor total</p>
+                </div>
+              </div>
+
+              {/* Client Info */}
+              {(selectedGroup.client || selectedGroup.clientName) && (
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Cliente</h3>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
-                      <RepeatIcon className="w-6 h-6 text-purple-500" />
+                    <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-purple-500" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                        Turno Fijo - {selectedGroup.client?.name || selectedGroup.clientName}
-                      </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {selectedGroup.primaryCourt?.name} • {DAY_NAMES[selectedGroup.dayOfWeek]} {formatTime(selectedGroup.startTime)}
-                      </p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{selectedGroup.client?.name || selectedGroup.clientName}</p>
+                      {selectedGroup.client?.phone && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5" />
+                          {selectedGroup.client.phone}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowDetailsModal(false)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{selectedGroup.totalWeeks}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total turnos</p>
+              {/* Bookings List */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Turnos ({groupBookings.length})
+                </h3>
+                {loadingBookings ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-emerald-500">{selectedGroup.completedOccurrences}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Completados</p>
+                ) : groupBookings.length === 0 ? (
+                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                    No hay turnos registrados
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-red-400">{selectedGroup.cancelledOccurrences}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancelados</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-purple-500">{formatCurrency(selectedGroup.totalPrice)}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Valor total</p>
-                  </div>
-                </div>
-
-                {/* Client Info */}
-                {selectedGroup.client && (
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Cliente</h3>
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
-                        <User className="w-6 h-6 text-purple-500" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{selectedGroup.client.name}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                          {selectedGroup.client.phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-3.5 h-3.5" />
-                              {selectedGroup.client.phone}
+                ) : (
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                    {groupBookings.map((booking) => {
+                      const isPast = new Date(booking.date) < new Date(new Date().toDateString());
+                      const isCancelled = booking.status === 'cancelled';
+                      
+                      return (
+                        <div 
+                          key={booking.id}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            isCancelled 
+                              ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                              : isPast 
+                                ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700' 
+                                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-mono text-gray-400">#{booking.recurringSequence || '-'}</span>
+                            <span className={`font-medium ${isCancelled ? 'text-red-500 line-through' : 'text-gray-900 dark:text-white'}`}>
+                              {formatDate(booking.date)}
                             </span>
-                          )}
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {formatTime(booking.startTime)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isCancelled ? (
+                              <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">Cancelado</span>
+                            ) : isPast ? (
+                              <span className="px-2 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-400">Completado</span>
+                            ) : (
+                              <>
+                                <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">Próximo</span>
+                                <button
+                                  onClick={() => openCancelModal(selectedGroup, booking)}
+                                  className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                                  title="Cancelar este turno"
+                                >
+                                  <XCircle className="w-4 h-4 text-red-400" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
-
-                {/* Bookings List */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Turnos ({groupBookings.length})
-                  </h3>
-                  {loadingBookings ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {groupBookings.map((booking) => {
-                        const isPast = new Date(booking.date) < new Date(new Date().toDateString());
-                        const isCancelled = booking.status === 'cancelled';
-                        
-                        return (
-                          <div 
-                            key={booking.id}
-                            className={`flex items-center justify-between p-3 rounded-lg border ${
-                              isCancelled 
-                                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                                : isPast 
-                                  ? 'bg-gray-50 dark:bg-gray-700/30 border-gray-200 dark:border-gray-700' 
-                                  : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs font-mono text-gray-400">#{booking.recurringSequence}</span>
-                              <span className={`font-medium ${isCancelled ? 'text-red-500 line-through' : 'text-gray-900 dark:text-white'}`}>
-                                {formatDate(booking.date)}
-                              </span>
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {isCancelled ? (
-                                <span className="px-2 py-1 text-xs rounded-full bg-red-500/20 text-red-400">Cancelado</span>
-                              ) : isPast ? (
-                                <span className="px-2 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-400">Completado</span>
-                              ) : (
-                                <>
-                                  <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400">Próximo</span>
-                                  <button
-                                    onClick={() => openCancelModal(selectedGroup, booking)}
-                                    className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
-                                    title="Cancelar este turno"
-                                  >
-                                    <XCircle className="w-4 h-4 text-red-400" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
               </div>
+            </div>
 
-              {/* Footer */}
-              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+            {/* Footer */}
+            <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+              >
+                Cerrar
+              </button>
+              {selectedGroup.status === 'active' && (
                 <button
-                  onClick={() => setShowDetailsModal(false)}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    openCancelModal(selectedGroup);
+                  }}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  Cerrar
+                  <Trash2 className="w-4 h-4" />
+                  Cancelar
                 </button>
-                {selectedGroup.status === 'active' && (
-                  <button
-                    onClick={() => {
-                      setShowDetailsModal(false);
-                      openCancelModal(selectedGroup);
-                    }}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Cancelar turno fijo
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body
+      )}
 
-      {/* Cancel Modal */}
-      <AnimatePresence>
-        {showCancelModal && selectedGroup && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 space-y-6"
-            >
+      {/* Cancel Sidebar */}
+      {showCancelModal && selectedGroup && createPortal(
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
+            onClick={() => {
+              setShowCancelModal(false);
+              setCancelReason('');
+              setSelectedBookingForCancel(null);
+            }}
+          />
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-[60] flex flex-col"
+          >
+            {/* Header */}
+            <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-500" />
+                <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -721,7 +748,20 @@ export default function TurnosFijosPage() {
                   </p>
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                  setSelectedBookingForCancel(null);
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
 
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {/* Cancel Type Selection */}
               <div className="space-y-3">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -749,24 +789,26 @@ export default function TurnosFijosPage() {
                   </button>
                 )}
                 
-                <button
-                  onClick={() => setCancelType('from_date')}
-                  className={`w-full p-4 rounded-xl border text-left transition-colors ${
-                    cancelType === 'from_date'
-                      ? 'border-red-500 bg-red-500/10'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full border-2 ${cancelType === 'from_date' ? 'border-red-500 bg-red-500' : 'border-gray-400'}`} />
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">Este y todos los siguientes</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Cancela desde {selectedBookingForCancel ? formatDate(selectedBookingForCancel.date) : 'hoy'} en adelante
-                      </p>
+                {selectedBookingForCancel && (
+                  <button
+                    onClick={() => setCancelType('from_date')}
+                    className={`w-full p-4 rounded-xl border text-left transition-colors ${
+                      cancelType === 'from_date'
+                        ? 'border-red-500 bg-red-500/10'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded-full border-2 ${cancelType === 'from_date' ? 'border-red-500 bg-red-500' : 'border-gray-400'}`} />
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">Este y todos los siguientes</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Cancela desde {formatDate(selectedBookingForCancel.date)} en adelante
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                )}
                 
                 <button
                   onClick={() => setCancelType('all_pending')}
@@ -797,46 +839,47 @@ export default function TurnosFijosPage() {
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder="Ej: Cambio de horario, viaje, etc..."
-                  rows={2}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-red-500 resize-none"
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-red-500 resize-none"
                 />
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowCancelModal(false);
-                    setCancelReason('');
-                    setSelectedBookingForCancel(null);
-                  }}
-                  disabled={isCancelling}
-                  className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
-                >
-                  Volver
-                </button>
-                <button
-                  onClick={handleCancelRecurring}
-                  disabled={isCancelling}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  {isCancelling ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Cancelando...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4" />
-                      Confirmar
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            {/* Footer */}
+            <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                  setSelectedBookingForCancel(null);
+                }}
+                disabled={isCancelling}
+                className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleCancelRecurring}
+                disabled={isCancelling}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {isCancelling ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Cancelando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Confirmar
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
