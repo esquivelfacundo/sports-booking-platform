@@ -85,12 +85,11 @@ interface CreateReservationSidebarProps {
   amenities?: Amenity[];
 }
 
-type Step = 'sport' | 'date' | 'time' | 'court' | 'player' | 'confirmation';
+type Step = 'sport' | 'datetime' | 'court' | 'player' | 'confirmation';
 
 const STEPS: { key: Step; label: string; icon: React.ElementType }[] = [
   { key: 'sport', label: 'Deporte', icon: Trophy },
-  { key: 'date', label: 'Fecha', icon: Calendar },
-  { key: 'time', label: 'Hora', icon: Clock },
+  { key: 'datetime', label: 'Fecha', icon: Calendar },
   { key: 'court', label: 'Cancha', icon: MapPin },
   { key: 'player', label: 'Jugador', icon: User },
   { key: 'confirmation', label: 'Confirmación', icon: CheckCircle },
@@ -595,10 +594,8 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     switch (currentStep) {
       case 'sport':
         return !!selectedSport;
-      case 'date':
-        return !!selectedDate;
-      case 'time':
-        return !!selectedTime;
+      case 'datetime':
+        return !!selectedDate && !!selectedTime;
       case 'court':
         return !!selectedCourt;
       case 'player':
@@ -758,6 +755,41 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     }
   };
 
+  // Generate dates for horizontal scroll (14 days from today)
+  const horizontalDates = useMemo(() => {
+    const dates: Array<{
+      value: string;
+      dayName: string;
+      dayNumber: number;
+      month: string;
+      isToday: boolean;
+      isWeekend: boolean;
+    }> = [];
+    const today = new Date();
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateValue = `${year}-${month}-${day}`;
+      
+      dates.push({
+        value: dateValue,
+        dayName: dayNames[date.getDay()],
+        dayNumber: date.getDate(),
+        month: monthNames[date.getMonth()],
+        isToday: i === 0,
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
+      });
+    }
+    
+    return dates;
+  }, []);
+
   // Reset form
   const handleClose = () => {
     setCurrentStep('sport');
@@ -857,82 +889,129 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
           </div>
         );
 
-      case 'date':
+      case 'datetime':
+        const presetDurations = [60, 90, 120];
+        const isCustomDuration = !presetDurations.includes(selectedDuration);
+        
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white mb-4">Seleccionar Fecha</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Fecha y hora</h3>
             
-            {/* Calendar navigation */}
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => {
-                  const newMonth = new Date(calendarMonth);
-                  newMonth.setMonth(newMonth.getMonth() - 1);
-                  setCalendarMonth(newMonth);
-                }}
-                className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <span className="text-white font-medium">
-                {calendarMonth.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
-              </span>
-              <button
-                onClick={() => {
-                  const newMonth = new Date(calendarMonth);
-                  newMonth.setMonth(newMonth.getMonth() + 1);
-                  setCalendarMonth(newMonth);
-                }}
-                className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-            
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((day, i) => (
-                <div key={i} className="text-center text-xs text-gray-400 py-2">
-                  {day}
-                </div>
+            {/* Horizontal date selector */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin scrollbar-thumb-gray-600">
+              {horizontalDates.map((date) => (
+                <button
+                  key={date.value}
+                  onClick={() => setSelectedDate(date.value)}
+                  className={`flex-shrink-0 flex flex-col items-center p-2 rounded-lg border-2 transition-all min-w-[56px] ${
+                    selectedDate === date.value
+                      ? 'bg-emerald-500 border-emerald-500 text-white'
+                      : date.isWeekend
+                        ? 'bg-gray-700/70 border-gray-600 text-gray-300 hover:border-emerald-500/50'
+                        : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-emerald-500/50'
+                  }`}
+                >
+                  <span className="text-[10px] opacity-70 uppercase">{date.dayName}</span>
+                  <span className="text-base font-bold">{date.dayNumber}</span>
+                  <span className="text-[10px] opacity-70">{date.month}</span>
+                </button>
               ))}
-              {calendarDays.map((day, index) => {
-                const dateStr = day.toISOString().split('T')[0];
-                const isCurrentMonth = day.getMonth() === calendarMonth.getMonth();
-                const isToday = day.toDateString() === new Date().toDateString();
-                const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
-                const isSelected = dateStr === selectedDate;
-                
-                return (
-                  <button
-                    key={index}
-                    onClick={() => !isPast && setSelectedDate(dateStr)}
-                    disabled={isPast}
-                    className={`
-                      p-2 rounded-lg text-sm transition-all
-                      ${!isCurrentMonth ? 'opacity-30' : ''}
-                      ${isPast ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
-                      ${isSelected ? 'bg-emerald-500 text-white' : ''}
-                      ${isToday && !isSelected ? 'ring-2 ring-emerald-500' : ''}
-                      ${!isSelected && !isPast ? 'hover:bg-gray-700 text-gray-300' : ''}
-                    `}
-                  >
-                    {day.getDate()}
-                  </button>
-                );
-              })}
             </div>
-            
+
             {selectedDate && (
-              <div className="mt-4 p-3 bg-gray-700/50 rounded-lg">
-                <p className="text-emerald-400 text-sm">
-                  Fecha seleccionada: <span className="font-medium">{formatDate(selectedDate)}</span>
+              <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                <p className="text-emerald-400 text-sm text-center">
+                  {formatDate(selectedDate)}
                 </p>
               </div>
             )}
+            
+            {/* Duration selector */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Duración</label>
+              <div className="flex gap-2 flex-wrap">
+                {presetDurations.map((duration) => (
+                  <button
+                    key={duration}
+                    onClick={() => setSelectedDuration(duration)}
+                    className={`py-2 px-3 rounded-lg text-sm transition-all ${
+                      selectedDuration === duration
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    {duration} min
+                  </button>
+                ))}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="30"
+                    max="480"
+                    step="30"
+                    value={isCustomDuration ? selectedDuration : ''}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 60;
+                      setSelectedDuration(Math.max(30, Math.min(480, val)));
+                    }}
+                    placeholder="Otro"
+                    className={`w-20 py-2 px-3 rounded-lg text-sm transition-all ${
+                      isCustomDuration
+                        ? 'bg-emerald-500 text-white border-emerald-500'
+                        : 'bg-gray-700 text-gray-300 border-gray-600'
+                    } border focus:outline-none focus:border-emerald-500`}
+                  />
+                  <span className="text-gray-400 text-sm">min</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Time slots */}
+            {selectedDate && (
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Horarios disponibles</label>
+                {loadingSlots ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                  </div>
+                ) : availableSlots.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-y-auto">
+                    {availableSlots.map((slot) => {
+                      const isPast = isSlotInPast(slot.time);
+                      const isAvailable = slot.available && !isPast;
+                      
+                      return (
+                        <button
+                          key={slot.time}
+                          onClick={() => isAvailable && setSelectedTime(slot.time)}
+                          disabled={!isAvailable}
+                          className={`
+                            py-2 px-1 rounded-lg text-xs font-medium transition-all
+                            ${isPast ? 'bg-gray-800/50 text-gray-600 cursor-not-allowed line-through' : ''}
+                            ${!isAvailable && !isPast ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : ''}
+                            ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : ''}
+                            ${isAvailable && selectedTime !== slot.time ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : ''}
+                          `}
+                        >
+                          {slot.time}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    No hay horarios disponibles
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!selectedDate && (
+              <p className="text-center text-gray-500 py-4">Seleccioná una fecha para ver los horarios</p>
+            )}
 
             {/* Recurring reservation option */}
-            <div className="mt-4 border-t border-gray-700 pt-4">
+            <div className="border-t border-gray-700 pt-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <Repeat className="h-5 w-5 text-blue-400" />
@@ -1000,9 +1079,9 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
                   <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                     <div className="flex items-center space-x-2 mb-2">
                       <CalendarRange className="h-4 w-4 text-blue-400" />
-                      <span className="text-blue-400 text-sm font-medium">📅 Fechas del turno fijo:</span>
+                      <span className="text-blue-400 text-sm font-medium">Fechas del turno fijo:</span>
                     </div>
-                    <div className="text-xs space-y-1 max-h-40 overflow-y-auto">
+                    <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
                       {getRecurringDates().map((date, index) => {
                         const isFirst = index === 0;
                         return (
@@ -1027,95 +1106,6 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
                 </motion.div>
               )}
             </div>
-          </div>
-        );
-
-      case 'time':
-        const presetDurations = [60, 90, 120];
-        const isCustomDuration = !presetDurations.includes(selectedDuration);
-        
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white mb-4">Seleccionar Hora</h3>
-            
-            {/* Duration selector */}
-            <div className="mb-4">
-              <label className="block text-sm text-gray-400 mb-2">Duración</label>
-              <div className="flex gap-2 flex-wrap">
-                {presetDurations.map((duration) => (
-                  <button
-                    key={duration}
-                    onClick={() => setSelectedDuration(duration)}
-                    className={`py-2 px-3 rounded-lg text-sm transition-all ${
-                      selectedDuration === duration
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    {duration} min
-                  </button>
-                ))}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="30"
-                    max="480"
-                    step="30"
-                    value={isCustomDuration ? selectedDuration : ''}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 60;
-                      setSelectedDuration(Math.max(30, Math.min(480, val)));
-                    }}
-                    placeholder="Otro"
-                    className={`w-20 py-2 px-3 rounded-lg text-sm transition-all ${
-                      isCustomDuration
-                        ? 'bg-emerald-500 text-white border-emerald-500'
-                        : 'bg-gray-700 text-gray-300 border-gray-600'
-                    } border focus:outline-none focus:border-emerald-500`}
-                  />
-                  <span className="text-gray-400 text-sm">min</span>
-                </div>
-              </div>
-            </div>
-            
-            {loadingSlots ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 gap-2 max-h-[300px] overflow-y-auto">
-                {availableSlots.map((slot) => {
-                  const isPast = isSlotInPast(slot.time);
-                  const isAvailable = slot.available && !isPast;
-                  
-                  return (
-                    <button
-                      key={slot.time}
-                      onClick={() => isAvailable && setSelectedTime(slot.time)}
-                      disabled={!isAvailable}
-                      className={`
-                        p-3 rounded-lg text-sm transition-all relative
-                        ${isPast ? 'bg-gray-800/50 text-gray-600 cursor-not-allowed line-through' : ''}
-                        ${!isAvailable && !isPast ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : ''}
-                        ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : ''}
-                        ${isAvailable && selectedTime !== slot.time ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : ''}
-                      `}
-                    >
-                      {slot.time}
-                      {isPast ? (
-                        <span className="block text-xs opacity-50">pasado</span>
-                      ) : isAvailable ? (
-                        <span className="block text-xs opacity-70">
-                          {slot.courts.length} {slot.courts.length === 1 ? 'cancha' : 'canchas'}
-                        </span>
-                      ) : (
-                        <span className="block text-xs opacity-50">ocupado</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
         );
 
