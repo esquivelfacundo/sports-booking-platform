@@ -407,7 +407,7 @@ export default function TurnosFijosPage() {
           placeholder="Buscar..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 pr-3 py-1.5 w-40 lg:w-52 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+          className="pl-9 pr-3 py-1.5 w-40 lg:w-52 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500"
         />
       </div>
       
@@ -415,7 +415,7 @@ export default function TurnosFijosPage() {
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value as any)}
-        className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white"
+        className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white"
       >
         <option value="all">Todos</option>
         <option value="active">Activos</option>
@@ -426,10 +426,10 @@ export default function TurnosFijosPage() {
       {/* Refresh */}
       <button
         onClick={fetchGroups}
-        className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+        className="p-1.5 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors"
         title="Actualizar"
       >
-        <RefreshCw className="w-4 h-4 text-gray-400" />
+        <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-400" />
       </button>
       
       {/* New button */}
