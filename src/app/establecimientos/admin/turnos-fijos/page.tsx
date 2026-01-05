@@ -100,6 +100,7 @@ export default function TurnosFijosPage() {
 
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<RecurringGroup[]>([]);
+  const [expandedBookings, setExpandedBookings] = useState<Array<RecurringBooking & { groupInfo: RecurringGroup; totalInGroup: number }>>([]);
   const [selectedGroup, setSelectedGroup] = useState<RecurringGroup | null>(null);
   const [groupBookings, setGroupBookings] = useState<RecurringBooking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
@@ -152,6 +153,33 @@ export default function TurnosFijosPage() {
       
       if (data.success) {
         setGroups(data.groups || []);
+        
+        // Fetch bookings for each group and expand them
+        const allBookings: Array<RecurringBooking & { groupInfo: RecurringGroup; totalInGroup: number }> = [];
+        
+        for (const group of (data.groups || [])) {
+          try {
+            const detailResponse = await fetch(`${API_URL}/api/recurring-bookings/${group.id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const detailData = await detailResponse.json();
+            
+            if (detailData.success && detailData.bookings) {
+              const bookings = detailData.bookings;
+              bookings.forEach((booking: RecurringBooking) => {
+                allBookings.push({
+                  ...booking,
+                  groupInfo: group,
+                  totalInGroup: bookings.length
+                });
+              });
+            }
+          } catch (err) {
+            console.error(`Error fetching bookings for group ${group.id}:`, err);
+          }
+        }
+        
+        setExpandedBookings(allBookings);
       }
     } catch (error) {
       console.error('Error fetching recurring groups:', error);
@@ -234,26 +262,30 @@ export default function TurnosFijosPage() {
     }
   };
 
-  // Filter groups
-  const filteredGroups = useMemo(() => {
-    let filtered = [...groups];
+  // Filter bookings
+  const filteredBookings = useMemo(() => {
+    let filtered = [...expandedBookings];
     
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(g => 
-        g.clientName?.toLowerCase().includes(query) ||
-        g.client?.name?.toLowerCase().includes(query) ||
-        g.client?.phone?.includes(query) ||
-        g.primaryCourt?.name?.toLowerCase().includes(query)
+      filtered = filtered.filter(b => 
+        b.groupInfo.clientName?.toLowerCase().includes(query) ||
+        b.groupInfo.client?.name?.toLowerCase().includes(query) ||
+        b.groupInfo.client?.phone?.includes(query) ||
+        b.groupInfo.primaryCourt?.name?.toLowerCase().includes(query)
       );
     }
     
     if (courtFilter !== 'all') {
-      filtered = filtered.filter(g => g.courtId === courtFilter);
+      filtered = filtered.filter(b => b.groupInfo.courtId === courtFilter);
+    }
+    
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(b => b.groupInfo.status === statusFilter);
     }
     
     return filtered;
-  }, [groups, searchQuery, courtFilter]);
+  }, [expandedBookings, searchQuery, courtFilter, statusFilter]);
 
   // Stats
   const stats = useMemo(() => {
@@ -480,9 +512,9 @@ export default function TurnosFijosPage() {
           </div>
         </div>
 
-        {/* Groups List */}
+        {/* Bookings List */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {filteredGroups.length === 0 ? (
+          {filteredBookings.length === 0 ? (
             <div className="p-8 text-center">
               <RepeatIcon className="w-12 h-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-400 mb-2">No hay turnos fijos</p>
@@ -492,14 +524,14 @@ export default function TurnosFijosPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredGroups.map((group) => {
-                // Calculate completed from bookings count or use stored value
-                const totalBookings = group.totalWeeks || 0;
-                const completed = group.completedOccurrences || 0;
+              {filteredBookings.map((booking) => {
+                const group = booking.groupInfo;
+                const sequence = booking.recurringSequence || 0;
+                const total = booking.totalInGroup;
                 
                 return (
                   <div 
-                    key={group.id} 
+                    key={booking.id} 
                     className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-4">
@@ -513,32 +545,32 @@ export default function TurnosFijosPage() {
                             <span className="font-semibold text-gray-900 dark:text-white">
                               {group.client?.name || group.clientName || 'Sin cliente'}
                             </span>
-                            {getStatusBadge(group.status)}
-                            {getPaymentStatusBadge(group.paymentStatus)}
+                            {getStatusBadge(booking.status)}
+                            {getPaymentStatusBadge(booking.recurringPaymentStatus || 'pending')}
                           </div>
                           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 mt-1 flex-wrap">
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3.5 h-3.5" />
-                              {group.primaryCourt?.name || 'Sin cancha'}
+                              {booking.court?.name || group.primaryCourt?.name || 'Sin cancha'}
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3.5 h-3.5" />
-                              {DAY_NAMES[group.dayOfWeek]}s • {formatDate(group.startDate)} - {formatDate(group.endDate)}
+                              {DAY_NAMES[group.dayOfWeek]}s • {formatDate(booking.date)}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5" />
-                              {formatTime(group.startTime)}
+                              {formatTime(booking.startTime)}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Progress */}
+                      {/* Sequence */}
                       <div className="hidden md:block text-center px-4">
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          {completed}/{totalBookings}
+                          {sequence}/{total}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Turnos</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Turno</p>
                       </div>
 
                       {/* Price */}
@@ -558,9 +590,9 @@ export default function TurnosFijosPage() {
                         >
                           <Eye className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
                         </button>
-                        {group.status === 'active' && (
+                        {booking.status !== 'cancelled' && (
                           <button
-                            onClick={() => openCancelModal(group)}
+                            onClick={() => openCancelModal(group, booking)}
                             className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                             title="Cancelar"
                           >
