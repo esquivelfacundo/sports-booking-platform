@@ -110,30 +110,14 @@ const BookingPage = () => {
     autoFetch: true
   }) as { establishment: EstablishmentData | null; loading: boolean; error: string | null };
 
-  // Helper to get saved booking state from sessionStorage
-  const getSavedBookingState = () => {
-    if (typeof window === 'undefined') return null;
-    const saved = sessionStorage.getItem(`booking_state_${idOrSlug}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  };
-
-  // Initialize state from sessionStorage if available
-  const savedState = getSavedBookingState();
-  
-  const [selectedDate, setSelectedDate] = useState<string>(savedState?.selectedDate || '');
-  const [selectedCourt, setSelectedCourt] = useState<Court | null>(savedState?.selectedCourt || null);
-  const [selectedTime, setSelectedTime] = useState<string>(savedState?.selectedTime || '');
-  const [selectedDuration, setSelectedDuration] = useState<number>(savedState?.selectedDuration || 60);
-  const [customDuration, setCustomDuration] = useState<number>(savedState?.customDuration || 60);
-  const [showCustomDuration, setShowCustomDuration] = useState(savedState?.showCustomDuration || false);
-  const [selectedSport, setSelectedSport] = useState<string>(savedState?.selectedSport || '');
+  // State initialization - will be restored from sessionStorage in useEffect
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string>('');
+  const [selectedDuration, setSelectedDuration] = useState<number>(60);
+  const [customDuration, setCustomDuration] = useState<number>(60);
+  const [showCustomDuration, setShowCustomDuration] = useState(false);
+  const [selectedSport, setSelectedSport] = useState<string>('');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isEstablishmentInfoExpanded, setIsEstablishmentInfoExpanded] = useState(false);
@@ -142,14 +126,45 @@ const BookingPage = () => {
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [userFavorites, setUserFavorites] = useState<Array<{ id: string; name: string; slug: string; image?: string }>>([]);
+  const [hasRestoredState, setHasRestoredState] = useState(false);
   
   // Multi-step form state
-  const [currentStep, setCurrentStep] = useState(savedState?.currentStep || 1);
+  const [currentStep, setCurrentStep] = useState(1);
   const TOTAL_STEPS = 5;
   
-  // Save booking state to sessionStorage whenever it changes
+  // Restore state from sessionStorage on client-side hydration
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || hasRestoredState) return;
+    
+    const saved = sessionStorage.getItem(`booking_state_${idOrSlug}`);
+    if (saved) {
+      try {
+        const savedState = JSON.parse(saved);
+        console.log('📦 Restoring booking state:', savedState);
+        
+        if (savedState.selectedSport) setSelectedSport(savedState.selectedSport);
+        if (savedState.selectedDuration) setSelectedDuration(savedState.selectedDuration);
+        if (savedState.customDuration) setCustomDuration(savedState.customDuration);
+        if (savedState.showCustomDuration) setShowCustomDuration(savedState.showCustomDuration);
+        if (savedState.selectedDate) setSelectedDate(savedState.selectedDate);
+        if (savedState.selectedTime) setSelectedTime(savedState.selectedTime);
+        if (savedState.selectedCourt) setSelectedCourt(savedState.selectedCourt);
+        if (savedState.currentStep) setCurrentStep(savedState.currentStep);
+        
+        setHasRestoredState(true);
+      } catch (e) {
+        console.error('Error restoring booking state:', e);
+        setHasRestoredState(true);
+      }
+    } else {
+      setHasRestoredState(true);
+    }
+  }, [idOrSlug, hasRestoredState]);
+  
+  // Save booking state to sessionStorage whenever it changes (only after initial restoration)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !hasRestoredState) return;
+    
     const stateToSave = {
       selectedDate,
       selectedCourt,
@@ -161,7 +176,7 @@ const BookingPage = () => {
       currentStep
     };
     sessionStorage.setItem(`booking_state_${idOrSlug}`, JSON.stringify(stateToSave));
-  }, [selectedDate, selectedCourt, selectedTime, selectedDuration, customDuration, showCustomDuration, selectedSport, currentStep, idOrSlug]);
+  }, [selectedDate, selectedCourt, selectedTime, selectedDuration, customDuration, showCustomDuration, selectedSport, currentStep, idOrSlug, hasRestoredState]);
   
   // Clear saved state in specific scenarios
   useEffect(() => {
@@ -170,17 +185,10 @@ const BookingPage = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const hasPaymentParams = urlParams.get('payment_id') || urlParams.get('collection_id');
     const hasSuccessParam = urlParams.get('payment_success') === 'true';
-    const isFromLogin = urlParams.get('from_login') === 'true';
     
-    // Clear state if:
-    // 1. Payment was completed (has payment params)
-    // 2. Explicit success parameter
-    // 3. User is coming from somewhere other than login (fresh start)
+    // Clear state if payment was completed
     if (hasPaymentParams || hasSuccessParam) {
       sessionStorage.removeItem(`booking_state_${idOrSlug}`);
-    } else if (!isFromLogin && !savedState) {
-      // If no saved state and not from login, ensure we start fresh
-      setCurrentStep(1);
     }
   }, [idOrSlug]);
   
@@ -581,14 +589,23 @@ const BookingPage = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const isFromLogin = urlParams.get('from_login') === 'true';
     
-    if (isFromLogin && savedState?.selectedDate && savedState?.selectedTime) {
-      setIsRestoringFromLogin(true);
+    if (isFromLogin) {
+      // Check if we have saved state to restore
+      const saved = sessionStorage.getItem(`booking_state_${idOrSlug}`);
+      if (saved) {
+        try {
+          const parsedState = JSON.parse(saved);
+          if (parsedState.selectedDate && parsedState.selectedTime) {
+            setIsRestoringFromLogin(true);
+          }
+        } catch {}
+      }
       // Clean up the URL param
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('from_login');
       window.history.replaceState({}, '', newUrl.toString());
     }
-  }, []);
+  }, [idOrSlug]);
   
   // Update slots when date, duration, or sport changes
   useEffect(() => {

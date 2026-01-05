@@ -2091,7 +2091,7 @@ const ConfigurationPage = () => {
         <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="text-gray-900 dark:text-white font-medium">Penalidad por No-Show</h4>
+              <h4 className="text-gray-900 dark:text-white font-medium">Penalidad por no asistir</h4>
               <p className="text-gray-500 dark:text-gray-400 text-sm">Cobrar cuando el cliente no se presenta</p>
             </div>
             <button
@@ -2161,7 +2161,7 @@ const ConfigurationPage = () => {
               'Sin reembolso'
             }</li>
             {config.noShowPenalty && (
-              <li>• No-show: {
+              <li>• No asiste: {
                 config.noShowPenaltyType === 'full_charge' ? 'Se cobra el total' :
                 config.noShowPenaltyType === 'deposit_only' ? 'Se retiene la seña' :
                 `Se cobra el ${config.noShowPenaltyPercentage}%`
