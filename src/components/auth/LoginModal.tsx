@@ -232,17 +232,19 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
               </div>
 
               {/* Switch to Register */}
-              <div className="mt-6 text-center">
-                <p className="text-gray-400">
-                  ¿No tienes cuenta?{' '}
-                  <a
-                    href="/dashboard"
-                    className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-                  >
-                    Regístrate
-                  </a>
-                </p>
-              </div>
+              {onSwitchToRegister && (
+                <div className="mt-6 text-center">
+                  <p className="text-gray-400">
+                    ¿No tienes cuenta?{' '}
+                    <button
+                      onClick={onSwitchToRegister}
+                      className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                    >
+                      Regístrate
+                    </button>
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
