@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { useEstablishmentAdminContext, AdminReservation } from '@/contexts/EstablishmentAdminContext';
 import { useCommandMenu } from '@/contexts/CommandMenuContext';
