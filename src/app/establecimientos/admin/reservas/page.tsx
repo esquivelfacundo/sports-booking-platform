@@ -1558,221 +1558,246 @@ const ReservationsPage = () => {
         amenities={amenities}
       />
 
-      {/* Edit Reservation Modal */}
-      {showEditModal && selectedReservation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl p-6 w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">Editar Reserva</h3>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <XCircle className="h-6 w-6" />
-              </button>
-            </div>
-
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              const reservationData = {
-                clientName: formData.get('clientName') as string,
-                clientEmail: formData.get('clientEmail') as string,
-                clientPhone: formData.get('clientPhone') as string,
-                court: formData.get('court') as string,
-                date: formData.get('date') as string,
-                time: formData.get('time') as string,
-                duration: Number(formData.get('duration')),
-                price: Number(formData.get('price')),
-                status: formData.get('status') as Reservation['status'],
-                paymentStatus: formData.get('paymentStatus') as Reservation['paymentStatus'],
-                notes: formData.get('notes') as string
-              };
-              handleSaveReservation(reservationData);
-            }} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Nombre del Cliente *
-                  </label>
-                  <input
-                    type="text"
-                    name="clientName"
-                    required
-                    defaultValue={selectedReservation.clientName}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
+      {/* Edit Reservation Sidebar */}
+      <AnimatePresence>
+        {showEditModal && selectedReservation && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              onClick={() => setShowEditModal(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                    <Edit className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Editar Reserva</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{selectedReservation.clientName}</p>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="clientEmail"
-                    required
-                    defaultValue={selectedReservation.clientEmail}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Teléfono *
-                  </label>
-                  <input
-                    type="tel"
-                    name="clientPhone"
-                    required
-                    defaultValue={selectedReservation.clientPhone}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Cancha *
-                  </label>
-                  <select
-                    name="court"
-                    required
-                    defaultValue={selectedReservation.court}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    <option value="Cancha 1 - Fútbol 5">Cancha 1 - Fútbol 5</option>
-                    <option value="Cancha 2 - Padel">Cancha 2 - Padel</option>
-                    <option value="Cancha 3 - Tenis">Cancha 3 - Tenis</option>
-                    <option value="Cancha 4 - Básquet">Cancha 4 - Básquet</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Fecha *
-                  </label>
-                  <input
-                    type="date"
-                    name="date"
-                    required
-                    defaultValue={selectedReservation.date}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Hora *
-                  </label>
-                  <input
-                    type="time"
-                    name="time"
-                    required
-                    defaultValue={selectedReservation.time}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Duración (minutos) *
-                  </label>
-                  <select
-                    name="duration"
-                    required
-                    defaultValue={selectedReservation.duration}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    <option value="60">60 minutos</option>
-                    <option value="90">90 minutos</option>
-                    <option value="120">120 minutos</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Precio (ARS) *
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    required
-                    min="0"
-                    defaultValue={selectedReservation.price}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Estado *
-                  </label>
-                  <select
-                    name="status"
-                    required
-                    defaultValue={selectedReservation.status}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    <option value="pending">Pendiente</option>
-                    <option value="confirmed">Confirmada</option>
-                    <option value="completed">Completada</option>
-                    <option value="cancelled">Cancelada</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Estado de Pago *
-                  </label>
-                  <select
-                    name="paymentStatus"
-                    required
-                    defaultValue={selectedReservation.paymentStatus}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    <option value="pending">Pendiente</option>
-                    <option value="paid">Pagado</option>
-                    <option value="failed">Fallido</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Notas
-                </label>
-                <textarea
-                  name="notes"
-                  rows={3}
-                  defaultValue={selectedReservation.notes || ''}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Notas adicionales sobre la reserva..."
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
                 <button
-                  type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors"
-                >
-                  Guardar Cambios
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+
+              {/* Form */}
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const reservationData = {
+                  clientName: formData.get('clientName') as string,
+                  clientEmail: formData.get('clientEmail') as string,
+                  clientPhone: formData.get('clientPhone') as string,
+                  court: formData.get('court') as string,
+                  date: formData.get('date') as string,
+                  time: formData.get('time') as string,
+                  duration: Number(formData.get('duration')),
+                  price: Number(formData.get('price')),
+                  status: formData.get('status') as Reservation['status'],
+                  paymentStatus: formData.get('paymentStatus') as Reservation['paymentStatus'],
+                  notes: formData.get('notes') as string
+                };
+                handleSaveReservation(reservationData);
+              }} className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nombre del Cliente *
+                    </label>
+                    <input
+                      type="text"
+                      name="clientName"
+                      required
+                      defaultValue={selectedReservation.clientName}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      name="clientEmail"
+                      required
+                      defaultValue={selectedReservation.clientEmail}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Teléfono *
+                    </label>
+                    <input
+                      type="tel"
+                      name="clientPhone"
+                      required
+                      defaultValue={selectedReservation.clientPhone}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Cancha *
+                    </label>
+                    <select
+                      name="court"
+                      required
+                      defaultValue={selectedReservation.courtId}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      {adminCourts.filter(c => c.isActive).map(court => (
+                        <option key={court.id} value={court.id}>
+                          {court.name} - {court.sport}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Fecha *
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      required
+                      defaultValue={selectedReservation.date}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Hora *
+                    </label>
+                    <input
+                      type="time"
+                      name="time"
+                      required
+                      defaultValue={selectedReservation.time}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Duración (minutos) *
+                    </label>
+                    <select
+                      name="duration"
+                      required
+                      defaultValue={selectedReservation.duration}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="60">60 minutos</option>
+                      <option value="90">90 minutos</option>
+                      <option value="120">120 minutos</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Precio (ARS) *
+                    </label>
+                    <input
+                      type="number"
+                      name="price"
+                      required
+                      min="0"
+                      defaultValue={selectedReservation.price}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Estado *
+                    </label>
+                    <select
+                      name="status"
+                      required
+                      defaultValue={selectedReservation.status}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="pending">Pendiente</option>
+                      <option value="confirmed">Confirmada</option>
+                      <option value="completed">Completada</option>
+                      <option value="cancelled">Cancelada</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Estado de Pago *
+                    </label>
+                    <select
+                      name="paymentStatus"
+                      required
+                      defaultValue={selectedReservation.paymentStatus}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="pending">Pendiente</option>
+                      <option value="paid">Pagado</option>
+                      <option value="failed">Fallido</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Notas
+                  </label>
+                  <textarea
+                    name="notes"
+                    rows={3}
+                    defaultValue={selectedReservation.notes || ''}
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Notas adicionales sobre la reserva..."
+                  />
+                </div>
+
+                {/* Footer */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Create Reservation Sidebar */}
       <CreateReservationSidebar
@@ -1792,193 +1817,239 @@ const ReservationsPage = () => {
         onReservationCreated={handleReservationCreated}
       />
 
-      {/* Move Reservation Modal */}
-      {showMoveModal && selectedReservation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-cyan-500/10 rounded-lg">
-                  <MoveHorizontal className="h-5 w-5 text-cyan-400" />
+      {/* Move Reservation Sidebar */}
+      <AnimatePresence>
+        {showMoveModal && selectedReservation && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              onClick={() => {
+                setShowMoveModal(false);
+                setSelectedReservation(null);
+              }}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center">
+                    <MoveHorizontal className="w-5 h-5 text-cyan-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Mover Reserva</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Cambiar fecha, hora o cancha</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-white">Mover Reserva</h3>
-              </div>
-              <button
-                onClick={() => {
-                  setShowMoveModal(false);
-                  setSelectedReservation(null);
-                }}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="mb-4 p-3 bg-gray-700/50 rounded-lg">
-              <p className="text-gray-400 text-sm">Reserva actual:</p>
-              <p className="text-white font-medium">{selectedReservation.clientName}</p>
-              <p className="text-gray-300 text-sm">
-                {new Date(selectedReservation.date).toLocaleDateString('es-AR')} a las {selectedReservation.time}
-              </p>
-              <p className="text-gray-300 text-sm">{selectedReservation.court}</p>
-            </div>
-
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleSaveMove(
-                formData.get('newDate') as string,
-                formData.get('newTime') as string,
-                formData.get('newCourt') as string || undefined
-              );
-            }} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Nueva Fecha
-                </label>
-                <input
-                  type="date"
-                  name="newDate"
-                  required
-                  defaultValue={selectedReservation.date}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Nueva Hora
-                </label>
-                <input
-                  type="time"
-                  name="newTime"
-                  required
-                  defaultValue={selectedReservation.time}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Nueva Cancha (opcional)
-                </label>
-                <select
-                  name="newCourt"
-                  defaultValue=""
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                <button
+                  onClick={() => {
+                    setShowMoveModal(false);
+                    setSelectedReservation(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  <option value="">Mantener cancha actual</option>
-                  {adminCourts.filter(c => c.isActive).map(court => (
-                    <option key={court.id} value={court.id}>
-                      {court.name} - {court.sport}
-                    </option>
-                  ))}
-                </select>
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* Current Reservation Info */}
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Reserva actual</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{selectedReservation.clientName}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    {new Date(selectedReservation.date).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} a las {selectedReservation.time}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{selectedReservation.court}</p>
+                </div>
+
+                <form id="move-form" onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  handleSaveMove(
+                    formData.get('newDate') as string,
+                    formData.get('newTime') as string,
+                    formData.get('newCourt') as string || undefined
+                  );
+                }} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nueva Fecha
+                    </label>
+                    <input
+                      type="date"
+                      name="newDate"
+                      required
+                      defaultValue={selectedReservation.date}
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nueva Hora
+                    </label>
+                    <input
+                      type="time"
+                      name="newTime"
+                      required
+                      defaultValue={selectedReservation.time}
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nueva Cancha (opcional)
+                    </label>
+                    <select
+                      name="newCourt"
+                      defaultValue=""
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    >
+                      <option value="">Mantener cancha actual</option>
+                      {adminCourts.filter(c => c.isActive).map(court => (
+                        <option key={court.id} value={court.id}>
+                          {court.name} - {court.sport}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </form>
+              </div>
+
+              {/* Footer */}
+              <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowMoveModal(false);
                     setSelectedReservation(null);
                   }}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
+                  form="move-form"
                   disabled={isSaving}
-                  className="flex items-center space-x-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  <MoveHorizontal className="h-4 w-4" />
-                  <span>{isSaving ? 'Moviendo...' : 'Mover Reserva'}</span>
+                  <MoveHorizontal className="w-4 h-4" />
+                  {isSaving ? 'Moviendo...' : 'Mover Reserva'}
                 </button>
               </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-      {/* Notes Modal */}
-      {showNotesModal && selectedReservation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-500/10 rounded-lg">
-                  <MessageSquare className="h-5 w-5 text-orange-400" />
+      {/* Notes Sidebar */}
+      <AnimatePresence>
+        {showNotesModal && selectedReservation && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              onClick={() => {
+                setShowNotesModal(false);
+                setSelectedReservation(null);
+              }}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Notas de Reserva</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Notas internas del staff</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-white">Notas de Reserva</h3>
-              </div>
-              <button
-                onClick={() => {
-                  setShowNotesModal(false);
-                  setSelectedReservation(null);
-                }}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="mb-4 p-3 bg-gray-700/50 rounded-lg">
-              <p className="text-white font-medium">{selectedReservation.clientName}</p>
-              <p className="text-gray-300 text-sm">
-                {new Date(selectedReservation.date).toLocaleDateString('es-AR')} a las {selectedReservation.time}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Notas internas
-                </label>
-                <textarea
-                  value={editingNotes}
-                  onChange={(e) => setEditingNotes(e.target.value)}
-                  rows={5}
-                  placeholder="Agregar notas sobre esta reserva..."
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Estas notas son solo visibles para el staff del establecimiento.
-                </p>
+                <button
+                  onClick={() => {
+                    setShowNotesModal(false);
+                    setSelectedReservation(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-2">
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* Reservation Info */}
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p className="font-semibold text-gray-900 dark:text-white">{selectedReservation.clientName}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    {new Date(selectedReservation.date).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} a las {selectedReservation.time}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{selectedReservation.court}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Notas internas
+                  </label>
+                  <textarea
+                    value={editingNotes}
+                    onChange={(e) => setEditingNotes(e.target.value)}
+                    rows={8}
+                    placeholder="Agregar notas sobre esta reserva..."
+                    className="w-full px-3 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Estas notas son solo visibles para el staff del establecimiento.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowNotesModal(false);
                     setSelectedReservation(null);
                   }}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSaveNotes}
                   disabled={isSaving}
-                  className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  <Save className="h-4 w-4" />
-                  <span>{isSaving ? 'Guardando...' : 'Guardar Notas'}</span>
+                  <Save className="w-4 h-4" />
+                  {isSaving ? 'Guardando...' : 'Guardar Notas'}
                 </button>
               </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* PIN Confirmation Modal */}
       <PinModal />
