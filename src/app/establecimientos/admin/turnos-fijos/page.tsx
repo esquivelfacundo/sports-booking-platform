@@ -516,14 +516,14 @@ export default function TurnosFijosPage() {
                             {getStatusBadge(group.status)}
                             {getPaymentStatusBadge(group.paymentStatus)}
                           </div>
-                          <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                          <div className="flex items-center gap-3 text-sm text-gray-500 mt-1 flex-wrap">
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3.5 h-3.5" />
                               {group.primaryCourt?.name || 'Sin cancha'}
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3.5 h-3.5" />
-                              {DAY_NAMES[group.dayOfWeek]}
+                              {DAY_NAMES[group.dayOfWeek]}s • {formatDate(group.startDate)} - {formatDate(group.endDate)}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5" />
