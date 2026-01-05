@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Phone } from 'lucide-react';
 
 interface PhoneInputProps {
   value: string;
@@ -105,16 +106,19 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
 
   return (
     <div>
-      <input
-        type="tel"
-        value={displayValue}
-        onChange={handleChange}
-        onFocus={handleFocus}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        className={`${className} ${error ? 'border-red-500 focus:ring-red-500' : ''}`}
-        autoComplete="tel"
-      />
+      <div className="relative">
+        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="tel"
+          value={displayValue}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${error ? 'border-red-500 focus:ring-red-500' : ''} ${className}`}
+          autoComplete="tel"
+        />
+      </div>
       {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
     </div>
   );

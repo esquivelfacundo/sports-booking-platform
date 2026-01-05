@@ -192,7 +192,16 @@ const RegisterModalWithEmail = ({ isOpen, onClose, onSwitchToLogin, onSuccess }:
 
   return (
     <>
-      <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm" onClick={handleClose} />
+      <div 
+        className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm" 
+        onClick={handleClose}
+        onTouchStart={(e) => {
+          // Only close if touching the backdrop directly, not the modal content
+          if (e.target === e.currentTarget) {
+            handleClose();
+          }
+        }}
+      />
       <div className="fixed inset-0 z-[99999] overflow-y-auto pointer-events-none">
         <div className="flex min-h-full items-center justify-center p-4">
           <motion.div
@@ -200,6 +209,8 @@ const RegisterModalWithEmail = ({ isOpen, onClose, onSwitchToLogin, onSuccess }:
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl pointer-events-auto overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
