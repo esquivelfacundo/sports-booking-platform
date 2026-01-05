@@ -844,7 +844,7 @@ const BookingPage = () => {
 
   // Shared booking form component for all designs
   const BookingForm = ({ compact = false }: { compact?: boolean }) => (
-    <div className="bg-white dark:bg-gray-900 flex flex-col h-full min-h-[calc(100vh-56px)] lg:min-h-0 lg:h-auto">
+    <div className="bg-white dark:bg-gray-900 flex flex-col h-full min-h-[calc(100vh-56px)] lg:min-h-0 lg:h-auto lg:relative">
       {/* Booking Header with Progress */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
@@ -865,7 +865,7 @@ const BookingPage = () => {
       </div>
 
       {/* Content area - flex-1 to fill available space */}
-      <div className={`p-4 flex-1 overflow-y-auto ${compact ? 'max-h-[60vh]' : ''}`}>
+      <div className={`p-4 flex-1 overflow-y-auto pb-24 lg:pb-4 ${compact ? 'max-h-[60vh]' : ''}`}>
         <AnimatePresence mode="wait">
           {/* Step 1: Sport Selection */}
           {currentStep === 1 && (
@@ -1214,7 +1214,7 @@ const BookingPage = () => {
       </div>
 
       {/* Navigation - fixed at bottom on mobile */}
-      <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <div className="fixed lg:relative bottom-0 left-0 right-0 flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-10">
         <div className="flex items-center justify-between">
           <button onClick={goToPrevStep} disabled={currentStep === 1 || isProcessingPayment}
             className={`flex items-center gap-1 px-4 py-2.5 rounded-lg text-sm font-medium ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
