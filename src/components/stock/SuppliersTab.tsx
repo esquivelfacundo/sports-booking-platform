@@ -24,14 +24,20 @@ interface Supplier {
 
 interface SuppliersTabProps {
   establishmentId: string;
+  showSidebar?: boolean;
+  setShowSidebar?: (show: boolean) => void;
 }
 
-export default function SuppliersTab({ establishmentId }: SuppliersTabProps) {
+export default function SuppliersTab({ establishmentId, showSidebar, setShowSidebar }: SuppliersTabProps) {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [localSidebarOpen, setLocalSidebarOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  
+  // Use external state if provided, otherwise use local state
+  const sidebarOpen = showSidebar !== undefined ? showSidebar : localSidebarOpen;
+  const setSidebarOpen = setShowSidebar || setLocalSidebarOpen;
 
   useEffect(() => {
     loadSuppliers();

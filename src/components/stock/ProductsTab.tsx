@@ -85,7 +85,7 @@ const ProductsTab = ({
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const params: any = { establishmentId };
+      const params: any = { establishmentId, isActive: true };
       if (selectedCategory) {
         params.categoryId = selectedCategory;
       }

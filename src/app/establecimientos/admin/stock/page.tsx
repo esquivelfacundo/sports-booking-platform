@@ -53,6 +53,9 @@ const StockPage = () => {
   const [movementType, setMovementType] = useState('all');
   const [showMovementSidebar, setShowMovementSidebar] = useState(false);
   
+  // Suppliers tab state
+  const [showSupplierSidebar, setShowSupplierSidebar] = useState(false);
+  
   // Reports tab state
   const [reportDateRange, setReportDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -202,7 +205,7 @@ const StockPage = () => {
       {/* Suppliers Tab Controls */}
       {activeTab === 'suppliers' && (
         <button
-          onClick={() => {/* TODO: Open supplier sidebar */}}
+          onClick={() => setShowSupplierSidebar(true)}
           className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
         >
           <Plus className="h-4 w-4" />
@@ -278,6 +281,8 @@ const StockPage = () => {
             {activeTab === 'suppliers' && (
               <SuppliersTab 
                 establishmentId={establishment.id}
+                showSidebar={showSupplierSidebar}
+                setShowSidebar={setShowSupplierSidebar}
               />
             )}
             {activeTab === 'reports' && (
