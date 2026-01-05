@@ -346,6 +346,8 @@ const ReservationsPage = () => {
       const success = await apiCancelReservation(id);
       if (success) {
         showSuccess('Reserva eliminada', `${reservation?.clientName || 'Cliente'}`);
+        // Refresh reservations list after deletion
+        await loadReservations();
       } else {
         showError('Error al eliminar', 'No se pudo eliminar la reserva');
       }
