@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEstablishmentDetails } from '@/hooks/useEstablishmentDetails';
 import { apiClient } from '@/lib/api';
 import LoginModal from '@/components/auth/LoginModal';
-import RegisterModal from '@/components/auth/RegisterModal';
+import RegisterModalWithEmail from '@/components/auth/RegisterModalWithEmail';
 import { 
   Star, 
   MapPin, 
@@ -579,48 +579,35 @@ const BookingPage = () => {
     setAvailableSlots(slots);
   };
 
-  // Track if we're restoring from login to avoid resetting selections
-  const [isRestoringFromLogin, setIsRestoringFromLogin] = useState(false);
-  
-  // Detect if coming back from login and need to restore slots
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const isFromLogin = urlParams.get('from_login') === 'true';
-    
-    if (isFromLogin) {
-      // Check if we have saved state to restore
-      const saved = sessionStorage.getItem(`booking_state_${idOrSlug}`);
-      if (saved) {
-        try {
-          const parsedState = JSON.parse(saved);
-          if (parsedState.selectedDate && parsedState.selectedTime) {
-            setIsRestoringFromLogin(true);
-          }
-        } catch {}
-      }
-      // Clean up the URL param
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('from_login');
-      window.history.replaceState({}, '', newUrl.toString());
-    }
-  }, [idOrSlug]);
+  // Track previous values to detect actual user changes vs initial load
+  const prevDateRef = useRef<string | null>(null);
+  const prevDurationRef = useRef<number | null>(null);
+  const prevSportRef = useRef<string | null>(null);
+  const isInitializedRef = useRef(false);
   
   // Update slots when date, duration, or sport changes
   useEffect(() => {
     if (selectedDate && selectedDuration && establishment?.courts?.length) {
-      // Only reset time/court if NOT restoring from login
-      if (!isRestoringFromLogin) {
+      // Only reset time/court if user CHANGED the values (not on initial load or login)
+      const dateChanged = prevDateRef.current !== null && prevDateRef.current !== selectedDate;
+      const durationChanged = prevDurationRef.current !== null && prevDurationRef.current !== selectedDuration;
+      const sportChanged = prevSportRef.current !== null && prevSportRef.current !== selectedSport;
+      
+      // If user changed date, duration, or sport - reset time and court
+      if (isInitializedRef.current && (dateChanged || durationChanged || sportChanged)) {
         setSelectedTime('');
         setSelectedCourt(null);
-      } else {
-        // After first fetch when restoring, clear the flag
-        setIsRestoringFromLogin(false);
       }
+      
+      // Update refs
+      prevDateRef.current = selectedDate;
+      prevDurationRef.current = selectedDuration;
+      prevSportRef.current = selectedSport;
+      isInitializedRef.current = true;
+      
       fetchAvailability();
     }
-  }, [selectedDate, selectedDuration, selectedSport, fetchAvailability, isRestoringFromLogin]);
+  }, [selectedDate, selectedDuration, selectedSport, fetchAvailability]);
 
   const getPrice = () => {
     if (!selectedCourt) return 0;
@@ -2324,7 +2311,7 @@ const BookingPage = () => {
 
       {/* Modals */}
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} onSwitchToRegister={() => { setShowLoginModal(false); setShowRegisterModal(true); }} />
-      <RegisterModal isOpen={showRegisterModal} onClose={() => setShowRegisterModal(false)} onSwitchToLogin={() => { setShowRegisterModal(false); setShowLoginModal(true); }} />
+      <RegisterModalWithEmail isOpen={showRegisterModal} onClose={() => setShowRegisterModal(false)} onSwitchToLogin={() => { setShowRegisterModal(false); setShowLoginModal(true); }} />
     </div>
   );
 };

@@ -135,6 +135,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     initAuth();
+
+    // Listen for auth-change events (from Google login, etc.)
+    const handleAuthChange = () => {
+      initAuth();
+    };
+    
+    window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
   }, []);
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
