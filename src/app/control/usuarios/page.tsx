@@ -204,26 +204,36 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+  const handleDeleteUser = async (user: User) => {
+    const isClient = user.source === 'client';
+    const confirmMsg = isClient 
+      ? '¿Estás seguro de eliminar este cliente?' 
+      : '¿Estás seguro de eliminar este usuario?';
+    
+    if (!confirm(confirmMsg)) return;
 
     try {
       const token = localStorage.getItem('superAdminToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
-      const response = await fetch(`${apiUrl}/api/users/${userId}`, {
+      // Use different endpoint for clients vs users
+      const endpoint = isClient 
+        ? `${apiUrl}/api/admin/clients/${user.id}`
+        : `${apiUrl}/api/admin/users/${user.id}`;
+
+      const response = await fetch(endpoint, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) throw new Error('Error deleting user');
+      if (!response.ok) throw new Error(isClient ? 'Error deleting client' : 'Error deleting user');
 
       fetchUsers();
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al eliminar usuario');
+      alert(isClient ? 'Error al eliminar cliente' : 'Error al eliminar usuario');
     }
   };
 
@@ -484,7 +494,7 @@ export default function UsersPage() {
                         </button>
                         {user.id !== currentUser?.id && (
                           <button
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleDeleteUser(user)}
                             className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                           >
                             <Trash2 className="w-4 h-4" />
