@@ -34,8 +34,8 @@ const STEPS = [
   { id: 'schedule', title: 'Horarios', icon: Clock, description: 'Días y horas de atención' },
   { id: 'amenities', title: 'Servicios', icon: Sparkles, description: 'Qué ofreces' },
   { id: 'courts', title: 'Canchas', icon: LayoutGrid, description: 'Tus espacios deportivos' },
-  { id: 'account', title: 'Tu Cuenta', icon: User, description: 'Datos de acceso' },
   { id: 'terms', title: 'Términos', icon: FileText, description: 'Contrato legal' },
+  { id: 'account', title: 'Tu Cuenta', icon: User, description: 'Datos de acceso' },
 ];
 
 interface FormData {
@@ -177,10 +177,10 @@ const EstablishmentRegistrationPage = () => {
         return formData.sports.length > 0;
       case 4: // Courts
         return formData.courts.length > 0;
-      case 5: // Account
-        return formData.password.length >= 6 && formData.password === formData.confirmPassword;
-      case 6: // Terms
+      case 5: // Terms
         return formData.termsAccepted && formData.termsReadComplete;
+      case 6: // Account
+        return formData.password.length >= 6 && formData.password === formData.confirmPassword;
       default:
         return false;
     }
@@ -410,19 +410,19 @@ const EstablishmentRegistrationPage = () => {
       ]
     },
     5: {
-      title: '🔐 Tu Cuenta',
-      tips: [
-        'Crea una contraseña segura (mínimo 6 caracteres)',
-        'Usarás tu email para iniciar sesión',
-        'Podrás cambiar tu contraseña después',
-      ]
-    },
-    6: {
       title: '📄 Términos Legales',
       tips: [
         'Lee completamente el contrato antes de aceptar',
         'Incluye protección legal para ambas partes',
         'Define responsabilidades y comisiones claramente',
+      ]
+    },
+    6: {
+      title: '🔐 Tu Cuenta',
+      tips: [
+        'Crea una contraseña segura (mínimo 6 caracteres)',
+        'Usarás tu email para iniciar sesión',
+        'Podrás cambiar tu contraseña después',
       ]
     },
   };
@@ -889,7 +889,7 @@ const EstablishmentRegistrationPage = () => {
                   </div>
                 )}
 
-                {/* Step 5: Account */}
+                {/* Step 5: Terms and Conditions */}
                 {currentStep === 5 && (
                   <div className="space-y-6">
                     <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -965,7 +965,7 @@ const EstablishmentRegistrationPage = () => {
                   </div>
                 )}
 
-                {/* Step 6: Terms and Conditions */}
+                {/* Step 6: Account */}
                 {currentStep === 6 && (
                   <div className="space-y-6">
                     <div className="bg-white rounded-xl border border-gray-200 p-6">
