@@ -252,8 +252,8 @@ export const EstablishmentProvider = ({ children }: { children: ReactNode }) => 
         return;
       }
       
-      // Handle admin users - load THEIR OWN establishments (not all)
-      if (user.userType === 'admin') {
+      // Handle admin and establishment users - load THEIR OWN establishments (not all)
+      if (user.userType === 'admin' || user.userType === 'establishment') {
         try {
           console.log('EstablishmentContext: Admin user - loading MY establishments');
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
