@@ -226,7 +226,16 @@ const EstablishmentRegistrationPage = () => {
       const registerResult = await registerResponse.json();
 
       if (!registerResponse.ok) {
-        throw new Error(registerResult.message || 'Error al crear la cuenta');
+        // Translate common error messages to Spanish
+        let errorMessage = registerResult.message || 'Error al crear la cuenta';
+        if (errorMessage.includes('already exists')) {
+          errorMessage = 'Ya existe una cuenta con este correo electrónico';
+        } else if (errorMessage.includes('Invalid email')) {
+          errorMessage = 'Correo electrónico inválido';
+        } else if (errorMessage.includes('Password')) {
+          errorMessage = 'La contraseña no cumple con los requisitos';
+        }
+        throw new Error(errorMessage);
       }
 
       // Step 2: Use the token from registration to create the establishment
