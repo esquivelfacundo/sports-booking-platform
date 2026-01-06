@@ -2,9 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Building2, Search, CheckCircle, XCircle, Eye, Edit2, Trash2, Plus, CreditCard } from 'lucide-react';
+import { Building2, Search, CheckCircle, XCircle, Eye, Edit2, Trash2, Plus, CreditCard, X } from 'lucide-react';
 import { superAdminApi, EstablishmentData } from '@/services/superAdminApi';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
+
+interface CreateEstablishmentForm {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  accessEmail: string;
+  accessPassword: string;
+  adminFirstName: string;
+  adminLastName: string;
+}
+
+const initialFormData: CreateEstablishmentForm = {
+  name: '',
+  email: '',
+  phone: '',
+  address: '',
+  city: '',
+  accessEmail: '',
+  accessPassword: '',
+  adminFirstName: '',
+  adminLastName: ''
+};
 
 export default function EstablecimientosPage() {
   const [mounted, setMounted] = useState(false);
@@ -12,6 +36,9 @@ export default function EstablecimientosPage() {
   const [establishments, setEstablishments] = useState<EstablishmentData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [formData, setFormData] = useState<CreateEstablishmentForm>(initialFormData);
 
   useEffect(() => {
     setMounted(true);
@@ -45,6 +72,39 @@ export default function EstablecimientosPage() {
       setEstablishments(prev => prev.map(e => 
         e.id === id ? { ...e, registrationStatus: 'rejected' } : e
       ));
+    }
+  };
+
+  const handleCreateEstablishment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setCreating(true);
+      const token = localStorage.getItem('superAdminToken');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+
+      const response = await fetch(`${apiUrl}/api/establishments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error creating establishment');
+      }
+
+      setShowCreateModal(false);
+      setFormData(initialFormData);
+      loadData();
+      alert('Establecimiento creado exitosamente');
+    } catch (error: any) {
+      console.error('Error:', error);
+      alert(error.message || 'Error al crear establecimiento');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -87,6 +147,15 @@ export default function EstablecimientosPage() {
           />
         </div>
       </div>
+
+      {/* Create button */}
+      <button
+        onClick={() => setShowCreateModal(true)}
+        className="hidden sm:flex px-3 py-1.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors items-center gap-1.5 text-sm font-medium"
+      >
+        <Plus className="w-4 h-4" />
+        <span className="hidden xl:inline">Crear</span>
+      </button>
     </div>,
     document.getElementById('header-page-controls')!
   ) : null;
@@ -241,6 +310,149 @@ export default function EstablecimientosPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Crear Establecimiento</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateEstablishment} className="p-4 space-y-4">
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Información del Establecimiento</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="Nombre del establecimiento"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="contacto@establecimiento.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="+54 9 11 1234-5678"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="Av. Corrientes 1234"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="Buenos Aires"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Credenciales de Acceso</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Admin *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.adminFirstName}
+                      onChange={(e) => setFormData({ ...formData, adminFirstName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="Juan"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido Admin *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.adminLastName}
+                      onChange={(e) => setFormData({ ...formData, adminLastName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="Pérez"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email de Acceso *</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.accessEmail}
+                      onChange={(e) => setFormData({ ...formData, accessEmail: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="admin@establecimiento.com"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña *</label>
+                    <input
+                      type="password"
+                      required
+                      value={formData.accessPassword}
+                      onChange={(e) => setFormData({ ...formData, accessPassword: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {creating ? 'Creando...' : 'Crear Establecimiento'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
