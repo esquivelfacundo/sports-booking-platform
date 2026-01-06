@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Building2, MapPin, Phone, Mail, Globe, Clock, Loader2 } from 'lucide-react';
+import { X, Building2, MapPin, Phone, Mail, Globe, Clock, Loader2, Lock } from 'lucide-react';
 
 interface CreateEstablishmentModalProps {
   isOpen: boolean;
@@ -21,6 +21,8 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
     website: '',
     sports: [] as string[],
     amenities: [] as string[],
+    accessEmail: '',
+    accessPassword: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -74,6 +76,8 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
           sunday: { open: '08:00', close: '23:00' },
         },
         rules: [],
+        accessEmail: formData.accessEmail,
+        accessPassword: formData.accessPassword,
       };
 
       console.log('Creating establishment with payload:', payload);
@@ -119,6 +123,8 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
       website: '',
       sports: [],
       amenities: [],
+      accessEmail: '',
+      accessPassword: '',
     });
     setError('');
     onClose();
@@ -260,7 +266,7 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email de Contacto *</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
@@ -286,6 +292,46 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
                       placeholder="https://www.ejemplo.com"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Access Credentials */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wider">Credenciales de Acceso</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email de Acceso *</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        required
+                        value={formData.accessEmail}
+                        onChange={(e) => setFormData({ ...formData, accessEmail: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        placeholder="admin@establecimiento.com"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Email para iniciar sesión</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Contraseña *</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="password"
+                        required
+                        value={formData.accessPassword}
+                        onChange={(e) => setFormData({ ...formData, accessPassword: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        placeholder="Mínimo 6 caracteres"
+                        minLength={6}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Contraseña de acceso</p>
                   </div>
                 </div>
               </div>
@@ -350,7 +396,7 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={isLoading || !formData.name || !formData.city || !formData.address || !formData.phone || !formData.email || formData.sports.length === 0}
+                disabled={isLoading || !formData.name || !formData.city || !formData.address || !formData.phone || !formData.email || !formData.accessEmail || !formData.accessPassword || formData.sports.length === 0}
                 className="px-6 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
               >
                 {isLoading ? (

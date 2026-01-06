@@ -31,6 +31,7 @@ import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useSuperAdmin } from '@/contexts/SuperAdminContext';
 import { superAdminApi, EstablishmentData, UserData } from '@/services/superAdminApi';
 import CreateEstablishmentModal from './CreateEstablishmentModal';
+import EditEstablishmentModal from './EditEstablishmentModal';
 
 
 // Compact fee editor for table cells
@@ -267,6 +268,8 @@ const SuperAdminDashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState<{type: 'establishment' | 'user', id: string, name: string} | null>(null);
   const [selectedEstablishment, setSelectedEstablishment] = useState<EstablishmentData | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [establishmentToEdit, setEstablishmentToEdit] = useState<EstablishmentData | null>(null);
   
   // Platform config state
   const [platformConfig, setPlatformConfig] = useState<{
@@ -1073,6 +1076,16 @@ const SuperAdminDashboard = () => {
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
+                              onClick={() => {
+                                setEstablishmentToEdit(establishment);
+                                setShowEditModal(true);
+                              }}
+                              className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded transition-colors"
+                              title="Editar credenciales"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => setShowDeleteModal({type: 'establishment', id: establishment.id, name: establishment.name})}
                               className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
                               title="Eliminar"
@@ -1515,6 +1528,21 @@ const SuperAdminDashboard = () => {
           loadData();
           setShowCreateModal(false);
         }}
+      />
+
+      {/* Edit Establishment Modal */}
+      <EditEstablishmentModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEstablishmentToEdit(null);
+        }}
+        onSuccess={() => {
+          loadData();
+          setShowEditModal(false);
+          setEstablishmentToEdit(null);
+        }}
+        establishment={establishmentToEdit}
       />
     </div>
   );
