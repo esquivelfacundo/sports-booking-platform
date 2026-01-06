@@ -47,8 +47,8 @@ export default function ControlLayout({ children }: ControlLayoutProps) {
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('superadmin_token');
-      localStorage.removeItem('superadmin_data');
+      localStorage.removeItem('superAdminToken');
+      localStorage.removeItem('superAdminData');
     }
     logout();
     router.push('/control/login');

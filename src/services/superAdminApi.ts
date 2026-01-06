@@ -47,8 +47,8 @@ export interface UserData {
 
 class SuperAdminApiService {
   private getAuthHeaders() {
-    // Use superadmin_token (set by SuperAdminContext)
-    const token = localStorage.getItem('superadmin_token');
+    // Use superAdminToken (set by SuperAdminContext)
+    const token = localStorage.getItem('superAdminToken');
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
