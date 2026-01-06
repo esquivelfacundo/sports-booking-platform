@@ -235,7 +235,7 @@ const EstablishmentRegistrationPage = () => {
       }
 
       // Step 2: Use the token from registration to create the establishment
-      const token = registerResult.token || registerResult.data?.token;
+      const token = registerResult.tokens?.accessToken || registerResult.token || registerResult.data?.token;
       if (!token) {
         console.error('Register result:', registerResult);
         throw new Error('No se pudo obtener el token de autenticación. Por favor, intenta iniciar sesión.');
@@ -810,7 +810,7 @@ const EstablishmentRegistrationPage = () => {
                                 type="text"
                                 value={court.name}
                                 onChange={(e) => updateCourt(index, { name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                               />
                             </div>
                             
@@ -819,7 +819,7 @@ const EstablishmentRegistrationPage = () => {
                               <select
                                 value={court.sport}
                                 onChange={(e) => updateCourt(index, { sport: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                               >
                                 {availableSports.map(s => (
                                   <option key={s.id} value={s.id}>{s.label}</option>
@@ -833,7 +833,7 @@ const EstablishmentRegistrationPage = () => {
                                 type="number"
                                 value={court.pricePerHour}
                                 onChange={(e) => updateCourt(index, { pricePerHour: parseInt(e.target.value) || 0 })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                               />
                             </div>
                             
@@ -842,7 +842,7 @@ const EstablishmentRegistrationPage = () => {
                               <select
                                 value={court.surfaceType}
                                 onChange={(e) => updateCourt(index, { surfaceType: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                               >
                                 <option value="synthetic">Sintético</option>
                                 <option value="grass">Césped</option>
