@@ -37,8 +37,20 @@ export default function EstablecimientosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedEstablishment, setSelectedEstablishment] = useState<EstablishmentData | null>(null);
   const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<CreateEstablishmentForm>(initialFormData);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    isActive: true,
+    registrationStatus: 'approved' as string
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -72,6 +84,55 @@ export default function EstablecimientosPage() {
       setEstablishments(prev => prev.map(e => 
         e.id === id ? { ...e, registrationStatus: 'rejected' } : e
       ));
+    }
+  };
+
+  const openEditModal = (est: EstablishmentData) => {
+    setSelectedEstablishment(est);
+    setEditFormData({
+      name: est.name || '',
+      email: est.email || '',
+      phone: est.phone || '',
+      address: est.address || '',
+      city: est.city || '',
+      isActive: est.isActive !== false,
+      registrationStatus: est.registrationStatus || 'approved'
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEstablishment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEstablishment) return;
+    
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('superAdminToken');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+
+      const response = await fetch(`${apiUrl}/api/admin/establishments/${selectedEstablishment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editFormData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error updating establishment');
+      }
+
+      setShowEditModal(false);
+      setSelectedEstablishment(null);
+      loadData();
+      alert('Establecimiento actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Error:', error);
+      alert(error.message || 'Error al actualizar establecimiento');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -295,6 +356,13 @@ export default function EstablecimientosPage() {
                             </>
                           )}
                           <button
+                            onClick={() => openEditModal(est)}
+                            className="p-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
                             className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                             title="Ver detalles"
                           >
@@ -310,6 +378,114 @@ export default function EstablecimientosPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && selectedEstablishment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Editar Establecimiento</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateEstablishment} className="p-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
+                  <input
+                    type="text"
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.city}
+                    onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+                  <select
+                    value={editFormData.registrationStatus}
+                    onChange={(e) => setEditFormData({ ...editFormData, registrationStatus: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="approved">Aprobado</option>
+                    <option value="pending">Pendiente</option>
+                    <option value="rejected">Rechazado</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.isActive}
+                      onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Establecimiento activo</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Create Modal */}
       {showCreateModal && (
