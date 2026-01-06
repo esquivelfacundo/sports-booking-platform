@@ -53,36 +53,55 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
 
     try {
       const token = localStorage.getItem('auth_token') || localStorage.getItem('superAdminToken');
+      
+      const payload = {
+        name: formData.name,
+        description: formData.description || '',
+        address: formData.address,
+        city: formData.city,
+        phone: formData.phone,
+        email: formData.email,
+        website: formData.website || undefined,
+        sports: formData.sports,
+        amenities: formData.amenities,
+        openingHours: {
+          monday: { open: '08:00', close: '23:00' },
+          tuesday: { open: '08:00', close: '23:00' },
+          wednesday: { open: '08:00', close: '23:00' },
+          thursday: { open: '08:00', close: '23:00' },
+          friday: { open: '08:00', close: '23:00' },
+          saturday: { open: '08:00', close: '23:00' },
+          sunday: { open: '08:00', close: '23:00' },
+        },
+        rules: [],
+      };
+
+      console.log('Creating establishment with payload:', payload);
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/establishments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          openingHours: {
-            monday: { open: '08:00', close: '23:00' },
-            tuesday: { open: '08:00', close: '23:00' },
-            wednesday: { open: '08:00', close: '23:00' },
-            thursday: { open: '08:00', close: '23:00' },
-            friday: { open: '08:00', close: '23:00' },
-            saturday: { open: '08:00', close: '23:00' },
-            sunday: { open: '08:00', close: '23:00' },
-          },
-          rules: [],
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
+      console.log('Response:', { status: response.status, data });
 
       if (response.ok) {
         onSuccess();
         handleClose();
       } else {
-        setError(data.message || 'Error al crear el establecimiento');
+        const errorMsg = data.errors 
+          ? data.errors.map((e: any) => e.msg).join(', ')
+          : data.message || 'Error al crear el establecimiento';
+        console.error('Error creating establishment:', errorMsg, data);
+        setError(errorMsg);
       }
     } catch (err) {
+      console.error('Exception creating establishment:', err);
       setError('Error de conexión. Intentá de nuevo.');
     } finally {
       setIsLoading(false);
