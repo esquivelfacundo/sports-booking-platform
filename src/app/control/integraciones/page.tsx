@@ -63,6 +63,14 @@ export default function IntegracionesPage() {
         }
       });
 
+      if (response.status === 403) {
+        setTestResult({ 
+          success: false, 
+          message: 'Sesión expirada. Por favor, cierra sesión y vuelve a iniciar sesión.' 
+        });
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         setConfig(data.data);
