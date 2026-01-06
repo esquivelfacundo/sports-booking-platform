@@ -12,7 +12,8 @@ import {
   Bell, 
   LogOut, 
   X,
-  Shield
+  Shield,
+  Plug
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSuperAdmin } from '@/contexts/SuperAdminContext';
@@ -84,6 +85,12 @@ export default function ControlLayout({ children }: ControlLayoutProps) {
     },
     {
       items: [
+        {
+          name: 'Integraciones',
+          href: '/control/integraciones',
+          icon: Plug,
+          current: pathname.startsWith('/control/integraciones')
+        },
         {
           name: 'Configuración',
           href: '/control/configuracion',
