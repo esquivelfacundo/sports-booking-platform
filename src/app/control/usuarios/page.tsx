@@ -18,7 +18,7 @@ interface User {
 
 export default function UsersPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'player' | 'admin'>('player');
+  const [activeTab, setActiveTab] = useState<'player' | 'establishment' | 'admin'>('player');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,7 +39,7 @@ export default function UsersPage() {
     firstName: '',
     lastName: '',
     phone: '',
-    userType: 'admin' as 'player' | 'admin',
+    userType: 'admin' as 'player' | 'establishment' | 'admin',
     isActive: true
   });
 
@@ -249,6 +249,19 @@ export default function UsersPage() {
                 </div>
               </button>
               <button
+                onClick={() => setActiveTab('establishment')}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'establishment'
+                    ? 'border-orange-600 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Establecimientos
+                </div>
+              </button>
+              <button
                 onClick={() => setActiveTab('admin')}
                 className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'admin'
@@ -276,13 +289,13 @@ export default function UsersPage() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
-            {activeTab === 'admin' && (
+            {(activeTab === 'admin' || activeTab === 'establishment') && (
               <button
                 onClick={openCreateModal}
                 className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" />
-                Crear Administrador
+                {activeTab === 'admin' ? 'Crear Administrador' : 'Crear Establecimiento'}
               </button>
             )}
           </div>
@@ -400,7 +413,9 @@ export default function UsersPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Crear Administrador</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                {formData.userType === 'admin' ? 'Crear Administrador' : 'Crear Establecimiento'}
+              </h2>
               <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
