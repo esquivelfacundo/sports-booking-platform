@@ -41,6 +41,7 @@ const STEPS = [
 interface FormData {
   // Basic Info
   name: string;
+  slug: string;
   description: string;
   phone: string;
   email: string;
@@ -125,6 +126,7 @@ const EstablishmentRegistrationPage = () => {
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
+    slug: '',
     description: '',
     phone: '',
     email: '',
@@ -254,6 +256,7 @@ const EstablishmentRegistrationPage = () => {
       const payload = {
         basicInfo: {
           name: formData.name,
+          slug: formData.slug,
           description: formData.description,
           phone: formData.phone,
           email: formData.email,
@@ -638,10 +641,40 @@ const EstablishmentRegistrationPage = () => {
                           <input
                             type="text"
                             value={formData.name}
-                            onChange={(e) => updateFormData({ name: e.target.value })}
+                            onChange={(e) => {
+                              const name = e.target.value;
+                              updateFormData({ name });
+                              // Auto-generate slug if user hasn't manually edited it
+                              if (!formData.slug || formData.slug === formData.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')) {
+                                const autoSlug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                                updateFormData({ slug: autoSlug });
+                              }
+                            }}
                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                             placeholder="Ej: Complejo Deportivo La Cancha"
                           />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            URL del Establecimiento (slug)
+                          </label>
+                          <div className="flex items-center">
+                            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-2.5 border border-r-0 border-gray-300 rounded-l-lg">
+                              miscanchas.com/
+                            </span>
+                            <input
+                              type="text"
+                              value={formData.slug}
+                              onChange={(e) => {
+                                const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                                updateFormData({ slug });
+                              }}
+                              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                              placeholder="mi-establecimiento"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Esta será la URL única de tu establecimiento. Solo letras, números y guiones.</p>
                         </div>
                       
                         <div>
