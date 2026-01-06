@@ -19,7 +19,9 @@ import {
   Loader2,
   ChevronRight,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete';
 
@@ -110,6 +112,8 @@ const EstablishmentRegistrationPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showGuideSidebar, setShowGuideSidebar] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -212,9 +216,10 @@ const EstablishmentRegistrationPage = () => {
       }
 
       // Step 2: Use the token from registration to create the establishment
-      const token = registerResult.token;
+      const token = registerResult.token || registerResult.data?.token;
       if (!token) {
-        throw new Error('No se pudo obtener el token de autenticación');
+        console.error('Register result:', registerResult);
+        throw new Error('No se pudo obtener el token de autenticación. Por favor, intenta iniciar sesión.');
       }
 
       // Save token for future use
@@ -600,6 +605,7 @@ const EstablishmentRegistrationPage = () => {
                               onChange={(e) => updateFormData({ city: e.target.value })}
                               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                               placeholder="Buenos Aires"
+                              style={{ color: '#111827' }}
                             />
                           </div>
                           
@@ -613,6 +619,7 @@ const EstablishmentRegistrationPage = () => {
                               onChange={(e) => updateFormData({ province: e.target.value })}
                               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                               placeholder="Buenos Aires"
+                              style={{ color: '#111827' }}
                             />
                           </div>
                         </div>
@@ -861,7 +868,7 @@ const EstablishmentRegistrationPage = () => {
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">Tu Cuenta</h3>
                       <p className="text-sm text-gray-500 mb-6">Crea tu contraseña para acceder al sistema</p>
                     
-                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
                         <div className="flex items-center gap-3">
                           <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                           <div>
@@ -876,26 +883,44 @@ const EstablishmentRegistrationPage = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Contraseña *
                           </label>
-                          <input
-                            type="password"
-                            value={formData.password}
-                            onChange={(e) => updateFormData({ password: e.target.value })}
-                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                            placeholder="Mínimo 6 caracteres"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              value={formData.password}
+                              onChange={(e) => updateFormData({ password: e.target.value })}
+                              className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                              placeholder="Mínimo 6 caracteres"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          </div>
                         </div>
                         
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Confirmar Contraseña *
                           </label>
-                          <input
-                            type="password"
-                            value={formData.confirmPassword}
-                            onChange={(e) => updateFormData({ confirmPassword: e.target.value })}
-                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                            placeholder="Repite tu contraseña"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={formData.confirmPassword}
+                              onChange={(e) => updateFormData({ confirmPassword: e.target.value })}
+                              className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                              placeholder="Repite tu contraseña"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          </div>
                           {formData.confirmPassword && formData.password !== formData.confirmPassword && (
                             <p className="text-red-500 text-sm mt-1">Las contraseñas no coinciden</p>
                           )}
