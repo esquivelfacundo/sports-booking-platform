@@ -307,7 +307,10 @@ const EstablishmentRegistrationPage = () => {
           router.replace('/establecimientos/admin');
         }, 2500);
       } else {
-        throw new Error(result.message || 'Error al registrar el establecimiento');
+        // Show detailed error from backend
+        const errorMsg = result.error || result.message || 'Error al registrar el establecimiento';
+        console.error('Backend error details:', result);
+        throw new Error(errorMsg);
       }
     } catch (err) {
       console.error('Registration error:', err);
