@@ -10,11 +10,17 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  name?: string; // For clients
   phone?: string;
   userType: 'player' | 'establishment' | 'admin';
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  // New fields for players/clients combined
+  isRegistered?: boolean;
+  source?: 'user' | 'client';
+  establishmentName?: string | null;
+  establishmentId?: string;
 }
 
 export default function UsersPage() {
@@ -74,24 +80,53 @@ export default function UsersPage() {
       const token = localStorage.getItem('superAdminToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       
-      const params = new URLSearchParams({
-        userType: activeTab,
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-        ...(searchTerm && { search: searchTerm })
-      });
+      // Use different endpoint for players tab (includes clients)
+      if (activeTab === 'player') {
+        const params = new URLSearchParams({
+          page: pagination.page.toString(),
+          limit: pagination.limit.toString(),
+          ...(searchTerm && { search: searchTerm })
+        });
 
-      const response = await fetch(`${apiUrl}/api/users?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+        const response = await fetch(`${apiUrl}/api/admin/players-clients?${params}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-      if (!response.ok) throw new Error('Error fetching users');
+        if (!response.ok) throw new Error('Error fetching players and clients');
 
-      const result = await response.json();
-      setUsers(result.data);
-      setPagination(result.pagination);
+        const result = await response.json();
+        // Transform data to match User interface
+        const transformedData = result.data.map((item: any) => ({
+          ...item,
+          firstName: item.name?.split(' ')[0] || item.firstName || '',
+          lastName: item.name?.split(' ').slice(1).join(' ') || item.lastName || '',
+          userType: 'player' as const
+        }));
+        setUsers(transformedData);
+        setPagination(result.pagination);
+      } else {
+        // Original endpoint for establishment and admin users
+        const params = new URLSearchParams({
+          userType: activeTab,
+          page: pagination.page.toString(),
+          limit: pagination.limit.toString(),
+          ...(searchTerm && { search: searchTerm })
+        });
+
+        const response = await fetch(`${apiUrl}/api/users?${params}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) throw new Error('Error fetching users');
+
+        const result = await response.json();
+        setUsers(result.data);
+        setPagination(result.pagination);
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -364,21 +399,29 @@ export default function UsersPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Usuario</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Teléfono</th>
+                  {activeTab === 'player' && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Registrado</th>
+                  )}
+                  {activeTab === 'player' && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Establecimiento</th>
+                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Último acceso</th>
+                  {activeTab !== 'player' && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Último acceso</th>
+                  )}
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={activeTab === 'player' ? 7 : 6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                       Cargando usuarios...
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={activeTab === 'player' ? 7 : 6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                       No se encontraron usuarios
                     </td>
                   </tr>
@@ -402,6 +445,22 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">{user.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">{user.phone || '-'}</td>
+                      {activeTab === 'player' && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            user.isRegistered
+                              ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-400'
+                              : 'bg-gray-100 dark:bg-gray-600/30 text-gray-700 dark:text-gray-400'
+                          }`}>
+                            {user.isRegistered ? 'Sí' : 'No'}
+                          </span>
+                        </td>
+                      )}
+                      {activeTab === 'player' && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden lg:table-cell">
+                          {user.establishmentName || '-'}
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                           user.isActive
@@ -411,9 +470,11 @@ export default function UsersPage() {
                           {user.isActive ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
-                        {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Nunca'}
-                      </td>
+                      {activeTab !== 'player' && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                          {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Nunca'}
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => openEditModal(user)}
