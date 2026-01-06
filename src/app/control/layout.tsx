@@ -12,9 +12,7 @@ import {
   Bell, 
   LogOut, 
   X,
-  Shield,
-  BarChart3,
-  DollarSign
+  Shield
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSuperAdmin } from '@/contexts/SuperAdminContext';
@@ -80,22 +78,6 @@ export default function ControlLayout({ children }: ControlLayoutProps) {
           href: '/control/usuarios',
           icon: Users,
           current: pathname.startsWith('/control/usuarios')
-        }
-      ]
-    },
-    {
-      items: [
-        {
-          name: 'Análisis',
-          href: '/control/analytics',
-          icon: BarChart3,
-          current: pathname.startsWith('/control/analytics')
-        },
-        {
-          name: 'Finanzas',
-          href: '/control/finanzas',
-          icon: DollarSign,
-          current: pathname.startsWith('/control/finanzas')
         }
       ]
     },

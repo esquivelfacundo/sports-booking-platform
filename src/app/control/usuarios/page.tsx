@@ -59,8 +59,7 @@ export default function UsersPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const userData = localStorage.getItem('user_data');
+      const userData = localStorage.getItem('superadmin_data');
       if (userData) {
         setCurrentUser(JSON.parse(userData));
       }
@@ -72,7 +71,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('superadmin_token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       
       const params = new URLSearchParams({
@@ -103,7 +102,7 @@ export default function UsersPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('superadmin_token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
       const response = await fetch(`${apiUrl}/api/auth/register`, {
@@ -131,7 +130,7 @@ export default function UsersPage() {
     if (!selectedUser) return;
 
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('superadmin_token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
       const updateData: any = {
@@ -174,7 +173,7 @@ export default function UsersPage() {
     if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
 
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('superadmin_token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
       const response = await fetch(`${apiUrl}/api/users/${userId}`, {
