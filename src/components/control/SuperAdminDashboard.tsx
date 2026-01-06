@@ -30,6 +30,7 @@ import {
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useSuperAdmin } from '@/contexts/SuperAdminContext';
 import { superAdminApi, EstablishmentData, UserData } from '@/services/superAdminApi';
+import CreateEstablishmentModal from './CreateEstablishmentModal';
 
 
 // Compact fee editor for table cells
@@ -265,6 +266,7 @@ const SuperAdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showDeleteModal, setShowDeleteModal] = useState<{type: 'establishment' | 'user', id: string, name: string} | null>(null);
   const [selectedEstablishment, setSelectedEstablishment] = useState<EstablishmentData | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Platform config state
   const [platformConfig, setPlatformConfig] = useState<{
@@ -928,6 +930,13 @@ const SuperAdminDashboard = () => {
                 <option value="pending">Pendientes</option>
                 <option value="rejected">Rechazados</option>
               </select>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap"
+              >
+                <Building2 className="w-4 h-4" />
+                Crear Establecimiento
+              </button>
             </div>
 
             {/* Info banner */}
@@ -1497,6 +1506,16 @@ const SuperAdminDashboard = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Create Establishment Modal */}
+      <CreateEstablishmentModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          loadData();
+          setShowCreateModal(false);
+        }}
+      />
     </div>
   );
 };
