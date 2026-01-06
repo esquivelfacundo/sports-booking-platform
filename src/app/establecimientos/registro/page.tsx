@@ -362,152 +362,166 @@ const EstablishmentRegistrationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header with Steps */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-20">
-            {/* Logo */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-lg font-semibold text-gray-900">Registrar Establecimiento</h1>
-              </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Left Sidebar - Steps Navigation */}
+      <aside className="w-72 bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 bottom-0 z-30">
+        {/* Logo Header */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white" />
             </div>
-            
-            {/* Steps - Centered */}
-            <div className="flex-1 flex justify-center px-4 overflow-x-auto">
-              <div className="flex items-center gap-1 sm:gap-2">
-                {STEPS.map((step, index) => {
-                  const Icon = step.icon;
-                  const isActive = index === currentStep;
-                  const isCompleted = index < currentStep;
-                  
-                  return (
-                    <React.Fragment key={step.id}>
-                      <button
-                        onClick={() => index <= currentStep && setCurrentStep(index)}
-                        disabled={index > currentStep}
-                        className={`flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg transition-all ${
-                          isActive 
-                            ? 'bg-emerald-50 text-emerald-600' 
-                            : isCompleted
-                              ? 'text-emerald-600 hover:bg-emerald-50'
-                              : 'text-gray-400'
-                        } ${index <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                      >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                          isActive 
-                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200' 
-                            : isCompleted
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-gray-200 text-gray-400'
-                        }`}>
-                          {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
-                        </div>
-                        <span className="text-xs font-medium whitespace-nowrap hidden md:block">{step.title}</span>
-                      </button>
-                      
-                      {index < STEPS.length - 1 && (
-                        <div className={`w-6 sm:w-10 h-0.5 rounded ${
-                          index < currentStep ? 'bg-emerald-500' : 'bg-gray-200'
-                        }`} />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
+            <div>
+              <h1 className="text-base font-semibold text-gray-900">Registrar Establecimiento</h1>
+              <p className="text-xs text-gray-500">Paso {currentStep + 1} de {STEPS.length}</p>
             </div>
-            
-            {/* Help Button */}
-            <button
-              onClick={() => setShowGuideSidebar(!showGuideSidebar)}
-              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex-shrink-0"
-              title="Mostrar/ocultar guía"
-            >
-              <HelpCircle className="w-5 h-5" />
-            </button>
           </div>
         </div>
-      </header>
 
-      <div className="flex">
-        {/* Main Content */}
-        <main className={`flex-1 transition-all duration-300 ${showGuideSidebar ? 'mr-80' : ''}`}>
+        {/* Steps List */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <div className="space-y-1">
+            {STEPS.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = index === currentStep;
+              const isCompleted = index < currentStep;
+              
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => index <= currentStep && setCurrentStep(index)}
+                  disabled={index > currentStep}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    isActive 
+                      ? 'bg-emerald-50 text-emerald-600 shadow-sm' 
+                      : isCompleted
+                        ? 'text-gray-700 hover:bg-gray-50'
+                        : 'text-gray-400 cursor-not-allowed'
+                  } ${index <= currentStep ? 'cursor-pointer' : ''}`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${
+                    isActive 
+                      ? 'bg-emerald-500 text-white' 
+                      : isCompleted
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className={`text-sm font-medium ${
+                      isActive ? 'text-emerald-600' : isCompleted ? 'text-gray-900' : 'text-gray-400'
+                    }`}>
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Help Section */}
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={() => setShowGuideSidebar(!showGuideSidebar)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+          >
+            <HelpCircle className="w-4 h-4" />
+            {showGuideSidebar ? 'Ocultar Guía' : 'Mostrar Guía'}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 ml-72">
+        {/* Top Bar */}
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-20 h-14">
+          <div className="h-full px-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-medium text-gray-900">{STEPS[currentStep].title}</h2>
+            </div>
+            <div className="text-xs text-gray-500">
+              Guardado automáticamente
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className={`transition-all duration-300 ${showGuideSidebar ? 'mr-80' : ''}`}>
 
           {/* Form Content */}
-          <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto px-6 py-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-8"
               >
                 {/* Step 0: Basic Info */}
                 {currentStep === 0 && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Información del Establecimiento</h2>
-                      <p className="text-gray-500">Cuéntanos sobre tu complejo deportivo</p>
-                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Información Básica</h3>
+                      <p className="text-sm text-gray-500 mb-6">Cuéntanos sobre tu complejo deportivo</p>
                     
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Nombre del Establecimiento *
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => updateFormData({ name: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                          placeholder="Ej: Complejo Deportivo La Cancha"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Descripción
-                        </label>
-                        <textarea
-                          value={formData.description}
-                          onChange={(e) => updateFormData({ description: e.target.value })}
-                          rows={3}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none text-gray-900 placeholder-gray-400"
-                          placeholder="Describe tu establecimiento, qué lo hace especial..."
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-5">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Email *
+                            Nombre del Establecimiento *
                           </label>
                           <input
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => updateFormData({ email: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                            placeholder="contacto@ejemplo.com"
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => updateFormData({ name: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                            placeholder="Ej: Complejo Deportivo La Cancha"
                           />
                         </div>
-                        
+                      
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Teléfono *
+                            Descripción
                           </label>
-                          <input
-                            type="tel"
-                            value={formData.phone}
-                            onChange={(e) => updateFormData({ phone: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                            placeholder="+54 11 1234-5678"
+                          <textarea
+                            value={formData.description}
+                            onChange={(e) => updateFormData({ description: e.target.value })}
+                            rows={3}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none text-gray-900 placeholder-gray-400"
+                            placeholder="Describe tu establecimiento, qué lo hace especial..."
                           />
+                        </div>
+                      
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Email *
+                            </label>
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => updateFormData({ email: e.target.value })}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                              placeholder="contacto@ejemplo.com"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Teléfono *
+                            </label>
+                            <input
+                              type="tel"
+                              value={formData.phone}
+                              onChange={(e) => updateFormData({ phone: e.target.value })}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                              placeholder="+54 11 1234-5678"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -517,50 +531,50 @@ const EstablishmentRegistrationPage = () => {
                 {/* Step 1: Location */}
                 {currentStep === 1 && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Ubicación</h2>
-                      <p className="text-gray-500">¿Dónde se encuentra tu establecimiento?</p>
-                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Ubicación</h3>
+                      <p className="text-sm text-gray-500 mb-6">¿Dónde se encuentra tu establecimiento?</p>
                     
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Dirección *
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.address}
-                          onChange={(e) => updateFormData({ address: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                          placeholder="Av. Ejemplo 1234"
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-5">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Ciudad *
+                            Dirección *
                           </label>
                           <input
                             type="text"
-                            value={formData.city}
-                            onChange={(e) => updateFormData({ city: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                            placeholder="Buenos Aires"
+                            value={formData.address}
+                            onChange={(e) => updateFormData({ address: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                            placeholder="Av. Ejemplo 1234"
                           />
                         </div>
                         
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Provincia
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.province}
-                            onChange={(e) => updateFormData({ province: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                            placeholder="Buenos Aires"
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Ciudad *
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.city}
+                              onChange={(e) => updateFormData({ city: e.target.value })}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                              placeholder="Buenos Aires"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Provincia
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.province}
+                              onChange={(e) => updateFormData({ province: e.target.value })}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                              placeholder="Buenos Aires"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -570,12 +584,11 @@ const EstablishmentRegistrationPage = () => {
                 {/* Step 2: Schedule */}
                 {currentStep === 2 && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Horarios de Atención</h2>
-                      <p className="text-gray-500">Define cuándo está abierto tu establecimiento</p>
-                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Horarios de Atención</h3>
+                      <p className="text-sm text-gray-500 mb-6">Define cuándo está abierto tu establecimiento</p>
                     
-                    <div className="space-y-3">
+                      <div className="space-y-2">
                       {Object.entries(formData.schedule).map(([day, hours]) => (
                         <div key={day} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
                           <div className="w-24">
@@ -626,6 +639,7 @@ const EstablishmentRegistrationPage = () => {
                           )}
                         </div>
                       ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -633,14 +647,14 @@ const EstablishmentRegistrationPage = () => {
                 {/* Step 3: Amenities & Sports */}
                 {currentStep === 3 && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Deportes y Servicios</h2>
-                      <p className="text-gray-500">¿Qué deportes y servicios ofreces?</p>
-                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Deportes y Servicios</h3>
+                      <p className="text-sm text-gray-500 mb-6">¿Qué deportes y servicios ofreces?</p>
                     
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3">Deportes *</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="space-y-6">
+                        <div>
+                          <h4 className="text-base font-semibold text-gray-800 mb-3">Deportes *</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {availableSports.map((sport) => (
                           <button
                             key={sport.id}
@@ -661,11 +675,11 @@ const EstablishmentRegistrationPage = () => {
                             <span className="text-sm font-medium">{sport.label}</span>
                           </button>
                         ))}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3">Servicios</h3>
+                      
+                      <div>
+                        <h4 className="text-base font-semibold text-gray-800 mb-3">Servicios</h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {availableAmenities.map((amenity) => (
                           <button
@@ -687,6 +701,8 @@ const EstablishmentRegistrationPage = () => {
                             <span className="text-xs font-medium">{amenity.label}</span>
                           </button>
                         ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -695,10 +711,9 @@ const EstablishmentRegistrationPage = () => {
                 {/* Step 4: Courts */}
                 {currentStep === 4 && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Tus Canchas</h2>
-                      <p className="text-gray-500">Agrega al menos una cancha para comenzar</p>
-                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Tus Canchas</h3>
+                      <p className="text-sm text-gray-500 mb-6">Agrega al menos una cancha para comenzar</p>
                     
                     <div className="space-y-4">
                       {formData.courts.map((court, index) => (
@@ -794,6 +809,7 @@ const EstablishmentRegistrationPage = () => {
                         <LayoutGrid className="w-5 h-5" />
                         Agregar Cancha
                       </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -801,114 +817,116 @@ const EstablishmentRegistrationPage = () => {
                 {/* Step 5: Account */}
                 {currentStep === 5 && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">Tu Cuenta</h2>
-                      <p className="text-gray-500">Crea tu contraseña para acceder al sistema</p>
-                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Tu Cuenta</h3>
+                      <p className="text-sm text-gray-500 mb-6">Crea tu contraseña para acceder al sistema</p>
                     
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0" />
-                        <div>
-                          <p className="text-emerald-800 font-medium">Email de acceso</p>
-                          <p className="text-emerald-600 text-sm">{formData.email || 'Tu email del paso 1'}</p>
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                          <div>
+                            <p className="text-emerald-800 font-medium text-sm">Email de acceso</p>
+                            <p className="text-emerald-600 text-sm">{formData.email || 'Tu email del paso 1'}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Contraseña *
-                        </label>
-                        <input
-                          type="password"
-                          value={formData.password}
-                          onChange={(e) => updateFormData({ password: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                          placeholder="Mínimo 6 caracteres"
-                        />
-                      </div>
                       
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Confirmar Contraseña *
-                        </label>
-                        <input
-                          type="password"
-                          value={formData.confirmPassword}
-                          onChange={(e) => updateFormData({ confirmPassword: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                          placeholder="Repite tu contraseña"
-                        />
-                        {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                          <p className="text-red-500 text-sm mt-1">Las contraseñas no coinciden</p>
-                        )}
+                      <div className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Contraseña *
+                          </label>
+                          <input
+                            type="password"
+                            value={formData.password}
+                            onChange={(e) => updateFormData({ password: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                            placeholder="Mínimo 6 caracteres"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Confirmar Contraseña *
+                          </label>
+                          <input
+                            type="password"
+                            value={formData.confirmPassword}
+                            onChange={(e) => updateFormData({ confirmPassword: e.target.value })}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
+                            placeholder="Repite tu contraseña"
+                          />
+                          {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                            <p className="text-red-500 text-sm mt-1">Las contraseñas no coinciden</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {error && (
-                      <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                        <p className="text-red-700 text-sm">{error}</p>
-                      </div>
-                    )}
+                      {error && (
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                          <p className="text-red-700 text-sm">{error}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </motion.div>
             </AnimatePresence>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-6">
-              <button
-                onClick={handlePrev}
-                disabled={currentStep === 0}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-                  currentStep === 0
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <ArrowLeft className="w-5 h-5" />
-                Anterior
-              </button>
-              
-              {currentStep < STEPS.length - 1 ? (
+            <div className="bg-white border-t border-gray-200 p-6 sticky bottom-0">
+              <div className="max-w-4xl mx-auto flex items-center justify-between">
                 <button
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-                    canProceed()
-                      ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-200'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  onClick={handlePrev}
+                  disabled={currentStep === 0}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all ${
+                    currentStep === 0
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-700 hover:bg-gray-100 border border-gray-300'
                   }`}
                 >
-                  Siguiente
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowLeft className="w-4 h-4" />
+                  Anterior
                 </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  disabled={!canProceed() || isSubmitting}
-                  className={`flex items-center gap-2 px-8 py-3 rounded-xl font-medium transition-all ${
-                    canProceed() && !isSubmitting
-                      ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-200'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Registrando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-5 h-5" />
-                      Completar Registro
-                    </>
-                  )}
-                </button>
-              )}
+                
+                {currentStep < STEPS.length - 1 ? (
+                  <button
+                    onClick={handleNext}
+                    disabled={!canProceed()}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all ${
+                      canProceed()
+                        ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    Siguiente
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!canProceed() || isSubmitting}
+                    className={`flex items-center gap-2 px-8 py-2.5 rounded-lg font-medium transition-all ${
+                      canProceed() && !isSubmitting
+                        ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Registrando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        Completar Registro
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </main>
@@ -921,7 +939,7 @@ const EstablishmentRegistrationPage = () => {
               animate={{ x: 0 }}
               exit={{ x: 320 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-16 bottom-0 w-80 bg-white border-l border-gray-200 overflow-y-auto z-30"
+              className="fixed right-0 top-0 bottom-0 w-80 bg-white border-l border-gray-200 overflow-y-auto z-30"
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
