@@ -120,6 +120,8 @@ const EstablishmentRegistrationPage = () => {
   const [showGuideSidebar, setShowGuideSidebar] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [registrationStep, setRegistrationStep] = useState<'creating' | 'configuring' | 'success'>('creating');
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -201,6 +203,8 @@ const EstablishmentRegistrationPage = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
+    setShowSuccessAnimation(true);
+    setRegistrationStep('creating');
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
@@ -244,6 +248,8 @@ const EstablishmentRegistrationPage = () => {
       // Save token for future use
       localStorage.setItem('auth_token', token);
       localStorage.setItem('user_data', JSON.stringify(registerResult.user));
+
+      setRegistrationStep('configuring');
 
       const payload = {
         basicInfo: {
@@ -290,18 +296,23 @@ const EstablishmentRegistrationPage = () => {
           timestamp: new Date().toISOString()
         }));
         
+        // Show success animation
+        setRegistrationStep('success');
+        
         // Dispatch auth change event
         window.dispatchEvent(new Event('auth-change'));
         
-        // Redirect to establishment dashboard
-        router.replace('/establecimientos/admin');
+        // Wait for animation then redirect
+        setTimeout(() => {
+          router.replace('/establecimientos/admin');
+        }, 2500);
       } else {
         throw new Error(result.message || 'Error al registrar el establecimiento');
       }
     } catch (err) {
       console.error('Registration error:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
-    } finally {
+      setShowSuccessAnimation(false);
       setIsSubmitting(false);
     }
   };
@@ -428,6 +439,88 @@ const EstablishmentRegistrationPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Success Animation Overlay */}
+      <AnimatePresence>
+        {showSuccessAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-center max-w-md mx-auto px-6"
+            >
+              {registrationStep === 'creating' && (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-20 h-20 mx-auto mb-6"
+                  >
+                    <div className="w-20 h-20 border-4 border-emerald-200 border-t-emerald-600 rounded-full" />
+                  </motion.div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Creando tu cuenta...</h3>
+                  <p className="text-gray-600">Por favor espera mientras configuramos todo</p>
+                </>
+              )}
+              {registrationStep === 'configuring' && (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-20 h-20 mx-auto mb-6"
+                  >
+                    <div className="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full" />
+                  </motion.div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Configurando establecimiento...</h3>
+                  <p className="text-gray-600">Registrando canchas y servicios</p>
+                </>
+              )}
+              {registrationStep === 'success' && (
+                <>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="w-24 h-24 mx-auto mb-6 bg-emerald-500 rounded-full flex items-center justify-center"
+                  >
+                    <Check className="w-12 h-12 text-white" />
+                  </motion.div>
+                  <motion.h3
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-2xl font-bold text-gray-900 mb-2"
+                  >
+                    ¡Registro exitoso!
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-gray-600 mb-4"
+                  >
+                    Tu establecimiento ha sido creado correctamente
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.7 }}
+                    className="text-sm text-emerald-600"
+                  >
+                    Redirigiendo al panel de administración...
+                  </motion.p>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Left Sidebar - Steps Navigation */}
       <aside className="w-72 bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 bottom-0 z-30">
         {/* Logo Header */}
