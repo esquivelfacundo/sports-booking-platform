@@ -620,23 +620,34 @@ const SuperAdminDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
-              { id: 'overview', label: 'Resumen', icon: Activity },
-              { id: 'establishments', label: 'Establecimientos', icon: Building2 },
-              { id: 'users', label: 'Usuarios', icon: Users },
-              { id: 'settings', label: 'Configuración', icon: Settings }
+              { id: 'overview', label: 'Resumen', icon: Activity, href: null },
+              { id: 'establishments', label: 'Establecimientos', icon: Building2, href: null },
+              { id: 'users', label: 'Usuarios', icon: Users, href: '/control/usuarios' },
+              { id: 'settings', label: 'Configuración', icon: Settings, href: null }
             ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-red-500 text-red-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
+              tab.href ? (
+                <a
+                  key={tab.id}
+                  href={tab.href}
+                  className="flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300"
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </a>
+              ) : (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-red-500 text-red-400'
+                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              )
             ))}
           </nav>
         </div>
