@@ -23,6 +23,8 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
     amenities: [] as string[],
     accessEmail: '',
     accessPassword: '',
+    adminFirstName: '',
+    adminLastName: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -78,6 +80,8 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
         rules: [],
         accessEmail: formData.accessEmail,
         accessPassword: formData.accessPassword,
+        adminFirstName: formData.adminFirstName,
+        adminLastName: formData.adminLastName,
       };
 
       console.log('Creating establishment with payload:', payload);
@@ -125,6 +129,8 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
       amenities: [],
       accessEmail: '',
       accessPassword: '',
+      adminFirstName: '',
+      adminLastName: '',
     });
     setError('');
     onClose();
@@ -302,6 +308,32 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Nombre del Admin *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.adminFirstName}
+                      onChange={(e) => setFormData({ ...formData, adminFirstName: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Juan"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Apellido del Admin *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.adminLastName}
+                      onChange={(e) => setFormData({ ...formData, adminLastName: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Pérez"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Email de Acceso *</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -396,7 +428,7 @@ const CreateEstablishmentModal = ({ isOpen, onClose, onSuccess }: CreateEstablis
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={isLoading || !formData.name || !formData.city || !formData.address || !formData.phone || !formData.email || !formData.accessEmail || !formData.accessPassword || formData.sports.length === 0}
+                disabled={isLoading || !formData.name || !formData.city || !formData.address || !formData.phone || !formData.email || !formData.accessEmail || !formData.accessPassword || !formData.adminFirstName || !formData.adminLastName || formData.sports.length === 0}
                 className="px-6 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
               >
                 {isLoading ? (
