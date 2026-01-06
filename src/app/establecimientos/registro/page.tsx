@@ -21,6 +21,7 @@ import {
   AlertCircle,
   HelpCircle
 } from 'lucide-react';
+import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete';
 
 // Step definitions
 const STEPS = [
@@ -42,6 +43,7 @@ interface FormData {
   address: string;
   city: string;
   province: string;
+  coordinates?: { lat: number; lng: number };
   // Schedule
   schedule: Record<string, { open: string; close: string; closed: boolean }>;
   // Amenities
@@ -117,6 +119,7 @@ const EstablishmentRegistrationPage = () => {
     address: '',
     city: '',
     province: '',
+    coordinates: undefined,
     schedule: defaultSchedule,
     amenities: [],
     sports: [],
@@ -230,6 +233,7 @@ const EstablishmentRegistrationPage = () => {
           city: formData.city,
           state: formData.province,
           zipCode: '',
+          coordinates: formData.coordinates,
         },
         schedule: formData.schedule,
         amenities: formData.amenities,
@@ -307,6 +311,35 @@ const EstablishmentRegistrationPage = () => {
       ...prev,
       courts: prev.courts.map((court, i) => i === index ? { ...court, ...updates } : court)
     }));
+  };
+
+  const handleAddressPlaceSelect = (place: any) => {
+    if (place.formatted_address) {
+      updateFormData({ address: place.formatted_address });
+    }
+    
+    if (place.geometry?.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      updateFormData({ coordinates: { lat, lng } });
+    }
+    
+    // Extract city from address components
+    if (place.address_components) {
+      const cityComponent = place.address_components.find((component: any) =>
+        component.types.includes('locality') || component.types.includes('administrative_area_level_2')
+      );
+      if (cityComponent) {
+        updateFormData({ city: cityComponent.long_name });
+      }
+      
+      const provinceComponent = place.address_components.find((component: any) =>
+        component.types.includes('administrative_area_level_1')
+      );
+      if (provinceComponent) {
+        updateFormData({ province: provinceComponent.long_name });
+      }
+    }
   };
 
   // Guide content for sidebar
@@ -540,13 +573,20 @@ const EstablishmentRegistrationPage = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Dirección *
                           </label>
-                          <input
-                            type="text"
+                          <GooglePlacesAutocomplete
                             value={formData.address}
-                            onChange={(e) => updateFormData({ address: e.target.value })}
+                            onChange={(value) => updateFormData({ address: value })}
+                            onPlaceSelect={handleAddressPlaceSelect}
+                            placeholder="Buscar dirección en Google Maps..."
                             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
-                            placeholder="Av. Ejemplo 1234"
+                            types={['address']}
                           />
+                          {formData.coordinates && (
+                            <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              Ubicación verificada en el mapa
+                            </p>
+                          )}
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
