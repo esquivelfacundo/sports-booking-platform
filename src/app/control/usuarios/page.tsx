@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Users, UserPlus, Edit2, Trash2, Shield, Search, X, Building2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, UserPlus, Edit2, Trash2, Shield, Search, X, Building2, Phone, Mail, Calendar, Activity, Eye } from 'lucide-react';
 
 interface User {
   id: string;
@@ -30,8 +31,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<'view' | 'edit' | 'create' | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [pagination, setPagination] = useState({
@@ -151,7 +151,7 @@ export default function UsersPage() {
 
       if (!response.ok) throw new Error('Error creating user');
 
-      setShowCreateModal(false);
+      closeSidebar();
       resetForm();
       fetchUsers();
     } catch (error) {
@@ -190,8 +190,7 @@ export default function UsersPage() {
 
       if (!response.ok) throw new Error('Error updating user');
 
-      setShowEditModal(false);
-      setSelectedUser(null);
+      closeSidebar();
       resetForm();
       fetchUsers();
       
@@ -237,24 +236,28 @@ export default function UsersPage() {
     }
   };
 
-  const openEditModal = (user: User) => {
-    setSelectedUser(user);
-    setFormData({
-      email: user.email,
-      password: '',
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone || '',
-      userType: user.userType,
-      isActive: user.isActive
-    });
-    setShowEditModal(true);
+  const openSidebar = (mode: 'view' | 'edit' | 'create', user?: User) => {
+    if (user) {
+      setSelectedUser(user);
+      setFormData({
+        email: user.email,
+        password: '',
+        firstName: user.firstName || user.name?.split(' ')[0] || '',
+        lastName: user.lastName || user.name?.split(' ').slice(1).join(' ') || '',
+        phone: user.phone || '',
+        userType: user.userType,
+        isActive: user.isActive
+      });
+    } else {
+      resetForm();
+      setFormData(prev => ({ ...prev, userType: activeTab }));
+    }
+    setSidebarMode(mode);
   };
 
-  const openCreateModal = () => {
-    resetForm();
-    setFormData(prev => ({ ...prev, userType: activeTab }));
-    setShowCreateModal(true);
+  const closeSidebar = () => {
+    setSidebarMode(null);
+    setSelectedUser(null);
   };
 
   const resetForm = () => {
@@ -329,7 +332,7 @@ export default function UsersPage() {
       {/* Create button in topbar */}
       {(activeTab === 'admin' || activeTab === 'establishment') && (
         <button
-          onClick={openCreateModal}
+          onClick={() => openSidebar('create')}
           className="hidden sm:flex px-3 py-1.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors items-center gap-1.5 text-sm font-medium"
         >
           <UserPlus className="w-4 h-4" />
@@ -391,7 +394,7 @@ export default function UsersPage() {
             </div>
             {(activeTab === 'admin' || activeTab === 'establishment') && (
               <button
-                onClick={openCreateModal}
+                onClick={() => openSidebar('create')}
                 className="px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
@@ -487,8 +490,16 @@ export default function UsersPage() {
                       )}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => openEditModal(user)}
-                          className="text-orange-600 dark:text-orange-400 hover:text-orange-900 dark:hover:text-orange-300 mr-4"
+                          onClick={() => openSidebar('view', user)}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 mr-3"
+                          title="Ver detalles"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openSidebar('edit', user)}
+                          className="text-orange-600 dark:text-orange-400 hover:text-orange-900 dark:hover:text-orange-300 mr-3"
+                          title="Editar"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -535,193 +546,304 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {formData.userType === 'admin' ? 'Crear Administrador' : 'Crear Establecimiento'}
-              </h2>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña *</label>
-                <input
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4 text-orange-600 border-gray-300 dark:border-gray-600 rounded focus:ring-orange-500 bg-white dark:bg-gray-700"
-                />
-                <label htmlFor="isActive" className="text-sm text-gray-700 dark:text-gray-300">Usuario activo</label>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                >
-                  Crear
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Sidebar */}
+      <AnimatePresence>
+        {sidebarMode && (
+          <div className="fixed inset-0 z-[100] flex">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={closeSidebar}
+            />
 
-      {/* Edit Modal */}
-      {showEditModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Editar {selectedUser.id === currentUser?.id ? 'Mi Perfil' : 'Usuario'}
-              </h2>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleUpdateUser} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                <input
-                  type="email"
-                  disabled
-                  value={formData.email}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva Contraseña (dejar vacío para no cambiar)</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  />
+            {/* Sidebar Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-xl overflow-y-auto z-[101]"
+            >
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {sidebarMode === 'create' 
+                      ? (formData.userType === 'admin' ? 'Nuevo Administrador' : 'Nuevo Usuario')
+                      : sidebarMode === 'edit' 
+                      ? (selectedUser?.id === currentUser?.id ? 'Mi Perfil' : 'Editar Usuario')
+                      : 'Detalles del Usuario'}
+                  </h2>
+                  <button
+                    onClick={closeSidebar}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  />
-                </div>
+
+                {/* View Mode */}
+                {sidebarMode === 'view' && selectedUser && (
+                  <div className="space-y-6">
+                    {/* Avatar and Name */}
+                    <div className="flex items-center space-x-4">
+                      <div className="h-16 w-16 rounded-full bg-orange-100 dark:bg-orange-600 flex items-center justify-center">
+                        <span className="text-xl font-bold text-orange-600 dark:text-white">
+                          {(selectedUser.firstName || selectedUser.name || '?')[0].toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {selectedUser.firstName && selectedUser.lastName 
+                            ? `${selectedUser.firstName} ${selectedUser.lastName}`
+                            : selectedUser.name || 'Sin nombre'}
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                          {selectedUser.userType === 'admin' ? 'Administrador' : 
+                           selectedUser.userType === 'establishment' ? 'Establecimiento' : 'Jugador'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
+                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Contacto</h4>
+                      {selectedUser.email && (
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">{selectedUser.email}</span>
+                        </div>
+                      )}
+                      {selectedUser.phone && (
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">{selectedUser.phone}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">Estado</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          selectedUser.isActive
+                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
+                            : 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
+                        }`}>
+                          {selectedUser.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+                      {selectedUser.isRegistered !== undefined && (
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-gray-500 dark:text-gray-400 text-sm">Registrado</span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            selectedUser.isRegistered
+                              ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-400'
+                              : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {selectedUser.isRegistered ? 'Sí' : 'No'}
+                          </span>
+                        </div>
+                      )}
+                      {selectedUser.establishmentName && (
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-gray-500 dark:text-gray-400 text-sm">Establecimiento</span>
+                          <span className="text-gray-900 dark:text-white text-sm">{selectedUser.establishmentName}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    {selectedUser.source !== 'client' && (
+                      <div className="flex gap-3 pt-4">
+                        <button
+                          onClick={() => setSidebarMode('edit')}
+                          className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                        >
+                          Editar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Edit Mode */}
+                {sidebarMode === 'edit' && selectedUser && (
+                  <form onSubmit={handleUpdateUser} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                      <input
+                        type="email"
+                        disabled
+                        value={formData.email}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva Contraseña</label>
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="Dejar vacío para no cambiar"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    {selectedUser.id !== currentUser?.id && (
+                      <div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.isActive}
+                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Usuario activo</span>
+                        </label>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        type="button"
+                        onClick={closeSidebar}
+                        className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                      >
+                        Guardar
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Create Mode */}
+                {sidebarMode === 'create' && (
+                  <form onSubmit={handleCreateUser} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña *</label>
+                      <input
+                        type="password"
+                        required
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.isActive}
+                          onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                          className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Usuario activo</span>
+                      </label>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        type="button"
+                        onClick={closeSidebar}
+                        className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                      >
+                        Crear
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-              {selectedUser.id !== currentUser?.id && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isActiveEdit"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="w-4 h-4 text-orange-600 border-gray-300 dark:border-gray-600 rounded focus:ring-orange-500 bg-white dark:bg-gray-700"
-                  />
-                  <label htmlFor="isActiveEdit" className="text-sm text-gray-700 dark:text-gray-300">Usuario activo</label>
-                </div>
-              )}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                >
-                  Guardar
-                </button>
-              </div>
-            </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 }
