@@ -890,7 +890,7 @@ const EstablishmentRegistrationPage = () => {
                 )}
 
                 {/* Step 5: Terms and Conditions */}
-                {currentStep === 6 && (
+                {currentStep === 5 && (
                   <div className="space-y-6">
                     <div className="bg-white rounded-xl border border-gray-200 p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">Tu Cuenta</h3>
@@ -966,7 +966,7 @@ const EstablishmentRegistrationPage = () => {
                 )}
 
                 {/* Step 6: Account */}
-                {currentStep === 5 && (
+                {currentStep === 6 && (
                   <div className="space-y-6">
                     <div className="bg-white rounded-xl border border-gray-200 p-6">
                       <div className="flex items-center gap-3 mb-4">
