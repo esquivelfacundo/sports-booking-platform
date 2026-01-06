@@ -438,7 +438,7 @@ const EstablishmentRegistrationPage = () => {
   };
 
   return (
-    <>
+    <div>
       {/* Success Animation Overlay */}
       <AnimatePresence>
         {showSuccessAnimation && (
@@ -1412,7 +1412,7 @@ const EstablishmentRegistrationPage = () => {
           )}
         </AnimatePresence>
       </div>
-    </>
+    </div>
   );
 };
 
