@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete';
 
+import { FileText, Shield } from 'lucide-react';
+
 // Step definitions
 const STEPS = [
   { id: 'info', title: 'Información', icon: Building2, description: 'Nombre y contacto' },
@@ -33,6 +35,7 @@ const STEPS = [
   { id: 'amenities', title: 'Servicios', icon: Sparkles, description: 'Qué ofreces' },
   { id: 'courts', title: 'Canchas', icon: LayoutGrid, description: 'Tus espacios deportivos' },
   { id: 'account', title: 'Tu Cuenta', icon: User, description: 'Datos de acceso' },
+  { id: 'terms', title: 'Términos', icon: FileText, description: 'Contrato legal' },
 ];
 
 interface FormData {
@@ -63,6 +66,9 @@ interface FormData {
   // Account
   password: string;
   confirmPassword: string;
+  // Terms
+  termsAccepted: boolean;
+  termsReadComplete: boolean;
 }
 
 const defaultSchedule = {
@@ -114,6 +120,8 @@ const EstablishmentRegistrationPage = () => {
   const [showGuideSidebar, setShowGuideSidebar] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [registrationStep, setRegistrationStep] = useState<'creating' | 'configuring' | 'success'>('creating');
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -130,6 +138,8 @@ const EstablishmentRegistrationPage = () => {
     courts: [],
     password: '',
     confirmPassword: '',
+    termsAccepted: false,
+    termsReadComplete: false,
   });
 
   // Load saved progress
@@ -171,8 +181,10 @@ const EstablishmentRegistrationPage = () => {
         return formData.courts.length > 0;
       case 5: // Account
         return formData.password.length >= 6 && formData.password === formData.confirmPassword;
+      case 6: // Terms
+        return formData.termsAccepted && formData.termsReadComplete;
       default:
-        return true;
+        return false;
     }
   };
 
@@ -191,6 +203,8 @@ const EstablishmentRegistrationPage = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
+    setShowSuccessAnimation(true);
+    setRegistrationStep('creating');
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
@@ -225,6 +239,8 @@ const EstablishmentRegistrationPage = () => {
       // Save token for future use
       localStorage.setItem('auth_token', token);
       localStorage.setItem('user_data', JSON.stringify(registerResult.user));
+
+      setRegistrationStep('configuring');
 
       const payload = {
         basicInfo: {
@@ -265,6 +281,7 @@ const EstablishmentRegistrationPage = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        setRegistrationStep('success');
         localStorage.removeItem('establishmentRegistrationProgress');
         localStorage.setItem('registrationSuccess', JSON.stringify({
           establishment: result.establishment,
@@ -275,13 +292,17 @@ const EstablishmentRegistrationPage = () => {
         // Dispatch auth change event
         window.dispatchEvent(new Event('auth-change'));
         
-        router.replace('/establecimientos/registro/exito');
+        // Wait for animation then redirect
+        setTimeout(() => {
+          router.replace('/establecimientos/admin');
+        }, 2000);
       } else {
         throw new Error(result.message || 'Error al registrar el establecimiento');
       }
     } catch (err) {
       console.error('Registration error:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
+      setShowSuccessAnimation(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -397,12 +418,135 @@ const EstablishmentRegistrationPage = () => {
         'Podrás cambiar tu contraseña después',
       ]
     },
+    6: {
+      title: '📄 Términos Legales',
+      tips: [
+        'Lee completamente el contrato antes de aceptar',
+        'Incluye protección legal para ambas partes',
+        'Define responsabilidades y comisiones claramente',
+      ]
+    },
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Left Sidebar - Steps Navigation */}
-      <aside className="w-72 bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 bottom-0 z-30">
+    <>
+      {/* Success Animation Overlay */}
+      <AnimatePresence>
+        {showSuccessAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring", damping: 15 }}
+              className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl"
+            >
+              <div className="text-center space-y-6">
+                {/* Animated Icon */}
+                <div className="relative">
+                  {registrationStep === 'creating' && (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-20 h-20 mx-auto"
+                    >
+                      <div className="w-20 h-20 border-4 border-emerald-200 border-t-emerald-600 rounded-full" />
+                    </motion.div>
+                  )}
+                  {registrationStep === 'configuring' && (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-20 h-20 mx-auto"
+                    >
+                      <div className="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full" />
+                    </motion.div>
+                  )}
+                  {registrationStep === 'success' && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", damping: 10 }}
+                      className="w-20 h-20 mx-auto bg-emerald-500 rounded-full flex items-center justify-center"
+                    >
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Check className="w-10 h-10 text-white" strokeWidth={3} />
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Status Text */}
+                <div>
+                  {registrationStep === 'creating' && (
+                    <>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">Creando tu cuenta</h3>
+                      <p className="text-gray-600">Configurando tu perfil de establecimiento...</p>
+                    </>
+                  )}
+                  {registrationStep === 'configuring' && (
+                    <>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">Configurando establecimiento</h3>
+                      <p className="text-gray-600">Registrando canchas y servicios...</p>
+                    </>
+                  )}
+                  {registrationStep === 'success' && (
+                    <>
+                      <motion.h3
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-2xl font-bold text-emerald-600 mb-2"
+                      >
+                        ¡Registro completado!
+                      </motion.h3>
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-gray-600"
+                      >
+                        Redirigiendo a tu dashboard...
+                      </motion.p>
+                    </>
+                  )}
+                </div>
+
+                {/* Progress Dots */}
+                <div className="flex justify-center gap-2">
+                  {['creating', 'configuring', 'success'].map((step, index) => (
+                    <motion.div
+                      key={step}
+                      initial={{ scale: 0.8 }}
+                      animate={{
+                        scale: registrationStep === step ? 1.2 : 0.8,
+                        backgroundColor: 
+                          registrationStep === 'success' && index <= 2 ? '#10b981' :
+                          registrationStep === 'configuring' && index <= 1 ? '#3b82f6' :
+                          registrationStep === 'creating' && index === 0 ? '#10b981' :
+                          '#e5e7eb'
+                      }}
+                      transition={{ duration: 0.3 }}
+                      className="w-2 h-2 rounded-full"
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Left Sidebar - Steps Navigation */}
+        <aside className="w-72 bg-white border-r border-gray-200 flex flex-col fixed left-0 top-0 bottom-0 z-30">
         {/* Logo Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -936,6 +1080,222 @@ const EstablishmentRegistrationPage = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Step 6: Terms and Conditions */}
+                {currentStep === 6 && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                          <FileText className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Términos y Condiciones</h3>
+                          <p className="text-sm text-gray-500">Contrato de Prestación de Servicios</p>
+                        </div>
+                      </div>
+
+                      {/* Terms Content - Scrollable */}
+                      <div 
+                        className="h-96 overflow-y-auto border border-gray-200 rounded-lg p-6 bg-gray-50 text-sm text-gray-700 leading-relaxed space-y-4 mb-6"
+                        onScroll={(e) => {
+                          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                          const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+                          if (isAtBottom && !formData.termsReadComplete) {
+                            updateFormData({ termsReadComplete: true });
+                          }
+                        }}
+                      >
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">1. OBJETO DEL CONTRATO</h4>
+                          <p>El presente contrato regula la prestación de servicios de la plataforma digital de reservas deportivas ("la Plataforma"), que permite a establecimientos deportivos ("el Establecimiento") ofrecer sus servicios de alquiler de canchas y espacios deportivos a usuarios finales ("los Usuarios").</p>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">2. OBLIGACIONES DEL ESTABLECIMIENTO</h4>
+                          <div className="space-y-2">
+                            <p><strong>2.1 Información Veraz:</strong> Proporcionar información veraz, actualizada y completa sobre instalaciones, servicios, horarios y tarifas.</p>
+                            <p><strong>2.2 Disponibilidad:</strong> Mantener actualizada la disponibilidad de canchas en tiempo real.</p>
+                            <p><strong>2.3 Calidad del Servicio:</strong> Brindar servicios conforme a estándares publicitados y mantener instalaciones en condiciones óptimas de seguridad e higiene.</p>
+                            <p><strong>2.4 Atención al Cliente:</strong> Proporcionar atención adecuada respetando horarios de reserva confirmados.</p>
+                            <p><strong>2.5 Cumplimiento Legal:</strong> Cumplir con todas las normativas locales, provinciales y nacionales aplicables.</p>
+                            <p><strong>2.6 Seguros:</strong> Mantener vigente seguro de responsabilidad civil que cubra daños a terceros por monto mínimo de $5.000.000 ARS.</p>
+                          </div>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">3. COMISIONES Y TARIFAS</h4>
+                          <div className="space-y-2">
+                            <p><strong>3.1 Comisión de Plataforma:</strong> La Plataforma cobrará una comisión del 8% sobre el valor de cada reserva confirmada y efectivamente utilizada.</p>
+                            <p><strong>3.2 Tarifa de Servicio al Usuario:</strong> Se aplicará una tarifa de servicio del 5% al Usuario final, la cual será claramente informada antes de confirmar la reserva.</p>
+                            <p><strong>3.3 Liquidación:</strong> Las liquidaciones se realizarán semanalmente, descontando comisiones e impuestos aplicables.</p>
+                            <p><strong>3.4 Procesamiento de Pagos:</strong> Los pagos se procesarán a través de Mercado Pago. Las comisiones de procesamiento de pago son adicionales y serán descontadas automáticamente.</p>
+                            <p><strong>3.5 Facturación:</strong> El Establecimiento deberá emitir facturación correspondiente conforme a legislación fiscal vigente.</p>
+                            <p><strong>3.6 Impuestos:</strong> Cada parte será responsable del pago de impuestos que le correspondan según legislación aplicable.</p>
+                          </div>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">4. PAGOS Y REEMBOLSOS</h4>
+                          <div className="space-y-2">
+                            <p><strong>4.1 Métodos de Pago:</strong> Los Usuarios podrán pagar mediante tarjetas de crédito/débito, transferencias bancarias o efectivo (según disponibilidad del Establecimiento).</p>
+                            <p><strong>4.2 Depósitos:</strong> El Establecimiento podrá requerir un depósito del 50% al momento de la reserva, con el saldo restante pagadero antes o al momento del uso.</p>
+                            <p><strong>4.3 Cancelaciones con Reembolso:</strong> Cancelaciones con más de 24 horas de anticipación: reembolso del 100%. Cancelaciones con menos de 24 horas: reembolso del 50%.</p>
+                            <p><strong>4.4 No-Show:</strong> Si el Usuario no se presenta sin cancelar, no habrá reembolso y se cobrará el 100% de la reserva.</p>
+                            <p><strong>4.5 Fuerza Mayor:</strong> En casos de fuerza mayor (clima adverso, emergencias sanitarias, etc.), se aplicará reembolso del 100%.</p>
+                            <p><strong>4.6 Cancelación por Establecimiento:</strong> Si el Establecimiento cancela una reserva confirmada, deberá reembolsar el 100% más una penalidad del 20% del valor.</p>
+                            <p><strong>4.7 Tiempo de Reembolso:</strong> Los reembolsos se procesarán en un plazo máximo de 10 días hábiles.</p>
+                          </div>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">5. RESPONSABILIDADES Y LIMITACIONES</h4>
+                          <div className="space-y-2">
+                            <p><strong>5.1 Responsabilidad del Establecimiento:</strong> El Establecimiento es ÚNICO RESPONSABLE por:</p>
+                            <ul className="list-disc list-inside ml-4 space-y-1">
+                              <li>Seguridad de las instalaciones y equipamiento</li>
+                              <li>Lesiones, accidentes o daños que ocurran en sus predios</li>
+                              <li>Cumplimiento de normativas de seguridad, higiene y habilitaciones municipales</li>
+                              <li>Mantenimiento adecuado de canchas y espacios deportivos</li>
+                              <li>Disponibilidad de servicios ofrecidos (iluminación, vestuarios, etc.)</li>
+                            </ul>
+                            <p><strong>5.2 Limitación de Responsabilidad de la Plataforma:</strong> La Plataforma actúa EXCLUSIVAMENTE como intermediario tecnológico y NO será responsable por:</p>
+                            <ul className="list-disc list-inside ml-4 space-y-1">
+                              <li>Daños, lesiones o perjuicios que ocurran en instalaciones del Establecimiento</li>
+                              <li>Calidad de servicios prestados por el Establecimiento</li>
+                              <li>Disputas entre Establecimiento y Usuarios</li>
+                              <li>Pérdida de objetos personales en las instalaciones</li>
+                              <li>Incumplimientos contractuales del Establecimiento con Usuarios</li>
+                            </ul>
+                            <p><strong>5.3 Indemnización:</strong> El Establecimiento se compromete a indemnizar y mantener indemne a la Plataforma de cualquier reclamo, demanda o acción legal derivada de su actividad.</p>
+                            <p><strong>5.4 Seguro Obligatorio:</strong> El Establecimiento DEBE mantener vigente un seguro de responsabilidad civil por monto mínimo de $5.000.000 ARS y presentar comprobante anual.</p>
+                          </div>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">6. PROTECCIÓN DE DATOS Y PRIVACIDAD</h4>
+                          <div className="space-y-2">
+                            <p><strong>6.1 Ley Aplicable:</strong> Tratamiento de datos personales conforme a Ley 25.326 de Protección de Datos Personales y normativas complementarias.</p>
+                            <p><strong>6.2 Confidencialidad:</strong> La información comercial y de usuarios será tratada con estricta confidencialidad.</p>
+                            <p><strong>6.3 Uso de Datos:</strong> Los datos solo podrán utilizarse para fines relacionados con la prestación del servicio.</p>
+                            <p><strong>6.4 Seguridad:</strong> Implementación de medidas técnicas y organizativas apropiadas para proteger datos.</p>
+                          </div>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">7. SUSPENSIÓN Y TERMINACIÓN</h4>
+                          <div className="space-y-2">
+                            <p><strong>7.1 Suspensión Inmediata:</strong> La Plataforma podrá suspender la cuenta del Establecimiento inmediatamente en caso de:</p>
+                            <ul className="list-disc list-inside ml-4 space-y-1">
+                              <li>Incumplimiento grave de obligaciones contractuales</li>
+                              <li>Fraude o actividades ilegales</li>
+                              <li>Múltiples reclamos de Usuarios</li>
+                              <li>Falta de pago de comisiones</li>
+                              <li>Información falsa o engañosa</li>
+                            </ul>
+                            <p><strong>7.2 Terminación Voluntaria:</strong> Cualquier parte podrá terminar el contrato con 30 días de preaviso.</p>
+                            <p><strong>7.3 Obligaciones Post-Terminación:</strong> Las reservas confirmadas deberán honrarse incluso después de la terminación.</p>
+                          </div>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">8. PROPIEDAD INTELECTUAL</h4>
+                          <div className="space-y-2">
+                            <p><strong>8.1 Derechos de la Plataforma:</strong> Todos los derechos de propiedad intelectual sobre la Plataforma pertenecen a la empresa operadora.</p>
+                            <p><strong>8.2 Licencia de Contenido:</strong> El Establecimiento otorga licencia no exclusiva para uso de sus imágenes y contenidos en la Plataforma.</p>
+                            <p><strong>8.3 Prohibiciones:</strong> Queda prohibido copiar, modificar o realizar ingeniería inversa de la Plataforma.</p>
+                          </div>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">9. RESOLUCIÓN DE CONFLICTOS</h4>
+                          <div className="space-y-2">
+                            <p><strong>9.1 Mediación:</strong> Las partes intentarán resolver controversias mediante mediación antes de recurrir a instancias judiciales.</p>
+                            <p><strong>9.2 Jurisdicción:</strong> Tribunales Ordinarios de la Ciudad Autónoma de Buenos Aires.</p>
+                            <p><strong>9.3 Ley Aplicable:</strong> Leyes de la República Argentina.</p>
+                          </div>
+                        </section>
+
+                        <section className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <h4 className="text-yellow-800 font-semibold mb-2 flex items-center">
+                            <Shield className="w-5 h-5 mr-2" />
+                            DECLARACIÓN DE CONFORMIDAD
+                          </h4>
+                          <p className="text-yellow-900 mb-2">Al aceptar estos términos, el representante legal del establecimiento declara bajo juramento que:</p>
+                          <ul className="list-disc list-inside space-y-1 text-yellow-900">
+                            <li>Tiene capacidad legal para contratar en nombre del establecimiento</li>
+                            <li>La información proporcionada es veraz y completa</li>
+                            <li>El establecimiento cumple con todas las habilitaciones municipales requeridas</li>
+                            <li>Cuenta con los seguros de responsabilidad civil correspondientes</li>
+                            <li>Se compromete a cumplir con todas las obligaciones establecidas</li>
+                            <li>Acepta las comisiones y tarifas de servicio establecidas</li>
+                            <li>Comprende y acepta las limitaciones de responsabilidad de la Plataforma</li>
+                          </ul>
+                        </section>
+
+                        <div className="text-center py-4 text-gray-500 border-t border-gray-300">
+                          <p className="font-medium">--- Fin del Documento ---</p>
+                          <p className="text-xs mt-2">
+                            Documento generado el {new Date().toLocaleDateString('es-AR')} - Versión 1.0<br />
+                            Plataforma de Reservas Deportivas - MisCanchas
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Reading Progress */}
+                      {!formData.termsReadComplete && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-center gap-3">
+                            <Eye className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <p className="text-blue-900 font-medium text-sm">Debes leer completamente los términos</p>
+                              <p className="text-blue-700 text-xs">Desplázate hasta el final del documento para continuar</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Acceptance Checkbox */}
+                      <div className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="terms-acceptance"
+                          checked={formData.termsAccepted}
+                          onChange={(e) => updateFormData({ termsAccepted: e.target.checked })}
+                          disabled={!formData.termsReadComplete}
+                          className="w-5 h-5 text-emerald-600 bg-white border-gray-300 rounded focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed mt-0.5"
+                        />
+                        <label 
+                          htmlFor="terms-acceptance" 
+                          className={`text-sm leading-relaxed ${
+                            formData.termsReadComplete ? 'text-gray-900 cursor-pointer' : 'text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <strong>Acepto los términos y condiciones</strong> del contrato de prestación de servicios. 
+                          Declaro que he leído, entendido y acepto todas las cláusulas establecidas. 
+                          Confirmo que tengo autoridad legal para comprometer al establecimiento en este acuerdo 
+                          y que toda la información proporcionada es veraz y completa.
+                        </label>
+                      </div>
+
+                      {formData.termsAccepted && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mt-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Check className="w-5 h-5 text-emerald-600" />
+                            <div>
+                              <p className="text-emerald-900 font-medium text-sm">Términos aceptados correctamente</p>
+                              <p className="text-emerald-700 text-xs">Fecha: {new Date().toLocaleString('es-AR')}</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </AnimatePresence>
 
@@ -1043,7 +1403,7 @@ const EstablishmentRegistrationPage = () => {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </>
   );
 };
 
