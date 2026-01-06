@@ -186,10 +186,37 @@ const EstablishmentRegistrationPage = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        throw new Error('Debes iniciar sesión para registrar un establecimiento');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      
+      // Step 1: Create user account first
+      const registerResponse = await fetch(`${apiUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.name.split(' ')[0] || 'Admin',
+          lastName: formData.name.split(' ').slice(1).join(' ') || 'Establecimiento',
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          userType: 'establishment'
+        }),
+      });
+
+      const registerResult = await registerResponse.json();
+
+      if (!registerResponse.ok) {
+        throw new Error(registerResult.message || 'Error al crear la cuenta');
       }
+
+      // Step 2: Use the token from registration to create the establishment
+      const token = registerResult.token;
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+
+      // Save token for future use
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('user_data', JSON.stringify(registerResult.user));
 
       const payload = {
         basicInfo: {
@@ -215,12 +242,9 @@ const EstablishmentRegistrationPage = () => {
           hasLighting: court.hasLighting,
           isIndoor: court.isIndoor,
         })),
-        representative: {
-          password: formData.password,
-        },
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/establishments/register`, {
+      const response = await fetch(`${apiUrl}/api/establishments/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,6 +262,10 @@ const EstablishmentRegistrationPage = () => {
           status: result.status,
           timestamp: new Date().toISOString()
         }));
+        
+        // Dispatch auth change event
+        window.dispatchEvent(new Event('auth-change'));
+        
         router.replace('/establecimientos/registro/exito');
       } else {
         throw new Error(result.message || 'Error al registrar el establecimiento');
@@ -335,23 +363,68 @@ const EstablishmentRegistrationPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
+      {/* Header with Steps */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center h-20">
+            {/* Logo */}
+            <div className="flex items-center gap-3 flex-shrink-0">
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-white" />
               </div>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-lg font-semibold text-gray-900">Registrar Establecimiento</h1>
-                <p className="text-xs text-gray-500">Paso {currentStep + 1} de {STEPS.length}</p>
               </div>
             </div>
             
+            {/* Steps - Centered */}
+            <div className="flex-1 flex justify-center px-4 overflow-x-auto">
+              <div className="flex items-center gap-1 sm:gap-2">
+                {STEPS.map((step, index) => {
+                  const Icon = step.icon;
+                  const isActive = index === currentStep;
+                  const isCompleted = index < currentStep;
+                  
+                  return (
+                    <React.Fragment key={step.id}>
+                      <button
+                        onClick={() => index <= currentStep && setCurrentStep(index)}
+                        disabled={index > currentStep}
+                        className={`flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg transition-all ${
+                          isActive 
+                            ? 'bg-emerald-50 text-emerald-600' 
+                            : isCompleted
+                              ? 'text-emerald-600 hover:bg-emerald-50'
+                              : 'text-gray-400'
+                        } ${index <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                          isActive 
+                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200' 
+                            : isCompleted
+                              ? 'bg-emerald-500 text-white'
+                              : 'bg-gray-200 text-gray-400'
+                        }`}>
+                          {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                        </div>
+                        <span className="text-xs font-medium whitespace-nowrap hidden md:block">{step.title}</span>
+                      </button>
+                      
+                      {index < STEPS.length - 1 && (
+                        <div className={`w-6 sm:w-10 h-0.5 rounded ${
+                          index < currentStep ? 'bg-emerald-500' : 'bg-gray-200'
+                        }`} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Help Button */}
             <button
               onClick={() => setShowGuideSidebar(!showGuideSidebar)}
-              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+              className="p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex-shrink-0"
               title="Mostrar/ocultar guía"
             >
               <HelpCircle className="w-5 h-5" />
@@ -363,51 +436,6 @@ const EstablishmentRegistrationPage = () => {
       <div className="flex">
         {/* Main Content */}
         <main className={`flex-1 transition-all duration-300 ${showGuideSidebar ? 'mr-80' : ''}`}>
-          {/* Progress Steps */}
-          <div className="bg-white border-b border-gray-200 py-4 overflow-x-auto">
-            <div className="max-w-4xl mx-auto px-4">
-              <div className="flex items-center justify-between min-w-max">
-                {STEPS.map((step, index) => {
-                  const Icon = step.icon;
-                  const isActive = index === currentStep;
-                  const isCompleted = index < currentStep;
-                  
-                  return (
-                    <React.Fragment key={step.id}>
-                      <button
-                        onClick={() => index <= currentStep && setCurrentStep(index)}
-                        disabled={index > currentStep}
-                        className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
-                          isActive 
-                            ? 'bg-emerald-50 text-emerald-600' 
-                            : isCompleted
-                              ? 'text-emerald-600 hover:bg-emerald-50'
-                              : 'text-gray-400'
-                        } ${index <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                      >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                          isActive 
-                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' 
-                            : isCompleted
-                              ? 'bg-emerald-100 text-emerald-600'
-                              : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                        </div>
-                        <span className="text-xs font-medium whitespace-nowrap">{step.title}</span>
-                      </button>
-                      
-                      {index < STEPS.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-2 rounded ${
-                          index < currentStep ? 'bg-emerald-500' : 'bg-gray-200'
-                        }`} />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
 
           {/* Form Content */}
           <div className="max-w-2xl mx-auto px-4 py-8">
@@ -437,7 +465,7 @@ const EstablishmentRegistrationPage = () => {
                           type="text"
                           value={formData.name}
                           onChange={(e) => updateFormData({ name: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                           placeholder="Ej: Complejo Deportivo La Cancha"
                         />
                       </div>
@@ -450,7 +478,7 @@ const EstablishmentRegistrationPage = () => {
                           value={formData.description}
                           onChange={(e) => updateFormData({ description: e.target.value })}
                           rows={3}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none text-gray-900 placeholder-gray-400"
                           placeholder="Describe tu establecimiento, qué lo hace especial..."
                         />
                       </div>
@@ -464,7 +492,7 @@ const EstablishmentRegistrationPage = () => {
                             type="email"
                             value={formData.email}
                             onChange={(e) => updateFormData({ email: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                             placeholder="contacto@ejemplo.com"
                           />
                         </div>
@@ -477,7 +505,7 @@ const EstablishmentRegistrationPage = () => {
                             type="tel"
                             value={formData.phone}
                             onChange={(e) => updateFormData({ phone: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                             placeholder="+54 11 1234-5678"
                           />
                         </div>
@@ -503,7 +531,7 @@ const EstablishmentRegistrationPage = () => {
                           type="text"
                           value={formData.address}
                           onChange={(e) => updateFormData({ address: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                           placeholder="Av. Ejemplo 1234"
                         />
                       </div>
@@ -517,7 +545,7 @@ const EstablishmentRegistrationPage = () => {
                             type="text"
                             value={formData.city}
                             onChange={(e) => updateFormData({ city: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                             placeholder="Buenos Aires"
                           />
                         </div>
@@ -530,7 +558,7 @@ const EstablishmentRegistrationPage = () => {
                             type="text"
                             value={formData.province}
                             onChange={(e) => updateFormData({ province: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                             placeholder="Buenos Aires"
                           />
                         </div>
@@ -797,7 +825,7 @@ const EstablishmentRegistrationPage = () => {
                           type="password"
                           value={formData.password}
                           onChange={(e) => updateFormData({ password: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                           placeholder="Mínimo 6 caracteres"
                         />
                       </div>
@@ -810,7 +838,7 @@ const EstablishmentRegistrationPage = () => {
                           type="password"
                           value={formData.confirmPassword}
                           onChange={(e) => updateFormData({ confirmPassword: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-gray-900 placeholder-gray-400"
                           placeholder="Repite tu contraseña"
                         />
                         {formData.confirmPassword && formData.password !== formData.confirmPassword && (
@@ -920,44 +948,6 @@ const EstablishmentRegistrationPage = () => {
                       </li>
                     ))}
                   </ul>
-                </div>
-                
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="font-medium text-gray-800 mb-3">Progreso</h4>
-                  <div className="space-y-2">
-                    {STEPS.map((step, index) => {
-                      const isActive = index === currentStep;
-                      const isCompleted = index < currentStep;
-                      const Icon = step.icon;
-                      
-                      return (
-                        <div
-                          key={step.id}
-                          className={`flex items-center gap-3 p-2 rounded-lg ${
-                            isActive ? 'bg-emerald-50' : ''
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            isCompleted
-                              ? 'bg-emerald-500 text-white'
-                              : isActive
-                                ? 'bg-emerald-100 text-emerald-600'
-                                : 'bg-gray-100 text-gray-400'
-                          }`}>
-                            {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
-                          </div>
-                          <div>
-                            <p className={`text-sm font-medium ${
-                              isActive ? 'text-emerald-600' : isCompleted ? 'text-gray-700' : 'text-gray-400'
-                            }`}>
-                              {step.title}
-                            </p>
-                            <p className="text-xs text-gray-400">{step.description}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
                 
                 <div className="mt-6 p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl">
