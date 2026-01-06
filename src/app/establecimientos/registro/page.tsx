@@ -21,7 +21,9 @@ import {
   AlertCircle,
   HelpCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  FileText,
+  Shield
 } from 'lucide-react';
 import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete';
 
@@ -33,6 +35,7 @@ const STEPS = [
   { id: 'amenities', title: 'Servicios', icon: Sparkles, description: 'Qué ofreces' },
   { id: 'courts', title: 'Canchas', icon: LayoutGrid, description: 'Tus espacios deportivos' },
   { id: 'account', title: 'Tu Cuenta', icon: User, description: 'Datos de acceso' },
+  { id: 'terms', title: 'Términos', icon: FileText, description: 'Contrato legal' },
 ];
 
 interface FormData {
@@ -63,6 +66,9 @@ interface FormData {
   // Account
   password: string;
   confirmPassword: string;
+  // Terms
+  termsAccepted: boolean;
+  termsReadComplete: boolean;
 }
 
 const defaultSchedule = {
@@ -130,6 +136,8 @@ const EstablishmentRegistrationPage = () => {
     courts: [],
     password: '',
     confirmPassword: '',
+    termsAccepted: false,
+    termsReadComplete: false,
   });
 
   // Load saved progress
@@ -171,8 +179,10 @@ const EstablishmentRegistrationPage = () => {
         return formData.courts.length > 0;
       case 5: // Account
         return formData.password.length >= 6 && formData.password === formData.confirmPassword;
+      case 6: // Terms
+        return formData.termsAccepted && formData.termsReadComplete;
       default:
-        return true;
+        return false;
     }
   };
 
@@ -212,7 +222,16 @@ const EstablishmentRegistrationPage = () => {
       const registerResult = await registerResponse.json();
 
       if (!registerResponse.ok) {
-        throw new Error(registerResult.message || 'Error al crear la cuenta');
+        // Translate common error messages to Spanish
+        let errorMessage = registerResult.message || 'Error al crear la cuenta';
+        if (errorMessage.includes('already exists')) {
+          errorMessage = 'Ya existe una cuenta con este correo electrónico';
+        } else if (errorMessage.includes('Invalid email')) {
+          errorMessage = 'Correo electrónico inválido';
+        } else if (errorMessage.includes('Password')) {
+          errorMessage = 'La contraseña no cumple con los requisitos';
+        }
+        throw new Error(errorMessage);
       }
 
       // Step 2: Use the token from registration to create the establishment
@@ -275,7 +294,8 @@ const EstablishmentRegistrationPage = () => {
         // Dispatch auth change event
         window.dispatchEvent(new Event('auth-change'));
         
-        router.replace('/establecimientos/registro/exito');
+        // Redirect to establishment dashboard
+        router.replace('/establecimientos/admin');
       } else {
         throw new Error(result.message || 'Error al registrar el establecimiento');
       }
@@ -395,6 +415,14 @@ const EstablishmentRegistrationPage = () => {
         'Crea una contraseña segura (mínimo 6 caracteres)',
         'Usarás tu email para iniciar sesión',
         'Podrás cambiar tu contraseña después',
+      ]
+    },
+    6: {
+      title: '📄 Términos Legales',
+      tips: [
+        'Lee completamente el contrato antes de aceptar',
+        'Incluye protección legal para ambas partes',
+        'Define responsabilidades y comisiones claramente',
       ]
     },
   };
@@ -668,7 +696,7 @@ const EstablishmentRegistrationPage = () => {
                                     [day]: { ...hours, open: e.target.value }
                                   }
                                 })}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                               />
                               <span className="text-gray-400">a</span>
                               <input
@@ -680,7 +708,7 @@ const EstablishmentRegistrationPage = () => {
                                     [day]: { ...hours, close: e.target.value }
                                   }
                                 })}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                               />
                             </>
                           )}
@@ -932,6 +960,113 @@ const EstablishmentRegistrationPage = () => {
                           <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                           <p className="text-red-700 text-sm">{error}</p>
                         </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 6: Terms and Conditions */}
+                {currentStep === 6 && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                          <FileText className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Términos y Condiciones</h3>
+                          <p className="text-sm text-gray-500">Contrato de Prestación de Servicios</p>
+                        </div>
+                      </div>
+
+                      {/* Terms Content - Scrollable */}
+                      <div 
+                        className="h-96 overflow-y-auto border border-gray-200 rounded-lg p-6 bg-gray-50 text-sm text-gray-700 leading-relaxed space-y-4 mb-6"
+                        onScroll={(e) => {
+                          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                          const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+                          if (isAtBottom && !formData.termsReadComplete) {
+                            updateFormData({ termsReadComplete: true });
+                          }
+                        }}
+                      >
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">1. COMISIONES Y TARIFAS</h4>
+                          <p><strong>Comisión de Plataforma:</strong> 8% sobre cada reserva confirmada.</p>
+                          <p><strong>Tarifa de Servicio al Usuario:</strong> 5% al usuario final.</p>
+                          <p><strong>Procesamiento:</strong> Vía Mercado Pago con comisiones adicionales.</p>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">2. RESPONSABILIDADES</h4>
+                          <p><strong>Del Establecimiento:</strong> Único responsable de seguridad, lesiones, instalaciones, mantenimiento y cumplimiento legal.</p>
+                          <p><strong>De la Plataforma:</strong> Intermediario tecnológico. NO responsable por daños, lesiones o incidentes en instalaciones.</p>
+                          <p><strong>Seguro Obligatorio:</strong> $5.000.000 ARS mínimo de responsabilidad civil.</p>
+                        </section>
+
+                        <section>
+                          <h4 className="font-semibold text-gray-900 mb-2">3. CANCELACIONES Y REEMBOLSOS</h4>
+                          <p><strong>+24 horas:</strong> Reembolso 100%</p>
+                          <p><strong>-24 horas:</strong> Reembolso 50%</p>
+                          <p><strong>No-Show:</strong> Sin reembolso</p>
+                        </section>
+
+                        <section className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <h4 className="text-yellow-800 font-semibold mb-2 flex items-center">
+                            <Shield className="w-5 h-5 mr-2" />
+                            DECLARACIÓN DE CONFORMIDAD
+                          </h4>
+                          <p className="text-yellow-900 text-xs">Al aceptar, declaras tener capacidad legal, información veraz, habilitaciones municipales, seguros vigentes y aceptar comisiones establecidas.</p>
+                        </section>
+
+                        <div className="text-center py-4 text-gray-500 border-t border-gray-300">
+                          <p className="font-medium">--- Fin del Documento ---</p>
+                          <p className="text-xs mt-2">Versión 1.0 - MisCanchas</p>
+                        </div>
+                      </div>
+
+                      {!formData.termsReadComplete && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-center gap-3">
+                            <Eye className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <p className="text-blue-900 font-medium text-sm">Debes leer completamente los términos</p>
+                              <p className="text-blue-700 text-xs">Desplázate hasta el final del documento</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="terms-acceptance"
+                          checked={formData.termsAccepted}
+                          onChange={(e) => updateFormData({ termsAccepted: e.target.checked })}
+                          disabled={!formData.termsReadComplete}
+                          className="w-5 h-5 text-emerald-600 bg-white border-gray-300 rounded focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed mt-0.5"
+                        />
+                        <label 
+                          htmlFor="terms-acceptance" 
+                          className={`text-sm leading-relaxed ${
+                            formData.termsReadComplete ? 'text-gray-900 cursor-pointer' : 'text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <strong>Acepto los términos y condiciones.</strong> Confirmo autoridad legal para comprometer al establecimiento y que la información es veraz.
+                        </label>
+                      </div>
+
+                      {formData.termsAccepted && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mt-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Check className="w-5 h-5 text-emerald-600" />
+                            <p className="text-emerald-900 font-medium text-sm">Términos aceptados - {new Date().toLocaleString('es-AR')}</p>
+                          </div>
+                        </motion.div>
                       )}
                     </div>
                   </div>
