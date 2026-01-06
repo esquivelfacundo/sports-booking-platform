@@ -255,12 +255,11 @@ const EstablishmentRegistrationPage = () => {
         location: {
           address: formData.address,
           city: formData.city,
-          state: formData.province,
-          zipCode: '',
           coordinates: formData.coordinates,
         },
         schedule: formData.schedule,
         amenities: formData.amenities,
+        sports: formData.sports,
         images: { photos: [] },
         courts: formData.courts.map(court => ({
           name: court.name,
