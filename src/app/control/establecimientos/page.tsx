@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Building2, Search, CheckCircle, XCircle, Eye, Edit2, Trash2, Plus, CreditCard, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Building2, Search, CheckCircle, XCircle, Eye, Edit2, Trash2, Plus, CreditCard, X, Phone, Mail, MapPin, Calendar, Users, Activity } from 'lucide-react';
 import { superAdminApi, EstablishmentData } from '@/services/superAdminApi';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
@@ -36,10 +37,8 @@ export default function EstablecimientosPage() {
   const [establishments, setEstablishments] = useState<EstablishmentData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<'view' | 'edit' | 'create' | null>(null);
   const [selectedEstablishment, setSelectedEstablishment] = useState<EstablishmentData | null>(null);
-  const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<CreateEstablishmentForm>(initialFormData);
   const [editFormData, setEditFormData] = useState({
@@ -87,18 +86,27 @@ export default function EstablecimientosPage() {
     }
   };
 
-  const openEditModal = (est: EstablishmentData) => {
-    setSelectedEstablishment(est);
-    setEditFormData({
-      name: est.name || '',
-      email: est.email || '',
-      phone: est.phone || '',
-      address: est.address || '',
-      city: est.city || '',
-      isActive: est.isActive !== false,
-      registrationStatus: est.registrationStatus || 'approved'
-    });
-    setShowEditModal(true);
+  const openSidebar = (mode: 'view' | 'edit' | 'create', est?: EstablishmentData) => {
+    if (est) {
+      setSelectedEstablishment(est);
+      setEditFormData({
+        name: est.name || '',
+        email: est.email || '',
+        phone: est.phone || '',
+        address: est.address || '',
+        city: est.city || '',
+        isActive: est.isActive !== false,
+        registrationStatus: est.registrationStatus || 'approved'
+      });
+    } else {
+      setFormData(initialFormData);
+    }
+    setSidebarMode(mode);
+  };
+
+  const closeSidebar = () => {
+    setSidebarMode(null);
+    setSelectedEstablishment(null);
   };
 
   const handleUpdateEstablishment = async (e: React.FormEvent) => {
@@ -124,8 +132,7 @@ export default function EstablecimientosPage() {
         throw new Error(error.message || 'Error updating establishment');
       }
 
-      setShowEditModal(false);
-      setSelectedEstablishment(null);
+      closeSidebar();
       loadData();
       alert('Establecimiento actualizado exitosamente');
     } catch (error: any) {
@@ -139,7 +146,7 @@ export default function EstablecimientosPage() {
   const handleCreateEstablishment = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setCreating(true);
+      setSaving(true);
       const token = localStorage.getItem('superAdminToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
@@ -157,7 +164,7 @@ export default function EstablecimientosPage() {
         throw new Error(error.message || 'Error creating establishment');
       }
 
-      setShowCreateModal(false);
+      closeSidebar();
       setFormData(initialFormData);
       loadData();
       alert('Establecimiento creado exitosamente');
@@ -165,7 +172,7 @@ export default function EstablecimientosPage() {
       console.error('Error:', error);
       alert(error.message || 'Error al crear establecimiento');
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   };
 
@@ -211,7 +218,7 @@ export default function EstablecimientosPage() {
 
       {/* Create button */}
       <button
-        onClick={() => setShowCreateModal(true)}
+        onClick={() => openSidebar('create')}
         className="hidden sm:flex px-3 py-1.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors items-center gap-1.5 text-sm font-medium"
       >
         <Plus className="w-4 h-4" />
@@ -356,13 +363,14 @@ export default function EstablecimientosPage() {
                             </>
                           )}
                           <button
-                            onClick={() => openEditModal(est)}
+                            onClick={() => openSidebar('edit', est)}
                             className="p-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 rounded-lg transition-colors"
                             title="Editar"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
+                            onClick={() => openSidebar('view', est)}
                             className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                             title="Ver detalles"
                           >
@@ -379,256 +387,358 @@ export default function EstablecimientosPage() {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {showEditModal && selectedEstablishment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Editar Establecimiento</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              </button>
-            </div>
-            <form onSubmit={handleUpdateEstablishment} className="p-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.name}
-                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={editFormData.email}
-                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                  <input
-                    type="tel"
-                    value={editFormData.phone}
-                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
-                  <input
-                    type="text"
-                    value={editFormData.address}
-                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.city}
-                    onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
-                  <select
-                    value={editFormData.registrationStatus}
-                    onChange={(e) => setEditFormData({ ...editFormData, registrationStatus: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+      {/* Sidebar */}
+      <AnimatePresence>
+        {sidebarMode && (
+          <div className="fixed inset-0 z-[100] flex">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={closeSidebar}
+            />
+
+            {/* Sidebar Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-xl overflow-y-auto z-[101]"
+            >
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {sidebarMode === 'create' ? 'Nuevo Establecimiento' :
+                     sidebarMode === 'edit' ? 'Editar Establecimiento' : 'Detalles del Establecimiento'}
+                  </h2>
+                  <button
+                    onClick={closeSidebar}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
                   >
-                    <option value="approved">Aprobado</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="rejected">Rechazado</option>
-                  </select>
+                    <X className="h-6 w-6" />
+                  </button>
                 </div>
-                <div className="sm:col-span-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editFormData.isActive}
-                      onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
-                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Establecimiento activo</span>
-                  </label>
-                </div>
-              </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
-                >
-                  {saving ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
+                {/* View Mode */}
+                {sidebarMode === 'view' && selectedEstablishment && (
+                  <div className="space-y-6">
+                    {/* Avatar and Name */}
+                    <div className="flex items-center space-x-4">
+                      <div className="h-16 w-16 rounded-full bg-orange-100 dark:bg-orange-600 flex items-center justify-center">
+                        <Building2 className="w-8 h-8 text-orange-600 dark:text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedEstablishment.name}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">{selectedEstablishment.city}</p>
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
+                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Contacto</h4>
+                      {selectedEstablishment.phone && (
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">{selectedEstablishment.phone}</span>
+                        </div>
+                      )}
+                      {selectedEstablishment.email && (
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">{selectedEstablishment.email}</span>
+                        </div>
+                      )}
+                      {selectedEstablishment.address && (
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900 dark:text-white">{selectedEstablishment.address}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase mb-3">Estadísticas</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{selectedEstablishment.courtsCount || 0}</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-xs">Canchas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{selectedEstablishment.totalBookings || 0}</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-xs">Reservas</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">Estado de Registro</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          selectedEstablishment.registrationStatus === 'approved'
+                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
+                            : selectedEstablishment.registrationStatus === 'pending'
+                            ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-400'
+                            : 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
+                        }`}>
+                          {selectedEstablishment.registrationStatus === 'approved' ? 'Aprobado' :
+                           selectedEstablishment.registrationStatus === 'pending' ? 'Pendiente' : 'Rechazado'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">Mercado Pago</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          selectedEstablishment.mpConnected
+                            ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-400'
+                            : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
+                        }`}>
+                          {selectedEstablishment.mpConnected ? 'Conectado' : 'No conectado'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={() => setSidebarMode('edit')}
+                        className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                      >
+                        Editar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Edit Mode */}
+                {sidebarMode === 'edit' && selectedEstablishment && (
+                  <form onSubmit={handleUpdateEstablishment} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.name}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={editFormData.email}
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                      <input
+                        type="tel"
+                        value={editFormData.phone}
+                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
+                      <input
+                        type="text"
+                        value={editFormData.address}
+                        onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad</label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.city}
+                        onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
+                      <select
+                        value={editFormData.registrationStatus}
+                        onChange={(e) => setEditFormData({ ...editFormData, registrationStatus: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="approved">Aprobado</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="rejected">Rechazado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.isActive}
+                          onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                          className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Establecimiento activo</span>
+                      </label>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        type="button"
+                        onClick={closeSidebar}
+                        className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                      >
+                        {saving ? 'Guardando...' : 'Guardar'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Create Mode */}
+                {sidebarMode === 'create' && (
+                  <form onSubmit={handleCreateEstablishment} className="space-y-4">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Información</h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="Nombre del establecimiento"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="contacto@ejemplo.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="+54 9 11 1234-5678"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
+                        <input
+                          type="text"
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="Av. Corrientes 1234"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="Buenos Aires"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
+                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">Credenciales de Acceso</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+                          <input
+                            type="text"
+                            required
+                            value={formData.adminFirstName}
+                            onChange={(e) => setFormData({ ...formData, adminFirstName: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                            placeholder="Juan"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
+                          <input
+                            type="text"
+                            required
+                            value={formData.adminLastName}
+                            onChange={(e) => setFormData({ ...formData, adminLastName: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                            placeholder="Pérez"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email de Acceso *</label>
+                        <input
+                          type="email"
+                          required
+                          value={formData.accessEmail}
+                          onChange={(e) => setFormData({ ...formData, accessEmail: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="admin@ejemplo.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña *</label>
+                        <input
+                          type="password"
+                          required
+                          value={formData.accessPassword}
+                          onChange={(e) => setFormData({ ...formData, accessPassword: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
+                          placeholder="••••••••"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        type="button"
+                        onClick={closeSidebar}
+                        className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                      >
+                        {saving ? 'Creando...' : 'Crear'}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
-            </form>
+            </motion.div>
           </div>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Crear Establecimiento</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateEstablishment} className="p-4 space-y-4">
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Información del Establecimiento</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="Nombre del establecimiento"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="contacto@establecimiento.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="+54 9 11 1234-5678"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="Av. Corrientes 1234"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ciudad *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="Buenos Aires"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Credenciales de Acceso</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Admin *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.adminFirstName}
-                      onChange={(e) => setFormData({ ...formData, adminFirstName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="Juan"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido Admin *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.adminLastName}
-                      onChange={(e) => setFormData({ ...formData, adminLastName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="Pérez"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email de Acceso *</label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.accessEmail}
-                      onChange={(e) => setFormData({ ...formData, accessEmail: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="admin@establecimiento.com"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contraseña *</label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.accessPassword}
-                      onChange={(e) => setFormData({ ...formData, accessPassword: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
-                >
-                  {creating ? 'Creando...' : 'Crear Establecimiento'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 }
