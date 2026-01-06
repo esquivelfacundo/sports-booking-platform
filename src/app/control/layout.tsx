@@ -31,18 +31,19 @@ export default function ControlLayout({ children }: ControlLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const isLoginPage = pathname === '/control/login';
 
-  // Skip layout for login page
-  if (pathname === '/control/login') {
-    return <>{children}</>;
-  }
-
-  // Authentication guard
+  // Authentication guard - must be called unconditionally (React hooks rules)
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoginPage && !isLoading && !isAuthenticated) {
       router.push('/control/login');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, isLoginPage]);
+
+  // Skip layout for login page - AFTER all hooks
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
