@@ -717,7 +717,7 @@ const BookingPage = () => {
   // Calculate prices for all available time slots in step 3
   useEffect(() => {
     const calculateSlotPrices = async () => {
-      if (currentStep !== 3 || !selectedDate || !selectedDuration || availableSlots.length === 0 || !courts[0]) {
+      if (currentStep !== 3 || !selectedDate || !selectedDuration || availableSlots.length === 0 || !filteredCourts[0]) {
         return;
       }
 
@@ -725,7 +725,7 @@ const BookingPage = () => {
       const prices: Record<string, number> = {};
       
       // Use first court with schedules to calculate prices (assuming all courts have similar schedules)
-      const courtWithSchedules = courts.find(c => c.priceSchedules && c.priceSchedules.length > 0) || courts[0];
+      const courtWithSchedules = filteredCourts.find(c => c.priceSchedules && c.priceSchedules.length > 0) || filteredCourts[0];
       
       for (const slot of availableSlots.filter(s => s.available)) {
         try {
@@ -751,7 +751,7 @@ const BookingPage = () => {
     };
 
     calculateSlotPrices();
-  }, [currentStep, selectedDate, selectedDuration, availableSlots, courts]);
+  }, [currentStep, selectedDate, selectedDuration, availableSlots, filteredCourts]);
 
   // Helper to get price display for a court (range or single)
   const getCourtPriceDisplay = (court: Court, forSpecificTime: boolean = false) => {
