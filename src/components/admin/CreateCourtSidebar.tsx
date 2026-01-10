@@ -128,7 +128,7 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
       case 'details':
         return !!formData.name.trim() && !!formData.surface;
       case 'pricing':
-        return formData.pricePerHour > 0;
+        return formData.priceSchedules.length > 0 && formData.priceSchedules.every(s => s.pricePerHour > 0);
       case 'features':
         return true;
       case 'photos':
@@ -307,8 +307,8 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
           const newSchedule: PriceSchedule = {
             name: `Franja ${formData.priceSchedules.length + 1}`,
             startTime: '08:00',
-            endTime: '18:00',
-            pricePerHour: formData.pricePerHour
+            endTime: '23:00',
+            pricePerHour: 10000
           };
           setFormData(prev => ({
             ...prev,
@@ -339,24 +339,6 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
               <p className="text-gray-400 text-sm mb-4">Define los precios por franjas horarias</p>
             </div>
 
-            {/* Base Price */}
-            <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
-              <label className="block text-sm font-medium text-white mb-3">
-                Precio base por hora <span className="text-red-400">*</span>
-              </label>
-              <p className="text-xs text-gray-400 mb-3">Este precio se usa cuando no hay franjas definidas</p>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="number"
-                  value={formData.pricePerHour}
-                  onChange={(e) => setFormData(prev => ({ ...prev, pricePerHour: parseInt(e.target.value) || 0 }))}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white text-lg font-semibold focus:ring-2 focus:ring-emerald-500"
-                  min="0"
-                />
-              </div>
-            </div>
-
             {/* Price Schedules */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -371,10 +353,10 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
               </div>
 
               {formData.priceSchedules.length === 0 ? (
-                <div className="text-center py-6 bg-gray-700/30 rounded-xl border border-dashed border-gray-600">
-                  <Clock className="w-8 h-8 text-gray-500 mx-auto mb-2" />
-                  <p className="text-gray-400 text-sm">No hay franjas horarias definidas</p>
-                  <p className="text-gray-500 text-xs mt-1">Se usará el precio base para todas las horas</p>
+                <div className="text-center py-6 bg-gray-700/30 rounded-xl border border-dashed border-red-500/50">
+                  <Clock className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                  <p className="text-red-400 text-sm font-medium">Debes agregar al menos una franja horaria</p>
+                  <p className="text-gray-500 text-xs mt-1">Define los precios para diferentes horarios</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -598,23 +580,14 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
 
               {/* Pricing */}
               <div className="pt-4 border-t border-gray-600">
-                <span className="text-gray-400 text-sm">Precios</span>
+                <span className="text-gray-400 text-sm">Franjas de Precios</span>
                 <div className="mt-2 space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Precio base</span>
-                    <span className="text-emerald-400 font-semibold">${formData.pricePerHour.toLocaleString()}/h</span>
-                  </div>
-                  {formData.priceSchedules.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-gray-600">
-                      <span className="text-gray-400 text-xs">Franjas horarias:</span>
-                      {formData.priceSchedules.map((schedule, i) => (
-                        <div key={i} className="flex justify-between text-xs mt-1">
-                          <span className="text-gray-300">{schedule.name} ({schedule.startTime}-{schedule.endTime})</span>
-                          <span className="text-emerald-400">${schedule.pricePerHour.toLocaleString()}/h</span>
-                        </div>
-                      ))}
+                  {formData.priceSchedules.map((schedule, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="text-gray-300">{schedule.name} ({schedule.startTime}-{schedule.endTime})</span>
+                      <span className="text-emerald-400 font-semibold">${schedule.pricePerHour.toLocaleString()}/h</span>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
