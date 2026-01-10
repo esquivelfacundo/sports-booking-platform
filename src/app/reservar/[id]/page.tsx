@@ -251,6 +251,7 @@ const BookingPage = () => {
   const [priceBreakdown, setPriceBreakdown] = useState<Array<{ scheduleName: string; minutes: number; amount: number }>>([]);
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
   const [courtPrices, setCourtPrices] = useState<Record<string, number>>({});
+  const [slotPrices, setSlotPrices] = useState<Record<string, number>>({});
   
   // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha, 5.Resumen)
   const canGoNext = () => {
@@ -713,6 +714,45 @@ const BookingPage = () => {
     calculateCourtPrices();
   }, [currentStep, selectedDate, selectedTime, selectedDuration, availableCourtsAtTime]);
 
+  // Calculate prices for all available time slots in step 3
+  useEffect(() => {
+    const calculateSlotPrices = async () => {
+      if (currentStep !== 3 || !selectedDate || !selectedDuration || availableSlots.length === 0 || !courts[0]) {
+        return;
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const prices: Record<string, number> = {};
+      
+      // Use first court with schedules to calculate prices (assuming all courts have similar schedules)
+      const courtWithSchedules = courts.find(c => c.priceSchedules && c.priceSchedules.length > 0) || courts[0];
+      
+      for (const slot of availableSlots.filter(s => s.available)) {
+        try {
+          const [hours, minutes] = slot.time.split(':').map(Number);
+          const totalMinutes = hours * 60 + minutes + selectedDuration;
+          const endHours = Math.floor(totalMinutes / 60);
+          const endMinutes = totalMinutes % 60;
+          const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+          
+          const response = await fetch(
+            `${API_URL}/api/courts/${courtWithSchedules.id}/calculate-price?startTime=${slot.time}&endTime=${endTime}&date=${selectedDate}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            prices[slot.time] = data.totalPrice;
+          }
+        } catch (err) {
+          console.error(`Error calculating price for slot ${slot.time}:`, err);
+        }
+      }
+      
+      setSlotPrices(prices);
+    };
+
+    calculateSlotPrices();
+  }, [currentStep, selectedDate, selectedDuration, availableSlots, courts]);
+
   // Helper to get price display for a court (range or single)
   const getCourtPriceDisplay = (court: Court, forSpecificTime: boolean = false) => {
     // If we have a calculated price for this court in step 4, use it
@@ -1109,11 +1149,16 @@ const BookingPage = () => {
                   {loadingSlots ? (
                     <div className="text-center py-6"><div className="w-8 h-8 mx-auto border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
                   ) : availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       {availableSlots.map((slot) => (
                         <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
-                          className={`py-2 px-1 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
-                          {slot.time}
+                          className={`py-2 px-2 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
+                          <div className="font-semibold">{slot.time}</div>
+                          {slot.available && slotPrices[slot.time] && (
+                            <div className="text-[10px] mt-0.5 opacity-80">
+                              ${(slotPrices[slot.time] / 1000).toFixed(0)}k
+                            </div>
+                          )}
                         </button>
                       ))}
                     </div>

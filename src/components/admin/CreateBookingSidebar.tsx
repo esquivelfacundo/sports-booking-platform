@@ -385,8 +385,13 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
         const endMinutes = totalMinutes % 60;
         const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
         
+        // Convert Date to YYYY-MM-DD string
+        const dateStr = selectedDate instanceof Date 
+          ? selectedDate.toISOString().split('T')[0]
+          : selectedDate;
+        
         const response = await fetch(
-          `${API_URL}/api/courts/${court.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${selectedDate}`
+          `${API_URL}/api/courts/${court.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${dateStr}`
         );
         
         if (response.ok) {
