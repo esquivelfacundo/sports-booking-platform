@@ -717,15 +717,20 @@ const BookingPage = () => {
   // Calculate prices for all available time slots in step 3
   useEffect(() => {
     const calculateSlotPrices = async () => {
-      if (currentStep !== 3 || !selectedDate || !selectedDuration || availableSlots.length === 0 || !filteredCourts[0]) {
+      if (currentStep !== 3 || !selectedDate || !selectedDuration || availableSlots.length === 0) {
+        return;
+      }
+
+      const courtsForSport = establishment?.courts?.filter(c => 
+        selectedSport === 'all' || c.sport === selectedSport
+      ) || [];
+
+      if (courtsForSport.length === 0) {
         return;
       }
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       const prices: Record<string, number> = {};
-      
-      // Use first court with schedules to calculate prices (assuming all courts have similar schedules)
-      const courtWithSchedules = filteredCourts.find(c => c.priceSchedules && c.priceSchedules.length > 0) || filteredCourts[0];
       
       for (const slot of availableSlots.filter(s => s.available)) {
         try {
@@ -735,12 +740,27 @@ const BookingPage = () => {
           const endMinutes = totalMinutes % 60;
           const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
           
-          const response = await fetch(
-            `${API_URL}/api/courts/${courtWithSchedules.id}/calculate-price?startTime=${slot.time}&endTime=${endTime}&date=${selectedDate}`
-          );
-          if (response.ok) {
-            const data = await response.json();
-            prices[slot.time] = data.totalPrice;
+          // Calculate price for each court available at this time and get average
+          const courtPrices: number[] = [];
+          const availableCourtsForSlot = slot.availableCourtIds || [];
+          
+          for (const courtId of availableCourtsForSlot) {
+            const court = courtsForSport.find(c => c.id === courtId);
+            if (court) {
+              const response = await fetch(
+                `${API_URL}/api/courts/${court.id}/calculate-price?startTime=${slot.time}&endTime=${endTime}&date=${selectedDate}`
+              );
+              if (response.ok) {
+                const data = await response.json();
+                courtPrices.push(data.totalPrice);
+              }
+            }
+          }
+          
+          // Calculate average price
+          if (courtPrices.length > 0) {
+            const avgPrice = Math.round(courtPrices.reduce((a, b) => a + b, 0) / courtPrices.length);
+            prices[slot.time] = avgPrice;
           }
         } catch (err) {
           console.error(`Error calculating price for slot ${slot.time}:`, err);
@@ -751,7 +771,7 @@ const BookingPage = () => {
     };
 
     calculateSlotPrices();
-  }, [currentStep, selectedDate, selectedDuration, availableSlots, filteredCourts]);
+  }, [currentStep, selectedDate, selectedDuration, selectedSport, availableSlots, establishment?.courts]);
 
   // Helper to get price display for a court (range or single)
   const getCourtPriceDisplay = (court: Court, forSpecificTime: boolean = false) => {
