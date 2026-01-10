@@ -720,6 +720,11 @@ const BookingPage = () => {
       return `$${courtPrices[court.id].toLocaleString('es-AR')}`;
     }
     
+    // If we're in step 4 and prices are being calculated, show loading
+    if (currentStep === 4 && Object.keys(courtPrices).length === 0) {
+      return 'Calculando...';
+    }
+    
     // If we have a specific time selected and we're in step 4, show calculated price
     if (forSpecificTime && selectedTime && calculatedPrice !== null && selectedCourt?.id === court.id) {
       return `$${calculatedPrice.toLocaleString('es-AR')}`;
