@@ -16,7 +16,6 @@ import {
   Camera,
   Loader2,
   CheckCircle,
-  Lightbulb,
   Umbrella
 } from 'lucide-react';
 import { SPORTS_OPTIONS, SURFACE_OPTIONS } from '@/types/establishment';
@@ -61,6 +60,15 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
   // Current step
   const [currentStep, setCurrentStep] = useState<Step>('sport');
   
+  // Price schedule interface
+  interface PriceSchedule {
+    id?: string;
+    name: string;
+    startTime: string;
+    endTime: string;
+    pricePerHour: number;
+  }
+
   // Form data
   const [formData, setFormData] = useState({
     name: '',
@@ -69,10 +77,7 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
     pricePerHour: 5000,
     pricePerHour90: 0,
     pricePerHour120: 0,
-    lighting: true,
-    lightingPrice: 0,
-    lightingStartTime: '18:00',
-    lightingEndTime: '23:00',
+    priceSchedules: [] as PriceSchedule[],
     covered: false,
     description: '',
     images: [] as string[],
@@ -92,10 +97,7 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
         pricePerHour: editingCourt.pricePerHour || 5000,
         pricePerHour90: editingCourt.pricePerHour90 || 0,
         pricePerHour120: editingCourt.pricePerHour120 || 0,
-        lighting: editingCourt.lighting ?? true,
-        lightingPrice: editingCourt.lightingPrice || 0,
-        lightingStartTime: editingCourt.lightingStartTime || '18:00',
-        lightingEndTime: editingCourt.lightingEndTime || '23:00',
+        priceSchedules: editingCourt.priceSchedules || [],
         covered: editingCourt.covered || false,
         description: editingCourt.description || '',
         images: editingCourt.images || [],
@@ -169,15 +171,11 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
         isIndoor: formData.covered,
         description: formData.description,
         amenities: [
-          ...(formData.lighting ? ['Iluminación LED'] : []),
           ...(formData.covered ? ['Techada'] : []),
           ...formData.amenities,
         ],
-        // Extra fields for lighting schedule
-        lighting: formData.lighting,
-        lightingPrice: formData.lightingPrice,
-        lightingStartTime: formData.lightingStartTime,
-        lightingEndTime: formData.lightingEndTime,
+        // Price schedules for time-based pricing
+        priceSchedules: formData.priceSchedules,
       };
       
       await onSuccess(courtData);
@@ -199,10 +197,7 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
       pricePerHour: 5000,
       pricePerHour90: 0,
       pricePerHour120: 0,
-      lighting: true,
-      lightingPrice: 0,
-      lightingStartTime: '18:00',
-      lightingEndTime: '23:00',
+      priceSchedules: [],
       covered: false,
       description: '',
       images: [],
@@ -308,18 +303,48 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
         );
 
       case 'pricing':
+        const addPriceSchedule = () => {
+          const newSchedule: PriceSchedule = {
+            name: `Franja ${formData.priceSchedules.length + 1}`,
+            startTime: '08:00',
+            endTime: '18:00',
+            pricePerHour: formData.pricePerHour
+          };
+          setFormData(prev => ({
+            ...prev,
+            priceSchedules: [...prev.priceSchedules, newSchedule]
+          }));
+        };
+
+        const updatePriceSchedule = (index: number, field: keyof PriceSchedule, value: string | number) => {
+          setFormData(prev => ({
+            ...prev,
+            priceSchedules: prev.priceSchedules.map((schedule, i) => 
+              i === index ? { ...schedule, [field]: value } : schedule
+            )
+          }));
+        };
+
+        const removePriceSchedule = (index: number) => {
+          setFormData(prev => ({
+            ...prev,
+            priceSchedules: prev.priceSchedules.filter((_, i) => i !== index)
+          }));
+        };
+
         return (
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">Configurar Precios</h3>
-              <p className="text-gray-400 text-sm mb-4">Define los precios por duración de reserva</p>
+              <p className="text-gray-400 text-sm mb-4">Define los precios por franjas horarias</p>
             </div>
 
-            {/* Price per hour */}
+            {/* Base Price */}
             <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
               <label className="block text-sm font-medium text-white mb-3">
-                Precio por 60 minutos <span className="text-red-400">*</span>
+                Precio base por hora <span className="text-red-400">*</span>
               </label>
+              <p className="text-xs text-gray-400 mb-3">Este precio se usa cuando no hay franjas definidas</p>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -332,66 +357,101 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
               </div>
             </div>
 
-            {/* Price for 90 min */}
-            <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
-              <label className="block text-sm font-medium text-white mb-3">
-                Precio por 90 minutos
-                <span className="text-gray-400 text-xs ml-2">(opcional)</span>
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="number"
-                  value={formData.pricePerHour90}
-                  onChange={(e) => setFormData(prev => ({ ...prev, pricePerHour90: parseInt(e.target.value) || 0 }))}
-                  placeholder={`Sugerido: $${Math.round(formData.pricePerHour * 1.4)}`}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
-                  min="0"
-                />
+            {/* Price Schedules */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-white font-medium">Franjas Horarias</h4>
+                <button
+                  type="button"
+                  onClick={addPriceSchedule}
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-lg transition-colors"
+                >
+                  <span>+ Agregar Franja</span>
+                </button>
               </div>
+
+              {formData.priceSchedules.length === 0 ? (
+                <div className="text-center py-6 bg-gray-700/30 rounded-xl border border-dashed border-gray-600">
+                  <Clock className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">No hay franjas horarias definidas</p>
+                  <p className="text-gray-500 text-xs mt-1">Se usará el precio base para todas las horas</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {formData.priceSchedules.map((schedule, index) => (
+                    <div key={index} className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
+                      <div className="flex items-center justify-between mb-3">
+                        <input
+                          type="text"
+                          value={schedule.name}
+                          onChange={(e) => updatePriceSchedule(index, 'name', e.target.value)}
+                          className="bg-transparent text-white font-medium border-b border-transparent hover:border-gray-500 focus:border-emerald-500 outline-none px-1"
+                          placeholder="Nombre de la franja"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePriceSchedule(index)}
+                          className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Desde</label>
+                          <input
+                            type="time"
+                            value={schedule.startTime}
+                            onChange={(e) => updatePriceSchedule(index, 'startTime', e.target.value)}
+                            className="w-full px-2 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Hasta</label>
+                          <input
+                            type="time"
+                            value={schedule.endTime}
+                            onChange={(e) => updatePriceSchedule(index, 'endTime', e.target.value)}
+                            className="w-full px-2 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Precio/hora</label>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                            <input
+                              type="number"
+                              value={schedule.pricePerHour}
+                              onChange={(e) => updatePriceSchedule(index, 'pricePerHour', parseInt(e.target.value) || 0)}
+                              className="w-full pl-6 pr-2 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white text-sm focus:ring-2 focus:ring-emerald-500"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Price for 120 min */}
-            <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
-              <label className="block text-sm font-medium text-white mb-3">
-                Precio por 120 minutos
-                <span className="text-gray-400 text-xs ml-2">(opcional)</span>
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="number"
-                  value={formData.pricePerHour120}
-                  onChange={(e) => setFormData(prev => ({ ...prev, pricePerHour120: parseInt(e.target.value) || 0 }))}
-                  placeholder={`Sugerido: $${Math.round(formData.pricePerHour * 1.8)}`}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
-                  min="0"
-                />
+            {/* Example */}
+            {formData.priceSchedules.length > 0 && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                <h4 className="text-blue-400 font-medium mb-2 flex items-center">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Ejemplo de cálculo
+                </h4>
+                <p className="text-gray-300 text-sm">
+                  Si un jugador reserva de 17:30 a 18:30 y tienes una franja de 12:00-18:00 a $10.000 
+                  y otra de 18:00-23:00 a $20.000, se cobrará:
+                </p>
+                <p className="text-white text-sm mt-2">
+                  30 min × $10.000/h + 30 min × $20.000/h = <strong>$15.000</strong>
+                </p>
               </div>
-            </div>
-
-            {/* Preview */}
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-              <h4 className="text-emerald-400 font-medium mb-3">Vista previa de precios</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-300">60 minutos</span>
-                  <span className="text-white font-semibold">${formData.pricePerHour.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-300">90 minutos</span>
-                  <span className="text-white font-semibold">
-                    ${(formData.pricePerHour90 || Math.round(formData.pricePerHour * 1.4)).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-300">120 minutos</span>
-                  <span className="text-white font-semibold">
-                    ${(formData.pricePerHour120 || Math.round(formData.pricePerHour * 1.8)).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         );
 
@@ -401,90 +461,6 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">Características</h3>
               <p className="text-gray-400 text-sm mb-4">Selecciona las características de la cancha</p>
-            </div>
-
-            {/* Lighting */}
-            <div className={`rounded-xl p-4 border-2 transition-all ${
-              formData.lighting 
-                ? 'border-yellow-500/50 bg-yellow-500/10' 
-                : 'border-gray-600 bg-gray-700/50'
-            }`}>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center space-x-3">
-                  <Lightbulb className={`w-6 h-6 ${formData.lighting ? 'text-yellow-400' : 'text-gray-400'}`} />
-                  <div>
-                    <span className="text-white font-medium">Iluminación artificial</span>
-                    <p className="text-sm text-gray-400">La cancha cuenta con luces para jugar de noche</p>
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={formData.lighting}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, lighting: e.target.checked }));
-                    if (!e.target.checked) {
-                      setFormData(prev => ({ ...prev, lightingPrice: 0 }));
-                    }
-                  }}
-                  className="w-5 h-5 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500"
-                />
-              </label>
-              
-              {formData.lighting && (
-                <div className="mt-4 pt-4 border-t border-gray-600 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Precio extra por iluminación
-                    </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="number"
-                        value={formData.lightingPrice}
-                        onChange={(e) => setFormData(prev => ({ ...prev, lightingPrice: parseInt(e.target.value) || 0 }))}
-                        placeholder="0"
-                        className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Horario de iluminación
-                    </label>
-                    <p className="text-xs text-gray-400 mb-3">
-                      Define desde qué hora hasta qué hora se cobra el extra por iluminación
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-gray-400 mb-1">Desde</label>
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <input
-                            type="time"
-                            value={formData.lightingStartTime}
-                            onChange={(e) => setFormData(prev => ({ ...prev, lightingStartTime: e.target.value }))}
-                            className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-400 mb-1">Hasta</label>
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <input
-                            type="time"
-                            value={formData.lightingEndTime}
-                            onChange={(e) => setFormData(prev => ({ ...prev, lightingEndTime: e.target.value }))}
-                            className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-emerald-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Covered */}
@@ -514,17 +490,12 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
             <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
               <h4 className="text-white font-medium mb-3">Características seleccionadas</h4>
               <div className="flex flex-wrap gap-2">
-                {formData.lighting && (
-                  <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm">
-                    🔆 Iluminación
-                  </span>
-                )}
                 {formData.covered && (
                   <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
                     ☂️ Techada
                   </span>
                 )}
-                {!formData.lighting && !formData.covered && (
+                {!formData.covered && (
                   <span className="text-gray-400 text-sm">Sin características adicionales</span>
                 )}
               </div>
@@ -630,19 +601,18 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
                 <span className="text-gray-400 text-sm">Precios</span>
                 <div className="mt-2 space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">60 min</span>
-                    <span className="text-emerald-400 font-semibold">${formData.pricePerHour.toLocaleString()}</span>
+                    <span className="text-gray-300">Precio base</span>
+                    <span className="text-emerald-400 font-semibold">${formData.pricePerHour.toLocaleString()}/h</span>
                   </div>
-                  {formData.pricePerHour90 > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-300">90 min</span>
-                      <span className="text-emerald-400 font-semibold">${formData.pricePerHour90.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {formData.pricePerHour120 > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-300">120 min</span>
-                      <span className="text-emerald-400 font-semibold">${formData.pricePerHour120.toLocaleString()}</span>
+                  {formData.priceSchedules.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-600">
+                      <span className="text-gray-400 text-xs">Franjas horarias:</span>
+                      {formData.priceSchedules.map((schedule, i) => (
+                        <div key={i} className="flex justify-between text-xs mt-1">
+                          <span className="text-gray-300">{schedule.name} ({schedule.startTime}-{schedule.endTime})</span>
+                          <span className="text-emerald-400">${schedule.pricePerHour.toLocaleString()}/h</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -652,22 +622,12 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
               <div className="pt-4 border-t border-gray-600">
                 <span className="text-gray-400 text-sm">Características</span>
                 <div className="mt-2 space-y-2">
-                  {formData.lighting && (
-                    <div className="flex flex-col">
-                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs inline-block w-fit">
-                        🔆 Iluminación {formData.lightingPrice > 0 && `(+$${formData.lightingPrice})`}
-                      </span>
-                      <span className="text-xs text-gray-400 mt-1">
-                        Horario: {formData.lightingStartTime} - {formData.lightingEndTime}
-                      </span>
-                    </div>
-                  )}
                   {formData.covered && (
                     <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs inline-block">
                       ☂️ Techada
                     </span>
                   )}
-                  {!formData.lighting && !formData.covered && (
+                  {!formData.covered && (
                     <span className="text-gray-500 text-xs">Sin características adicionales</span>
                   )}
                 </div>

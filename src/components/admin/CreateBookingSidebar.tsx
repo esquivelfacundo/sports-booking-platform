@@ -822,18 +822,16 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
                       <label className="block text-sm font-medium text-blue-300">
                         Cantidad de semanas
                       </label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <input
-                          type="range"
-                          min="4"
-                          max="24"
+                          type="number"
+                          min="1"
                           value={recurringWeeks}
-                          onChange={(e) => setRecurringWeeks(Number(e.target.value))}
-                          className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                          onChange={(e) => setRecurringWeeks(Math.max(1, Number(e.target.value) || 1))}
+                          className="w-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Semanas"
                         />
-                        <span className="text-blue-300 font-medium min-w-[60px] text-right">
-                          {recurringWeeks} sem.
-                        </span>
+                        <span className="text-gray-400 text-sm">semanas</span>
                       </div>
                       
                       {/* Upcoming dates preview */}
