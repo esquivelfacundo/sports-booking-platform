@@ -136,14 +136,25 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
         if (!formData.priceSchedules.every(s => s.pricePerHour > 0)) return false;
         
         // Check for overlaps (allow schedules to touch exactly)
+        const timeToMinutes = (time: string) => {
+          const [hours, minutes] = time.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+        
         for (let i = 0; i < formData.priceSchedules.length; i++) {
           for (let j = i + 1; j < formData.priceSchedules.length; j++) {
             const s1 = formData.priceSchedules[i];
             const s2 = formData.priceSchedules[j];
-            // Schedules overlap if one starts before the other ends AND they don't just touch
-            // Allow touching: 08:00-18:00 and 18:00-23:00 is OK
-            const overlap = (s1.startTime < s2.endTime && s2.startTime < s1.endTime) && 
-                           (s1.endTime !== s2.startTime && s2.endTime !== s1.startTime);
+            
+            const s1Start = timeToMinutes(s1.startTime);
+            const s1End = timeToMinutes(s1.endTime);
+            const s2Start = timeToMinutes(s2.startTime);
+            const s2End = timeToMinutes(s2.endTime);
+            
+            // Schedules overlap if one starts before the other ends
+            // Allow touching: end of one equals start of another
+            const overlap = (s1Start < s2End && s2Start < s1End) && (s1End !== s2Start && s2End !== s1Start);
+            
             if (overlap) {
               return false; // Has overlap
             }
@@ -327,13 +338,25 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
         // Helper to check for overlapping schedules
         // Allow schedules to touch exactly (e.g., 08:00-18:00 and 18:00-23:00)
         const hasOverlap = (schedules: PriceSchedule[]) => {
+          const timeToMinutes = (time: string) => {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+
           for (let i = 0; i < schedules.length; i++) {
             for (let j = i + 1; j < schedules.length; j++) {
               const s1 = schedules[i];
               const s2 = schedules[j];
-              // Schedules overlap if one starts before the other ends AND they don't just touch
-              const overlap = (s1.startTime < s2.endTime && s2.startTime < s1.endTime) && 
-                             (s1.endTime !== s2.startTime && s2.endTime !== s1.startTime);
+              
+              const s1Start = timeToMinutes(s1.startTime);
+              const s1End = timeToMinutes(s1.endTime);
+              const s2Start = timeToMinutes(s2.startTime);
+              const s2End = timeToMinutes(s2.endTime);
+              
+              // Schedules overlap if one starts before the other ends
+              // Allow touching: end of one equals start of another
+              const overlap = (s1Start < s2End && s2Start < s1End) && (s1End !== s2Start && s2End !== s1Start);
+              
               if (overlap) {
                 return { index1: i, index2: j, schedule1: s1, schedule2: s2 };
               }
