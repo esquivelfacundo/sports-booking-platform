@@ -57,6 +57,16 @@ interface TimeSlot {
   availableCourtIds?: string[]; // Track which courts are available at this time
 }
 
+interface PriceSchedule {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  pricePerHour: string;
+  daysOfWeek: number[];
+  isActive: boolean;
+}
+
 interface Court {
   id: string;
   name: string;
@@ -67,6 +77,7 @@ interface Court {
   pricePerHour120?: number;
   images?: string[];
   isIndoor?: boolean;
+  priceSchedules?: PriceSchedule[];
 }
 
 interface EstablishmentData {
@@ -665,6 +676,27 @@ const BookingPage = () => {
     }
   }, [selectedCourt, selectedDate, selectedTime, selectedDuration, fetchDynamicPrice]);
 
+  // Helper to get price display for a court (range or single)
+  const getCourtPriceDisplay = (court: Court) => {
+    if (court.priceSchedules && court.priceSchedules.length > 0) {
+      const activeSchedules = court.priceSchedules.filter(s => s.isActive);
+      if (activeSchedules.length > 0) {
+        const prices = activeSchedules.map(s => parseFloat(s.pricePerHour));
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        
+        const priceForDuration = (price: number) => Math.round(price * (selectedDuration / 60));
+        
+        if (minPrice === maxPrice) {
+          return `$${priceForDuration(minPrice).toLocaleString('es-AR')}`;
+        }
+        return `$${priceForDuration(minPrice).toLocaleString('es-AR')} - $${priceForDuration(maxPrice).toLocaleString('es-AR')}`;
+      }
+    }
+    // Fallback to base price
+    return `$${Math.round(court.pricePerHour * (selectedDuration / 60)).toLocaleString('es-AR')}`;
+  };
+
   const getPrice = () => {
     // Use calculated price from backend if available
     if (calculatedPrice !== null) return calculatedPrice;
@@ -1059,7 +1091,7 @@ const BookingPage = () => {
                           <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{court.sport} • {court.surface}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-emerald-500">${Math.round(court.pricePerHour * (selectedDuration / 60))}</p>
+                          <p className="text-lg font-bold text-emerald-500">{getCourtPriceDisplay(court)}</p>
                         </div>
                       </div>
                     </div>
@@ -1939,7 +1971,7 @@ const BookingPage = () => {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-2xl font-bold text-emerald-600">${Math.round(court.pricePerHour * (selectedDuration / 60))}</div>
+                              <div className="text-2xl font-bold text-emerald-600">{getCourtPriceDisplay(court)}</div>
                               <div className="text-xs text-gray-400">por {formatDuration()}</div>
                             </div>
                           </motion.button>
