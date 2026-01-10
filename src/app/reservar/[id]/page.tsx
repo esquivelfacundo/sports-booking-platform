@@ -718,6 +718,7 @@ const BookingPage = () => {
   useEffect(() => {
     const calculateSlotPrices = async () => {
       if (currentStep !== 3 || !selectedDate || !selectedDuration || availableSlots.length === 0) {
+        console.log('Skipping slot price calculation:', { currentStep, selectedDate, selectedDuration, slotsCount: availableSlots.length });
         return;
       }
 
@@ -726,8 +727,11 @@ const BookingPage = () => {
       ) || [];
 
       if (courtsForSport.length === 0) {
+        console.log('No courts found for sport:', selectedSport);
         return;
       }
+
+      console.log('Calculating prices for', availableSlots.filter(s => s.available).length, 'available slots');
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       const prices: Record<string, number> = {};
@@ -761,12 +765,14 @@ const BookingPage = () => {
           if (courtPrices.length > 0) {
             const avgPrice = Math.round(courtPrices.reduce((a, b) => a + b, 0) / courtPrices.length);
             prices[slot.time] = avgPrice;
+            console.log(`Price for ${slot.time}: $${avgPrice}`);
           }
         } catch (err) {
           console.error(`Error calculating price for slot ${slot.time}:`, err);
         }
       }
       
+      console.log('Final slot prices:', prices);
       setSlotPrices(prices);
     };
 
