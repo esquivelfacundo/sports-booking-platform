@@ -250,6 +250,7 @@ const BookingPage = () => {
   const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
   const [priceBreakdown, setPriceBreakdown] = useState<Array<{ scheduleName: string; minutes: number; amount: number }>>([]);
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  const [courtPrices, setCourtPrices] = useState<Record<string, number>>({});
   
   // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha, 5.Resumen)
   const canGoNext = () => {
@@ -676,8 +677,49 @@ const BookingPage = () => {
     }
   }, [selectedCourt, selectedDate, selectedTime, selectedDuration, fetchDynamicPrice]);
 
+  // Calculate prices for all available courts when entering step 4
+  useEffect(() => {
+    const calculateCourtPrices = async () => {
+      if (currentStep !== 4 || !selectedDate || !selectedTime || availableCourtsAtTime.length === 0) {
+        return;
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes + selectedDuration;
+      const endHours = Math.floor(totalMinutes / 60);
+      const endMinutes = totalMinutes % 60;
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+
+      const prices: Record<string, number> = {};
+      
+      for (const court of availableCourtsAtTime) {
+        try {
+          const response = await fetch(
+            `${API_URL}/api/courts/${court.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${selectedDate}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            prices[court.id] = data.totalPrice;
+          }
+        } catch (err) {
+          console.error(`Error calculating price for court ${court.id}:`, err);
+        }
+      }
+      
+      setCourtPrices(prices);
+    };
+
+    calculateCourtPrices();
+  }, [currentStep, selectedDate, selectedTime, selectedDuration, availableCourtsAtTime]);
+
   // Helper to get price display for a court (range or single)
   const getCourtPriceDisplay = (court: Court, forSpecificTime: boolean = false) => {
+    // If we have a calculated price for this court in step 4, use it
+    if (courtPrices[court.id]) {
+      return `$${courtPrices[court.id].toLocaleString('es-AR')}`;
+    }
+    
     // If we have a specific time selected and we're in step 4, show calculated price
     if (forSpecificTime && selectedTime && calculatedPrice !== null && selectedCourt?.id === court.id) {
       return `$${calculatedPrice.toLocaleString('es-AR')}`;
