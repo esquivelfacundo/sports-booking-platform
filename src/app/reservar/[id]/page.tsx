@@ -677,7 +677,12 @@ const BookingPage = () => {
   }, [selectedCourt, selectedDate, selectedTime, selectedDuration, fetchDynamicPrice]);
 
   // Helper to get price display for a court (range or single)
-  const getCourtPriceDisplay = (court: Court) => {
+  const getCourtPriceDisplay = (court: Court, forSpecificTime: boolean = false) => {
+    // If we have a specific time selected and we're in step 4, show calculated price
+    if (forSpecificTime && selectedTime && calculatedPrice !== null && selectedCourt?.id === court.id) {
+      return `$${calculatedPrice.toLocaleString('es-AR')}`;
+    }
+    
     if (court.priceSchedules && court.priceSchedules.length > 0) {
       const activeSchedules = court.priceSchedules.filter(s => s.isActive);
       if (activeSchedules.length > 0) {
@@ -1082,7 +1087,30 @@ const BookingPage = () => {
               {availableCourtsAtTime.length > 0 ? (
                 <div className="space-y-3">
                   {availableCourtsAtTime.map((court) => (
-                    <div key={court.id} onClick={() => { setSelectedCourt(court); setCurrentStep(5); }}
+                    <div key={court.id} onClick={async () => { 
+                      setSelectedCourt(court);
+                      // Calculate price before advancing
+                      if (selectedDate && selectedTime) {
+                        setIsCalculatingPrice(true);
+                        try {
+                          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+                          const endTime = getEndTime();
+                          const response = await fetch(
+                            `${API_URL}/api/courts/${court.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${selectedDate}`
+                          );
+                          if (response.ok) {
+                            const data = await response.json();
+                            setCalculatedPrice(data.totalPrice);
+                            setPriceBreakdown(data.breakdown || []);
+                          }
+                        } catch (err) {
+                          console.error('Error calculating price:', err);
+                        } finally {
+                          setIsCalculatingPrice(false);
+                        }
+                      }
+                      setCurrentStep(5);
+                    }}
                       className={`p-4 rounded-xl border-2 cursor-pointer ${selectedCourt?.id === court.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-500/50'}`}>
                       <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${selectedCourt?.id === court.id ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}>🏟️</div>
