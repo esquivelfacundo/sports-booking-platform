@@ -235,6 +235,11 @@ const BookingPage = () => {
     debts: [] as Array<{ id: string; amount: number; reason: string; description: string }>
   });
   
+  // Dynamic price calculation state (for time-based pricing)
+  const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
+  const [priceBreakdown, setPriceBreakdown] = useState<Array<{ scheduleName: string; minutes: number; amount: number }>>([]);
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
+  
   // Step navigation helpers (new order: 1.Deporte, 2.Duración, 3.Fecha+Hora, 4.Cancha, 5.Resumen)
   const canGoNext = () => {
     switch (currentStep) {
@@ -609,21 +614,64 @@ const BookingPage = () => {
     }
   }, [selectedDate, selectedDuration, selectedSport, fetchAvailability]);
 
-  const getPrice = () => {
-    if (!selectedCourt) return 0;
-    const hourlyRate = selectedCourt.pricePerHour;
-    // Calculate price based on duration (pro-rated)
-    return Math.round(hourlyRate * (selectedDuration / 60));
-  };
-
   // Calculate end time based on start time and duration
-  const getEndTime = () => {
+  const getEndTime = useCallback(() => {
     if (!selectedTime) return '';
     const [hours, minutes] = selectedTime.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes + selectedDuration;
     const endHours = Math.floor(totalMinutes / 60) % 24;
     const endMinutes = totalMinutes % 60;
     return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+  }, [selectedTime, selectedDuration]);
+
+  // Fetch dynamic price from backend based on time schedules
+  const fetchDynamicPrice = useCallback(async () => {
+    if (!selectedCourt || !selectedDate || !selectedTime) {
+      setCalculatedPrice(null);
+      setPriceBreakdown([]);
+      return;
+    }
+    
+    setIsCalculatingPrice(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const endTime = getEndTime();
+      const response = await fetch(
+        `${API_URL}/api/courts/${selectedCourt.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${selectedDate}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCalculatedPrice(data.totalPrice);
+        setPriceBreakdown(data.breakdown || []);
+      } else {
+        // Fallback to simple calculation
+        setCalculatedPrice(null);
+        setPriceBreakdown([]);
+      }
+    } catch (err) {
+      console.error('Error fetching dynamic price:', err);
+      setCalculatedPrice(null);
+      setPriceBreakdown([]);
+    } finally {
+      setIsCalculatingPrice(false);
+    }
+  }, [selectedCourt, selectedDate, selectedTime, getEndTime]);
+
+  // Fetch price when court, date, time or duration changes
+  useEffect(() => {
+    if (selectedCourt && selectedDate && selectedTime) {
+      fetchDynamicPrice();
+    }
+  }, [selectedCourt, selectedDate, selectedTime, selectedDuration, fetchDynamicPrice]);
+
+  const getPrice = () => {
+    // Use calculated price from backend if available
+    if (calculatedPrice !== null) return calculatedPrice;
+    // Fallback to simple calculation
+    if (!selectedCourt) return 0;
+    const hourlyRate = selectedCourt.pricePerHour;
+    return Math.round(hourlyRate * (selectedDuration / 60));
   };
 
   // Fetch fee and deposit info when entering step 5
@@ -1131,8 +1179,23 @@ const BookingPage = () => {
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500 dark:text-gray-400">Precio del turno</span>
-                      <span className="text-gray-700 dark:text-gray-300">${getPrice().toLocaleString('es-AR')}</span>
+                      <span className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                        {isCalculatingPrice && <Loader2 className="w-3 h-3 animate-spin" />}
+                        ${getPrice().toLocaleString('es-AR')}
+                      </span>
                     </div>
+                    {/* Time-based price breakdown */}
+                    {priceBreakdown.length > 1 && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 mt-2">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">Desglose por franjas:</p>
+                        {priceBreakdown.map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-xs text-blue-700 dark:text-blue-300">
+                            <span>{item.scheduleName} ({item.minutes} min)</span>
+                            <span>${item.amount.toLocaleString('es-AR')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
                         {paymentType === 'full' ? 'Pago completo' : `Pago de seña (${depositInfo.percent}%)`}
@@ -2013,8 +2076,23 @@ const BookingPage = () => {
                           <div className="space-y-3">
                             <div className="flex justify-between">
                               <span className="text-gray-500">Precio del turno</span>
-                              <span className="text-gray-900">${getPrice().toLocaleString('es-AR')}</span>
+                              <span className="text-gray-900 flex items-center gap-2">
+                                {isCalculatingPrice && <Loader2 className="w-3 h-3 animate-spin" />}
+                                ${getPrice().toLocaleString('es-AR')}
+                              </span>
                             </div>
+                            {/* Time-based price breakdown */}
+                            {priceBreakdown.length > 1 && (
+                              <div className="bg-blue-50 rounded-lg p-3">
+                                <p className="text-xs text-blue-600 mb-2 font-medium">Desglose por franjas horarias:</p>
+                                {priceBreakdown.map((item, idx) => (
+                                  <div key={idx} className="flex justify-between text-xs text-blue-700">
+                                    <span>{item.scheduleName} ({item.minutes} min)</span>
+                                    <span>${item.amount.toLocaleString('es-AR')}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                             <div className="border-t border-gray-100 pt-3">
                               <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
                                 {paymentType === 'full' ? 'Pago completo' : `Pago de seña (${depositInfo.percent}%)`}
