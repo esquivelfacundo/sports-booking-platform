@@ -16,7 +16,8 @@ import {
   Camera,
   Loader2,
   CheckCircle,
-  Umbrella
+  Umbrella,
+  AlertTriangle
 } from 'lucide-react';
 import { SPORTS_OPTIONS, SURFACE_OPTIONS } from '@/types/establishment';
 
