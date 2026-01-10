@@ -135,12 +135,13 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
         if (formData.priceSchedules.length === 0) return false;
         if (!formData.priceSchedules.every(s => s.pricePerHour > 0)) return false;
         
-        // Check for overlaps
+        // Check for overlaps (allow schedules to touch exactly)
         for (let i = 0; i < formData.priceSchedules.length; i++) {
           for (let j = i + 1; j < formData.priceSchedules.length; j++) {
             const s1 = formData.priceSchedules[i];
             const s2 = formData.priceSchedules[j];
-            if (s1.startTime < s2.endTime && s2.startTime < s1.endTime) {
+            // Only consider it an overlap if they actually overlap, not just touch
+            if (s1.startTime < s2.endTime && s2.startTime < s1.endTime && s1.endTime !== s2.startTime && s2.endTime !== s1.startTime) {
               return false; // Has overlap
             }
           }
@@ -321,12 +322,14 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
 
       case 'pricing':
         // Helper to check for overlapping schedules
+        // Allow schedules to touch exactly (e.g., 08:00-18:00 and 18:00-23:00)
         const hasOverlap = (schedules: PriceSchedule[]) => {
           for (let i = 0; i < schedules.length; i++) {
             for (let j = i + 1; j < schedules.length; j++) {
               const s1 = schedules[i];
               const s2 = schedules[j];
-              if (s1.startTime < s2.endTime && s2.startTime < s1.endTime) {
+              // Only consider it an overlap if they actually overlap, not just touch
+              if (s1.startTime < s2.endTime && s2.startTime < s1.endTime && s1.endTime !== s2.startTime && s2.endTime !== s1.startTime) {
                 return { index1: i, index2: j, schedule1: s1, schedule2: s2 };
               }
             }
@@ -341,17 +344,8 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
           let startTime = '08:00';
           if (formData.priceSchedules.length > 0) {
             const lastSchedule = formData.priceSchedules[formData.priceSchedules.length - 1];
-            // Add 1 minute to end time
-            const [hours, minutes] = lastSchedule.endTime.split(':').map(Number);
-            let newMinutes = minutes + 1;
-            let newHours = hours;
-            if (newMinutes >= 60) {
-              newMinutes = 0;
-              newHours += 1;
-            }
-            if (newHours < 24) {
-              startTime = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
-            }
+            // Use the exact end time of the last schedule (no gap)
+            startTime = lastSchedule.endTime;
           }
 
           const newSchedule: PriceSchedule = {
