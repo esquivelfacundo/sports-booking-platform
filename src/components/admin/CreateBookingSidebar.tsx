@@ -1054,9 +1054,16 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
                 <div className="bg-gray-700/50 rounded-xl p-4 border border-gray-600">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-300">Precio</span>
-                    <span className="text-2xl font-bold text-emerald-400">
-                      {formatCurrency(calculatePrice())}
-                    </span>
+                    {isCalculatingPrice ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                        <span className="text-sm text-gray-400">Calculando...</span>
+                      </div>
+                    ) : (
+                      <span className="text-2xl font-bold text-emerald-400">
+                        {formatCurrency(calculatePrice())}
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {selectedTime} - {calculateEndTime()} ({formData.duration} min)
