@@ -90,6 +90,8 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
   // Initialize form with editing court data
   useEffect(() => {
     if (editingCourt) {
+      console.log('📝 Editing court data:', editingCourt);
+      console.log('📝 Price schedules from court:', editingCourt.priceSchedules);
       setFormData({
         name: editingCourt.name || '',
         type: editingCourt.type || 'futbol',
