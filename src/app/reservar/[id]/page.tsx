@@ -1176,17 +1176,24 @@ const BookingPage = () => {
                     <div className="text-center py-6"><div className="w-8 h-8 mx-auto border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
                   ) : availableSlots.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2">
-                      {availableSlots.map((slot) => (
-                        <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
-                          className={`py-2 px-2 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
-                          <div className="font-semibold">{slot.time}</div>
-                          {slot.available && slotPrices[slot.time] !== undefined && (
-                            <div className="text-[10px] mt-0.5 opacity-80">
-                              ${Math.round(slotPrices[slot.time] / 1000)}k
-                            </div>
-                          )}
-                        </button>
-                      ))}
+                      {availableSlots.map((slot) => {
+                        const hasPrice = slotPrices[slot.time] !== undefined;
+                        const price = slotPrices[slot.time];
+                        if (slot.available && hasPrice) {
+                          console.log(`Rendering slot ${slot.time} with price $${price}`);
+                        }
+                        return (
+                          <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
+                            className={`py-2 px-2 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
+                            <div className="font-semibold">{slot.time}</div>
+                            {slot.available && hasPrice && (
+                              <div className="text-[10px] mt-0.5 opacity-80">
+                                ${Math.round(price / 1000)}k
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : <div className="text-center py-6 text-gray-500">No hay horarios disponibles</div>}
                 </div>
