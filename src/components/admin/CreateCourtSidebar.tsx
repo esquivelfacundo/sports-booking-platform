@@ -140,8 +140,11 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
           for (let j = i + 1; j < formData.priceSchedules.length; j++) {
             const s1 = formData.priceSchedules[i];
             const s2 = formData.priceSchedules[j];
-            // Only consider it an overlap if they actually overlap, not just touch
-            if (s1.startTime < s2.endTime && s2.startTime < s1.endTime && s1.endTime !== s2.startTime && s2.endTime !== s1.startTime) {
+            // Schedules overlap if one starts before the other ends AND they don't just touch
+            // Allow touching: 08:00-18:00 and 18:00-23:00 is OK
+            const overlap = (s1.startTime < s2.endTime && s2.startTime < s1.endTime) && 
+                           (s1.endTime !== s2.startTime && s2.endTime !== s1.startTime);
+            if (overlap) {
               return false; // Has overlap
             }
           }
@@ -328,8 +331,10 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
             for (let j = i + 1; j < schedules.length; j++) {
               const s1 = schedules[i];
               const s2 = schedules[j];
-              // Only consider it an overlap if they actually overlap, not just touch
-              if (s1.startTime < s2.endTime && s2.startTime < s1.endTime && s1.endTime !== s2.startTime && s2.endTime !== s1.startTime) {
+              // Schedules overlap if one starts before the other ends AND they don't just touch
+              const overlap = (s1.startTime < s2.endTime && s2.startTime < s1.endTime) && 
+                             (s1.endTime !== s2.startTime && s2.endTime !== s1.startTime);
+              if (overlap) {
                 return { index1: i, index2: j, schedule1: s1, schedule2: s2 };
               }
             }
