@@ -796,7 +796,7 @@ const BookingPage = () => {
     };
     
     fetchFeeAndDeposit();
-  }, [currentStep, selectedCourt, establishment?.id, user?.email]);
+  }, [currentStep, selectedCourt, establishment?.id, user?.email, calculatedPrice]);
 
   // Handle payment - redirect to Mercado Pago
   const handlePayment = async () => {
