@@ -109,6 +109,8 @@ export default function TurnosFijosPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'cancelled' | 'completed'>('all');
   const [courtFilter, setCourtFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   
   // Modals
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -284,8 +286,20 @@ export default function TurnosFijosPage() {
       filtered = filtered.filter(b => b.groupInfo.status === statusFilter);
     }
     
+    // Date filters
+    if (dateFrom) {
+      filtered = filtered.filter(b => b.date >= dateFrom);
+    }
+    
+    if (dateTo) {
+      filtered = filtered.filter(b => b.date <= dateTo);
+    }
+    
+    // Sort by date
+    filtered.sort((a, b) => a.date.localeCompare(b.date));
+    
     return filtered;
-  }, [expandedBookings, searchQuery, courtFilter, statusFilter]);
+  }, [expandedBookings, searchQuery, courtFilter, statusFilter, dateFrom, dateTo]);
 
   // Stats
   const stats = useMemo(() => {
@@ -409,6 +423,34 @@ export default function TurnosFijosPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 pr-3 py-1.5 w-40 lg:w-52 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500"
         />
+      </div>
+      
+      {/* Date filters */}
+      <div className="hidden md:flex items-center gap-1">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white"
+          title="Desde"
+        />
+        <span className="text-gray-400 text-xs">a</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white"
+          title="Hasta"
+        />
+        {(dateFrom || dateTo) && (
+          <button
+            onClick={() => { setDateFrom(''); setDateTo(''); }}
+            className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+            title="Limpiar fechas"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
       
       {/* Status filter */}
