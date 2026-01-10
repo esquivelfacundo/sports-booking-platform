@@ -22,6 +22,16 @@ import {
 import { apiClient } from '@/lib/api';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 
+interface PriceSchedule {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  pricePerHour: string;
+  daysOfWeek: number[];
+  isActive: boolean;
+}
+
 interface Court {
   id: string;
   name: string;
@@ -29,6 +39,7 @@ interface Court {
   pricePerHour: number;
   pricePerHour90?: number;
   pricePerHour120?: number;
+  priceSchedules?: PriceSchedule[];
 }
 
 interface Amenity {
@@ -156,6 +167,10 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
   // State for custom duration
   const [showCustomDuration, setShowCustomDuration] = useState(false);
   const [customDurationMinutes, setCustomDurationMinutes] = useState(60);
+
+  // Dynamic price calculation state
+  const [calculatedPrice, setCalculatedPrice] = useState<number | null>(null);
+  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -353,8 +368,50 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     }));
   };
 
+  // Fetch dynamic price when court, date, time or duration changes
+  useEffect(() => {
+    const fetchDynamicPrice = async () => {
+      if (!court || !selectedDate || !selectedTime || !formData.duration) {
+        setCalculatedPrice(null);
+        return;
+      }
+
+      setIsCalculatingPrice(true);
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        const totalMinutes = hours * 60 + minutes + formData.duration;
+        const endHours = Math.floor(totalMinutes / 60);
+        const endMinutes = totalMinutes % 60;
+        const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+        
+        const response = await fetch(
+          `${API_URL}/api/courts/${court.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${selectedDate}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCalculatedPrice(data.totalPrice);
+        } else {
+          setCalculatedPrice(null);
+        }
+      } catch (err) {
+        console.error('Error fetching dynamic price:', err);
+        setCalculatedPrice(null);
+      } finally {
+        setIsCalculatingPrice(false);
+      }
+    };
+
+    fetchDynamicPrice();
+  }, [court, selectedDate, selectedTime, formData.duration]);
+
   // Calculate price based on duration
   const calculatePrice = (): number => {
+    // Use calculated price from backend if available
+    if (calculatedPrice !== null) return calculatedPrice;
+    
+    // Fallback to simple calculation
     if (!court) return 0;
     
     let courtPrice = 0;
