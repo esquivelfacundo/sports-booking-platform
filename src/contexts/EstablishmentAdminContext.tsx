@@ -42,6 +42,7 @@ const courtsFetcher = async (key: string): Promise<AdminCourt[]> => {
     pricePerHour: parseFloat(court.pricePerHour) || 0,
     pricePerHour90: court.pricePerHour90 ? parseFloat(court.pricePerHour90) : undefined,
     pricePerHour120: court.pricePerHour120 ? parseFloat(court.pricePerHour120) : undefined,
+    priceSchedules: court.priceSchedules || [],
     isActive: court.isActive !== false,
     description: court.description,
     images: court.images,
