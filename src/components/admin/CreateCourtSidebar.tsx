@@ -130,7 +130,21 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
       case 'details':
         return !!formData.name.trim() && !!formData.surface;
       case 'pricing':
-        return formData.priceSchedules.length > 0 && formData.priceSchedules.every(s => s.pricePerHour > 0);
+        // Check for schedules, valid prices, and no overlaps
+        if (formData.priceSchedules.length === 0) return false;
+        if (!formData.priceSchedules.every(s => s.pricePerHour > 0)) return false;
+        
+        // Check for overlaps
+        for (let i = 0; i < formData.priceSchedules.length; i++) {
+          for (let j = i + 1; j < formData.priceSchedules.length; j++) {
+            const s1 = formData.priceSchedules[i];
+            const s2 = formData.priceSchedules[j];
+            if (s1.startTime < s2.endTime && s2.startTime < s1.endTime) {
+              return false; // Has overlap
+            }
+          }
+        }
+        return true;
       case 'features':
         return true;
       case 'photos':
@@ -305,10 +319,43 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
         );
 
       case 'pricing':
+        // Helper to check for overlapping schedules
+        const hasOverlap = (schedules: PriceSchedule[]) => {
+          for (let i = 0; i < schedules.length; i++) {
+            for (let j = i + 1; j < schedules.length; j++) {
+              const s1 = schedules[i];
+              const s2 = schedules[j];
+              if (s1.startTime < s2.endTime && s2.startTime < s1.endTime) {
+                return { index1: i, index2: j, schedule1: s1, schedule2: s2 };
+              }
+            }
+          }
+          return null;
+        };
+
+        const overlap = hasOverlap(formData.priceSchedules);
+
         const addPriceSchedule = () => {
+          // Auto-fill start time with end time of last schedule
+          let startTime = '08:00';
+          if (formData.priceSchedules.length > 0) {
+            const lastSchedule = formData.priceSchedules[formData.priceSchedules.length - 1];
+            // Add 1 minute to end time
+            const [hours, minutes] = lastSchedule.endTime.split(':').map(Number);
+            let newMinutes = minutes + 1;
+            let newHours = hours;
+            if (newMinutes >= 60) {
+              newMinutes = 0;
+              newHours += 1;
+            }
+            if (newHours < 24) {
+              startTime = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+            }
+          }
+
           const newSchedule: PriceSchedule = {
             name: `Franja ${formData.priceSchedules.length + 1}`,
-            startTime: '08:00',
+            startTime,
             endTime: '23:00',
             pricePerHour: 10000
           };
@@ -353,6 +400,19 @@ export const CreateCourtSidebar: React.FC<CreateCourtSidebarProps> = ({
                   <span>+ Agregar Franja</span>
                 </button>
               </div>
+
+              {/* Overlap warning */}
+              {overlap && (
+                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-start space-x-2">
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-red-400 text-sm font-medium">Solapamiento de horarios detectado</p>
+                    <p className="text-red-300 text-xs mt-1">
+                      {overlap.schedule1.name} ({overlap.schedule1.startTime}-{overlap.schedule1.endTime}) se solapa con {overlap.schedule2.name} ({overlap.schedule2.startTime}-{overlap.schedule2.endTime})
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {formData.priceSchedules.length === 0 ? (
                 <div className="text-center py-6 bg-gray-700/30 rounded-xl border border-dashed border-red-500/50">

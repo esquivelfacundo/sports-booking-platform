@@ -223,6 +223,20 @@ const CanchasPage = () => {
     setShowStatsModal(true);
   };
 
+  // Helper to format price display based on schedules
+  const formatCourtPrice = (court: any) => {
+    if (court.priceSchedules && court.priceSchedules.length > 0) {
+      const prices = court.priceSchedules.map((s: any) => s.pricePerHour);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      if (minPrice === maxPrice) {
+        return formatCurrency(minPrice);
+      }
+      return `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`;
+    }
+    return formatCurrency(court.pricePerHour || 0);
+  };
+
   const loading = establishmentLoading || courtsLoading;
 
   // Transform API courts to local format
@@ -234,6 +248,7 @@ const CanchasPage = () => {
     surface: court.surface || 'No especificado',
     capacity: court.capacity || 0,
     pricePerHour: court.pricePerHour || 0,
+    priceSchedules: court.priceSchedules || [],
     openTime: '08:00',
     closeTime: '22:00',
     lighting: court.amenities?.includes('Iluminación') || court.amenities?.includes('Iluminación LED') || false,
@@ -756,7 +771,7 @@ const CanchasPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(court.pricePerHour)}
+                      {formatCourtPrice(court)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {court.totalReservations}
