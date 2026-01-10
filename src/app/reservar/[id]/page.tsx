@@ -1152,7 +1152,7 @@ const BookingPage = () => {
               
               {/* Date selector - horizontal scroll */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-                {dates.slice(0, 14).map((date) => (
+                {dates.map((date) => (
                   date.isEmpty ? null : (
                     <button key={date.value} onClick={() => setSelectedDate(date.value)}
                       className={`flex-shrink-0 flex flex-col items-center p-2 rounded-lg border-2 transition-all min-w-[56px] ${
@@ -1180,9 +1180,9 @@ const BookingPage = () => {
                         <button key={slot.time} onClick={() => { if (slot.available) { setSelectedTime(slot.time); setCurrentStep(4); } }} disabled={!slot.available}
                           className={`py-2 px-2 rounded-lg text-xs font-medium ${selectedTime === slot.time ? 'bg-emerald-500 text-white' : slot.available ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-gray-100/50 dark:bg-gray-800/30 text-gray-400 dark:text-gray-600 line-through'}`}>
                           <div className="font-semibold">{slot.time}</div>
-                          {slot.available && slotPrices[slot.time] && (
+                          {slot.available && slotPrices[slot.time] !== undefined && (
                             <div className="text-[10px] mt-0.5 opacity-80">
-                              ${(slotPrices[slot.time] / 1000).toFixed(0)}k
+                              ${Math.round(slotPrices[slot.time] / 1000)}k
                             </div>
                           )}
                         </button>
