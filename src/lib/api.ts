@@ -955,6 +955,10 @@ class ApiClient {
     return this.request(`/api/finance/establishment/${establishmentId}/sales-by-product?period=${period}`);
   }
 
+  async getPurchasesByProduct(establishmentId: string, period: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'month') {
+    return this.request(`/api/stock-movements/purchases-by-product/${establishmentId}?period=${period}`);
+  }
+
   // Staff endpoints
   async getStaff(establishmentId: string) {
     return this.request(`/api/staff/establishment/${establishmentId}`);

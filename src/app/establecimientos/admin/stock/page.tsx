@@ -10,10 +10,11 @@ import ProductsTab from '@/components/stock/ProductsTab';
 import MovementsTab from '@/components/stock/MovementsTab';
 import ReportsTab from '@/components/stock/ReportsTab';
 import SuppliersTab from '@/components/stock/SuppliersTab';
+import PurchasesTab from '@/components/stock/PurchasesTab';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 
-type Tab = 'products' | 'movements' | 'suppliers' | 'reports';
+type Tab = 'products' | 'movements' | 'suppliers' | 'reports' | 'purchases';
 
 interface Category {
   id: string;
@@ -31,7 +32,7 @@ const StockPage = () => {
   // Read tab from URL on mount
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['products', 'movements', 'suppliers', 'reports'].includes(tabParam)) {
+    if (tabParam && ['products', 'movements', 'suppliers', 'reports', 'purchases'].includes(tabParam)) {
       setActiveTab(tabParam as Tab);
     }
   }, [searchParams]);
@@ -88,6 +89,7 @@ const StockPage = () => {
   const tabs = [
     { id: 'products' as Tab, name: 'Productos', icon: Package },
     { id: 'movements' as Tab, name: 'Movimientos', icon: TrendingUp },
+    { id: 'purchases' as Tab, name: 'Compras', icon: DollarSign },
     { id: 'suppliers' as Tab, name: 'Proveedores', icon: Truck }
   ];
 
@@ -283,6 +285,11 @@ const StockPage = () => {
                 establishmentId={establishment.id}
                 showSidebar={showSupplierSidebar}
                 setShowSidebar={setShowSupplierSidebar}
+              />
+            )}
+            {activeTab === 'purchases' && (
+              <PurchasesTab 
+                establishmentId={establishment.id}
               />
             )}
             {activeTab === 'reports' && (
