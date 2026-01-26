@@ -951,6 +951,10 @@ class ApiClient {
     return this.request(`/api/finance/establishment/${establishmentId}/pending`);
   }
 
+  async getSalesByProductAndPaymentMethod(establishmentId: string, period: 'week' | 'month' | 'quarter' | 'year' = 'month') {
+    return this.request(`/api/finance/establishment/${establishmentId}/sales-by-product?period=${period}`);
+  }
+
   // Staff endpoints
   async getStaff(establishmentId: string) {
     return this.request(`/api/staff/establishment/${establishmentId}`);

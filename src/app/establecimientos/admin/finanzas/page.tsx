@@ -80,6 +80,26 @@ interface PendingPayment {
   status: string;
 }
 
+interface ProductSales {
+  productId: string;
+  productName: string;
+  totalQuantity: number;
+  totalAmount: number;
+  paymentMethods: {
+    [key: string]: {
+      name: string;
+      amount: number;
+    };
+  };
+}
+
+interface SalesByProductResponse {
+  success: boolean;
+  period: { start: string; end: string; label: string };
+  paymentMethods: { code: string; name: string; icon: string | null }[];
+  products: ProductSales[];
+}
+
 const FinancePage = () => {
   const { establishment, loading: establishmentLoading } = useEstablishment();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
@@ -89,8 +109,9 @@ const FinancePage = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'pending'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'pending' | 'products'>('overview');
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  const [productSales, setProductSales] = useState<SalesByProductResponse | null>(null);
 
   // Get header portal container on mount
   useEffect(() => {
@@ -103,13 +124,13 @@ const FinancePage = () => {
   // Read tab from URL on mount
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['overview', 'transactions', 'pending'].includes(tabParam)) {
-      setActiveTab(tabParam as 'overview' | 'transactions' | 'pending');
+    if (tabParam && ['overview', 'transactions', 'pending', 'products'].includes(tabParam)) {
+      setActiveTab(tabParam as 'overview' | 'transactions' | 'pending' | 'products');
     }
   }, [searchParams]);
   
   // Update URL when tab changes
-  const handleTabChange = (tab: 'overview' | 'transactions' | 'pending') => {
+  const handleTabChange = (tab: 'overview' | 'transactions' | 'pending' | 'products') => {
     setActiveTab(tab);
     router.push(`/establecimientos/admin/finanzas?tab=${tab}`, { scroll: false });
   };
@@ -121,13 +142,15 @@ const FinancePage = () => {
     setError(null);
     
     try {
-      const [financeRes, pendingRes] = await Promise.all([
+      const [financeRes, pendingRes, productSalesRes] = await Promise.all([
         apiClient.getFinancialSummary(establishment.id, selectedPeriod),
-        apiClient.getPendingPayments(establishment.id)
+        apiClient.getPendingPayments(establishment.id),
+        apiClient.getSalesByProductAndPaymentMethod(establishment.id, selectedPeriod)
       ]);
       
-      setFinance(financeRes);
-      setPendingPayments(pendingRes.payments || []);
+      setFinance(financeRes as FinanceResponse);
+      setPendingPayments((pendingRes as any).payments || []);
+      setProductSales(productSalesRes as SalesByProductResponse);
     } catch (err: any) {
       console.error('Error fetching finance:', err);
       setError(err.message || 'Error al cargar datos financieros');
@@ -219,6 +242,16 @@ const FinancePage = () => {
           }`}
         >
           Resumen
+        </button>
+        <button
+          onClick={() => handleTabChange('products')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'products'
+              ? 'bg-emerald-600 text-white'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          Por Producto ({productSales?.products.length || 0})
         </button>
         <button
           onClick={() => handleTabChange('transactions')}
@@ -620,6 +653,78 @@ const FinancePage = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'products' && productSales && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-100 dark:bg-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Producto</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cantidad</th>
+                  {productSales.paymentMethods.map((pm) => (
+                    <th key={pm.code} className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">
+                      {pm.name}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {productSales.products.map((product) => (
+                  <tr key={product.productId} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-4 py-3">
+                      <div className="text-gray-900 dark:text-white font-medium">{product.productName}</div>
+                    </td>
+                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">
+                      {product.totalQuantity}
+                    </td>
+                    {productSales.paymentMethods.map((pm) => {
+                      const amount = product.paymentMethods[pm.code]?.amount || 0;
+                      return (
+                        <td key={pm.code} className="px-4 py-3 text-right">
+                          <span className={amount > 0 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-gray-400'}>
+                            {amount > 0 ? formatCurrency(amount) : '-'}
+                          </span>
+                        </td>
+                      );
+                    })}
+                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white font-bold">
+                      {formatCurrency(product.totalAmount)}
+                    </td>
+                  </tr>
+                ))}
+                {productSales.products.length === 0 && (
+                  <tr>
+                    <td colSpan={productSales.paymentMethods.length + 3} className="px-4 py-8 text-center text-gray-400">
+                      No hay ventas de productos en este período
+                    </td>
+                  </tr>
+                )}
+                {productSales.products.length > 0 && (
+                  <tr className="bg-gray-50 dark:bg-gray-700/50 font-bold">
+                    <td className="px-4 py-3 text-gray-900 dark:text-white">TOTAL</td>
+                    <td className="px-4 py-3 text-center text-gray-900 dark:text-white">
+                      {productSales.products.reduce((sum, p) => sum + p.totalQuantity, 0)}
+                    </td>
+                    {productSales.paymentMethods.map((pm) => {
+                      const total = productSales.products.reduce((sum, p) => sum + (p.paymentMethods[pm.code]?.amount || 0), 0);
+                      return (
+                        <td key={pm.code} className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(total)}
+                        </td>
+                      );
+                    })}
+                    <td className="px-4 py-3 text-right text-gray-900 dark:text-white">
+                      {formatCurrency(productSales.products.reduce((sum, p) => sum + p.totalAmount, 0))}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
