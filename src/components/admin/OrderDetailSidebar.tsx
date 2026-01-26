@@ -467,6 +467,31 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                     </div>
                   </div>
 
+                  {/* Payment Methods Summary for Direct Sales */}
+                  {displayOrder.orderType === 'direct_sale' && displayOrder.payments && displayOrder.payments.length > 0 && (
+                    <div className="bg-gray-700/50 rounded-xl p-4 space-y-3">
+                      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Métodos de Pago</h3>
+                      <div className="space-y-2">
+                        {displayOrder.payments.map((payment) => (
+                          <div key={payment.id} className="flex items-center justify-between bg-gray-800 rounded-lg p-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="p-2 bg-gray-700 rounded-lg">
+                                {getPaymentMethodIcon(payment.paymentMethod)}
+                              </div>
+                              <div>
+                                <p className="text-white font-medium">{getPaymentMethodLabel(payment.paymentMethod)}</p>
+                                <p className="text-xs text-gray-400">{formatDate(payment.createdAt)}</p>
+                              </div>
+                            </div>
+                            <span className="text-emerald-400 font-semibold">
+                              ${parseFloat(payment.amount.toString()).toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Detalle de pago - igual que en /reservas */}
                   {displayOrder.booking && (
                     <div className="bg-gray-700/50 rounded-xl p-4 space-y-3">
