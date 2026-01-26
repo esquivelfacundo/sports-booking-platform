@@ -389,6 +389,7 @@ const GastosPage = () => {
                 <thead className="bg-gray-100 dark:bg-gray-700">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Fecha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Origen</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Categoría</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Descripción</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Proveedor</th>
@@ -398,46 +399,80 @@ const GastosPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {expenses.expenses.map((expense) => (
-                    <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-4 py-3 text-gray-900 dark:text-white text-sm">
-                        {formatDate(expense.expenseDate)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">
-                          {expense.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-900 dark:text-white text-sm max-w-xs truncate">
-                        {expense.description}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">
-                        {expense.supplier || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
-                        {formatCurrency(expense.amount)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">
-                        {expense.user?.name || 'Usuario'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => handleOpenSidebar(expense)}
-                            className="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {expenses.expenses.map((expense) => {
+                    const formatCashRegisterDate = (dateString: string) => {
+                      const date = new Date(dateString);
+                      // Convert to UTC-3
+                      date.setHours(date.getHours() - 3);
+                      return date.toLocaleString('es-AR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      });
+                    };
+
+                    return (
+                      <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-4 py-3 text-gray-900 dark:text-white text-sm">
+                          {formatDate(expense.expenseDate)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {expense.cashRegisterId ? (
+                            <div className="flex flex-col">
+                              <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">
+                                Caja
+                              </span>
+                              {expense.cashRegister?.openedAt && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {formatCashRegisterDate(expense.cashRegister.openedAt)}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs font-medium">
+                              Administración
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">
+                            {expense.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-900 dark:text-white text-sm max-w-xs truncate">
+                          {expense.description}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">
+                          {expense.supplier || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
+                          {formatCurrency(expense.amount)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">
+                          {expense.user?.name || 'Usuario'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => handleOpenSidebar(expense)}
+                              className="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(expense.id)}
+                              className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
