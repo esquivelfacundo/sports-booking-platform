@@ -959,6 +959,61 @@ class ApiClient {
     return this.request(`/api/stock-movements/purchases-by-product/${establishmentId}?period=${period}`);
   }
 
+  // Expenses endpoints
+  async getExpenses(establishmentId: string, params?: { period?: string; userId?: string; cashRegisterId?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.period) queryParams.append('period', params.period);
+    if (params?.userId) queryParams.append('userId', params.userId);
+    if (params?.cashRegisterId) queryParams.append('cashRegisterId', params.cashRegisterId);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/expenses/establishment/${establishmentId}${query}`);
+  }
+
+  async createExpense(data: {
+    establishmentId: string;
+    cashRegisterId?: string;
+    category: string;
+    description: string;
+    amount: number;
+    paymentMethod?: string;
+    invoiceNumber?: string;
+    supplier?: string;
+    notes?: string;
+    expenseDate?: string;
+  }) {
+    return this.request('/api/expenses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateExpense(id: string, data: {
+    category?: string;
+    description?: string;
+    amount?: number;
+    paymentMethod?: string;
+    invoiceNumber?: string;
+    supplier?: string;
+    notes?: string;
+    expenseDate?: string;
+  }) {
+    return this.request(`/api/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteExpense(id: string) {
+    return this.request(`/api/expenses/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Staff endpoints
   async getStaff(establishmentId: string) {
     return this.request(`/api/staff/establishment/${establishmentId}`);

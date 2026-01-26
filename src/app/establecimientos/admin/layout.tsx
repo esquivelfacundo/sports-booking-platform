@@ -260,6 +260,12 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
           current: pathname.startsWith('/establecimientos/admin/ventas')
         },
         {
+          name: 'Gastos',
+          href: '/establecimientos/admin/gastos',
+          icon: DollarSign,
+          current: pathname.startsWith('/establecimientos/admin/gastos')
+        },
+        {
           name: 'Stock',
           href: '/establecimientos/admin/stock',
           icon: Package,
