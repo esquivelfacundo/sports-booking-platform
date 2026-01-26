@@ -69,6 +69,22 @@ interface User {
   name: string;
 }
 
+interface PaymentMethod {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+}
+
+interface CashRegister {
+  id: string;
+  openedAt: string;
+  closedAt: string | null;
+  user?: {
+    name: string;
+  };
+}
+
 const GastosPage = () => {
   const { establishment } = useEstablishment();
   const { showSuccess, showError } = useToast();
@@ -78,6 +94,8 @@ const GastosPage = () => {
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   
   // Sidebar state
@@ -87,6 +105,8 @@ const GastosPage = () => {
   
   // Form state
   const [formData, setFormData] = useState({
+    origin: 'administration' as 'administration' | 'cash_register',
+    cashRegisterId: '',
     category: '',
     description: '',
     amount: '',
@@ -147,6 +167,36 @@ const GastosPage = () => {
     }
   }, []);
 
+  const fetchPaymentMethods = useCallback(async () => {
+    if (!establishment?.id) return;
+    
+    try {
+      const response = await apiClient.getPaymentMethods(establishment.id) as any;
+      setPaymentMethods(response.paymentMethods || []);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+    }
+  }, [establishment?.id]);
+
+  const fetchCashRegisters = useCallback(async () => {
+    if (!establishment?.id) return;
+    
+    try {
+      const response = await apiClient.request(`/api/cash-registers?establishmentId=${establishment.id}&limit=50`) as any;
+      const registers = (response.cashRegisters || []).map((cr: any) => ({
+        id: cr.id,
+        openedAt: cr.openedAt,
+        closedAt: cr.closedAt,
+        user: cr.user ? {
+          name: `${cr.user.firstName || ''} ${cr.user.lastName || ''}`.trim()
+        } : undefined
+      }));
+      setCashRegisters(registers);
+    } catch (error) {
+      console.error('Error fetching cash registers:', error);
+    }
+  }, [establishment?.id]);
+
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
@@ -154,12 +204,16 @@ const GastosPage = () => {
   useEffect(() => {
     fetchUsers();
     fetchCategories();
-  }, [fetchUsers, fetchCategories]);
+    fetchPaymentMethods();
+    fetchCashRegisters();
+  }, [fetchUsers, fetchCategories, fetchPaymentMethods, fetchCashRegisters]);
 
   const handleOpenSidebar = (expense?: Expense) => {
     if (expense) {
       setEditingExpense(expense);
       setFormData({
+        origin: expense.cashRegisterId ? 'cash_register' : 'administration',
+        cashRegisterId: expense.cashRegisterId || '',
         category: expense.category,
         description: expense.description,
         amount: expense.amount.toString(),
@@ -172,6 +226,8 @@ const GastosPage = () => {
     } else {
       setEditingExpense(null);
       setFormData({
+        origin: 'administration',
+        cashRegisterId: '',
         category: '',
         description: '',
         amount: '',
@@ -211,6 +267,7 @@ const GastosPage = () => {
       } else {
         await apiClient.createExpense({
           establishmentId: establishment.id,
+          cashRegisterId: formData.origin === 'cash_register' ? formData.cashRegisterId : undefined,
           category: formData.category,
           description: formData.description,
           amount: parseFloat(formData.amount),
@@ -523,6 +580,51 @@ const GastosPage = () => {
 
               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
                 <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Origen *</label>
+                  <select
+                    value={formData.origin}
+                    onChange={(e) => setFormData({ ...formData, origin: e.target.value as 'administration' | 'cash_register', cashRegisterId: '' })}
+                    required
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="administration">Administración</option>
+                    <option value="cash_register">Caja</option>
+                  </select>
+                </div>
+
+                {formData.origin === 'cash_register' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Caja *</label>
+                    <select
+                      value={formData.cashRegisterId}
+                      onChange={(e) => setFormData({ ...formData, cashRegisterId: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Seleccionar caja</option>
+                      {cashRegisters.map((cr) => {
+                        const openDate = new Date(cr.openedAt);
+                        openDate.setHours(openDate.getHours() - 3); // UTC-3
+                        const dateStr = openDate.toLocaleString('es-AR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false
+                        });
+                        const status = cr.closedAt ? '(Cerrada)' : '(Abierta)';
+                        return (
+                          <option key={cr.id} value={cr.id}>
+                            {dateStr} - {cr.user?.name || 'Usuario'} {status}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
+
+                <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Categoría *</label>
                   <select
                     value={formData.category}
@@ -588,13 +690,16 @@ const GastosPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Método de Pago</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.paymentMethod}
                     onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                    placeholder="Ej: Efectivo, Transferencia"
-                  />
+                  >
+                    <option value="">Seleccionar método</option>
+                    {paymentMethods.map((pm) => (
+                      <option key={pm.id} value={pm.code}>{pm.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
