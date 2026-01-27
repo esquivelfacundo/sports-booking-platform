@@ -33,7 +33,8 @@ import {
   Hash,
   CreditCard,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -119,6 +120,7 @@ export default function TurnosFijosPage() {
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<RecurringBooking | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Header portal
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
@@ -402,6 +404,25 @@ export default function TurnosFijosPage() {
     setShowCancelModal(true);
   };
 
+  const handleExportCSV = async () => {
+    if (!establishment?.id) return;
+    setIsExporting(true);
+    try {
+      await apiClient.exportRecurringBookingsToCSV({
+        establishmentId: establishment.id,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        startDate: dateFrom || undefined,
+        endDate: dateTo || undefined
+      });
+      showSuccess('Exportación completada');
+    } catch (error) {
+      console.error('Error exporting:', error);
+      showError('Error al exportar');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading && groups.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -472,6 +493,16 @@ export default function TurnosFijosPage() {
         title="Actualizar"
       >
         <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+      </button>
+      
+      {/* Export button */}
+      <button
+        onClick={handleExportCSV}
+        disabled={isExporting}
+        className="p-1.5 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors disabled:opacity-50"
+        title="Exportar CSV"
+      >
+        <Download className={`w-4 h-4 text-gray-600 dark:text-gray-400 ${isExporting ? 'animate-pulse' : ''}`} />
       </button>
       
       {/* New button */}

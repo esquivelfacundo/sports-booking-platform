@@ -460,6 +460,10 @@ export default function CashRegisterPage() {
                 await apiClient.exportIncomeByMethodToCSV({
                   establishmentId: establishment.id
                 });
+              } else if (e.target.value === 'daily-closing') {
+                await apiClient.exportDailyCashClosingToCSV({
+                  establishmentId: establishment.id
+                });
               }
             } catch (error) {
               console.error('Error exporting:', error);
@@ -475,6 +479,7 @@ export default function CashRegisterPage() {
           <option value=""></option>
           <option value="movements">Movimientos</option>
           <option value="income">Ingresos x Método</option>
+          <option value="daily-closing">Cierre Diario</option>
         </select>
         <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
           <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />

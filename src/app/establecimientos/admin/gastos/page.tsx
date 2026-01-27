@@ -305,12 +305,16 @@ const GastosPage = () => {
     }
   };
 
-  const handleExportExpenses = async (type: 'all' | 'category') => {
+  const handleExportExpenses = async (type: 'all' | 'category' | 'supplier') => {
     if (!establishment?.id) return;
     setIsExporting(true);
     try {
       if (type === 'category') {
         await apiClient.exportExpensesByCategoryToCSV({
+          establishmentId: establishment.id
+        });
+      } else if (type === 'supplier') {
+        await apiClient.exportExpensesBySupplierToCSV({
           establishmentId: establishment.id
         });
       } else {
@@ -385,7 +389,7 @@ const GastosPage = () => {
       <div className="relative">
         <select
           onChange={(e) => {
-            if (e.target.value) handleExportExpenses(e.target.value as 'all' | 'category');
+            if (e.target.value) handleExportExpenses(e.target.value as 'all' | 'category' | 'supplier');
             e.target.value = '';
           }}
           disabled={isExporting}
@@ -395,6 +399,7 @@ const GastosPage = () => {
           <option value=""></option>
           <option value="all">Gastos</option>
           <option value="category">Por Categoría</option>
+          <option value="supplier">Por Proveedor</option>
         </select>
         <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
           <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />

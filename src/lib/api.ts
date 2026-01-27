@@ -872,6 +872,95 @@ class ApiClient {
     await this.downloadCSV(`/api/current-accounts/debts/export?${queryParams.toString()}`, 'deudas_pendientes.csv');
   }
 
+  async exportRecurringBookingsToCSV(params: {
+    establishmentId: string;
+    status?: string;
+    clientId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/recurring-bookings/export?${queryParams.toString()}`, 'reservas_recurrentes.csv');
+  }
+
+  async exportNoShowBookingsToCSV(params: {
+    establishmentId: string;
+    courtId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/bookings/no-show/export?${queryParams.toString()}`, 'reservas_no_show.csv');
+  }
+
+  async exportFinancialSummaryToCSV(params: {
+    establishmentId: string;
+    period?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/finance/summary/export?${queryParams.toString()}`, 'resumen_financiero.csv');
+  }
+
+  async exportPendingPaymentsToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/finance/pending-payments/export?${queryParams.toString()}`, 'pagos_pendientes.csv');
+  }
+
+  async exportDailyCashClosingToCSV(params: {
+    establishmentId: string;
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/cash-registers/daily-closing/export?${queryParams.toString()}`, 'cierre_caja_diario.csv');
+  }
+
+  async exportExpensesBySupplierToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/expenses/by-supplier/export?${queryParams.toString()}`, 'gastos_por_proveedor.csv');
+  }
+
+  async exportSalesByPaymentMethodToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/orders/by-payment-method/export?${queryParams.toString()}`, 'ventas_por_metodo_pago.csv');
+  }
+
   // Optimized stats endpoint - returns aggregated statistics without fetching all bookings
   async getEstablishmentStats(establishmentId: string) {
     return this.request(`/api/bookings/establishment/${establishmentId}/stats`);

@@ -68,7 +68,7 @@ const AnalyticsPage = () => {
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = async (type: 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court') => {
+  const handleExport = async (type: 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court' | 'financial' | 'pending-payments') => {
     if (!establishment?.id) return;
     setIsExporting(true);
     try {
@@ -82,6 +82,10 @@ const AnalyticsPage = () => {
         await apiClient.exportByWeekdayToCSV({ establishmentId: establishment.id });
       } else if (type === 'revenue-court') {
         await apiClient.exportRevenueByCourtToCSV({ establishmentId: establishment.id });
+      } else if (type === 'financial') {
+        await apiClient.exportFinancialSummaryToCSV({ establishmentId: establishment.id });
+      } else if (type === 'pending-payments') {
+        await apiClient.exportPendingPaymentsToCSV({ establishmentId: establishment.id });
       }
     } catch (error) {
       console.error('Error exporting:', error);
@@ -230,7 +234,7 @@ const AnalyticsPage = () => {
         <div className="relative">
           <select
             onChange={(e) => {
-              if (e.target.value) handleExport(e.target.value as 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court');
+              if (e.target.value) handleExport(e.target.value as 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court' | 'financial' | 'pending-payments');
               e.target.value = '';
             }}
             disabled={isExporting}
@@ -243,6 +247,8 @@ const AnalyticsPage = () => {
             <option value="hours">Horarios Pico</option>
             <option value="weekday">Por Día de Semana</option>
             <option value="revenue-court">Ingresos por Cancha</option>
+            <option value="financial">Resumen Financiero</option>
+            <option value="pending-payments">Pagos Pendientes</option>
           </select>
           <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
             <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />

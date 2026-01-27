@@ -214,6 +214,22 @@ const VentasPage = () => {
     }
   };
 
+  const handleExportByPaymentMethod = async () => {
+    if (!establishment?.id) return;
+    setIsExporting(true);
+    try {
+      await apiClient.exportSalesByPaymentMethodToCSV({
+        establishmentId: establishment.id,
+        startDate: dateRange.start || undefined,
+        endDate: dateRange.end || undefined
+      });
+    } catch (error: any) {
+      console.error('Error exporting by payment method:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
@@ -341,6 +357,7 @@ const VentasPage = () => {
           onChange={(e) => {
             if (e.target.value === 'orders') handleExportOrders();
             if (e.target.value === 'products') handleExportByProduct();
+            if (e.target.value === 'payment-method') handleExportByPaymentMethod();
             e.target.value = '';
           }}
           disabled={isExporting}
@@ -350,6 +367,7 @@ const VentasPage = () => {
           <option value=""></option>
           <option value="orders">Ventas</option>
           <option value="products">Por Producto</option>
+          <option value="payment-method">Por Método de Pago</option>
         </select>
         <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
           <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />

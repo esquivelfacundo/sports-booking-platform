@@ -761,19 +761,29 @@ const ReservationsPage = () => {
   };
 
   // Export bookings to CSV
-  const handleExportBookings = async () => {
+  const [isExporting, setIsExporting] = useState(false);
+  
+  const handleExport = async (type: 'bookings' | 'noshow') => {
     if (!establishment?.id) return;
-    
+    setIsExporting(true);
     try {
-      await apiClient.exportBookingsToCSV({
-        establishmentId: establishment.id,
-        startDate: undefined,
-        endDate: undefined
-      });
-      showSuccess('Exportación exitosa', 'Las reservas se han exportado correctamente');
+      if (type === 'bookings') {
+        await apiClient.exportBookingsToCSV({
+          establishmentId: establishment.id,
+          startDate: undefined,
+          endDate: undefined
+        });
+      } else if (type === 'noshow') {
+        await apiClient.exportNoShowBookingsToCSV({
+          establishmentId: establishment.id
+        });
+      }
+      showSuccess('Exportación exitosa', 'Los datos se han exportado correctamente');
     } catch (error: any) {
-      console.error('Error exporting bookings:', error);
-      showError('Error al exportar', error.message || 'No se pudieron exportar las reservas');
+      console.error('Error exporting:', error);
+      showError('Error al exportar', error.message || 'No se pudieron exportar los datos');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -936,12 +946,31 @@ const ReservationsPage = () => {
         <span className="hidden sm:inline">Turnos Fijos</span>
       </Link>
 
-      {/* Export Button */}
-      <ExportButton 
-        onExport={handleExportBookings}
-        label="Exportar"
-        size="sm"
-      />
+      {/* Export Dropdown */}
+      <div className="relative">
+        <button
+          disabled={isExporting}
+          className="p-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors disabled:opacity-50"
+          title="Exportar CSV"
+        >
+          <Download className={`h-4 w-4 ${isExporting ? 'animate-pulse' : ''}`} />
+        </button>
+        <select
+          onChange={(e) => {
+            if (e.target.value) {
+              handleExport(e.target.value as 'bookings' | 'noshow');
+              e.target.value = '';
+            }
+          }}
+          disabled={isExporting}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          title="Opciones de exportación"
+        >
+          <option value="">Exportar...</option>
+          <option value="bookings">Reservas</option>
+          <option value="noshow">No-Show</option>
+        </select>
+      </div>
 
       {/* New Reservation Button */}
       <button 

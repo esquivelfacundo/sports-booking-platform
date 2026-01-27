@@ -2,8 +2,8 @@
 
 ## Estado General
 - **Fecha de inicio**: 26 de Enero, 2026
-- **Estado**: ✅ Fases 1, 2, 3 y 4 Completadas + 3 adicionales
-- **Progreso**: 23/52 reportes implementados (44%)
+- **Estado**: ✅ Fases 1, 2, 3 y 4 Completadas + 10 adicionales
+- **Progreso**: 30/52 reportes implementados (58%)
 
 ---
 
@@ -16,27 +16,30 @@
 - [x] Filtros: Rango de fechas, cancha, estado, cliente, método de pago
 - **Completado**: 26/01/2026
 
-### 1.2 Reservas Recurrentes
-- [ ] Backend: Endpoint `/api/recurring-bookings/export`
-- [ ] Frontend: Botón de exportación en página de reservas recurrentes
-- [ ] Campos: Grupo, Frecuencia, Día de la semana, Hora, Cancha, Cliente, Fecha inicio, Fecha fin, Total reservas, Reservas completadas, Estado
-- [ ] Filtros: Rango de fechas, cancha, cliente, estado
+### 1.2 Reservas Recurrentes ✅
+- [x] Backend: Endpoint `/api/recurring-bookings/export`
+- [x] Frontend: Dropdown en página de turnos-fijos `exportRecurringBookingsToCSV`
+- [x] Campos: Grupo, Frecuencia, Día de la semana, Hora, Cancha, Cliente, Fecha inicio, Fecha fin, Total reservas, Reservas completadas, Estado
+- [x] Filtros: Rango de fechas, cancha, cliente, estado
+- **Completado**: 27/01/2026
 
-### 1.3 Reservas No-Show
-- [ ] Backend: Endpoint `/api/bookings/no-show/export`
-- [ ] Frontend: Botón de exportación en sección de no-shows
-- [ ] Campos: Fecha, Hora, Cancha, Cliente, Teléfono, Monto perdido, Seña perdida, Motivo
-- [ ] Filtros: Rango de fechas, cancha
+### 1.3 Reservas No-Show ✅
+- [x] Backend: Endpoint `/api/bookings/no-show/export`
+- [x] Frontend: Dropdown en página de reservas `exportNoShowBookingsToCSV`
+- [x] Campos: Fecha, Hora, Cancha, Cliente, Teléfono, Monto perdido, Seña perdida, Motivo
+- [x] Filtros: Rango de fechas, cancha
+- **Completado**: 27/01/2026
 
 ---
 
 ## 💰 2. FINANZAS
 
-### 2.1 Resumen Financiero General
-- [ ] Backend: Endpoint `/api/finance/summary/export`
-- [ ] Frontend: Botón de exportación en página de finanzas
-- [ ] Campos: Fecha, Ingresos totales, Depósitos, Saldo pendiente, Cantidad de reservas, Ticket promedio
-- [ ] Filtros: Período (día/semana/mes/trimestre/año)
+### 2.1 Resumen Financiero General ✅
+- [x] Backend: Endpoint `/api/finance/summary/export`
+- [x] Frontend: Dropdown en página de analytics `exportFinancialSummaryToCSV`
+- [x] Campos: Fecha, Ingresos totales, Depósitos, Saldo pendiente, Cantidad de reservas, Ticket promedio
+- [x] Filtros: Período (día/semana/mes/trimestre/año)
+- **Completado**: 27/01/2026
 
 ### 2.2 Ingresos por Método de Pago ✅
 - [x] Backend: Endpoint `/api/cash-register-movements/income-by-method/export`
@@ -52,11 +55,12 @@
 - [x] Filtros: Rango de fechas
 - **Completado**: 27/01/2026
 
-### 2.4 Pagos Pendientes
-- [ ] Backend: Endpoint `/api/finance/pending-payments/export`
-- [ ] Frontend: Botón de exportación en sección de pagos pendientes
-- [ ] Campos: Cliente, Teléfono, Fecha reserva, Cancha, Monto total, Pagado, Pendiente, Días de atraso
-- [ ] Filtros: Rango de fechas, cliente
+### 2.4 Pagos Pendientes ✅
+- [x] Backend: Endpoint `/api/finance/pending-payments/export`
+- [x] Frontend: Dropdown en página de analytics `exportPendingPaymentsToCSV`
+- [x] Campos: Cliente, Teléfono, Fecha reserva, Cancha, Monto total, Pagado, Pendiente, Días de atraso
+- [x] Filtros: Rango de fechas, cliente
+- **Completado**: 27/01/2026
 
 ---
 
@@ -76,11 +80,12 @@
 - [x] Filtros: Rango de fechas, turno, tipo de movimiento, método de pago
 - **Completado**: 27/01/2026
 
-### 3.3 Cierre de Caja Diario
-- [ ] Backend: Endpoint `/api/cash-registers/daily-close/export`
-- [ ] Frontend: Botón de exportación en resumen diario
-- [ ] Campos: Fecha, Total efectivo, Total tarjeta, Total transferencia, Total ventas, Total gastos, Diferencias, Observaciones
-- [ ] Filtros: Rango de fechas
+### 3.3 Cierre de Caja Diario ✅
+- [x] Backend: Endpoint `/api/cash-registers/daily-closing/export`
+- [x] Frontend: Dropdown en página de caja `exportDailyCashClosingToCSV`
+- [x] Campos: Fecha, Total efectivo, Total tarjeta, Total transferencia, Total ventas, Total gastos, Diferencias, Observaciones
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ---
 
@@ -100,11 +105,12 @@
 - [x] Filtros: Rango de fechas
 - **Completado**: 27/01/2026
 
-### 4.3 Gastos por Proveedor
-- [ ] Backend: Endpoint `/api/expenses/by-supplier/export`
-- [ ] Frontend: Botón de exportación en sección de proveedores
-- [ ] Campos: Proveedor, Cantidad de gastos, Monto total, Última compra, Categorías principales
-- [ ] Filtros: Rango de fechas
+### 4.3 Gastos por Proveedor ✅
+- [x] Backend: Endpoint `/api/expenses/by-supplier/export`
+- [x] Frontend: Dropdown en página de gastos `exportExpensesBySupplierToCSV`
+- [x] Campos: Proveedor, Cantidad de gastos, Monto total, Porcentaje, Promedio por gasto
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ---
 
@@ -124,11 +130,12 @@
 - [x] Filtros: Rango de fechas
 - **Completado**: 27/01/2026
 
-### 5.3 Ventas por Método de Pago
-- [ ] Backend: Endpoint `/api/orders/by-payment-method/export`
-- [ ] Frontend: Botón de exportación en sección de métodos de pago
-- [ ] Campos: Método de pago, Cantidad de ventas, Monto total, Porcentaje del total
-- [ ] Filtros: Rango de fechas
+### 5.3 Ventas por Método de Pago ✅
+- [x] Backend: Endpoint `/api/orders/by-payment-method/export`
+- [x] Frontend: Dropdown en página de ventas `exportSalesByPaymentMethodToCSV`
+- [x] Campos: Método de pago, Cantidad de ventas, Monto total, Porcentaje del total, Ticket promedio
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ---
 
@@ -374,14 +381,23 @@
 ## 📊 MÉTRICAS DE PROGRESO
 
 - **Total de reportes**: 52
-- **Reportes completados**: 5
-- **Porcentaje completado**: 9.6%
-- **Fase actual**: ✅ Fase 1 Completada
-- **Próximo hito**: Fase 2 - Reportes Importantes
+- **Reportes completados**: 30
+- **Porcentaje completado**: 58%
+- **Fase actual**: ✅ Fases 1-4 Completadas + 10 adicionales
+- **Próximo hito**: Fase 5 - Reportes adicionales
 
 ---
 
 ## 🔄 HISTORIAL DE CAMBIOS
+
+### 27/01/2026 - Exportaciones adicionales (7 reportes)
+- ✅ **1.2 Reservas Recurrentes** - Backend + Frontend UI en turnos-fijos
+- ✅ **1.3 Reservas No-Show** - Backend + Frontend dropdown en reservas
+- ✅ **2.1 Resumen Financiero General** - Backend + Frontend dropdown en analytics
+- ✅ **2.4 Pagos Pendientes** - Backend + Frontend dropdown en analytics
+- ✅ **3.3 Cierre de Caja Diario** - Backend + Frontend dropdown en caja
+- ✅ **4.3 Gastos por Proveedor** - Backend + Frontend dropdown en gastos
+- ✅ **5.3 Ventas por Método de Pago** - Backend + Frontend dropdown en ventas
 
 ### 26/01/2026 - 23:30
 - ✅ **FASE 1 COMPLETADA**
