@@ -38,11 +38,12 @@
 - [ ] Campos: Fecha, Ingresos totales, Depósitos, Saldo pendiente, Cantidad de reservas, Ticket promedio
 - [ ] Filtros: Período (día/semana/mes/trimestre/año)
 
-### 2.2 Ingresos por Método de Pago
-- [ ] Backend: Endpoint `/api/finance/by-payment-method/export`
-- [ ] Frontend: Botón de exportación en sección de métodos de pago
-- [ ] Campos: Método de pago, Cantidad de transacciones, Monto total, Porcentaje del total
-- [ ] Filtros: Rango de fechas
+### 2.2 Ingresos por Método de Pago ✅
+- [x] Backend: Endpoint `/api/cash-register-movements/income-by-method/export`
+- [x] Frontend: Método API client `exportIncomeByMethodToCSV`
+- [x] Campos: Método de pago, Cantidad de operaciones, Monto total, Porcentaje del total
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ### 2.3 Ingresos por Cancha
 - [ ] Backend: Endpoint `/api/finance/by-court/export`
@@ -67,11 +68,12 @@
 - [x] Filtros: Rango de fechas, usuario, estado
 - **Completado**: 26/01/2026
 
-### 3.2 Movimientos de Caja Detallados
-- [ ] Backend: Endpoint `/api/cash-register-movements/export`
-- [ ] Frontend: Botón de exportación en detalle de caja
-- [ ] Campos: Fecha/Hora, Turno, Tipo movimiento, Descripción, Método de pago, Monto, Usuario, Orden/Reserva asociada
-- [ ] Filtros: Rango de fechas, turno, tipo de movimiento, método de pago
+### 3.2 Movimientos de Caja Detallados ✅
+- [x] Backend: Endpoint `/api/cash-register-movements/export`
+- [x] Frontend: Método API client `exportCashMovementsToCSV`
+- [x] Campos: Fecha/Hora, Tipo, Descripción, Método de pago, Monto, Categoría, Orden/Reserva, Usuario, Notas
+- [x] Filtros: Rango de fechas, turno, tipo de movimiento, método de pago
+- **Completado**: 27/01/2026
 
 ### 3.3 Cierre de Caja Diario
 - [ ] Backend: Endpoint `/api/cash-registers/daily-close/export`
@@ -113,11 +115,12 @@
 - [x] Filtros: Rango de fechas, tipo, cliente, estado de pago, método de pago
 - **Completado**: 26/01/2026
 
-### 5.2 Ventas por Producto
-- [ ] Backend: Endpoint `/api/orders/by-product/export`
-- [ ] Frontend: Botón de exportación en sección de productos
-- [ ] Campos: Producto, Categoría, Cantidad vendida, Ingresos totales, Precio promedio, Última venta
-- [ ] Filtros: Rango de fechas, categoría
+### 5.2 Ventas por Producto ✅
+- [x] Backend: Endpoint `/api/orders/sales-by-product/export`
+- [x] Frontend: Método API client `exportSalesByProductToCSV`
+- [x] Campos: Ranking, Producto, Cantidad vendida, Ingreso total, Porcentaje, Promedio unitario
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ### 5.3 Ventas por Método de Pago
 - [ ] Backend: Endpoint `/api/orders/by-payment-method/export`
@@ -164,11 +167,12 @@
 
 ## 👥 7. CLIENTES
 
-### 7.1 Base de Datos de Clientes
-- [ ] Backend: Endpoint `/api/clients/export`
-- [ ] Frontend: Botón de exportación en página de clientes
-- [ ] Campos: Nombre, Teléfono, Email, Total reservas, Total gastado, Última reserva, Fecha registro, Estado cuenta corriente
-- [ ] Filtros: Estado de cuenta, actividad reciente
+### 7.1 Base de Datos de Clientes ✅
+- [x] Backend: Endpoint `/api/clients/establishment/:id/export`
+- [x] Frontend: Método API client `exportClientsToCSV`
+- [x] Campos: Nombre, Teléfono, Email, Reservas totales, Reservas completadas, Reservas canceladas, No show, Total gastado, Deuda, Última reserva, Estado, Notas
+- [x] Filtros: Tiene deuda, Estado activo
+- **Completado**: 27/01/2026
 
 ### 7.2 Clientes Frecuentes (Top Clientes)
 - [ ] Backend: Endpoint `/api/clients/top/export`
@@ -186,11 +190,12 @@
 
 ## 💳 8. CUENTAS CORRIENTES
 
-### 8.1 Estado de Cuentas Corrientes
-- [ ] Backend: Endpoint `/api/current-accounts/export`
-- [ ] Frontend: Botón de exportación en página de cuentas corrientes
-- [ ] Campos: Cliente, Teléfono, Saldo actual, Límite de crédito, Disponible, Última transacción, Estado
-- [ ] Filtros: Estado (activa/suspendida), saldo (positivo/negativo)
+### 8.1 Estado de Cuentas Corrientes ✅
+- [x] Backend: Endpoint `/api/current-accounts/establishment/:id/export`
+- [x] Frontend: Método API client `exportCurrentAccountsToCSV`
+- [x] Campos: Titular, Teléfono, Email, Tipo, Saldo actual, Total compras, Total pagos, Límite crédito, Descuento, Precio costo, Notas
+- [x] Filtros: Tipo de cuenta, tiene saldo
+- **Completado**: 27/01/2026
 
 ### 8.2 Movimientos de Cuenta Corriente
 - [ ] Backend: Endpoint `/api/current-accounts/movements/export`
@@ -285,12 +290,12 @@
 - [x] 5.1 Reporte de Ventas ✅
 - [x] 6.1 Inventario Actual ✅
 
-### 📝 Fase 2 - Importantes (Prioridad Media)
-- [ ] 2.2 Ingresos por Método de Pago
-- [ ] 3.2 Movimientos de Caja Detallados
-- [ ] 5.2 Ventas por Producto
-- [ ] 7.1 Base de Datos de Clientes
-- [ ] 8.1 Estado de Cuentas Corrientes
+### ✅ Fase 2 - Importantes (Prioridad Media) - 5/5 completado (100%) ✅
+- [x] 2.2 Ingresos por Método de Pago ✅
+- [x] 3.2 Movimientos de Caja Detallados ✅
+- [x] 5.2 Ventas por Producto ✅
+- [x] 7.1 Base de Datos de Clientes ✅
+- [x] 8.1 Estado de Cuentas Corrientes ✅
 
 ### 📊 Fase 3 - Analíticos (Prioridad Media-Baja)
 - [ ] 9.1 Ocupación de Canchas
