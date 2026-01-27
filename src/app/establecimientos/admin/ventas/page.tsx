@@ -52,6 +52,7 @@ interface Order {
   paymentStatus: 'pending' | 'partial' | 'paid' | 'refunded';
   paymentMethod: string;
   invoiceId?: string | null;
+  billingStatus?: 'invoiced' | 'credit_note' | null;
   customerName?: string;
   customerPhone?: string;
   subtotal: number;
@@ -612,8 +613,20 @@ const VentasPage = () => {
                         <td className="px-4 py-4 text-center">
                           <div className="flex justify-center">
                             <div 
-                              className={`w-3 h-3 rounded-full ${order.invoiceId ? 'bg-emerald-500' : 'bg-red-500'}`}
-                              title={order.invoiceId ? 'Facturado' : 'Sin facturar'}
+                              className={`w-3 h-3 rounded-full ${
+                                order.billingStatus === 'invoiced' 
+                                  ? 'bg-emerald-500' 
+                                  : order.billingStatus === 'credit_note'
+                                    ? 'bg-yellow-500'
+                                    : 'bg-red-500'
+                              }`}
+                              title={
+                                order.billingStatus === 'invoiced' 
+                                  ? 'Facturado' 
+                                  : order.billingStatus === 'credit_note'
+                                    ? 'Nota de Crédito emitida'
+                                    : 'Sin facturar'
+                              }
                             />
                           </div>
                         </td>

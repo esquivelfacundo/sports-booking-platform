@@ -67,6 +67,12 @@ interface Invoice {
   caeVencimiento?: string;
   total?: number;
   fechaEmision?: string;
+  importeTotal?: number;
+  status?: string;
+  comprobanteAsociadoId?: string;
+  motivoNc?: string;
+  createdAt?: string;
+  isNotaCredito?: boolean;
 }
 
 interface Order {
@@ -78,6 +84,8 @@ interface Order {
   paymentMethod: string;
   invoiceId?: string | null;
   invoice?: Invoice | null;
+  invoiceHistory?: Invoice[];
+  billingStatus?: 'invoiced' | 'credit_note' | null;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -573,75 +581,112 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                     </div>
                   </div>
 
-                  {/* Invoice Info - if invoiced */}
-                  {displayOrder.invoice && (
-                    <div className="bg-emerald-500/10 rounded-xl p-4 space-y-3 border border-emerald-500/20">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-medium text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                          <Receipt className="w-4 h-4" />
-                          Comprobante AFIP
-                        </h3>
+                  {/* Invoice History Timeline */}
+                  {displayOrder.invoiceHistory && displayOrder.invoiceHistory.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                        <Receipt className="w-4 h-4" />
+                        Historial de Facturación
+                      </h3>
+                      <div className="relative">
+                        {/* Timeline line */}
+                        <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-700" />
+                        
+                        <div className="space-y-3">
+                          {displayOrder.invoiceHistory.map((inv, index) => (
+                            <div key={inv.id} className="relative pl-8">
+                              {/* Timeline dot */}
+                              <div className={`absolute left-1 top-3 w-4 h-4 rounded-full border-2 ${
+                                inv.isNotaCredito 
+                                  ? 'bg-red-500 border-red-400' 
+                                  : 'bg-emerald-500 border-emerald-400'
+                              }`} />
+                              
+                              <div className={`rounded-lg p-3 border ${
+                                inv.isNotaCredito 
+                                  ? 'bg-red-500/10 border-red-500/20' 
+                                  : 'bg-emerald-500/10 border-emerald-500/20'
+                              }`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className={`text-sm font-medium ${inv.isNotaCredito ? 'text-red-400' : 'text-emerald-400'}`}>
+                                    {inv.tipoComprobanteNombre}
+                                  </span>
+                                  <button
+                                    onClick={async () => {
+                                      if (!establishmentId) return;
+                                      try {
+                                        await apiClient.openArcaInvoicePdf(establishmentId, inv.id);
+                                      } catch (e) {
+                                        console.error('Error downloading PDF:', e);
+                                      }
+                                    }}
+                                    className={`text-xs flex items-center gap-1 ${
+                                      inv.isNotaCredito ? 'text-red-400 hover:text-red-300' : 'text-emerald-400 hover:text-emerald-300'
+                                    }`}
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    PDF
+                                  </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div>
+                                    <p className="text-gray-400">Número</p>
+                                    <p className="text-white font-mono">
+                                      {String(inv.puntoVenta).padStart(5, '0')}-{String(inv.numeroComprobante).padStart(8, '0')}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-gray-400">Importe</p>
+                                    <p className={`font-semibold ${inv.isNotaCredito ? 'text-red-400' : 'text-emerald-400'}`}>
+                                      {inv.isNotaCredito ? '-' : ''}${parseFloat(inv.importeTotal?.toString() || '0').toLocaleString()}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-gray-400">CAE</p>
+                                    <p className="text-white font-mono truncate">{inv.cae}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-gray-400">Fecha</p>
+                                    <p className="text-white">
+                                      {inv.fechaEmision ? new Date(inv.fechaEmision).toLocaleDateString('es-AR') : '-'}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {inv.isNotaCredito && inv.motivoNc && (
+                                  <div className="mt-2 pt-2 border-t border-red-500/20">
+                                    <p className="text-gray-400 text-xs">Motivo:</p>
+                                    <p className="text-white text-xs">{inv.motivoNc}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Credit Note Button - show if last is invoice (not NC) */}
+                      {displayOrder.billingStatus === 'invoiced' && (
                         <button
-                          onClick={async () => {
-                            if (!establishmentId || !displayOrder.invoice?.id) return;
-                            try {
-                              await apiClient.openArcaInvoicePdf(establishmentId, displayOrder.invoice.id);
-                            } catch (e) {
-                              console.error('Error downloading PDF:', e);
-                            }
-                          }}
-                          className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                          onClick={() => setShowCreditNoteSidebar(true)}
+                          className="w-full py-2 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                         >
-                          <Download className="w-3 h-3" />
-                          PDF
+                          <XCircle className="w-4 h-4" />
+                          Emitir Nota de Crédito
                         </button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        {displayOrder.invoice.tipoComprobanteNombre && (
-                          <div>
-                            <p className="text-gray-400 text-xs">Tipo</p>
-                            <p className="text-white">{displayOrder.invoice.tipoComprobanteNombre}</p>
-                          </div>
-                        )}
-                        {displayOrder.invoice.puntoVenta && displayOrder.invoice.numeroComprobante && (
-                          <div>
-                            <p className="text-gray-400 text-xs">Número</p>
-                            <p className="text-white font-mono">
-                              {String(displayOrder.invoice.puntoVenta).padStart(5, '0')}-{String(displayOrder.invoice.numeroComprobante).padStart(8, '0')}
-                            </p>
-                          </div>
-                        )}
-                        {displayOrder.invoice.cae && (
-                          <div className="col-span-2">
-                            <p className="text-gray-400 text-xs">CAE</p>
-                            <p className="text-white font-mono text-xs">{displayOrder.invoice.cae}</p>
-                          </div>
-                        )}
-                        {displayOrder.invoice.caeVencimiento && (
-                          <div>
-                            <p className="text-gray-400 text-xs">Vto. CAE</p>
-                            <p className="text-white text-xs">
-                              {new Date(displayOrder.invoice.caeVencimiento).toLocaleDateString('es-AR')}
-                            </p>
-                          </div>
-                        )}
-                        {displayOrder.invoice.fechaEmision && (
-                          <div>
-                            <p className="text-gray-400 text-xs">Emisión</p>
-                            <p className="text-white text-xs">
-                              {new Date(displayOrder.invoice.fechaEmision).toLocaleDateString('es-AR')}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      {/* Credit Note Button */}
-                      <button
-                        onClick={() => setShowCreditNoteSidebar(true)}
-                        className="w-full mt-3 py-2 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Emitir Nota de Crédito
-                      </button>
+                      )}
+                      
+                      {/* Re-invoice Button - show if last is NC */}
+                      {displayOrder.billingStatus === 'credit_note' && (
+                        <button
+                          onClick={() => setIsInvoiceSidebarOpen(true)}
+                          className="w-full py-2 px-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Receipt className="w-4 h-4" />
+                          Emitir Nueva Factura
+                        </button>
+                      )}
                     </div>
                   )}
 
