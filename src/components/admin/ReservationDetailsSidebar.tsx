@@ -831,6 +831,18 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
 
   if (!mounted) return null;
 
+  const whatsappPhoneDigits = reservation?.clientPhone
+    ? reservation.clientPhone.split('').filter((c) => c >= '0' && c <= '9').join('')
+    : '';
+
+  const whatsappText = reservation
+    ? `Hola ${reservation.clientName}, te escribimos por tu reserva del ${formatDate(reservation.date)} a las ${reservation.time}.`
+    : '';
+
+  const whatsappHref = whatsappPhoneDigits
+    ? 'https://wa.me/' + whatsappPhoneDigits + '?text=' + encodeURIComponent(whatsappText)
+    : '';
+
   const establishmentId = reservation?.establishmentId || reservation?.establishment?.id;
 
   const invoiceItems: ArcaInvoiceItem[] = (() => {
@@ -905,7 +917,6 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                         onChange={(e) => handleStatusChange(e.target.value)}
                         disabled={isChangingStatus || reservation.status === 'cancelled' || reservation.status === 'completed' || reservation.status === 'no_show'}
                         className={`px-2 py-1 rounded-full text-xs font-medium border cursor-pointer appearance-none pr-6 ${getStatusColor(reservation.status)} bg-transparent focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239ca3af\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', backgroundSize: '12px' }}
                       >
                         <option value="pending">Pendiente</option>
                         <option value="in_progress">En Curso</option>
@@ -1449,7 +1460,6 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                     onChange={(e) => handleStatusChange(e.target.value)}
                     disabled={isChangingStatus || reservation.status === 'cancelled' || reservation.status === 'completed' || reservation.status === 'no_show'}
                     className={`px-2 py-1 rounded-full text-xs font-medium border cursor-pointer appearance-none pr-6 ${getStatusColor(reservation.status)} bg-transparent focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed`}
-                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239ca3af\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center', backgroundSize: '12px' }}
                   >
                     <option value="pending">Pendiente</option>
                     <option value="in_progress">En Curso</option>
@@ -1884,8 +1894,9 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   </div>
                 )}
               </div>
-              </div>
+            </div>
               )}
+
             </div>
 
             {/* Footer */}
@@ -2123,7 +2134,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
 
                     {reservation.clientPhone && (
                       <a
-                        href={`https://wa.me/${reservation.clientPhone.replace(/\D/g, '')}?text=Hola ${reservation.clientName}, te escribimos por tu reserva del ${formatDate(reservation.date)} a las ${reservation.time}.`}
+                        href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg transition-colors"
@@ -2217,7 +2228,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                     {/* WhatsApp Button - full width */}
                     {reservation.clientPhone && (
                       <a
-                        href={`https://wa.me/${reservation.clientPhone.replace(/\D/g, '')}?text=Hola ${reservation.clientName}, te escribimos por tu reserva del ${formatDate(reservation.date)} a las ${reservation.time}.`}
+                        href={whatsappHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg transition-colors"
@@ -2229,7 +2240,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   </div>
                 )}
               </div>
-            </div>
+            )}
 
             {reservation && (
               <ArcaInvoiceModal
