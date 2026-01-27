@@ -21,7 +21,8 @@ import {
   Banknote,
   Building2,
   Eye,
-  MoreHorizontal
+  MoreHorizontal,
+  Download
 } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
@@ -110,6 +111,7 @@ const VentasPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get the header portal container on mount
   useEffect(() => {
@@ -176,6 +178,24 @@ const VentasPage = () => {
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
     setShowOrderDetail(true);
+  };
+
+  const handleExportOrders = async () => {
+    if (!establishment?.id) return;
+    setIsExporting(true);
+    try {
+      await apiClient.exportOrdersToCSV({
+        establishmentId: establishment.id,
+        startDate: dateRange.start || undefined,
+        endDate: dateRange.end || undefined,
+        orderType: orderTypeFilter || undefined,
+        paymentStatus: paymentStatusFilter || undefined
+      });
+    } catch (error: any) {
+      console.error('Error exporting orders:', error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -298,6 +318,16 @@ const VentasPage = () => {
           className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
         />
       </div>
+
+      {/* Export Button */}
+      <button
+        onClick={handleExportOrders}
+        disabled={isExporting}
+        className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0 disabled:opacity-50"
+      >
+        <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+        <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
+      </button>
 
       {/* New Sale Button */}
       <button

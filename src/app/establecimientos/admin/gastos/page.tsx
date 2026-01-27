@@ -15,7 +15,8 @@ import {
   Edit2,
   Trash2,
   X,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
@@ -102,6 +103,7 @@ const GastosPage = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -303,6 +305,23 @@ const GastosPage = () => {
     }
   };
 
+  const handleExportExpenses = async () => {
+    if (!establishment?.id) return;
+    setIsExporting(true);
+    try {
+      await apiClient.exportExpensesToCSV({
+        establishmentId: establishment.id,
+        userId: selectedUser || undefined
+      });
+      showSuccess('Exportación exitosa', 'Los gastos se han exportado correctamente');
+    } catch (error: any) {
+      console.error('Error exporting expenses:', error);
+      showError('Error al exportar', error.message || 'No se pudieron exportar los gastos');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -355,6 +374,15 @@ const GastosPage = () => {
       >
         <RefreshCw className="h-4 w-4" />
         <span>Actualizar</span>
+      </button>
+
+      <button
+        onClick={handleExportExpenses}
+        disabled={isExporting}
+        className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
+      >
+        <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+        <span>{isExporting ? 'Exportando...' : 'Exportar'}</span>
       </button>
 
       <button

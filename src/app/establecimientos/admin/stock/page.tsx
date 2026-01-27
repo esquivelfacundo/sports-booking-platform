@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Package, TrendingUp, DollarSign, Plus, Search, Filter, FileText, Truck } from 'lucide-react';
+import { Package, TrendingUp, DollarSign, Plus, Search, Filter, FileText, Truck, Download } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductsTab from '@/components/stock/ProductsTab';
@@ -62,6 +62,7 @@ const StockPage = () => {
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get the header portal container on mount
   useEffect(() => {
@@ -85,6 +86,21 @@ const StockPage = () => {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  const handleExportInventory = async () => {
+    if (!establishment?.id) return;
+    setIsExporting(true);
+    try {
+      await apiClient.exportInventoryToCSV({
+        establishmentId: establishment.id,
+        categoryId: productCategory !== 'all' ? productCategory : undefined
+      });
+    } catch (error: any) {
+      console.error('Error exporting inventory:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const tabs = [
     { id: 'products' as Tab, name: 'Productos', icon: Package },
@@ -154,6 +170,16 @@ const StockPage = () => {
           >
             <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">Categorías</span>
+          </button>
+
+          {/* Export Button */}
+          <button
+            onClick={handleExportInventory}
+            disabled={isExporting}
+            className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0 disabled:opacity-50"
+          >
+            <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+            <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
           </button>
 
           {/* New Product Button */}

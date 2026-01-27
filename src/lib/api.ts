@@ -564,6 +564,91 @@ class ApiClient {
     window.URL.revokeObjectURL(blobUrl);
   }
 
+  // Generic CSV export helper
+  private async downloadCSV(endpoint: string, defaultFilename: string) {
+    const token = localStorage.getItem('token');
+    const url = `${this.baseURL}${endpoint}`;
+    
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to export');
+    }
+    
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    
+    const contentDisposition = response.headers.get('Content-Disposition');
+    const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+    link.download = filenameMatch ? filenameMatch[1] : defaultFilename;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  }
+
+  async exportCashRegistersToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+    userId?: string;
+    status?: 'open' | 'closed';
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/cash-registers/export?${queryParams.toString()}`, 'turnos_caja.csv');
+  }
+
+  async exportExpensesToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+    userId?: string;
+    origin?: 'cash_register' | 'administration';
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/expenses/establishment/${params.establishmentId}/export?${queryParams.toString()}`, 'gastos.csv');
+  }
+
+  async exportOrdersToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+    orderType?: string;
+    paymentStatus?: string;
+    paymentMethod?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/orders/export?${queryParams.toString()}`, 'ventas.csv');
+  }
+
+  async exportInventoryToCSV(params: {
+    establishmentId: string;
+    categoryId?: string;
+    stockStatus?: 'low' | 'critical';
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/products/export?${queryParams.toString()}`, 'inventario.csv');
+  }
+
   // Optimized stats endpoint - returns aggregated statistics without fetching all bookings
   async getEstablishmentStats(establishmentId: string) {
     return this.request(`/api/bookings/establishment/${establishmentId}/stats`);
