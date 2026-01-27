@@ -166,6 +166,13 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   
   // Print state
   const [isPrinting, setIsPrinting] = useState(false);
+  
+  // Credit note state
+  const [showCreditNoteSidebar, setShowCreditNoteSidebar] = useState(false);
+  const [creditNoteType, setCreditNoteType] = useState<'total' | 'partial'>('total');
+  const [creditNoteAmount, setCreditNoteAmount] = useState('');
+  const [creditNoteMotivo, setCreditNoteMotivo] = useState('');
+  const [isEmittingCreditNote, setIsEmittingCreditNote] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -209,6 +216,46 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
       alert('Error al registrar el pago');
     } finally {
       setIsAddingPayment(false);
+    }
+  };
+
+  const handleEmitCreditNote = async () => {
+    if (!fullOrder?.invoice?.id || !establishmentId) return;
+    
+    const amount = creditNoteType === 'total' 
+      ? fullOrder.total 
+      : parseFloat(creditNoteAmount);
+    
+    if (!amount || amount <= 0) {
+      alert('Debe especificar un monto válido');
+      return;
+    }
+    
+    if (!creditNoteMotivo.trim()) {
+      alert('Debe especificar un motivo');
+      return;
+    }
+    
+    setIsEmittingCreditNote(true);
+    try {
+      await apiClient.emitirNotaCreditoArca(establishmentId, {
+        facturaId: fullOrder.invoice.id,
+        total: amount,
+        motivo: creditNoteMotivo
+      });
+      
+      alert('Nota de crédito emitida exitosamente');
+      setShowCreditNoteSidebar(false);
+      setCreditNoteMotivo('');
+      setCreditNoteAmount('');
+      setCreditNoteType('total');
+      loadFullOrder();
+      onOrderUpdated();
+    } catch (error: any) {
+      console.error('Error emitting credit note:', error);
+      alert(error.message || 'Error al emitir nota de crédito');
+    } finally {
+      setIsEmittingCreditNote(false);
     }
   };
 
@@ -587,6 +634,14 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                           </div>
                         )}
                       </div>
+                      {/* Credit Note Button */}
+                      <button
+                        onClick={() => setShowCreditNoteSidebar(true)}
+                        className="w-full mt-3 py-2 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Emitir Nota de Crédito
+                      </button>
                     </div>
                   )}
 
@@ -943,6 +998,150 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                 onOrderUpdated();
               }}
             />
+
+            {/* Credit Note Sidebar */}
+            <AnimatePresence>
+              {showCreditNoteSidebar && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowCreditNoteSidebar(false)}
+                    className="fixed inset-0 bg-black/60 z-[70]"
+                  />
+                  <motion.div
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 shadow-2xl z-[80] flex flex-col"
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                      <h2 className="text-lg font-semibold text-white">Emitir Nota de Crédito</h2>
+                      <button
+                        onClick={() => setShowCreditNoteSidebar(false)}
+                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                      {/* Original Invoice Info */}
+                      <div className="bg-gray-700/50 rounded-lg p-3">
+                        <p className="text-xs text-gray-400 mb-1">Factura Original</p>
+                        <p className="text-white font-medium">
+                          {displayOrder.invoice?.tipoComprobanteNombre} - {' '}
+                          {String(displayOrder.invoice?.puntoVenta).padStart(5, '0')}-{String(displayOrder.invoice?.numeroComprobante).padStart(8, '0')}
+                        </p>
+                        <p className="text-emerald-400 font-semibold mt-1">
+                          Total: ${displayOrder.total?.toLocaleString()}
+                        </p>
+                      </div>
+
+                      {/* Credit Note Type */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Nota de Crédito</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setCreditNoteType('total')}
+                            className={`py-3 px-4 rounded-lg text-sm font-medium transition-colors ${
+                              creditNoteType === 'total'
+                                ? 'bg-red-500 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Total (Anular)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCreditNoteType('partial')}
+                            className={`py-3 px-4 rounded-lg text-sm font-medium transition-colors ${
+                              creditNoteType === 'partial'
+                                ? 'bg-orange-500 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Parcial
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Amount (only for partial) */}
+                      {creditNoteType === 'partial' && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">Monto a acreditar</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                            <input
+                              type="number"
+                              value={creditNoteAmount}
+                              onChange={(e) => setCreditNoteAmount(e.target.value)}
+                              max={displayOrder.total}
+                              className="w-full pl-8 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-orange-500"
+                              placeholder="0.00"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Máximo: ${displayOrder.total?.toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Motivo */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Motivo *</label>
+                        <textarea
+                          value={creditNoteMotivo}
+                          onChange={(e) => setCreditNoteMotivo(e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 resize-none"
+                          placeholder="Ej: Devolución de producto, Error en facturación..."
+                        />
+                      </div>
+
+                      {/* Summary */}
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                        <p className="text-sm text-gray-300 mb-2">Resumen de la Nota de Crédito:</p>
+                        <p className="text-2xl font-bold text-red-400">
+                          -${creditNoteType === 'total' 
+                            ? displayOrder.total?.toLocaleString() 
+                            : (parseFloat(creditNoteAmount) || 0).toLocaleString()}
+                        </p>
+                        {creditNoteType === 'total' && (
+                          <p className="text-xs text-red-400 mt-2">
+                            ⚠️ Esto anulará completamente la factura original
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-4 border-t border-gray-700">
+                      <button
+                        onClick={handleEmitCreditNote}
+                        disabled={isEmittingCreditNote || !creditNoteMotivo.trim() || (creditNoteType === 'partial' && (!creditNoteAmount || parseFloat(creditNoteAmount) <= 0))}
+                        className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                      >
+                        {isEmittingCreditNote ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Emitiendo...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Receipt className="w-5 h-5" />
+                            <span>Emitir Nota de Crédito</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </motion.div>
         </>
       )}
