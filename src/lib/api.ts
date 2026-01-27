@@ -777,6 +777,67 @@ class ApiClient {
     await this.downloadCSV(`/api/stock-movements/purchases/export?${queryParams.toString()}`, 'compras_proveedores.csv');
   }
 
+  // Phase 4 exports
+  async exportStockMovementsToCSV(params: {
+    establishmentId: string;
+    productId?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/stock-movements/export?${queryParams.toString()}`, 'movimientos_stock.csv');
+  }
+
+  async exportByWeekdayToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/analytics/by-weekday/export?${queryParams.toString()}`, 'rendimiento_por_dia.csv');
+  }
+
+  async exportRevenueByCourtToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/analytics/revenue-by-court/export?${queryParams.toString()}`, 'ingresos_por_cancha.csv');
+  }
+
+  async exportAccountMovementsToCSV(params: {
+    establishmentId: string;
+    accountId?: string;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/current-accounts/movements/export?${queryParams.toString()}`, 'movimientos_cuenta_corriente.csv');
+  }
+
+  async exportLowStockProductsToCSV(params: {
+    establishmentId: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('establishmentId', params.establishmentId);
+    await this.downloadCSV(`/api/products/alerts/low-stock/export?${queryParams.toString()}`, 'productos_stock_bajo.csv');
+  }
+
   // Optimized stats endpoint - returns aggregated statistics without fetching all bookings
   async getEstablishmentStats(establishmentId: string) {
     return this.request(`/api/bookings/establishment/${establishmentId}/stats`);

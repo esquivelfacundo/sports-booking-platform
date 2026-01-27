@@ -87,14 +87,16 @@ const StockPage = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const handleExport = async (type: 'inventory' | 'purchases') => {
+  const handleExport = async (type: 'inventory' | 'purchases' | 'movements' | 'low-stock') => {
     if (!establishment?.id) return;
     setIsExporting(true);
     try {
       if (type === 'purchases') {
-        await apiClient.exportPurchasesToCSV({
-          establishmentId: establishment.id
-        });
+        await apiClient.exportPurchasesToCSV({ establishmentId: establishment.id });
+      } else if (type === 'movements') {
+        await apiClient.exportStockMovementsToCSV({ establishmentId: establishment.id });
+      } else if (type === 'low-stock') {
+        await apiClient.exportLowStockProductsToCSV({ establishmentId: establishment.id });
       } else {
         await apiClient.exportInventoryToCSV({
           establishmentId: establishment.id,
@@ -181,7 +183,7 @@ const StockPage = () => {
           {/* Export Dropdown */}
           <select
             onChange={(e) => {
-              if (e.target.value) handleExport(e.target.value as 'inventory' | 'purchases');
+              if (e.target.value) handleExport(e.target.value as 'inventory' | 'purchases' | 'movements' | 'low-stock');
               e.target.value = '';
             }}
             disabled={isExporting}
@@ -190,6 +192,8 @@ const StockPage = () => {
             <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
             <option value="inventory">Inventario</option>
             <option value="purchases">Compras</option>
+            <option value="movements">Movimientos</option>
+            <option value="low-stock">Stock Bajo</option>
           </select>
 
           {/* New Product Button */}

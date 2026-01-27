@@ -68,7 +68,7 @@ const AnalyticsPage = () => {
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = async (type: 'occupancy' | 'clients' | 'hours') => {
+  const handleExport = async (type: 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court') => {
     if (!establishment?.id) return;
     setIsExporting(true);
     try {
@@ -78,6 +78,10 @@ const AnalyticsPage = () => {
         await apiClient.exportTopClientsToCSV({ establishmentId: establishment.id });
       } else if (type === 'hours') {
         await apiClient.exportPeakHoursToCSV({ establishmentId: establishment.id });
+      } else if (type === 'weekday') {
+        await apiClient.exportByWeekdayToCSV({ establishmentId: establishment.id });
+      } else if (type === 'revenue-court') {
+        await apiClient.exportRevenueByCourtToCSV({ establishmentId: establishment.id });
       }
     } catch (error) {
       console.error('Error exporting:', error);
@@ -225,7 +229,7 @@ const AnalyticsPage = () => {
 
         <select
           onChange={(e) => {
-            if (e.target.value) handleExport(e.target.value as 'occupancy' | 'clients' | 'hours');
+            if (e.target.value) handleExport(e.target.value as 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court');
             e.target.value = '';
           }}
           disabled={isExporting}
@@ -235,6 +239,8 @@ const AnalyticsPage = () => {
           <option value="occupancy">Ocupación Canchas</option>
           <option value="clients">Clientes Frecuentes</option>
           <option value="hours">Horarios Pico</option>
+          <option value="weekday">Por Día de Semana</option>
+          <option value="revenue-court">Ingresos por Cancha</option>
         </select>
       </div>
     </div>

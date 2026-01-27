@@ -476,29 +476,38 @@ export default function CuentasCorrientesPage() {
         ))}
       </div>
 
-      {/* Export Button */}
-      <button
-        onClick={async () => {
-          if (!establishment?.id) return;
+      {/* Export Dropdown */}
+      <select
+        onChange={async (e) => {
+          if (!e.target.value || !establishment?.id) return;
+          const type = e.target.value;
+          e.target.value = '';
           setIsExporting(true);
           try {
-            await apiClient.exportCurrentAccountsToCSV({
-              establishmentId: establishment.id,
-              accountType: filterType !== 'all' ? filterType : undefined,
-              hasBalance: undefined
-            });
+            if (type === 'movements') {
+              await apiClient.exportAccountMovementsToCSV({
+                establishmentId: establishment.id
+              });
+            } else {
+              await apiClient.exportCurrentAccountsToCSV({
+                establishmentId: establishment.id,
+                accountType: filterType !== 'all' ? filterType : undefined,
+                hasBalance: undefined
+              });
+            }
           } catch (error) {
-            console.error('Error exporting accounts:', error);
+            console.error('Error exporting:', error);
           } finally {
             setIsExporting(false);
           }
         }}
         disabled={isExporting}
-        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer"
       >
-        <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
-        <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
-      </button>
+        <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
+        <option value="accounts">Cuentas</option>
+        <option value="movements">Movimientos</option>
+      </select>
 
       {/* Create for Staff Button */}
       <button

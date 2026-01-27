@@ -2,8 +2,8 @@
 
 ## Estado General
 - **Fecha de inicio**: 26 de Enero, 2026
-- **Estado**: ✅ Fases 1, 2 y 3 Completadas
-- **Progreso**: 15/52 reportes implementados (29%)
+- **Estado**: ✅ Fases 1, 2, 3 y 4 Completadas
+- **Progreso**: 20/52 reportes implementados (38%)
 
 ---
 
@@ -45,11 +45,12 @@
 - [x] Filtros: Rango de fechas
 - **Completado**: 27/01/2026
 
-### 2.3 Ingresos por Cancha
-- [ ] Backend: Endpoint `/api/finance/by-court/export`
-- [ ] Frontend: Botón de exportación en sección de canchas
-- [ ] Campos: Cancha, Cantidad de reservas, Ingresos totales, Ticket promedio, Porcentaje del total
-- [ ] Filtros: Rango de fechas
+### 2.3 Ingresos por Cancha ✅
+- [x] Backend: Endpoint `/api/analytics/revenue-by-court/export`
+- [x] Frontend: Dropdown en página de analytics `exportRevenueByCourtToCSV`
+- [x] Campos: Cancha, Deporte, Cantidad reservas, Ingresos totales, Depósitos, Ticket promedio, Porcentaje
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ### 2.4 Pagos Pendientes
 - [ ] Backend: Endpoint `/api/finance/pending-payments/export`
@@ -140,11 +141,12 @@
 - [x] Filtros: Categoría, estado de stock
 - **Completado**: 26/01/2026
 
-### 6.2 Movimientos de Stock
-- [ ] Backend: Endpoint `/api/stock-movements/export`
-- [ ] Frontend: Botón de exportación en movimientos de stock
-- [ ] Campos: Fecha/Hora, Producto, Tipo movimiento (Entrada/Salida/Ajuste/Venta/Merma), Cantidad, Costo unitario, Costo total, Usuario, Notas
-- [ ] Filtros: Rango de fechas, producto, tipo de movimiento
+### 6.2 Movimientos de Stock ✅
+- [x] Backend: Endpoint `/api/stock-movements/export`
+- [x] Frontend: Dropdown en página de stock `exportStockMovementsToCSV`
+- [x] Campos: Fecha/Hora, Producto, SKU, Tipo, Cantidad, Unidad, Costo unitario, Costo total, Stock anterior, Stock nuevo, Usuario, Notas
+- [x] Filtros: Rango de fechas, producto, tipo de movimiento
+- **Completado**: 27/01/2026
 
 ### 6.3 Compras a Proveedores ✅
 - [x] Backend: Endpoint `/api/stock-movements/purchases/export`
@@ -153,11 +155,12 @@
 - [x] Filtros: Rango de fechas, proveedor
 - **Completado**: 27/01/2026
 
-### 6.4 Productos con Stock Bajo
-- [ ] Backend: Endpoint `/api/products/low-stock/export`
-- [ ] Frontend: Botón de exportación en alertas de stock
-- [ ] Campos: Producto, Categoría, Stock actual, Stock mínimo, Diferencia, Última entrada, Proveedor habitual
-- [ ] Filtros: Ninguno (siempre muestra productos bajo stock)
+### 6.4 Productos con Stock Bajo ✅
+- [x] Backend: Endpoint `/api/products/alerts/low-stock/export`
+- [x] Frontend: Dropdown en página de stock `exportLowStockProductsToCSV`
+- [x] Campos: Producto, Categoría, SKU, Stock actual, Stock mínimo, Diferencia, Estado, Costo unitario, Valor faltante
+- [x] Filtros: Ninguno (siempre muestra productos bajo stock)
+- **Completado**: 27/01/2026
 
 ### 6.5 Historial de Mermas
 - [ ] Backend: Endpoint `/api/stock-movements/waste/export`
@@ -200,11 +203,12 @@
 - [x] Filtros: Tipo de cuenta, tiene saldo
 - **Completado**: 27/01/2026
 
-### 8.2 Movimientos de Cuenta Corriente
-- [ ] Backend: Endpoint `/api/current-accounts/movements/export`
-- [ ] Frontend: Botón de exportación en detalle de cuenta
-- [ ] Campos: Fecha, Cliente, Tipo (Cargo/Pago), Descripción, Monto, Saldo anterior, Saldo nuevo, Usuario
-- [ ] Filtros: Rango de fechas, cliente, tipo de movimiento
+### 8.2 Movimientos de Cuenta Corriente ✅
+- [x] Backend: Endpoint `/api/current-accounts/movements/export`
+- [x] Frontend: Dropdown en página de cuentas corrientes `exportAccountMovementsToCSV`
+- [x] Campos: Fecha, Titular, Tipo, Descripción, Monto, Saldo anterior, Saldo nuevo, Orden, Usuario
+- [x] Filtros: Rango de fechas, cuenta, tipo de movimiento
+- **Completado**: 27/01/2026
 
 ### 8.3 Deudas Pendientes
 - [ ] Backend: Endpoint `/api/current-accounts/debts/export`
@@ -230,11 +234,12 @@
 - [x] Filtros: Rango de fechas
 - **Completado**: 27/01/2026
 
-### 9.3 Rendimiento por Día de la Semana
-- [ ] Backend: Endpoint `/api/analytics/by-weekday/export`
-- [ ] Frontend: Botón de exportación en analytics
-- [ ] Campos: Día, Cantidad de reservas, Ingresos totales, Ticket promedio, Ocupación promedio
-- [ ] Filtros: Rango de fechas
+### 9.3 Rendimiento por Día de la Semana ✅
+- [x] Backend: Endpoint `/api/analytics/by-weekday/export`
+- [x] Frontend: Dropdown en página de analytics `exportByWeekdayToCSV`
+- [x] Campos: Día, Cantidad reservas, Horas reservadas, Ingresos totales, Ticket promedio, Porcentaje
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ---
 
@@ -309,8 +314,12 @@
 - [x] 6.3 Compras a Proveedores ✅
 - [x] 9.2 Horarios Pico ✅
 
-### 🚀 Fase 4 - Avanzados (Prioridad Baja)
-- [ ] Resto de reportes analíticos y consolidados
+### ✅ Fase 4 - Avanzados (Prioridad Baja) - 5/5 completado (100%) ✅
+- [x] 6.2 Movimientos de Stock ✅
+- [x] 9.3 Rendimiento por Día de Semana ✅
+- [x] 8.2 Movimientos de Cuenta Corriente ✅
+- [x] 2.3 Ingresos por Cancha ✅
+- [x] 6.4 Productos con Stock Bajo ✅
 
 ---
 
