@@ -133,9 +133,9 @@ const INTEGRATION_CARDS: IntegrationCardData[] = [
     description: 'Facturación electrónica',
     logo: '/assets/logos-empresas/arca.png',
     logoSize: 48,
-    color: 'text-emerald-400',
-    gradient: 'from-emerald-500 to-cyan-500',
-    bgColor: 'bg-emerald-500/10',
+    color: 'text-sky-600 dark:text-sky-400',
+    gradient: 'from-sky-100 to-cyan-100',
+    bgColor: 'bg-sky-500/10',
     features: ['Comprobantes AFIP', 'Puntos de venta', 'PDF con QR'],
   },
 ];
@@ -599,13 +599,15 @@ export default function IntegrationsPage() {
     const card = INTEGRATION_CARDS.find(c => c.id === activeIntegration);
     if (!card) return null;
 
+    const logoClassName = card.id === 'AFIP' ? '' : 'brightness-0 invert';
+
     return (
       <div className="h-full flex flex-col">
         <div className="p-6 border-b border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center`}>
-                <Image src={card.logo} alt={card.name} width={card.logoSize * 0.8} height={card.logoSize * 0.8} className="brightness-0 invert" />
+                <Image src={card.logo} alt={card.name} width={card.logoSize * 0.8} height={card.logoSize * 0.8} className={logoClassName} />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white">{card.name}</h2>
@@ -1054,12 +1056,16 @@ export default function IntegrationsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {INTEGRATION_CARDS.map((card, index) => {
             const connected = isConnected(card.id);
+            const logoClassName = card.id === 'AFIP' ? '' : 'brightness-0 invert';
+            const connectButtonClassName = card.id === 'AFIP'
+              ? `bg-gradient-to-r ${card.gradient} text-sky-900 hover:opacity-90`
+              : `bg-gradient-to-r ${card.gradient} text-white hover:opacity-90`;
             return (
               <motion.div key={card.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer shadow-sm dark:shadow-none ${connected ? 'ring-2 ring-emerald-500/30' : ''}`} onClick={() => openSidebar(card.id)}>
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-lg`}>
-                      <Image src={card.logo} alt={card.name} width={card.logoSize} height={card.logoSize} className="brightness-0 invert" />
+                      <Image src={card.logo} alt={card.name} width={card.logoSize} height={card.logoSize} className={logoClassName} />
                     </div>
                     {connected && <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-medium flex items-center gap-1"><CheckCircle className="w-3 h-3" />Conectado</span>}
                   </div>
@@ -1068,7 +1074,7 @@ export default function IntegrationsPage() {
                   <div className="flex flex-wrap gap-1.5">{card.features.map((feature, i) => <span key={i} className={`px-2 py-0.5 ${card.bgColor} ${card.color} rounded text-xs`}>{feature}</span>)}</div>
                 </div>
                 <div className="px-5 py-3 bg-gray-100 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
-                  <button className={`w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${connected ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' : `bg-gradient-to-r ${card.gradient} text-white hover:opacity-90`}`}>{connected ? <><Settings className="w-4 h-4" />Configurar</> : <><Zap className="w-4 h-4" />Conectar</>}</button>
+                  <button className={`w-full py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${connected ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' : connectButtonClassName}`}>{connected ? <><Settings className="w-4 h-4" />Configurar</> : <><Zap className="w-4 h-4" />Conectar</>}</button>
                 </div>
               </motion.div>
             );
