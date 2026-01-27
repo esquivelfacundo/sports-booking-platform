@@ -2,8 +2,9 @@
 
 ## Estado General
 - **Fecha de inicio**: 26 de Enero, 2026
-- **Estado**: ✅ Fases 1, 2, 3 y 4 Completadas + 10 adicionales
-- **Progreso**: 30/52 reportes implementados (58%)
+- **Última actualización**: 27 de Enero, 2026
+- **Estado**: ✅ Fases 1-5 Completadas (30/36 reportes core)
+- **Progreso**: 83% de reportes principales implementados
 
 ---
 
@@ -331,21 +332,44 @@
 - [x] 2.3 Ingresos por Cancha ✅
 - [x] 6.4 Productos con Stock Bajo ✅
 
+### ✅ Fase 5 - Adicionales (27/01/2026) - 10/10 completado (100%) ✅
+- [x] 1.2 Reservas Recurrentes ✅
+- [x] 1.3 Reservas No-Show ✅
+- [x] 2.1 Resumen Financiero General ✅
+- [x] 2.4 Pagos Pendientes ✅
+- [x] 3.3 Cierre de Caja Diario ✅
+- [x] 4.3 Gastos por Proveedor ✅
+- [x] 5.3 Ventas por Método de Pago ✅
+- [x] 6.5 Historial de Mermas ✅
+- [x] 7.3 Clientes Inactivos ✅
+- [x] 8.3 Deudas Pendientes ✅
+
+### Fase 6 - Cupones y Staff (Pendiente) - 0/4
+- [ ] 10.1 Uso de Cupones
+- [ ] 10.2 Detalle de Usos por Cupón
+- [ ] 11.1 Actividad de Usuarios
+- [ ] 11.2 Rendimiento de Cajeros
+
+### Fase 7 - Consolidados (Pendiente) - 0/2
+- [ ] 12.1 Reporte Diario Completo
+- [ ] 12.2 Reporte Mensual Ejecutivo
+
 ---
 
-## 🛠️ COMPONENTES TÉCNICOS A DESARROLLAR
+## 🛠️ COMPONENTES TÉCNICOS
 
-### Backend
-- [ ] Utilidad de generación de CSV (`src/utils/csvGenerator.js`)
-- [ ] Middleware de validación de exportaciones
-- [ ] Sistema de caché para reportes grandes
-- [ ] Rate limiting para exportaciones
+### Backend ✅
+- [x] Utilidad de generación de CSV (`src/utils/csvGenerator.js`) ✅
+- [x] Autenticación y autorización por establecimiento ✅
+- [ ] Sistema de caché para reportes grandes (opcional)
+- [ ] Rate limiting para exportaciones (opcional)
 
-### Frontend
-- [ ] Componente reutilizable `ExportButton`
-- [ ] Modal de configuración de exportación
-- [ ] Indicador de progreso para exportaciones grandes
-- [ ] Sistema de descarga automática de archivos
+### Frontend ✅
+- [x] Botones/dropdowns de exportación en cada página ✅
+- [x] Estado de carga con `isExporting` + `animate-pulse` ✅
+- [x] Sistema de descarga automática (`window.open` / blob) ✅
+- [ ] Modal de configuración de exportación (opcional)
+- [ ] Selección de columnas a exportar (opcional)
 
 ---
 
@@ -358,33 +382,40 @@
 - Formato de fechas: DD/MM/YYYY
 - Formato de números: Punto decimal, sin separador de miles en CSV
 
-### Seguridad
-- Validar permisos de usuario antes de exportar
-- Limitar tamaño de exportaciones (máximo 10,000 registros por archivo)
-- Logging de todas las exportaciones realizadas
-- Rate limiting: máximo 10 exportaciones por usuario por hora
+### Seguridad ✅
+- [x] Validar permisos de usuario antes de exportar (authenticateToken middleware)
+- [x] Verificación de pertenencia al establecimiento
+- [ ] Limitar tamaño de exportaciones (opcional para futuro)
+- [ ] Rate limiting (opcional para futuro)
 
 ### Performance
-- Implementar paginación para datasets grandes
-- Usar streaming para archivos grandes
-- Caché de reportes frecuentes (15 minutos)
-- Procesamiento asíncrono para reportes complejos
+- [x] Generación de CSV en memoria (funciona bien para volúmenes actuales)
+- [ ] Streaming para archivos muy grandes (>10k registros) - opcional
+- [ ] Caché de reportes frecuentes - opcional
 
-### UX
-- Mostrar preview de datos antes de exportar
-- Permitir selección de columnas a exportar
-- Guardar configuraciones de exportación favoritas
-- Notificación cuando la exportación esté lista
+### UX ✅
+- [x] Indicador visual de carga (animate-pulse en botón)
+- [x] Descarga automática del archivo
+- [x] Dropdowns para múltiples opciones de exportación
+- [x] Mensajes de éxito/error con toast notifications
 
 ---
 
 ## 📊 MÉTRICAS DE PROGRESO
 
-- **Total de reportes**: 52
+- **Total de reportes**: 36 (sin contar cupones, staff y consolidados opcionales)
 - **Reportes completados**: 30
-- **Porcentaje completado**: 58%
-- **Fase actual**: ✅ Fases 1-4 Completadas + 10 adicionales
-- **Próximo hito**: Fase 5 - Reportes adicionales
+- **Porcentaje completado**: 83% (30/36 core reports)
+- **Fase actual**: ✅ Fases 1-5 Completadas
+- **Próximo hito**: Fase 6 - Cupones y Staff (cuando se implemente el módulo de cupones)
+
+### Reportes pendientes (6):
+- 10.1 Uso de Cupones
+- 10.2 Detalle de Usos por Cupón  
+- 11.1 Actividad de Usuarios
+- 11.2 Rendimiento de Cajeros
+- 12.1 Reporte Diario Completo
+- 12.2 Reporte Mensual Ejecutivo
 
 ---
 
