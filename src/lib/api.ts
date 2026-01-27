@@ -655,6 +655,68 @@ class ApiClient {
     await this.downloadCSV(`/api/products/export?${queryParams.toString()}`, 'inventario.csv');
   }
 
+  // Phase 2 exports
+  async exportCashMovementsToCSV(params: {
+    establishmentId: string;
+    cashRegisterId?: string;
+    type?: string;
+    paymentMethod?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/cash-register-movements/export?${queryParams.toString()}`, 'movimientos_caja.csv');
+  }
+
+  async exportIncomeByMethodToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/cash-register-movements/income-by-method/export?${queryParams.toString()}`, 'ingresos_metodo_pago.csv');
+  }
+
+  async exportSalesByProductToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/orders/sales-by-product/export?${queryParams.toString()}`, 'ventas_por_producto.csv');
+  }
+
+  async exportClientsToCSV(params: {
+    establishmentId: string;
+    hasDebt?: boolean;
+    isActive?: boolean;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params.hasDebt !== undefined) queryParams.append('hasDebt', params.hasDebt.toString());
+    if (params.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+    await this.downloadCSV(`/api/clients/establishment/${params.establishmentId}/export?${queryParams.toString()}`, 'clientes.csv');
+  }
+
+  async exportCurrentAccountsToCSV(params: {
+    establishmentId: string;
+    accountType?: string;
+    hasBalance?: boolean;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params.accountType) queryParams.append('accountType', params.accountType);
+    if (params.hasBalance !== undefined) queryParams.append('hasBalance', params.hasBalance.toString());
+    await this.downloadCSV(`/api/current-accounts/establishment/${params.establishmentId}/export?${queryParams.toString()}`, 'cuentas_corrientes.csv');
+  }
+
   // Optimized stats endpoint - returns aggregated statistics without fetching all bookings
   async getEstablishmentStats(establishmentId: string) {
     return this.request(`/api/bookings/establishment/${establishmentId}/stats`);

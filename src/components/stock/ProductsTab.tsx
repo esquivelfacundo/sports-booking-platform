@@ -284,6 +284,9 @@ const ProductsTab = ({
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Margen
                   </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Valor Total
+                  </th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Estado
                   </th>
@@ -372,6 +375,9 @@ const ProductsTab = ({
                       </td>
                       <td className="px-4 py-4 text-right text-blue-400">
                         {product.profitMargin}%
+                      </td>
+                      <td className="px-4 py-4 text-right text-gray-900 dark:text-white font-medium">
+                        ${(product.currentStock * product.costPrice).toLocaleString('es-AR')}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <span className={`inline-block text-xs px-2 py-1 rounded-full ${
