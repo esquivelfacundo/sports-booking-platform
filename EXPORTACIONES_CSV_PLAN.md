@@ -2,8 +2,8 @@
 
 ## Estado General
 - **Fecha de inicio**: 26 de Enero, 2026
-- **Estado**: ✅ Fases 1, 2, 3 y 4 Completadas
-- **Progreso**: 20/52 reportes implementados (38%)
+- **Estado**: ✅ Fases 1, 2, 3 y 4 Completadas + 3 adicionales
+- **Progreso**: 23/52 reportes implementados (44%)
 
 ---
 
@@ -162,11 +162,12 @@
 - [x] Filtros: Ninguno (siempre muestra productos bajo stock)
 - **Completado**: 27/01/2026
 
-### 6.5 Historial de Mermas
-- [ ] Backend: Endpoint `/api/stock-movements/waste/export`
-- [ ] Frontend: Botón de exportación en sección de mermas
-- [ ] Campos: Fecha, Producto, Cantidad, Costo, Motivo, Usuario
-- [ ] Filtros: Rango de fechas, producto
+### 6.5 Historial de Mermas ✅
+- [x] Backend: Endpoint `/api/stock-movements/waste/export`
+- [x] Frontend: Dropdown en página de stock `exportWasteToCSV`
+- [x] Campos: Fecha, Producto, SKU, Cantidad, Costo unitario, Costo total, Motivo, Usuario
+- [x] Filtros: Rango de fechas, producto
+- **Completado**: 27/01/2026
 
 ---
 
@@ -186,11 +187,12 @@
 - [x] Filtros: Límite de resultados
 - **Completado**: 27/01/2026
 
-### 7.3 Clientes Inactivos
-- [ ] Backend: Endpoint `/api/clients/inactive/export`
-- [ ] Frontend: Botón de exportación en sección de inactivos
-- [ ] Campos: Nombre, Teléfono, Email, Última reserva, Días sin actividad, Total histórico de reservas
-- [ ] Filtros: Días de inactividad mínimos
+### 7.3 Clientes Inactivos ✅
+- [x] Backend: Endpoint `/api/clients/establishment/:id/inactive/export`
+- [x] Frontend: Dropdown en página de clientes `exportInactiveClientsToCSV`
+- [x] Campos: Nombre, Teléfono, Email, Última reserva, Días sin actividad, Reservas totales, Total gastado, Notas
+- [x] Filtros: Días de inactividad mínimos (default: 30)
+- **Completado**: 27/01/2026
 
 ---
 
@@ -210,11 +212,12 @@
 - [x] Filtros: Rango de fechas, cuenta, tipo de movimiento
 - **Completado**: 27/01/2026
 
-### 8.3 Deudas Pendientes
-- [ ] Backend: Endpoint `/api/current-accounts/debts/export`
-- [ ] Frontend: Botón de exportación en sección de deudas
-- [ ] Campos: Cliente, Teléfono, Saldo deudor, Días de deuda, Última transacción, Límite de crédito
-- [ ] Filtros: Monto mínimo de deuda, días de atraso
+### 8.3 Deudas Pendientes ✅
+- [x] Backend: Endpoint `/api/current-accounts/debts/export`
+- [x] Frontend: Dropdown en página de cuentas corrientes `exportPendingDebtsToCSV`
+- [x] Campos: Titular, Teléfono, Email, Saldo deudor, Días de deuda, Última transacción, Límite crédito, Total compras, Total pagos
+- [x] Filtros: Monto mínimo de deuda, días de atraso
+- **Completado**: 27/01/2026
 
 ---
 

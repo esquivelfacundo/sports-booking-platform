@@ -489,6 +489,10 @@ export default function CuentasCorrientesPage() {
                 await apiClient.exportAccountMovementsToCSV({
                   establishmentId: establishment.id
                 });
+              } else if (type === 'debts') {
+                await apiClient.exportPendingDebtsToCSV({
+                  establishmentId: establishment.id
+                });
               } else {
                 await apiClient.exportCurrentAccountsToCSV({
                   establishmentId: establishment.id,
@@ -509,6 +513,7 @@ export default function CuentasCorrientesPage() {
           <option value=""></option>
           <option value="accounts">Cuentas</option>
           <option value="movements">Movimientos</option>
+          <option value="debts">Deudas</option>
         </select>
         <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
           <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />

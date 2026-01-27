@@ -838,6 +838,40 @@ class ApiClient {
     await this.downloadCSV(`/api/products/alerts/low-stock/export?${queryParams.toString()}`, 'productos_stock_bajo.csv');
   }
 
+  async exportWasteToCSV(params: {
+    establishmentId: string;
+    productId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value.toString());
+    });
+    await this.downloadCSV(`/api/stock-movements/waste/export?${queryParams.toString()}`, 'mermas.csv');
+  }
+
+  async exportInactiveClientsToCSV(params: {
+    establishmentId: string;
+    minDaysInactive?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params.minDaysInactive) queryParams.append('minDaysInactive', params.minDaysInactive.toString());
+    await this.downloadCSV(`/api/clients/establishment/${params.establishmentId}/inactive/export?${queryParams.toString()}`, 'clientes_inactivos.csv');
+  }
+
+  async exportPendingDebtsToCSV(params: {
+    establishmentId: string;
+    minAmount?: number;
+    minDays?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('establishmentId', params.establishmentId);
+    if (params.minAmount) queryParams.append('minAmount', params.minAmount.toString());
+    if (params.minDays) queryParams.append('minDays', params.minDays.toString());
+    await this.downloadCSV(`/api/current-accounts/debts/export?${queryParams.toString()}`, 'deudas_pendientes.csv');
+  }
+
   // Optimized stats endpoint - returns aggregated statistics without fetching all bookings
   async getEstablishmentStats(establishmentId: string) {
     return this.request(`/api/bookings/establishment/${establishmentId}/stats`);

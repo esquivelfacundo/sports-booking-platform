@@ -338,15 +338,19 @@ const ClientsPage = () => {
     }
   };
 
-  const handleExportCSV = async () => {
+  const handleExportCSV = async (type: 'all' | 'inactive' = 'all') => {
     if (!establishmentId) return;
     setIsExporting(true);
     try {
-      await apiClient.exportClientsToCSV({
-        establishmentId,
-        hasDebt: statusFilter === 'blocked' ? true : undefined,
-        isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
-      });
+      if (type === 'inactive') {
+        await apiClient.exportInactiveClientsToCSV({ establishmentId });
+      } else {
+        await apiClient.exportClientsToCSV({
+          establishmentId,
+          hasDebt: statusFilter === 'blocked' ? true : undefined,
+          isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
+        });
+      }
     } catch (error) {
       console.error('Error exporting clients:', error);
     } finally {
@@ -436,15 +440,25 @@ const ClientsPage = () => {
         />
       </label>
 
-      {/* Export CSV */}
-      <button 
-        onClick={handleExportCSV}
-        disabled={isExporting}
-        className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex-shrink-0 ${isExporting ? 'opacity-50' : ''}`}
-        title="Exportar"
-      >
-        <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
-      </button>
+      {/* Export Dropdown */}
+      <div className="relative flex-shrink-0">
+        <select
+          onChange={(e) => {
+            if (e.target.value) handleExportCSV(e.target.value as 'all' | 'inactive');
+            e.target.value = '';
+          }}
+          disabled={isExporting}
+          className="p-1.5 w-8 h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 appearance-none cursor-pointer opacity-0 absolute inset-0 z-10"
+          title="Exportar"
+        >
+          <option value=""></option>
+          <option value="all">Clientes</option>
+          <option value="inactive">Inactivos</option>
+        </select>
+        <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
+          <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+        </div>
+      </div>
 
       {/* New Client */}
       <button 

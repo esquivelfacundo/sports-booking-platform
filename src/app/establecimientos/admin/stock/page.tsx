@@ -87,7 +87,7 @@ const StockPage = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const handleExport = async (type: 'inventory' | 'purchases' | 'movements' | 'low-stock') => {
+  const handleExport = async (type: 'inventory' | 'purchases' | 'movements' | 'low-stock' | 'waste') => {
     if (!establishment?.id) return;
     setIsExporting(true);
     try {
@@ -97,6 +97,8 @@ const StockPage = () => {
         await apiClient.exportStockMovementsToCSV({ establishmentId: establishment.id });
       } else if (type === 'low-stock') {
         await apiClient.exportLowStockProductsToCSV({ establishmentId: establishment.id });
+      } else if (type === 'waste') {
+        await apiClient.exportWasteToCSV({ establishmentId: establishment.id });
       } else {
         await apiClient.exportInventoryToCSV({
           establishmentId: establishment.id,
@@ -184,7 +186,7 @@ const StockPage = () => {
           <div className="relative flex-shrink-0">
             <select
               onChange={(e) => {
-                if (e.target.value) handleExport(e.target.value as 'inventory' | 'purchases' | 'movements' | 'low-stock');
+                if (e.target.value) handleExport(e.target.value as 'inventory' | 'purchases' | 'movements' | 'low-stock' | 'waste');
                 e.target.value = '';
               }}
               disabled={isExporting}
@@ -196,6 +198,7 @@ const StockPage = () => {
               <option value="purchases">Compras</option>
               <option value="movements">Movimientos</option>
               <option value="low-stock">Stock Bajo</option>
+              <option value="waste">Mermas</option>
             </select>
             <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
               <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
