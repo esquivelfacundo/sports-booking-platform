@@ -30,8 +30,10 @@ import {
   ShoppingCart,
   Wallet,
   Ban,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
+import { apiClient } from '@/lib/api';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 
 interface CurrentAccount {
@@ -100,6 +102,7 @@ export default function CuentasCorrientesPage() {
   const [accountMovements, setAccountMovements] = useState<AccountMovement[]>([]);
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Set mounted for portal rendering
   useEffect(() => {
@@ -472,6 +475,30 @@ export default function CuentasCorrientesPage() {
           </button>
         ))}
       </div>
+
+      {/* Export Button */}
+      <button
+        onClick={async () => {
+          if (!establishment?.id) return;
+          setIsExporting(true);
+          try {
+            await apiClient.exportCurrentAccountsToCSV({
+              establishmentId: establishment.id,
+              accountType: filterType !== 'all' ? filterType : undefined,
+              hasBalance: undefined
+            });
+          } catch (error) {
+            console.error('Error exporting accounts:', error);
+          } finally {
+            setIsExporting(false);
+          }
+        }}
+        disabled={isExporting}
+        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+      >
+        <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+        <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
+      </button>
 
       {/* Create for Staff Button */}
       <button

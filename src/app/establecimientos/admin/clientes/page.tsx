@@ -91,6 +91,7 @@ const ClientsPage = () => {
   const [clientBookings, setClientBookings] = useState<ClientBooking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get the header portal container on mount
   useEffect(() => {
@@ -337,24 +338,20 @@ const ClientsPage = () => {
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Nombre', 'Email', 'Teléfono', 'Reservas', 'No Shows', 'Total Gastado', 'Fecha Registro'];
-    const csvData = filteredClients.map(c => [
-      c.name,
-      c.email || '',
-      c.phone || '',
-      c.totalBookings || 0,
-      c.noShows || 0,
-      c.totalSpent || 0,
-      c.createdAt?.split('T')[0] || ''
-    ]);
-    
-    const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `clientes_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+  const handleExportCSV = async () => {
+    if (!establishmentId) return;
+    setIsExporting(true);
+    try {
+      await apiClient.exportClientsToCSV({
+        establishmentId,
+        hasDebt: statusFilter === 'blocked' ? true : undefined,
+        isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
+      });
+    } catch (error) {
+      console.error('Error exporting clients:', error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleImportCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -442,10 +439,11 @@ const ClientsPage = () => {
       {/* Export CSV */}
       <button 
         onClick={handleExportCSV}
-        className="flex items-center space-x-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+        disabled={isExporting}
+        className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
       >
-        <Download className="h-4 w-4" />
-        <span className="hidden sm:inline">Exportar</span>
+        <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+        <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
       </button>
 
       {/* New Client */}

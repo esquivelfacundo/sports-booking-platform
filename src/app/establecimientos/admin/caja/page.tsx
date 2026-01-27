@@ -22,7 +22,8 @@ import {
   Building2,
   Smartphone,
   Eye,
-  Printer
+  Printer,
+  Download
 } from 'lucide-react';
 import { useCashRegisterContext } from '@/contexts/CashRegisterContext';
 import OpenCashRegisterSidebar from '@/components/admin/OpenCashRegisterSidebar';
@@ -171,6 +172,7 @@ export default function CashRegisterPage() {
   const [savingExpense, setSavingExpense] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Toast notifications
   const { showSuccess, showError, showWarning } = useToast();
@@ -440,6 +442,39 @@ export default function CashRegisterPage() {
         >
           Historial
         </button>
+      </div>
+
+      {/* Export Dropdown */}
+      <div className="relative flex-shrink-0">
+        <select
+          onChange={async (e) => {
+            if (!establishment?.id) return;
+            setIsExporting(true);
+            try {
+              if (e.target.value === 'movements') {
+                await apiClient.exportCashMovementsToCSV({
+                  establishmentId: establishment.id,
+                  cashRegisterId: cashRegister?.id
+                });
+              } else if (e.target.value === 'income') {
+                await apiClient.exportIncomeByMethodToCSV({
+                  establishmentId: establishment.id
+                });
+              }
+            } catch (error) {
+              console.error('Error exporting:', error);
+            } finally {
+              setIsExporting(false);
+            }
+            e.target.value = '';
+          }}
+          disabled={isExporting}
+          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer"
+        >
+          <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
+          <option value="movements">Movimientos</option>
+          <option value="income">Ingresos x Método</option>
+        </select>
       </div>
 
       {/* Spacer */}
