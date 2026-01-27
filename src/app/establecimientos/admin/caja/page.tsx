@@ -448,7 +448,7 @@ export default function CashRegisterPage() {
       <div className="relative flex-shrink-0">
         <select
           onChange={async (e) => {
-            if (!establishment?.id) return;
+            if (!establishment?.id || !e.target.value) return;
             setIsExporting(true);
             try {
               if (e.target.value === 'movements') {
@@ -469,12 +469,16 @@ export default function CashRegisterPage() {
             e.target.value = '';
           }}
           disabled={isExporting}
-          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer"
+          className="p-1.5 w-8 h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 appearance-none cursor-pointer opacity-0 absolute inset-0 z-10"
+          title="Exportar"
         >
-          <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
+          <option value=""></option>
           <option value="movements">Movimientos</option>
           <option value="income">Ingresos x Método</option>
         </select>
+        <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
+          <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+        </div>
       </div>
 
       {/* Spacer */}

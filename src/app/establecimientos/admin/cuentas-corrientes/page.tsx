@@ -477,37 +477,43 @@ export default function CuentasCorrientesPage() {
       </div>
 
       {/* Export Dropdown */}
-      <select
-        onChange={async (e) => {
-          if (!e.target.value || !establishment?.id) return;
-          const type = e.target.value;
-          e.target.value = '';
-          setIsExporting(true);
-          try {
-            if (type === 'movements') {
-              await apiClient.exportAccountMovementsToCSV({
-                establishmentId: establishment.id
-              });
-            } else {
-              await apiClient.exportCurrentAccountsToCSV({
-                establishmentId: establishment.id,
-                accountType: filterType !== 'all' ? filterType : undefined,
-                hasBalance: undefined
-              });
+      <div className="relative">
+        <select
+          onChange={async (e) => {
+            if (!e.target.value || !establishment?.id) return;
+            const type = e.target.value;
+            e.target.value = '';
+            setIsExporting(true);
+            try {
+              if (type === 'movements') {
+                await apiClient.exportAccountMovementsToCSV({
+                  establishmentId: establishment.id
+                });
+              } else {
+                await apiClient.exportCurrentAccountsToCSV({
+                  establishmentId: establishment.id,
+                  accountType: filterType !== 'all' ? filterType : undefined,
+                  hasBalance: undefined
+                });
+              }
+            } catch (error) {
+              console.error('Error exporting:', error);
+            } finally {
+              setIsExporting(false);
             }
-          } catch (error) {
-            console.error('Error exporting:', error);
-          } finally {
-            setIsExporting(false);
-          }
-        }}
-        disabled={isExporting}
-        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer"
-      >
-        <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
-        <option value="accounts">Cuentas</option>
-        <option value="movements">Movimientos</option>
-      </select>
+          }}
+          disabled={isExporting}
+          className="p-1.5 w-8 h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 appearance-none cursor-pointer opacity-0 absolute inset-0 z-10"
+          title="Exportar"
+        >
+          <option value=""></option>
+          <option value="accounts">Cuentas</option>
+          <option value="movements">Movimientos</option>
+        </select>
+        <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
+          <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+        </div>
+      </div>
 
       {/* Create for Staff Button */}
       <button

@@ -227,21 +227,27 @@ const AnalyticsPage = () => {
           <span>Actualizar</span>
         </button>
 
-        <select
-          onChange={(e) => {
-            if (e.target.value) handleExport(e.target.value as 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court');
-            e.target.value = '';
-          }}
-          disabled={isExporting}
-          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer"
-        >
-          <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
-          <option value="occupancy">Ocupación Canchas</option>
-          <option value="clients">Clientes Frecuentes</option>
-          <option value="hours">Horarios Pico</option>
-          <option value="weekday">Por Día de Semana</option>
-          <option value="revenue-court">Ingresos por Cancha</option>
-        </select>
+        <div className="relative">
+          <select
+            onChange={(e) => {
+              if (e.target.value) handleExport(e.target.value as 'occupancy' | 'clients' | 'hours' | 'weekday' | 'revenue-court');
+              e.target.value = '';
+            }}
+            disabled={isExporting}
+            className="p-1.5 w-8 h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 appearance-none cursor-pointer opacity-0 absolute inset-0 z-10"
+            title="Exportar"
+          >
+            <option value=""></option>
+            <option value="occupancy">Ocupación Canchas</option>
+            <option value="clients">Clientes Frecuentes</option>
+            <option value="hours">Horarios Pico</option>
+            <option value="weekday">Por Día de Semana</option>
+            <option value="revenue-court">Ingresos por Cancha</option>
+          </select>
+          <div className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${isExporting ? 'opacity-50' : ''}`}>
+            <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
+          </div>
+        </div>
       </div>
     </div>
   );

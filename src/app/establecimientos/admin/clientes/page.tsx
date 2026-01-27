@@ -440,10 +440,10 @@ const ClientsPage = () => {
       <button 
         onClick={handleExportCSV}
         disabled={isExporting}
-        className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0"
+        className={`p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex-shrink-0 ${isExporting ? 'opacity-50' : ''}`}
+        title="Exportar"
       >
         <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
-        <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
       </button>
 
       {/* New Client */}
