@@ -527,7 +527,10 @@ class ApiClient {
     const endpoint = `/api/bookings/export?${queryParams.toString()}`;
     
     // Get the token
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token) {
+      throw new Error('No token provided');
+    }
     
     // Create a temporary link to download the file
     const url = `${this.baseURL}${endpoint}`;
@@ -566,7 +569,10 @@ class ApiClient {
 
   // Generic CSV export helper
   private async downloadCSV(endpoint: string, defaultFilename: string) {
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token) {
+      throw new Error('No token provided');
+    }
     const url = `${this.baseURL}${endpoint}`;
     
     const response = await fetch(url, {
