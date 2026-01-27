@@ -86,6 +86,12 @@ interface CashRegister {
   };
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 const GastosPage = () => {
   const { establishment } = useEstablishment();
   const { showSuccess, showError } = useToast();
@@ -97,6 +103,10 @@ const GastosPage = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [showSupplierSidebar, setShowSupplierSidebar] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [isCreatingSupplier, setIsCreatingSupplier] = useState(false);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   
   // Sidebar state
@@ -199,6 +209,40 @@ const GastosPage = () => {
     }
   }, [establishment?.id]);
 
+  const fetchSuppliers = useCallback(async () => {
+    if (!establishment?.id) return;
+    
+    try {
+      const response = await apiClient.getSuppliers({ establishmentId: establishment.id, isActive: true }) as any;
+      setSuppliers(response.suppliers || []);
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+    }
+  }, [establishment?.id]);
+
+  const handleCreateSupplier = async () => {
+    if (!establishment?.id || !newSupplierName.trim()) return;
+    
+    setIsCreatingSupplier(true);
+    try {
+      const response = await apiClient.createSupplier({
+        establishmentId: establishment.id,
+        name: newSupplierName.trim()
+      }) as any;
+      
+      setSuppliers(prev => [...prev, response.supplier]);
+      setFormData(prev => ({ ...prev, supplier: response.supplier.name }));
+      setShowSupplierSidebar(false);
+      setNewSupplierName('');
+      showSuccess('Proveedor creado', 'El proveedor se creó correctamente');
+    } catch (error: any) {
+      console.error('Error creating supplier:', error);
+      showError('Error', error.message || 'No se pudo crear el proveedor');
+    } finally {
+      setIsCreatingSupplier(false);
+    }
+  };
+
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
@@ -208,7 +252,8 @@ const GastosPage = () => {
     fetchCategories();
     fetchPaymentMethods();
     fetchCashRegisters();
-  }, [fetchUsers, fetchCategories, fetchPaymentMethods, fetchCashRegisters]);
+    fetchSuppliers();
+  }, [fetchUsers, fetchCategories, fetchPaymentMethods, fetchCashRegisters, fetchSuppliers]);
 
   const handleOpenSidebar = (expense?: Expense) => {
     if (expense) {
@@ -341,7 +386,10 @@ const GastosPage = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-AR', {
+    // Parse YYYY-MM-DD without timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('es-AR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -728,13 +776,26 @@ const GastosPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Proveedor</label>
-                  <input
-                    type="text"
-                    value={formData.supplier}
-                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                    placeholder="Nombre del proveedor"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.supplier}
+                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Seleccionar proveedor</option>
+                      {suppliers.map((s) => (
+                        <option key={s.id} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowSupplierSidebar(true)}
+                      className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                      title="Nuevo proveedor"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -790,6 +851,67 @@ const GastosPage = () => {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* New Supplier Sidebar */}
+      <AnimatePresence>
+        {showSupplierSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSupplierSidebar(false)}
+              className="fixed inset-0 bg-black/60 z-[60]"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 h-full w-full max-w-sm bg-gray-800 shadow-2xl z-[70] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                <h2 className="text-lg font-semibold text-white">Nuevo Proveedor</h2>
+                <button
+                  onClick={() => setShowSupplierSidebar(false)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Nombre del proveedor *</label>
+                  <input
+                    type="text"
+                    value={newSupplierName}
+                    onChange={(e) => setNewSupplierName(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    placeholder="Ej: Distribuidora ABC"
+                    autoFocus
+                  />
+                </div>
+
+                <button
+                  onClick={handleCreateSupplier}
+                  disabled={isCreatingSupplier || !newSupplierName.trim()}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  {isCreatingSupplier ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Creando...</span>
+                    </>
+                  ) : (
+                    <span>Crear Proveedor</span>
+                  )}
+                </button>
+              </div>
             </motion.div>
           </>
         )}
