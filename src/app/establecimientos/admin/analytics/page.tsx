@@ -66,6 +66,25 @@ const AnalyticsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async (type: 'occupancy' | 'clients' | 'hours') => {
+    if (!establishment?.id) return;
+    setIsExporting(true);
+    try {
+      if (type === 'occupancy') {
+        await apiClient.exportCourtOccupancyToCSV({ establishmentId: establishment.id });
+      } else if (type === 'clients') {
+        await apiClient.exportTopClientsToCSV({ establishmentId: establishment.id });
+      } else if (type === 'hours') {
+        await apiClient.exportPeakHoursToCSV({ establishmentId: establishment.id });
+      }
+    } catch (error) {
+      console.error('Error exporting:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Get header portal container on mount
   useEffect(() => {
@@ -203,6 +222,20 @@ const AnalyticsPage = () => {
           <RefreshCw className="h-4 w-4" />
           <span>Actualizar</span>
         </button>
+
+        <select
+          onChange={(e) => {
+            if (e.target.value) handleExport(e.target.value as 'occupancy' | 'clients' | 'hours');
+            e.target.value = '';
+          }}
+          disabled={isExporting}
+          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer"
+        >
+          <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
+          <option value="occupancy">Ocupación Canchas</option>
+          <option value="clients">Clientes Frecuentes</option>
+          <option value="hours">Horarios Pico</option>
+        </select>
       </div>
     </div>
   );

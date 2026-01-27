@@ -305,14 +305,20 @@ const GastosPage = () => {
     }
   };
 
-  const handleExportExpenses = async () => {
+  const handleExportExpenses = async (type: 'all' | 'category') => {
     if (!establishment?.id) return;
     setIsExporting(true);
     try {
-      await apiClient.exportExpensesToCSV({
-        establishmentId: establishment.id,
-        userId: selectedUser || undefined
-      });
+      if (type === 'category') {
+        await apiClient.exportExpensesByCategoryToCSV({
+          establishmentId: establishment.id
+        });
+      } else {
+        await apiClient.exportExpensesToCSV({
+          establishmentId: establishment.id,
+          userId: selectedUser || undefined
+        });
+      }
       showSuccess('Exportación exitosa', 'Los gastos se han exportado correctamente');
     } catch (error: any) {
       console.error('Error exporting expenses:', error);
@@ -376,14 +382,18 @@ const GastosPage = () => {
         <span>Actualizar</span>
       </button>
 
-      <button
-        onClick={handleExportExpenses}
+      <select
+        onChange={(e) => {
+          if (e.target.value) handleExportExpenses(e.target.value as 'all' | 'category');
+          e.target.value = '';
+        }}
         disabled={isExporting}
-        className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
+        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer"
       >
-        <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
-        <span>{isExporting ? 'Exportando...' : 'Exportar'}</span>
-      </button>
+        <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
+        <option value="all">Gastos</option>
+        <option value="category">Por Categoría</option>
+      </select>
 
       <button
         onClick={() => handleOpenSidebar()}

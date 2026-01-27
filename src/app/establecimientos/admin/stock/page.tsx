@@ -87,16 +87,22 @@ const StockPage = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const handleExportInventory = async () => {
+  const handleExport = async (type: 'inventory' | 'purchases') => {
     if (!establishment?.id) return;
     setIsExporting(true);
     try {
-      await apiClient.exportInventoryToCSV({
-        establishmentId: establishment.id,
-        categoryId: productCategory !== 'all' ? productCategory : undefined
-      });
+      if (type === 'purchases') {
+        await apiClient.exportPurchasesToCSV({
+          establishmentId: establishment.id
+        });
+      } else {
+        await apiClient.exportInventoryToCSV({
+          establishmentId: establishment.id,
+          categoryId: productCategory !== 'all' ? productCategory : undefined
+        });
+      }
     } catch (error: any) {
-      console.error('Error exporting inventory:', error);
+      console.error('Error exporting:', error);
     } finally {
       setIsExporting(false);
     }
@@ -172,15 +178,19 @@ const StockPage = () => {
             <span className="hidden sm:inline">Categorías</span>
           </button>
 
-          {/* Export Button */}
-          <button
-            onClick={handleExportInventory}
+          {/* Export Dropdown */}
+          <select
+            onChange={(e) => {
+              if (e.target.value) handleExport(e.target.value as 'inventory' | 'purchases');
+              e.target.value = '';
+            }}
             disabled={isExporting}
-            className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex-shrink-0 disabled:opacity-50"
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors disabled:opacity-50 appearance-none cursor-pointer flex-shrink-0"
           >
-            <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`} />
-            <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
-          </button>
+            <option value="">{isExporting ? 'Exportando...' : 'Exportar ▼'}</option>
+            <option value="inventory">Inventario</option>
+            <option value="purchases">Compras</option>
+          </select>
 
           {/* New Product Button */}
           <button
