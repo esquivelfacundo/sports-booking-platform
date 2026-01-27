@@ -38,6 +38,7 @@ import { apiClient } from '@/lib/api';
 import { TicketData, printTicket, isWebUSBSupported } from '@/lib/ticketPrinter';
 import { useToast } from '@/contexts/ToastContext';
 import { useCashRegisterContext } from '@/contexts/CashRegisterContext';
+import ArcaInvoiceModal, { ArcaInvoiceItem } from '@/components/admin/ArcaInvoiceModal';
 
 interface BookingPaymentRecord {
   id: string;
@@ -85,6 +86,7 @@ interface Reservation {
   endTime?: string;
   duration: number;
   price: number;
+  invoiceId?: string | null;
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'no_show' | 'cancelled';
   paymentStatus: 'paid' | 'pending' | 'failed';
   createdAt: string;
@@ -195,6 +197,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
   const [mounted, setMounted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionType, setActionType] = useState<string | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   
   // Payment state
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -828,6 +831,28 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
 
   if (!mounted) return null;
 
+  const establishmentId = reservation?.establishmentId || reservation?.establishment?.id;
+
+  const invoiceItems: ArcaInvoiceItem[] = (() => {
+    if (!reservation) return [];
+    const items: ArcaInvoiceItem[] = [];
+    items.push({
+      descripcion: reservation.court ? `Cancha ${reservation.court}` : 'Cancha',
+      cantidad: 1,
+      precioUnitario: Number(reservation.price) || 0,
+    });
+    (consumptions || []).forEach((c) => {
+      items.push({
+        descripcion: c.product?.name || 'Consumo',
+        cantidad: Number(c.quantity) || 1,
+        precioUnitario: Number(c.unitPrice) || 0,
+      });
+    });
+    return items;
+  })();
+
+  const invoiceTotal = (Number(reservation?.price) || 0) + (Number(consumptionsTotal) || 0);
+
   const sidebarContent = (
     <AnimatePresence>
       {isOpen && reservation && (
@@ -902,6 +927,14 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
               
               {/* Right side - Controls */}
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setIsInvoiceModalOpen(true)}
+                  disabled={!reservation || !establishmentId || !!reservation.invoiceId}
+                  className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                  title={reservation?.invoiceId ? 'Ya facturado' : 'Facturar'}
+                >
+                  <FileText className="h-5 w-5" />
+                </button>
                 <button
                   onClick={handlePrintTicket}
                   disabled={isPrinting}
@@ -2196,6 +2229,23 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   </div>
                 )}
               </div>
+            </div>
+
+            {reservation && (
+              <ArcaInvoiceModal
+                isOpen={isInvoiceModalOpen}
+                onClose={() => setIsInvoiceModalOpen(false)}
+                establishmentId={establishmentId || ''}
+                bookingId={reservation.id}
+                items={invoiceItems}
+                total={invoiceTotal}
+                defaultCustomerName={reservation.clientName}
+                onInvoiced={() => {
+                  // reuse existing data loaders
+                  loadPayments(reservation.id);
+                  loadConsumptions(reservation.id);
+                }}
+              />
             )}
           </motion.div>
         </>

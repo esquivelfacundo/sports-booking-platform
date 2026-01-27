@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { printTicket, isWebUSBSupported, TicketData } from '@/lib/ticketPrinter';
+import ArcaInvoiceModal, { ArcaInvoiceItem } from '@/components/admin/ArcaInvoiceModal';
 
 interface OrderItem {
   id: string;
@@ -62,6 +63,7 @@ interface Order {
   status: 'pending' | 'completed' | 'cancelled' | 'refunded';
   paymentStatus: 'pending' | 'partial' | 'paid' | 'refunded';
   paymentMethod: string;
+  invoiceId?: string | null;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -140,6 +142,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   const [mounted, setMounted] = useState(false);
   const [fullOrder, setFullOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   
   // Payment form
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -292,6 +295,40 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   // Pendiente
   const pendingAmount = Math.max(0, totalGeneral - totalPaid);
 
+  const establishmentId = displayOrder.establishment?.id;
+
+  const invoiceItems: ArcaInvoiceItem[] = (() => {
+    if (isDirectSale) {
+      const items = (displayOrder.items || []).map((it) => ({
+        descripcion: it.product?.name || it.productName || 'Producto',
+        cantidad: Number(it.quantity) || 1,
+        precioUnitario: Number(it.unitPrice) || 0,
+      }));
+      if (items.length > 0) return items;
+      return [{ descripcion: `Venta ${displayOrder.orderNumber}`, cantidad: 1, precioUnitario: totalGeneral }];
+    }
+
+    const items: ArcaInvoiceItem[] = [];
+    if (bookingPrice > 0) {
+      items.push({
+        descripcion: displayOrder.booking?.court?.name ? `Cancha ${displayOrder.booking.court.name}` : 'Cancha',
+        cantidad: 1,
+        precioUnitario: bookingPrice,
+      });
+    }
+    (displayOrder.bookingConsumptions || []).forEach((c) => {
+      items.push({
+        descripcion: c.product?.name || 'Consumo',
+        cantidad: Number(c.quantity) || 1,
+        precioUnitario: Number(c.unitPrice) || 0,
+      });
+    });
+    if (items.length > 0) return items;
+    return [{ descripcion: `Consumo ${displayOrder.orderNumber}`, cantidad: 1, precioUnitario: totalGeneral }];
+  })();
+
+  const defaultCustomerName = displayOrder.client?.name || displayOrder.customerName || undefined;
+
   const handlePrintTicket = async () => {
     if (!isWebUSBSupported()) {
       alert('WebUSB no está soportado en este navegador. Use Chrome o Edge.');
@@ -417,6 +454,14 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
               <div className="flex items-center space-x-2">
                 {getStatusBadge(displayOrder.status)}
                 {getPaymentStatusBadge(displayOrder.paymentStatus)}
+                <button
+                  onClick={() => setIsInvoiceModalOpen(true)}
+                  disabled={!establishmentId || !!displayOrder.invoiceId}
+                  className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                  title={displayOrder.invoiceId ? 'Ya facturado' : 'Facturar'}
+                >
+                  <Receipt className="h-5 w-5" />
+                </button>
                 <button
                   onClick={handlePrintTicket}
                   disabled={isPrinting}
@@ -805,6 +850,21 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                 </>
               )}
             </div>
+
+            <ArcaInvoiceModal
+              isOpen={isInvoiceModalOpen}
+              onClose={() => setIsInvoiceModalOpen(false)}
+              establishmentId={establishmentId || ''}
+              orderId={displayOrder.id}
+              bookingId={displayOrder.booking?.id}
+              items={invoiceItems}
+              total={totalGeneral}
+              defaultCustomerName={defaultCustomerName}
+              onInvoiced={() => {
+                loadFullOrder();
+                onOrderUpdated();
+              }}
+            />
           </motion.div>
         </>
       )}

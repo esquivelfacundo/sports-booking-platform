@@ -2094,6 +2094,136 @@ class ApiClient {
     });
   }
 
+  // ==================== ARCA / AFIP ====================
+  async getArcaConfig(establishmentId: string) {
+    return this.request(`/api/arca/config/${establishmentId}`);
+  }
+
+  async saveArcaConfig(establishmentId: string, data: {
+    cuit: string;
+    razonSocial: string;
+    domicilioFiscal: string;
+    condicionFiscal: 'monotributista' | 'responsable_inscripto';
+    inicioActividades: string;
+    certificado?: string;
+    clavePrivada?: string;
+  }) {
+    return this.request(`/api/arca/config/${establishmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async testArcaConfig(establishmentId: string) {
+    return this.request(`/api/arca/config/${establishmentId}/test`, {
+      method: 'POST',
+    });
+  }
+
+  async setArcaConfigActive(establishmentId: string, isActive: boolean) {
+    return this.request(`/api/arca/config/${establishmentId}/activate`, {
+      method: 'PUT',
+      body: JSON.stringify({ isActive }),
+    });
+  }
+
+  async getArcaPuntosVenta(establishmentId: string) {
+    return this.request(`/api/arca/puntos-venta/${establishmentId}`);
+  }
+
+  async getArcaPuntosVentaFromAfip(establishmentId: string) {
+    return this.request(`/api/arca/puntos-venta/${establishmentId}/afip`);
+  }
+
+  async createArcaPuntoVenta(establishmentId: string, data: {
+    numero: number;
+    descripcion?: string;
+    isDefault?: boolean;
+  }) {
+    return this.request(`/api/arca/puntos-venta/${establishmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateArcaPuntoVenta(puntoVentaId: string, data: {
+    descripcion?: string;
+    isDefault?: boolean;
+    isActive?: boolean;
+  }) {
+    return this.request(`/api/arca/puntos-venta/${puntoVentaId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async emitirFacturaArca(establishmentId: string, data: {
+    items: Array<{ descripcion: string; cantidad: number; precioUnitario: number }>;
+    total: number;
+    cliente?: {
+      nombre?: string;
+      docTipo?: number;
+      docNro?: string;
+      condicionIva?: number;
+    };
+    receptorCondicion?: 'responsable_inscripto' | 'monotributista' | 'consumidor_final' | 'exento';
+    orderId?: string;
+    bookingId?: string;
+    puntoVentaId?: string;
+  }) {
+    return this.request(`/api/arca/facturas/${establishmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async emitirNotaCreditoArca(establishmentId: string, data: {
+    facturaId: string;
+    total: number;
+    motivo: string;
+    items?: Array<{ descripcion: string; cantidad: number; precioUnitario: number }>;
+    puntoVentaId?: string;
+  }) {
+    return this.request(`/api/arca/notas-credito/${establishmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getArcaInvoices(establishmentId: string, params?: {
+    page?: number;
+    limit?: number;
+    tipo?: number;
+    status?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+    search?: string;
+    orderId?: string;
+    bookingId?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.tipo) queryParams.append('tipo', params.tipo.toString());
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.fechaDesde) queryParams.append('fechaDesde', params.fechaDesde);
+    if (params?.fechaHasta) queryParams.append('fechaHasta', params.fechaHasta);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.orderId) queryParams.append('orderId', params.orderId);
+    if (params?.bookingId) queryParams.append('bookingId', params.bookingId);
+
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return this.request(`/api/arca/facturas/${establishmentId}${query}`);
+  }
+
+  async getArcaInvoice(establishmentId: string, invoiceId: string) {
+    return this.request(`/api/arca/facturas/${establishmentId}/${invoiceId}`);
+  }
+
+  getArcaInvoicePdfUrl(establishmentId: string, invoiceId: string) {
+    return `${this.baseURL}/api/arca/facturas/${establishmentId}/${invoiceId}/pdf`;
+  }
+
   // OCR Processing
   async processOCR(imageFile: File): Promise<{
     success: boolean;

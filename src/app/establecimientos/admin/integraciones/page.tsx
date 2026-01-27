@@ -21,7 +21,9 @@ import {
   Zap,
   Link2,
   Copy,
-  Bot
+  Bot,
+  Receipt,
+  Plus
 } from 'lucide-react';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
@@ -48,7 +50,32 @@ interface TestResult {
   details?: Record<string, any>;
 }
 
-type IntegrationType = 'OPENAI' | 'MERCADOPAGO' | 'WHATSAPP_BOT';
+type IntegrationType = 'OPENAI' | 'MERCADOPAGO' | 'WHATSAPP_BOT' | 'AFIP';
+
+interface ArcaConfig {
+  id: string;
+  cuit: string;
+  razonSocial: string;
+  domicilioFiscal: string;
+  condicionFiscal: 'monotributista' | 'responsable_inscripto';
+  inicioActividades: string;
+  certExpiration?: string | null;
+  isActive: boolean;
+  isVerified: boolean;
+  lastTestedAt?: string | null;
+  lastTestResult?: any;
+  hasCertificate?: boolean;
+  hasPrivateKey?: boolean;
+  puntosVenta?: ArcaPuntoVenta[];
+}
+
+interface ArcaPuntoVenta {
+  id: string;
+  numero: number;
+  descripcion?: string;
+  isDefault: boolean;
+  isActive: boolean;
+}
 
 interface IntegrationCardData {
   id: IntegrationType;
@@ -100,6 +127,17 @@ const INTEGRATION_CARDS: IntegrationCardData[] = [
     features: ['OCR de facturas', 'GPT-4 Vision'],
     docsUrl: 'https://platform.openai.com/api-keys',
   },
+  {
+    id: 'AFIP' as IntegrationType,
+    name: 'AFIP (ARCA)',
+    description: 'Facturación electrónica',
+    logo: '/assets/logos-empresas/arca.png',
+    logoSize: 48,
+    color: 'text-emerald-400',
+    gradient: 'from-emerald-500 to-cyan-500',
+    bgColor: 'bg-emerald-500/10',
+    features: ['Comprobantes AFIP', 'Puntos de venta', 'PDF con QR'],
+  },
 ];
 
 export default function IntegrationsPage() {
@@ -117,6 +155,29 @@ export default function IntegrationsPage() {
   const [activeIntegration, setActiveIntegration] = useState<IntegrationType | null>(null);
   const [activeTab, setActiveTab] = useState<'integrations' | 'docs'>('integrations');
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+
+  const [arcaConfig, setArcaConfig] = useState<ArcaConfig | null>(null);
+  const [arcaConfigLoading, setArcaConfigLoading] = useState(false);
+  const [arcaTestingResult, setArcaTestingResult] = useState<TestResult | null>(null);
+  const [arcaSaving, setArcaSaving] = useState(false);
+  const [arcaToggling, setArcaToggling] = useState(false);
+
+  const [arcaForm, setArcaForm] = useState({
+    cuit: '',
+    razonSocial: '',
+    domicilioFiscal: '',
+    condicionFiscal: 'monotributista' as 'monotributista' | 'responsable_inscripto',
+    inicioActividades: '',
+    certificado: '',
+    clavePrivada: ''
+  });
+
+  const [puntosVenta, setPuntosVenta] = useState<ArcaPuntoVenta[]>([]);
+  const [puntosVentaLoading, setPuntosVentaLoading] = useState(false);
+  const [puntosVentaAfip, setPuntosVentaAfip] = useState<any[]>([]);
+  const [puntosVentaAfipLoading, setPuntosVentaAfipLoading] = useState(false);
+  const [nuevoPuntoVenta, setNuevoPuntoVenta] = useState({ numero: '', descripcion: '', isDefault: true });
+  const [creandoPuntoVenta, setCreandoPuntoVenta] = useState(false);
 
   // Get header portal container on mount
   useEffect(() => {
@@ -169,6 +230,13 @@ export default function IntegrationsPage() {
     loadCourts();
   }, [establishment?.id]);
 
+  useEffect(() => {
+    if (activeIntegration === 'AFIP' && establishment?.id) {
+      loadArcaConfig();
+      loadArcaPuntosVenta();
+    }
+  }, [activeIntegration, establishment?.id]);
+
   const loadIntegrations = async () => {
     try {
       setLoading(true);
@@ -178,6 +246,66 @@ export default function IntegrationsPage() {
       console.error('Error loading integrations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadArcaConfig = async () => {
+    if (!establishment?.id) return;
+    try {
+      setArcaConfigLoading(true);
+      const response = await apiClient.getArcaConfig(establishment.id) as any;
+      const config: ArcaConfig | null = response?.config || null;
+      setArcaConfig(config);
+      setArcaTestingResult(null);
+
+      if (config) {
+        setArcaForm(prev => ({
+          ...prev,
+          cuit: config.cuit || '',
+          razonSocial: config.razonSocial || '',
+          domicilioFiscal: config.domicilioFiscal || '',
+          condicionFiscal: config.condicionFiscal || 'monotributista',
+          inicioActividades: config.inicioActividades || '',
+          certificado: '',
+          clavePrivada: ''
+        }));
+        if (Array.isArray(config.puntosVenta)) {
+          setPuntosVenta(config.puntosVenta);
+        }
+      } else {
+        setPuntosVenta([]);
+      }
+    } catch (error: any) {
+      console.error('Error loading ARCA config:', error);
+      showError(error?.message || 'Error al cargar configuración AFIP');
+    } finally {
+      setArcaConfigLoading(false);
+    }
+  };
+
+  const loadArcaPuntosVenta = async () => {
+    if (!establishment?.id) return;
+    try {
+      setPuntosVentaLoading(true);
+      const response = await apiClient.getArcaPuntosVenta(establishment.id) as any;
+      setPuntosVenta(response || []);
+    } catch (error: any) {
+      console.error('Error loading puntos de venta:', error);
+    } finally {
+      setPuntosVentaLoading(false);
+    }
+  };
+
+  const loadArcaPuntosVentaAfip = async () => {
+    if (!establishment?.id) return;
+    try {
+      setPuntosVentaAfipLoading(true);
+      const response = await apiClient.getArcaPuntosVentaFromAfip(establishment.id) as any;
+      setPuntosVentaAfip(Array.isArray(response) ? response : []);
+    } catch (error: any) {
+      showError(error?.message || 'Error al consultar puntos de venta en AFIP');
+    } finally {
+      setPuntosVentaAfipLoading(false);
     }
   };
 
@@ -284,6 +412,7 @@ export default function IntegrationsPage() {
   const isConnected = (type: IntegrationType): boolean => {
     if (type === 'MERCADOPAGO') return mpStatus.connected;
     if (type === 'WHATSAPP_BOT') return !!botApiKey;
+    if (type === 'AFIP') return !!arcaConfig;
     return !!getIntegration(type as 'OPENAI');
   };
 
@@ -292,6 +421,120 @@ export default function IntegrationsPage() {
     setSidebarOpen(false);
     setActiveIntegration(null);
     setOpenaiApiKey(''); setOpenaiTestResult(null);
+    setArcaTestingResult(null);
+    setPuntosVentaAfip([]);
+    setNuevoPuntoVenta({ numero: '', descripcion: '', isDefault: true });
+  };
+
+  const handleSaveArca = async () => {
+    if (!establishment?.id) return;
+
+    if (!arcaForm.cuit.trim() || !arcaForm.razonSocial.trim() || !arcaForm.domicilioFiscal.trim() || !arcaForm.inicioActividades) {
+      showError('Completá CUIT, Razón Social, Domicilio Fiscal e Inicio de Actividades');
+      return;
+    }
+
+    try {
+      setArcaSaving(true);
+      await apiClient.saveArcaConfig(establishment.id, {
+        cuit: arcaForm.cuit,
+        razonSocial: arcaForm.razonSocial,
+        domicilioFiscal: arcaForm.domicilioFiscal,
+        condicionFiscal: arcaForm.condicionFiscal,
+        inicioActividades: arcaForm.inicioActividades,
+        ...(arcaForm.certificado.trim() ? { certificado: arcaForm.certificado } : {}),
+        ...(arcaForm.clavePrivada.trim() ? { clavePrivada: arcaForm.clavePrivada } : {})
+      });
+      showSuccess('Configuración AFIP guardada');
+      await loadArcaConfig();
+    } catch (error: any) {
+      showError(error?.message || 'Error al guardar configuración AFIP');
+    } finally {
+      setArcaSaving(false);
+    }
+  };
+
+  const handleTestArca = async () => {
+    if (!establishment?.id) return;
+    try {
+      setTesting('AFIP');
+      setArcaTestingResult(null);
+      const response = await apiClient.testArcaConfig(establishment.id) as any;
+      const result: TestResult = {
+        success: !!response?.success,
+        message: response?.message || (response?.success ? 'Conexión exitosa' : 'Error'),
+        details: response?.details
+      };
+      setArcaTestingResult(result);
+      if (result.success) showSuccess('Conexión con AFIP exitosa');
+      await loadArcaConfig();
+    } catch (error: any) {
+      setArcaTestingResult({ success: false, message: error?.message || 'Error al probar conexión' });
+    } finally {
+      setTesting(null);
+    }
+  };
+
+  const handleToggleArcaActive = async (nextActive: boolean) => {
+    if (!establishment?.id) return;
+    try {
+      setArcaToggling(true);
+      await apiClient.setArcaConfigActive(establishment.id, nextActive);
+      showSuccess(nextActive ? 'Facturación electrónica activada' : 'Facturación electrónica desactivada');
+      await loadArcaConfig();
+    } catch (error: any) {
+      showError(error?.message || 'Error al cambiar estado');
+    } finally {
+      setArcaToggling(false);
+    }
+  };
+
+  const handleCreatePuntoVenta = async () => {
+    if (!establishment?.id) return;
+    const numero = parseInt(nuevoPuntoVenta.numero, 10);
+    if (!numero || numero < 1 || numero > 99999) {
+      showError('Número de punto de venta inválido (1-99999)');
+      return;
+    }
+
+    try {
+      setCreandoPuntoVenta(true);
+      await apiClient.createArcaPuntoVenta(establishment.id, {
+        numero,
+        descripcion: nuevoPuntoVenta.descripcion || undefined,
+        isDefault: !!nuevoPuntoVenta.isDefault
+      });
+      showSuccess('Punto de venta creado');
+      setNuevoPuntoVenta({ numero: '', descripcion: '', isDefault: false });
+      await loadArcaPuntosVenta();
+      await loadArcaConfig();
+    } catch (error: any) {
+      showError(error?.message || 'Error al crear punto de venta');
+    } finally {
+      setCreandoPuntoVenta(false);
+    }
+  };
+
+  const handleSetDefaultPuntoVenta = async (pv: ArcaPuntoVenta) => {
+    try {
+      await apiClient.updateArcaPuntoVenta(pv.id, { isDefault: true });
+      showSuccess('Punto de venta por defecto actualizado');
+      await loadArcaPuntosVenta();
+      await loadArcaConfig();
+    } catch (error: any) {
+      showError(error?.message || 'Error al actualizar punto de venta');
+    }
+  };
+
+  const handleTogglePuntoVentaActive = async (pv: ArcaPuntoVenta) => {
+    try {
+      await apiClient.updateArcaPuntoVenta(pv.id, { isActive: !pv.isActive });
+      showSuccess(!pv.isActive ? 'Punto de venta activado' : 'Punto de venta desactivado');
+      await loadArcaPuntosVenta();
+      await loadArcaConfig();
+    } catch (error: any) {
+      showError(error?.message || 'Error al actualizar punto de venta');
+    }
   };
 
   const handleConnectMP = async () => {
@@ -493,6 +736,268 @@ export default function IntegrationsPage() {
                   <div className="p-4 bg-gray-800 rounded-xl"><div className="flex items-start gap-3"><Shield className="w-5 h-5 text-blue-400 mt-0.5" /><p className="text-gray-300 text-sm">Tu API Key se almacena encriptada.</p></div></div>
                   <div><label className="block text-sm font-medium text-gray-300 mb-2">API Key de OpenAI</label><div className="relative"><input type={showOpenaiKey ? 'text' : 'password'} value={openaiApiKey} onChange={(e) => setOpenaiApiKey(e.target.value)} placeholder="sk-..." className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono pr-12" /><button type="button" onClick={() => setShowOpenaiKey(!showOpenaiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">{showOpenaiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button></div><a href={card.docsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline mt-2 inline-flex items-center gap-1">Obtener API Key <ExternalLink className="w-3 h-3" /></a></div>
                   <button onClick={handleSaveOpenAI} disabled={saving || !openaiApiKey.trim()} className="w-full px-4 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-2">{saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}Conectar OpenAI</button>
+                </>
+              )}
+            </div>
+          )}
+
+          {activeIntegration === 'AFIP' && (
+            <div className="space-y-6">
+              {arcaConfigLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                </div>
+              ) : (
+                <>
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <Receipt className="w-5 h-5 text-emerald-400 mt-0.5" />
+                      <div>
+                        <p className="text-emerald-400 font-medium">Facturación electrónica (AFIP)</p>
+                        <p className="text-sm text-gray-300">Configura tus datos fiscales y certificados para emitir comprobantes desde la plataforma.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {arcaConfig && (
+                    <div className={`p-4 rounded-xl border ${arcaConfig.isVerified ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-yellow-500/10 border-yellow-500/20'}`}>
+                      <div className="flex items-center gap-3">
+                        {arcaConfig.isVerified ? (
+                          <CheckCircle className="w-5 h-5 text-emerald-400" />
+                        ) : (
+                          <Shield className="w-5 h-5 text-yellow-400" />
+                        )}
+                        <div>
+                          <p className={`font-medium ${arcaConfig.isVerified ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                            {arcaConfig.isVerified ? 'Configuración verificada' : 'Configuración sin verificar'}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Certificado: {arcaConfig.hasCertificate ? 'cargado' : 'pendiente'} · Clave: {arcaConfig.hasPrivateKey ? 'cargada' : 'pendiente'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">CUIT</label>
+                      <input
+                        value={arcaForm.cuit}
+                        onChange={(e) => setArcaForm(prev => ({ ...prev, cuit: e.target.value }))}
+                        placeholder="20123456789"
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Razón Social</label>
+                      <input
+                        value={arcaForm.razonSocial}
+                        onChange={(e) => setArcaForm(prev => ({ ...prev, razonSocial: e.target.value }))}
+                        placeholder="Mi Cancha SRL"
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Domicilio Fiscal</label>
+                      <input
+                        value={arcaForm.domicilioFiscal}
+                        onChange={(e) => setArcaForm(prev => ({ ...prev, domicilioFiscal: e.target.value }))}
+                        placeholder="Calle 123, Ciudad"
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Condición</label>
+                        <select
+                          value={arcaForm.condicionFiscal}
+                          onChange={(e) => setArcaForm(prev => ({ ...prev, condicionFiscal: e.target.value as any }))}
+                          className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                        >
+                          <option value="monotributista">Monotributista</option>
+                          <option value="responsable_inscripto">Responsable Inscripto</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Inicio Actividades</label>
+                        <input
+                          type="date"
+                          value={arcaForm.inicioActividades}
+                          onChange={(e) => setArcaForm(prev => ({ ...prev, inicioActividades: e.target.value }))}
+                          className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Certificado (.crt en PEM)</label>
+                      <textarea
+                        value={arcaForm.certificado}
+                        onChange={(e) => setArcaForm(prev => ({ ...prev, certificado: e.target.value }))}
+                        placeholder="-----BEGIN CERTIFICATE-----\n..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                      />
+                      {arcaConfig?.certExpiration && (
+                        <p className="text-xs text-gray-400 mt-2">Vence: {new Date(arcaConfig.certExpiration).toLocaleDateString('es-AR')}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Clave privada (.key en PEM)</label>
+                      <textarea
+                        value={arcaForm.clavePrivada}
+                        onChange={(e) => setArcaForm(prev => ({ ...prev, clavePrivada: e.target.value }))}
+                        placeholder="-----BEGIN PRIVATE KEY-----\n..."
+                        rows={4}
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSaveArca}
+                      disabled={arcaSaving}
+                      className="w-full px-4 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {arcaSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                      Guardar configuración
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={handleTestArca}
+                        disabled={testing === 'AFIP'}
+                        className="w-full px-4 py-3 bg-emerald-500/20 text-emerald-400 rounded-xl font-medium hover:bg-emerald-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {testing === 'AFIP' ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+                        Probar
+                      </button>
+                      <button
+                        onClick={() => handleToggleArcaActive(!arcaConfig?.isActive)}
+                        disabled={arcaToggling || !arcaConfig}
+                        className={`w-full px-4 py-3 rounded-xl font-medium disabled:opacity-50 flex items-center justify-center gap-2 ${arcaConfig?.isActive ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'}`}
+                      >
+                        {arcaToggling ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+                        {arcaConfig?.isActive ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </div>
+
+                    {arcaTestingResult && (
+                      <div className={`p-4 rounded-xl ${arcaTestingResult.success ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                        <p className={arcaTestingResult.success ? 'text-emerald-400' : 'text-red-400'}>{arcaTestingResult.message}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium text-gray-300">Puntos de venta</h3>
+                      <button
+                        onClick={loadArcaPuntosVentaAfip}
+                        disabled={puntosVentaAfipLoading}
+                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 text-sm flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {puntosVentaAfipLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        AFIP
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {puntosVentaLoading ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+                        </div>
+                      ) : puntosVenta.length === 0 ? (
+                        <div className="p-4 bg-gray-800 rounded-xl text-sm text-gray-300">No hay puntos de venta configurados.</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {puntosVenta.map((pv) => (
+                            <div key={pv.id} className="p-3 bg-gray-800 rounded-xl flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-white font-medium">{pv.numero} {pv.isDefault ? <span className="text-xs text-emerald-400">(default)</span> : null}</p>
+                                <p className="text-xs text-gray-400">{pv.descripcion || '-'}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleSetDefaultPuntoVenta(pv)}
+                                  className="px-3 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-sm hover:bg-emerald-500/30"
+                                >
+                                  Default
+                                </button>
+                                <button
+                                  onClick={() => handleTogglePuntoVentaActive(pv)}
+                                  className={`px-3 py-2 rounded-lg text-sm ${pv.isActive ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'}`}
+                                >
+                                  {pv.isActive ? 'Off' : 'On'}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="p-4 bg-gray-900 rounded-xl border border-gray-700">
+                        <p className="text-sm text-gray-300 font-medium mb-3">Agregar punto de venta</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-400 mb-1">Número</label>
+                            <input
+                              value={nuevoPuntoVenta.numero}
+                              onChange={(e) => setNuevoPuntoVenta(prev => ({ ...prev, numero: e.target.value }))}
+                              placeholder="1"
+                              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-400 mb-1">Default</label>
+                            <select
+                              value={nuevoPuntoVenta.isDefault ? 'yes' : 'no'}
+                              onChange={(e) => setNuevoPuntoVenta(prev => ({ ...prev, isDefault: e.target.value === 'yes' }))}
+                              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                            >
+                              <option value="yes">Sí</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <label className="block text-xs text-gray-400 mb-1">Descripción (opcional)</label>
+                          <input
+                            value={nuevoPuntoVenta.descripcion}
+                            onChange={(e) => setNuevoPuntoVenta(prev => ({ ...prev, descripcion: e.target.value }))}
+                            placeholder="Mostrador"
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                        <button
+                          onClick={handleCreatePuntoVenta}
+                          disabled={creandoPuntoVenta}
+                          className="w-full mt-4 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {creandoPuntoVenta ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                          Crear
+                        </button>
+                      </div>
+
+                      {puntosVentaAfip.length > 0 && (
+                        <div className="p-4 bg-gray-900 rounded-xl border border-gray-700">
+                          <p className="text-sm text-gray-300 font-medium mb-2">Puntos de venta en AFIP</p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {puntosVentaAfip.map((pv: any) => (
+                              <div key={`${pv.numero}-${pv.emisionTipo}`} className="flex items-center justify-between text-sm bg-gray-800 rounded-lg p-2">
+                                <span className="text-gray-200">{pv.numero}</span>
+                                <span className="text-gray-400">{pv.emisionTipo}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
             </div>
