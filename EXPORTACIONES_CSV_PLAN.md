@@ -2,8 +2,8 @@
 
 ## Estado General
 - **Fecha de inicio**: 26 de Enero, 2026
-- **Estado**: ✅ Fase 1 Completada
-- **Progreso**: 5/52 reportes implementados (9.6%)
+- **Estado**: ✅ Fases 1, 2 y 3 Completadas
+- **Progreso**: 15/52 reportes implementados (29%)
 
 ---
 
@@ -92,11 +92,12 @@
 - [x] Filtros: Rango de fechas, categoría, proveedor, origen, usuario
 - **Completado**: 26/01/2026
 
-### 4.2 Gastos por Categoría
-- [ ] Backend: Endpoint `/api/expenses/by-category/export`
-- [ ] Frontend: Botón de exportación en sección de categorías
-- [ ] Campos: Categoría, Cantidad de gastos, Monto total, Porcentaje del total, Promedio por gasto
-- [ ] Filtros: Rango de fechas
+### 4.2 Gastos por Categoría ✅
+- [x] Backend: Endpoint `/api/expenses/by-category/export`
+- [x] Frontend: Dropdown en página de gastos `exportExpensesByCategoryToCSV`
+- [x] Campos: Categoría, Cantidad de gastos, Monto total, Porcentaje del total, Promedio por gasto
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ### 4.3 Gastos por Proveedor
 - [ ] Backend: Endpoint `/api/expenses/by-supplier/export`
@@ -145,11 +146,12 @@
 - [ ] Campos: Fecha/Hora, Producto, Tipo movimiento (Entrada/Salida/Ajuste/Venta/Merma), Cantidad, Costo unitario, Costo total, Usuario, Notas
 - [ ] Filtros: Rango de fechas, producto, tipo de movimiento
 
-### 6.3 Compras a Proveedores
-- [ ] Backend: Endpoint `/api/stock-movements/purchases/export`
-- [ ] Frontend: Botón de exportación en tab de compras
-- [ ] Campos: Fecha, Proveedor, Producto, Cantidad, Costo unitario, Costo total, Usuario, Notas
-- [ ] Filtros: Rango de fechas, proveedor, producto
+### 6.3 Compras a Proveedores ✅
+- [x] Backend: Endpoint `/api/stock-movements/purchases/export`
+- [x] Frontend: Dropdown en página de stock `exportPurchasesToCSV`
+- [x] Campos: Fecha, Producto, SKU, Cantidad, Unidad, Costo unitario, Costo total, Proveedor, Factura, Usuario, Notas
+- [x] Filtros: Rango de fechas, proveedor
+- **Completado**: 27/01/2026
 
 ### 6.4 Productos con Stock Bajo
 - [ ] Backend: Endpoint `/api/products/low-stock/export`
@@ -174,11 +176,12 @@
 - [x] Filtros: Tiene deuda, Estado activo
 - **Completado**: 27/01/2026
 
-### 7.2 Clientes Frecuentes (Top Clientes)
-- [ ] Backend: Endpoint `/api/clients/top/export`
-- [ ] Frontend: Botón de exportación en sección de top clientes
-- [ ] Campos: Nombre, Teléfono, Cantidad de reservas, Total gastado, Ticket promedio, Última visita, Frecuencia
-- [ ] Filtros: Rango de fechas, cantidad mínima de reservas
+### 7.2 Clientes Frecuentes (Top Clientes) ✅
+- [x] Backend: Endpoint `/api/analytics/top-clients/export`
+- [x] Frontend: Dropdown en página de analytics `exportTopClientsToCSV`
+- [x] Campos: Ranking, Nombre, Teléfono, Email, Reservas totales, Reservas completadas, Total gastado, Ticket promedio, Última reserva
+- [x] Filtros: Límite de resultados
+- **Completado**: 27/01/2026
 
 ### 7.3 Clientes Inactivos
 - [ ] Backend: Endpoint `/api/clients/inactive/export`
@@ -213,17 +216,19 @@
 
 ## 📊 9. REPORTES ANALÍTICOS
 
-### 9.1 Ocupación de Canchas
-- [ ] Backend: Endpoint `/api/analytics/court-occupancy/export`
-- [ ] Frontend: Botón de exportación en analytics
-- [ ] Campos: Cancha, Total horas disponibles, Horas reservadas, Horas ocupadas, Porcentaje ocupación, Ingresos generados
-- [ ] Filtros: Rango de fechas
+### 9.1 Ocupación de Canchas ✅
+- [x] Backend: Endpoint `/api/analytics/court-occupancy/export`
+- [x] Frontend: Dropdown en página de analytics `exportCourtOccupancyToCSV`
+- [x] Campos: Cancha, Deporte, Reservas totales, Horas ocupadas, Ingresos totales, Ticket promedio
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
-### 9.2 Horarios Pico
-- [ ] Backend: Endpoint `/api/analytics/peak-hours/export`
-- [ ] Frontend: Botón de exportación en analytics
-- [ ] Campos: Hora, Día de semana, Cantidad de reservas, Ingresos promedio, Ocupación promedio
-- [ ] Filtros: Rango de fechas, día de semana
+### 9.2 Horarios Pico ✅
+- [x] Backend: Endpoint `/api/analytics/peak-hours/export`
+- [x] Frontend: Dropdown en página de analytics `exportPeakHoursToCSV`
+- [x] Campos: Hora, Día de semana, Cantidad reservas, Ingresos totales, Promedio ingreso
+- [x] Filtros: Rango de fechas
+- **Completado**: 27/01/2026
 
 ### 9.3 Rendimiento por Día de la Semana
 - [ ] Backend: Endpoint `/api/analytics/by-weekday/export`
