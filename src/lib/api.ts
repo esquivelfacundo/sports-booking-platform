@@ -2224,6 +2224,32 @@ class ApiClient {
     return `${this.baseURL}/api/arca/facturas/${establishmentId}/${invoiceId}/pdf`;
   }
 
+  async downloadArcaInvoicePdf(establishmentId: string, invoiceId: string): Promise<Blob> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const url = `${this.baseURL}/api/arca/facturas/${establishmentId}/${invoiceId}/pdf`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Error al descargar PDF' }));
+      throw new Error(error.error || error.message || 'Error al descargar PDF');
+    }
+
+    return response.blob();
+  }
+
+  async openArcaInvoicePdf(establishmentId: string, invoiceId: string): Promise<void> {
+    const blob = await this.downloadArcaInvoicePdf(establishmentId, invoiceId);
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
+
   // OCR Processing
   async processOCR(imageFile: File): Promise<{
     success: boolean;
@@ -2305,7 +2331,7 @@ class ApiClient {
     return this.request(`/api/recurring-bookings/${groupId}`);
   }
 
-  async checkRecurringAvailability(data: {
+  async checkRecurringBookingAvailability(data: {
     establishmentId: string;
     courtId: string;
     startDate: string;

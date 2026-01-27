@@ -22,11 +22,12 @@ import {
   XCircle,
   AlertCircle,
   Plus,
-  Printer
+  Printer,
+  Download
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { printTicket, isWebUSBSupported, TicketData } from '@/lib/ticketPrinter';
-import ArcaInvoiceModal, { ArcaInvoiceItem } from '@/components/admin/ArcaInvoiceModal';
+import ArcaInvoiceSidebar, { ArcaInvoiceItem } from '@/components/admin/ArcaInvoiceSidebar';
 
 interface OrderItem {
   id: string;
@@ -56,6 +57,18 @@ interface OrderPayment {
   };
 }
 
+interface Invoice {
+  id: string;
+  tipoComprobante?: number;
+  tipoComprobanteNombre?: string;
+  puntoVenta?: number;
+  numeroComprobante?: number;
+  cae?: string;
+  caeVencimiento?: string;
+  total?: number;
+  fechaEmision?: string;
+}
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -64,6 +77,7 @@ interface Order {
   paymentStatus: 'pending' | 'partial' | 'paid' | 'refunded';
   paymentMethod: string;
   invoiceId?: string | null;
+  invoice?: Invoice | null;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -142,7 +156,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   const [mounted, setMounted] = useState(false);
   const [fullOrder, setFullOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isInvoiceSidebarOpen, setIsInvoiceSidebarOpen] = useState(false);
   
   // Payment form
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -455,7 +469,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                 {getStatusBadge(displayOrder.status)}
                 {getPaymentStatusBadge(displayOrder.paymentStatus)}
                 <button
-                  onClick={() => setIsInvoiceModalOpen(true)}
+                  onClick={() => setIsInvoiceSidebarOpen(true)}
                   disabled={!establishmentId || !!displayOrder.invoiceId}
                   className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
                   title={displayOrder.invoiceId ? 'Ya facturado' : 'Facturar'}
@@ -511,6 +525,70 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Invoice Info - if invoiced */}
+                  {displayOrder.invoice && (
+                    <div className="bg-emerald-500/10 rounded-xl p-4 space-y-3 border border-emerald-500/20">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                          <Receipt className="w-4 h-4" />
+                          Comprobante AFIP
+                        </h3>
+                        <button
+                          onClick={async () => {
+                            if (!establishmentId || !displayOrder.invoice?.id) return;
+                            try {
+                              await apiClient.openArcaInvoicePdf(establishmentId, displayOrder.invoice.id);
+                            } catch (e) {
+                              console.error('Error downloading PDF:', e);
+                            }
+                          }}
+                          className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" />
+                          PDF
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {displayOrder.invoice.tipoComprobanteNombre && (
+                          <div>
+                            <p className="text-gray-400 text-xs">Tipo</p>
+                            <p className="text-white">{displayOrder.invoice.tipoComprobanteNombre}</p>
+                          </div>
+                        )}
+                        {displayOrder.invoice.puntoVenta && displayOrder.invoice.numeroComprobante && (
+                          <div>
+                            <p className="text-gray-400 text-xs">Número</p>
+                            <p className="text-white font-mono">
+                              {String(displayOrder.invoice.puntoVenta).padStart(5, '0')}-{String(displayOrder.invoice.numeroComprobante).padStart(8, '0')}
+                            </p>
+                          </div>
+                        )}
+                        {displayOrder.invoice.cae && (
+                          <div className="col-span-2">
+                            <p className="text-gray-400 text-xs">CAE</p>
+                            <p className="text-white font-mono text-xs">{displayOrder.invoice.cae}</p>
+                          </div>
+                        )}
+                        {displayOrder.invoice.caeVencimiento && (
+                          <div>
+                            <p className="text-gray-400 text-xs">Vto. CAE</p>
+                            <p className="text-white text-xs">
+                              {new Date(displayOrder.invoice.caeVencimiento).toLocaleDateString('es-AR')}
+                            </p>
+                          </div>
+                        )}
+                        {displayOrder.invoice.fechaEmision && (
+                          <div>
+                            <p className="text-gray-400 text-xs">Emisión</p>
+                            <p className="text-white text-xs">
+                              {new Date(displayOrder.invoice.fechaEmision).toLocaleDateString('es-AR')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Payment Methods Summary for Direct Sales */}
                   {displayOrder.orderType === 'direct_sale' && displayOrder.payments && displayOrder.payments.length > 0 && (
@@ -851,9 +929,9 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
               )}
             </div>
 
-            <ArcaInvoiceModal
-              isOpen={isInvoiceModalOpen}
-              onClose={() => setIsInvoiceModalOpen(false)}
+            <ArcaInvoiceSidebar
+              isOpen={isInvoiceSidebarOpen}
+              onClose={() => setIsInvoiceSidebarOpen(false)}
               establishmentId={establishmentId || ''}
               orderId={displayOrder.id}
               bookingId={displayOrder.booking?.id}
