@@ -507,6 +507,63 @@ class ApiClient {
     return this.request(endpoint);
   }
 
+  async exportBookingsToCSV(params: {
+    establishmentId: string;
+    startDate?: string;
+    endDate?: string;
+    courtId?: string;
+    status?: string;
+    clientName?: string;
+    paymentMethod?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const endpoint = `/api/bookings/export?${queryParams.toString()}`;
+    
+    // Get the token
+    const token = localStorage.getItem('token');
+    
+    // Create a temporary link to download the file
+    const url = `${this.baseURL}${endpoint}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', '');
+    
+    // Add authorization header via fetch
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to export bookings');
+    }
+    
+    // Get the blob and create download link
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    link.href = blobUrl;
+    
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+    const filename = filenameMatch ? filenameMatch[1] : 'reservas.csv';
+    link.download = filename;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  }
+
   // Optimized stats endpoint - returns aggregated statistics without fetching all bookings
   async getEstablishmentStats(establishmentId: string) {
     return this.request(`/api/bookings/establishment/${establishmentId}/stats`);

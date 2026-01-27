@@ -11,6 +11,7 @@ import { BookingCalendarGrid } from '@/components/admin/BookingCalendarGrid';
 import { CreateBookingSidebar } from '@/components/admin/CreateBookingSidebar';
 import { ReservationDetailsSidebar } from '@/components/admin/ReservationDetailsSidebar';
 import { usePinConfirmation } from '@/components/admin/PinConfirmation';
+import ExportButton from '@/components/common/ExportButton';
 import { 
   Calendar, 
   Clock, 
@@ -759,6 +760,23 @@ const ReservationsPage = () => {
     return days;
   };
 
+  // Export bookings to CSV
+  const handleExportBookings = async () => {
+    if (!establishment?.id) return;
+    
+    try {
+      await apiClient.exportBookingsToCSV({
+        establishmentId: establishment.id,
+        startDate: undefined,
+        endDate: undefined
+      });
+      showSuccess('Exportación exitosa', 'Las reservas se han exportado correctamente');
+    } catch (error: any) {
+      console.error('Error exporting bookings:', error);
+      showError('Error al exportar', error.message || 'No se pudieron exportar las reservas');
+    }
+  };
+
   // Header controls to be rendered via portal
   const headerControls = (
     <div className="flex items-center w-full space-x-3">
@@ -917,6 +935,13 @@ const ReservationsPage = () => {
         <RepeatIcon className="h-4 w-4" />
         <span className="hidden sm:inline">Turnos Fijos</span>
       </Link>
+
+      {/* Export Button */}
+      <ExportButton 
+        onExport={handleExportBookings}
+        label="Exportar"
+        size="sm"
+      />
 
       {/* New Reservation Button */}
       <button 
