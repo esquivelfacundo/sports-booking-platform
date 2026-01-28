@@ -104,12 +104,15 @@ export default function CuentasCorrientesPage() {
   const [deactivating, setDeactivating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   
-  // Payment modal state
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  // Payment sidebar state
+  const [showPaymentSidebar, setShowPaymentSidebar] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentDescription, setPaymentDescription] = useState('');
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  
+  // All movements sidebar state
+  const [showAllMovementsSidebar, setShowAllMovementsSidebar] = useState(false);
 
   // Set mounted for portal rendering
   useEffect(() => {
@@ -172,10 +175,16 @@ export default function CuentasCorrientesPage() {
       );
       const data = await response.json();
       if (data.success) {
-        setShowPaymentModal(false);
+        setShowPaymentSidebar(false);
         setPaymentAmount('');
         setPaymentMethod('cash');
         setPaymentDescription('');
+        // Update selectedAccount with new balance
+        setSelectedAccount(prev => prev ? {
+          ...prev,
+          currentBalance: data.newBalance,
+          totalPayments: parseFloat(String(prev.totalPayments)) + parseFloat(paymentAmount)
+        } : null);
         loadAccountMovements(selectedAccount.id);
         loadAccounts();
       } else {
@@ -1122,11 +1131,21 @@ export default function CuentasCorrientesPage() {
                   </div>
                 )}
 
-                {/* Movements */}
+                {/* Movements - Last 5 */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4" />
-                    Movimientos
+                  <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <ShoppingCart className="h-4 w-4" />
+                      Movimientos
+                    </span>
+                    {accountMovements.length > 5 && (
+                      <button
+                        onClick={() => setShowAllMovementsSidebar(true)}
+                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                      >
+                        Ver todos ({accountMovements.length})
+                      </button>
+                    )}
                   </h4>
                   {loadingMovements ? (
                     <div className="flex items-center justify-center py-8">
@@ -1137,8 +1156,8 @@ export default function CuentasCorrientesPage() {
                       No hay movimientos registrados
                     </p>
                   ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {accountMovements.map((movement) => (
+                    <div className="space-y-2">
+                      {accountMovements.slice(0, 5).map((movement) => (
                         <div
                           key={movement.id}
                           className="p-3 bg-gray-700/50 rounded-lg"
@@ -1176,6 +1195,14 @@ export default function CuentasCorrientesPage() {
                           )}
                         </div>
                       ))}
+                      {accountMovements.length > 5 && (
+                        <button
+                          onClick={() => setShowAllMovementsSidebar(true)}
+                          className="w-full py-2 text-sm text-cyan-400 hover:text-cyan-300 bg-gray-700/30 rounded-lg transition-colors"
+                        >
+                          Ver todos los movimientos
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1208,7 +1235,7 @@ export default function CuentasCorrientesPage() {
               <div className="p-4 border-t border-gray-700 space-y-2">
                 {parseFloat(String(selectedAccount.currentBalance)) > 0 && (
                   <button
-                    onClick={() => setShowPaymentModal(true)}
+                    onClick={() => setShowPaymentSidebar(true)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg transition-colors"
                   >
                     <DollarSign className="h-4 w-4" />
@@ -1241,106 +1268,92 @@ export default function CuentasCorrientesPage() {
       document.body
       )}
 
-      {/* Payment Modal */}
-      {showPaymentModal && selectedAccount && createPortal(
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
-            onClick={() => setShowPaymentModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-gray-800 rounded-xl w-full max-w-md border border-gray-700 shadow-2xl"
-            >
-              <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white">Declarar Pago</h3>
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5 text-gray-400" />
-                </button>
-              </div>
-              
-              <div className="p-4 space-y-4">
-                <div className="bg-gray-700/50 rounded-lg p-3">
-                  <p className="text-sm text-gray-400">Cuenta</p>
-                  <p className="text-white font-medium">{selectedAccount.holderName}</p>
-                  <p className="text-sm text-red-400 mt-1">
-                    Deuda actual: ${parseFloat(String(selectedAccount.currentBalance)).toLocaleString()}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Monto del pago</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                    <input
-                      type="number"
-                      value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(e.target.value)}
-                      placeholder={String(selectedAccount.currentBalance)}
-                      className="w-full pl-8 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Método de pago</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="cash">Efectivo</option>
-                    <option value="transfer">Transferencia</option>
-                    <option value="debit">Débito</option>
-                    <option value="credit">Crédito</option>
-                    <option value="mercadopago">MercadoPago</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Descripción (opcional)</label>
-                  <input
-                    type="text"
-                    value={paymentDescription}
-                    onChange={(e) => setPaymentDescription(e.target.value)}
-                    placeholder="Ej: Pago parcial de deuda"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                  />
+      {/* Payment Sidebar */}
+      {showPaymentSidebar && selectedAccount && createPortal(
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowPaymentSidebar(false)} />
+          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-2xl z-[61] flex flex-col">
+            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2"><DollarSign className="h-5 w-5 text-emerald-400" />Declarar Pago</h3>
+              <button onClick={() => setShowPaymentSidebar(false)} className="p-2 hover:bg-gray-700 rounded-lg"><X className="h-5 w-5 text-gray-400" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="bg-gray-700/50 rounded-lg p-4">
+                <p className="text-sm text-gray-400">Cuenta</p>
+                <p className="text-white font-medium text-lg">{selectedAccount.holderName}</p>
+                <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <p className="text-sm text-gray-400">Deuda actual</p>
+                  <p className="text-2xl font-bold text-red-400">${parseFloat(String(selectedAccount.currentBalance)).toLocaleString()}</p>
                 </div>
               </div>
-
-              <div className="p-4 border-t border-gray-700 flex gap-3">
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleRegisterPayment}
-                  disabled={!paymentAmount || isSubmittingPayment}
-                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmittingPayment ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Check className="h-4 w-4" />
-                  )}
-                  Registrar Pago
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Monto del pago</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder={String(selectedAccount.currentBalance)} className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500" />
+                </div>
+                <button onClick={() => setPaymentAmount(String(selectedAccount.currentBalance))} className="mt-2 text-sm text-cyan-400 hover:text-cyan-300">Pagar deuda completa</button>
               </div>
-            </motion.div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Método de pago</label>
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500">
+                  <option value="cash">Efectivo</option>
+                  <option value="transfer">Transferencia</option>
+                  <option value="debit">Débito</option>
+                  <option value="credit">Crédito</option>
+                  <option value="mercadopago">MercadoPago</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Descripción (opcional)</label>
+                <input type="text" value={paymentDescription} onChange={(e) => setPaymentDescription(e.target.value)} placeholder="Ej: Pago parcial" className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+            <div className="p-4 border-t border-gray-700">
+              <button onClick={handleRegisterPayment} disabled={!paymentAmount || isSubmittingPayment} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2">
+                {isSubmittingPayment ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+                Registrar Pago
+              </button>
+            </div>
           </motion.div>
-        </AnimatePresence>,
+        </>,
+        document.body
+      )}
+
+      {/* All Movements Sidebar */}
+      {showAllMovementsSidebar && selectedAccount && createPortal(
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowAllMovementsSidebar(false)} />
+          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-2xl z-[61] flex flex-col">
+            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Historial de Movimientos</h3>
+              <button onClick={() => setShowAllMovementsSidebar(false)} className="p-2 hover:bg-gray-700 rounded-lg"><X className="h-5 w-5 text-gray-400" /></button>
+            </div>
+            <div className="p-4 bg-gray-700/30 border-b border-gray-700">
+              <p className="text-white font-medium">{selectedAccount.holderName}</p>
+              <p className="text-sm text-gray-400">{accountMovements.length} movimientos</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {accountMovements.map((movement) => (
+                <div key={movement.id} className="p-3 bg-gray-700/50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {movement.movementType === 'purchase' ? <ShoppingCart className="h-4 w-4 text-red-400" /> : <Wallet className="h-4 w-4 text-green-400" />}
+                      <span className={`text-sm font-medium ${movement.movementType === 'purchase' ? 'text-red-400' : 'text-green-400'}`}>{getMovementTypeLabel(movement.movementType)}</span>
+                    </div>
+                    <span className={`font-bold ${movement.movementType === 'purchase' ? 'text-red-400' : 'text-green-400'}`}>{movement.movementType === 'purchase' ? '+' : '-'}${Math.abs(movement.amount).toLocaleString()}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-xs text-gray-400">
+                    <span>{new Date(movement.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>Saldo: ${movement.balanceAfter.toLocaleString()}</span>
+                  </div>
+                  {movement.description && <p className="text-xs text-gray-500 mt-1">{movement.description}</p>}
+                  {movement.paymentMethod && <p className="text-xs text-gray-500 mt-1">Método: {movement.paymentMethod}</p>}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </>,
         document.body
       )}
       </div>
