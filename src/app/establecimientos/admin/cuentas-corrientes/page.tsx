@@ -1319,8 +1319,8 @@ export default function CuentasCorrientesPage() {
       {/* Payment Sidebar */}
       {showPaymentSidebar && selectedAccount && createPortal(
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowPaymentSidebar(false)} />
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-2xl z-[61] flex flex-col">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-[110]" onClick={() => setShowPaymentSidebar(false)} />
+          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-2xl z-[111] flex flex-col">
             <div className="p-4 border-b border-gray-700 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2"><DollarSign className="h-5 w-5 text-emerald-400" />Declarar Pago</h3>
               <button onClick={() => setShowPaymentSidebar(false)} className="p-2 hover:bg-gray-700 rounded-lg"><X className="h-5 w-5 text-gray-400" /></button>
@@ -1371,8 +1371,8 @@ export default function CuentasCorrientesPage() {
       {/* All Movements Sidebar */}
       {showAllMovementsSidebar && selectedAccount && createPortal(
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowAllMovementsSidebar(false)} />
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-2xl z-[61] flex flex-col">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-[110]" onClick={() => setShowAllMovementsSidebar(false)} />
+          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 shadow-2xl z-[111] flex flex-col">
             <div className="p-4 border-b border-gray-700 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white">Historial de Movimientos</h3>
               <button onClick={() => setShowAllMovementsSidebar(false)} className="p-2 hover:bg-gray-700 rounded-lg"><X className="h-5 w-5 text-gray-400" /></button>
