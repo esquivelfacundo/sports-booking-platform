@@ -693,9 +693,6 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                   title={establishment?.isOpen !== false ? 'Establecimiento abierto - Click para cerrar' : 'Establecimiento cerrado - Click para abrir'}
                 >
                   <Power className={`h-4 w-4 ${isTogglingOpen ? 'animate-pulse' : ''}`} />
-                  <span className="text-sm font-medium hidden sm:inline">
-                    {establishment?.isOpen !== false ? 'Abierto' : 'Cerrado'}
-                  </span>
                 </button>
 
                 {/* Theme Toggle */}
