@@ -103,6 +103,13 @@ export default function CuentasCorrientesPage() {
   const [loadingMovements, setLoadingMovements] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentDescription, setPaymentDescription] = useState('');
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   // Set mounted for portal rendering
   useEffect(() => {
@@ -141,8 +148,54 @@ export default function CuentasCorrientesPage() {
     }
   };
 
+  const handleRegisterPayment = async () => {
+    if (!selectedAccount || !paymentAmount) return;
+    
+    setIsSubmittingPayment(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(
+        `${API_URL}/api/current-accounts/${selectedAccount.id}/movements`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            movementType: 'payment',
+            amount: parseFloat(paymentAmount),
+            paymentMethod,
+            description: paymentDescription || `Pago registrado`
+          })
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setShowPaymentModal(false);
+        setPaymentAmount('');
+        setPaymentMethod('cash');
+        setPaymentDescription('');
+        loadAccountMovements(selectedAccount.id);
+        loadAccounts();
+      } else {
+        alert(data.error || 'Error al registrar el pago');
+      }
+    } catch (error) {
+      console.error('Error registering payment:', error);
+      alert('Error al registrar el pago');
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
   const handleDeactivateAccount = async () => {
     if (!selectedAccount) return;
+    
+    if (parseFloat(String(selectedAccount.currentBalance)) !== 0) {
+      alert('No se puede dar de baja una cuenta con saldo pendiente. Primero debe saldar la deuda.');
+      return;
+    }
     
     if (!confirm(`¿Estás seguro de dar de baja la cuenta de ${selectedAccount.holderName}?`)) {
       return;
@@ -1151,12 +1204,22 @@ export default function CuentasCorrientesPage() {
                 )}
               </div>
 
-              {/* Footer with deactivate button */}
-              <div className="p-4 border-t border-gray-700">
+              {/* Footer with buttons */}
+              <div className="p-4 border-t border-gray-700 space-y-2">
+                {parseFloat(String(selectedAccount.currentBalance)) > 0 && (
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg transition-colors"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    Declarar Pago
+                  </button>
+                )}
                 <button
                   onClick={handleDeactivateAccount}
-                  disabled={deactivating}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-lg transition-colors disabled:opacity-50"
+                  disabled={deactivating || parseFloat(String(selectedAccount.currentBalance)) !== 0}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={parseFloat(String(selectedAccount.currentBalance)) !== 0 ? 'Debe saldar la deuda antes de dar de baja' : ''}
                 >
                   {deactivating ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1165,12 +1228,120 @@ export default function CuentasCorrientesPage() {
                   )}
                   Dar de baja cuenta
                 </button>
+                {parseFloat(String(selectedAccount.currentBalance)) !== 0 && (
+                  <p className="text-xs text-gray-500 text-center">
+                    Debe saldar la deuda para dar de baja la cuenta
+                  </p>
+                )}
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>,
       document.body
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedAccount && createPortal(
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+            onClick={() => setShowPaymentModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-800 rounded-xl w-full max-w-md border border-gray-700 shadow-2xl"
+            >
+              <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">Declarar Pago</h3>
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-400" />
+                </button>
+              </div>
+              
+              <div className="p-4 space-y-4">
+                <div className="bg-gray-700/50 rounded-lg p-3">
+                  <p className="text-sm text-gray-400">Cuenta</p>
+                  <p className="text-white font-medium">{selectedAccount.holderName}</p>
+                  <p className="text-sm text-red-400 mt-1">
+                    Deuda actual: ${parseFloat(String(selectedAccount.currentBalance)).toLocaleString()}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Monto del pago</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                    <input
+                      type="number"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      placeholder={String(selectedAccount.currentBalance)}
+                      className="w-full pl-8 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Método de pago</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="cash">Efectivo</option>
+                    <option value="transfer">Transferencia</option>
+                    <option value="debit">Débito</option>
+                    <option value="credit">Crédito</option>
+                    <option value="mercadopago">MercadoPago</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Descripción (opcional)</label>
+                  <input
+                    type="text"
+                    value={paymentDescription}
+                    onChange={(e) => setPaymentDescription(e.target.value)}
+                    placeholder="Ej: Pago parcial de deuda"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-gray-700 flex gap-3">
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleRegisterPayment}
+                  disabled={!paymentAmount || isSubmittingPayment}
+                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmittingPayment ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  Registrar Pago
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body
       )}
       </div>
     </>
