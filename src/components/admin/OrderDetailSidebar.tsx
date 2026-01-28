@@ -931,7 +931,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                                   <div><p className="text-gray-400">Número</p><p className="text-white font-mono">{String(inv.puntoVenta).padStart(5, '0')}-{String(inv.numeroComprobante).padStart(8, '0')}</p></div>
                                   <div><p className="text-gray-400">Importe</p><p className={`font-semibold ${inv.isNotaCredito ? 'text-red-400' : 'text-emerald-400'}`}>{inv.isNotaCredito ? '-' : ''}${parseFloat(inv.importeTotal?.toString() || '0').toLocaleString()}</p></div>
                                   <div><p className="text-gray-400">CAE</p><p className="text-white font-mono truncate">{inv.cae}</p></div>
-                                  <div><p className="text-gray-400">Fecha</p><p className="text-white">{inv.fechaEmision ? new Date(inv.fechaEmision).toLocaleDateString('es-AR') : '-'}</p></div>
+                                  <div><p className="text-gray-400">Fecha</p><p className="text-white">{inv.fechaEmision ? new Date(inv.fechaEmision + 'T12:00:00').toLocaleDateString('es-AR') : '-'}</p></div>
                                 </div>
                                 {inv.isNotaCredito && inv.motivoNc && (<div className="mt-2 pt-2 border-t border-red-500/20"><p className="text-gray-400 text-xs">Motivo:</p><p className="text-white text-xs">{inv.motivoNc}</p></div>)}
                               </div>
