@@ -1131,6 +1131,54 @@ export default function CuentasCorrientesPage() {
                   </div>
                 )}
 
+                {/* Declared Payments Section */}
+                {(() => {
+                  const payments = accountMovements.filter(m => m.movementType === 'payment');
+                  return payments.length > 0 ? (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                        <Wallet className="h-4 w-4" />
+                        Pagos declarados
+                      </h4>
+                      <div className="space-y-2">
+                        {payments.slice(0, 5).map((payment) => (
+                          <div
+                            key={payment.id}
+                            className="p-3 bg-green-900/20 border border-green-700/30 rounded-lg"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Wallet className="h-4 w-4 text-green-400" />
+                                <span className="text-green-400 font-medium">
+                                  ${Math.abs(payment.amount).toLocaleString()}
+                                </span>
+                              </div>
+                              <span className="text-xs text-gray-400">
+                                {payment.paymentMethod === 'cash' ? 'Efectivo' : 
+                                 payment.paymentMethod === 'card' ? 'Tarjeta' : 
+                                 payment.paymentMethod === 'transfer' ? 'Transferencia' : 
+                                 payment.paymentMethod || 'N/A'}
+                              </span>
+                            </div>
+                            <div className="mt-1 text-xs text-gray-400">
+                              {new Date(payment.createdAt).toLocaleDateString('es-AR', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                            {payment.description && (
+                              <p className="text-xs text-gray-500 mt-1">{payment.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+
                 {/* Movements - Last 5 */}
                 <div>
                   <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center justify-between">
