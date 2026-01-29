@@ -317,25 +317,25 @@ const FinancePage = () => {
       
       <div className="p-6 space-y-6">
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Totales</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalRevenue)}</p>
-              <div className="flex items-center space-x-1 mt-2">
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalRevenue)}</p>
+              <div className="flex items-center space-x-1 mt-1">
                 {getTrendIcon(summary.growth.trend)}
-                <span className={`text-sm font-medium ${getTrendColor(summary.growth.trend)}`}>
+                <span className={`text-xs font-medium ${getTrendColor(summary.growth.trend)}`}>
                   {Math.abs(summary.growth.revenue)}%
                 </span>
-                <span className="text-gray-500 dark:text-gray-400 text-sm">vs anterior</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs">vs anterior</span>
               </div>
             </div>
-            <DollarSign className="h-8 w-8 text-emerald-400" />
+            <DollarSign className="h-7 w-7 text-emerald-400" />
           </div>
         </motion.div>
 
@@ -343,17 +343,17 @@ const FinancePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 dark:text-gray-400 text-sm">Señas Cobradas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.totalDeposits)}</p>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(summary.totalDeposits)}</p>
+              <p className="text-xs text-gray-500 mt-1">
                 {summary.totalRevenue > 0 ? Math.round((summary.totalDeposits / summary.totalRevenue) * 100) : 0}% del total
               </p>
             </div>
-            <PiggyBank className="h-8 w-8 text-yellow-400" />
+            <PiggyBank className="h-7 w-7 text-emerald-400" />
           </div>
         </motion.div>
 
@@ -361,15 +361,17 @@ const FinancePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Por Cobrar</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.pendingBalance)}</p>
-              <p className="text-sm text-gray-500 mt-2">Saldo pendiente</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Pendiente a Cobrar</p>
+              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(summary.pendingBalance)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Total - Señas
+              </p>
             </div>
-            <Wallet className="h-8 w-8 text-orange-400" />
+            <Wallet className="h-7 w-7 text-orange-400" />
           </div>
         </motion.div>
 
@@ -377,15 +379,35 @@ const FinancePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Reservas</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.totalBookings}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                En el período
+              </p>
+            </div>
+            <Calendar className="h-7 w-7 text-blue-400" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 dark:text-gray-400 text-sm">Ticket Promedio</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.averageTicket)}</p>
-              <p className="text-sm text-gray-500 mt-2">{summary.totalBookings} reservas</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.averageTicket)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Por reserva
+              </p>
             </div>
-            <Receipt className="h-8 w-8 text-blue-400" />
+            <Receipt className="h-7 w-7 text-purple-400" />
           </div>
         </motion.div>
       </div>
