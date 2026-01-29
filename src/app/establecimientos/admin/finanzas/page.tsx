@@ -24,7 +24,10 @@ import {
   Wallet,
   Clock,
   User,
-  MapPin
+  MapPin,
+  FileCheck,
+  FileX,
+  ShoppingBag
 } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 
@@ -33,10 +36,15 @@ interface FinanceResponse {
   period: { start: string; end: string; label: string };
   summary: {
     totalRevenue: number;
+    bookingRevenue: number;
+    orderRevenue: number;
     totalDeposits: number;
     pendingBalance: number;
     pendingPayments: number;
+    totalInvoiced: number;
+    totalNotInvoiced: number;
     totalBookings: number;
+    totalOrders: number;
     averageTicket: number;
     growth: { revenue: number; trend: 'up' | 'down' | 'stable' };
   };
@@ -316,11 +324,29 @@ const FinancePage = () => {
       {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
       
       <div className="p-6 space-y-6">
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Key Metrics - Row 1 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Reservas</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.totalBookings}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                En el período
+              </p>
+            </div>
+            <Calendar className="h-7 w-7 text-blue-400" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
@@ -342,36 +368,18 @@ const FinancePage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Señas Cobradas</p>
-              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(summary.totalDeposits)}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                {summary.totalRevenue > 0 ? Math.round((summary.totalDeposits / summary.totalRevenue) * 100) : 0}% del total
-              </p>
-            </div>
-            <PiggyBank className="h-7 w-7 text-emerald-400" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Pendiente a Cobrar</p>
-              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(summary.pendingBalance)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Facturado</p>
+              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(summary.totalInvoiced || 0)}</p>
               <p className="text-xs text-gray-500 mt-1">
-                Total - Señas
+                {summary.totalRevenue > 0 ? Math.round(((summary.totalInvoiced || 0) / summary.totalRevenue) * 100) : 0}% del total
               </p>
             </div>
-            <Wallet className="h-7 w-7 text-orange-400" />
+            <FileCheck className="h-7 w-7 text-emerald-400" />
           </div>
         </motion.div>
 
@@ -383,20 +391,77 @@ const FinancePage = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Reservas</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.totalBookings}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total No Facturado</p>
+              <p className="text-xl font-bold text-red-600 dark:text-red-400">{formatCurrency(summary.totalNotInvoiced || 0)}</p>
               <p className="text-xs text-gray-500 mt-1">
-                En el período
+                {summary.totalRevenue > 0 ? Math.round(((summary.totalNotInvoiced || 0) / summary.totalRevenue) * 100) : 0}% del total
               </p>
             </div>
-            <Calendar className="h-7 w-7 text-blue-400" />
+            <FileX className="h-7 w-7 text-red-400" />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Key Metrics - Row 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Señas Cobradas</p>
+              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(summary.totalDeposits)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {(summary.bookingRevenue || summary.totalRevenue) > 0 ? Math.round((summary.totalDeposits / (summary.bookingRevenue || summary.totalRevenue)) * 100) : 0}% de reservas
+              </p>
+            </div>
+            <PiggyBank className="h-7 w-7 text-emerald-400" />
           </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Pendiente a Cobrar</p>
+              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(summary.pendingBalance)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Reservas - Señas
+              </p>
+            </div>
+            <Wallet className="h-7 w-7 text-orange-400" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Kiosco</p>
+              <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(summary.orderRevenue || 0)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {summary.totalOrders || 0} ventas
+              </p>
+            </div>
+            <ShoppingBag className="h-7 w-7 text-purple-400" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
           className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
@@ -407,7 +472,7 @@ const FinancePage = () => {
                 Por reserva
               </p>
             </div>
-            <Receipt className="h-7 w-7 text-purple-400" />
+            <Receipt className="h-7 w-7 text-blue-400" />
           </div>
         </motion.div>
       </div>
