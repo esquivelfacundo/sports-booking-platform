@@ -139,6 +139,7 @@ const ReservationsPage = () => {
   // Amenities state
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [amenitiesLoading, setAmenitiesLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Load amenities
   useEffect(() => {
@@ -761,8 +762,6 @@ const ReservationsPage = () => {
   };
 
   // Export bookings to CSV
-  const [isExporting, setIsExporting] = useState(false);
-  
   const handleExport = async (type: 'bookings' | 'noshow') => {
     if (!establishment?.id) return;
     setIsExporting(true);
