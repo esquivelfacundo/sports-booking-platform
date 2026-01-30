@@ -199,14 +199,17 @@ const VentasPage = () => {
       const response = await apiClient.getOrderStats({
         establishmentId: establishment.id,
         startDate: dateRange.start || undefined,
-        endDate: dateRange.end || undefined
+        endDate: dateRange.end || undefined,
+        status: statusFilter || undefined,
+        paymentStatus: paymentStatusFilter || undefined,
+        orderType: orderTypeFilter || undefined
       }) as { stats: OrderStats };
       
       setStats(response.stats);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  }, [establishment?.id, dateRange]);
+  }, [establishment?.id, dateRange, statusFilter, paymentStatusFilter, orderTypeFilter]);
 
   useEffect(() => {
     loadOrders();

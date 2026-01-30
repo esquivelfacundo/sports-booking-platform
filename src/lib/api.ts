@@ -1849,10 +1849,16 @@ class ApiClient {
     establishmentId: string;
     startDate?: string;
     endDate?: string;
+    status?: string;
+    paymentStatus?: string;
+    orderType?: string;
   }) {
     const queryParams = new URLSearchParams();
     if (params.startDate) queryParams.append('startDate', params.startDate);
     if (params.endDate) queryParams.append('endDate', params.endDate);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+    if (params.orderType) queryParams.append('orderType', params.orderType);
     
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.request(`/api/orders/stats/${params.establishmentId}${query}`);
