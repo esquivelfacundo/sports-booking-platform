@@ -520,12 +520,30 @@ const FinancePage = () => {
                     {charts.dailyRevenue.map((day, index) => {
                       const maxRevenue = Math.max(...charts.dailyRevenue.map(d => d.revenue));
                       const heightPx = maxRevenue > 0 ? Math.max(4, (day.revenue / maxRevenue) * 180) : 4;
+                      
+                      const handleBarClick = () => {
+                        if (day.isWeekly) {
+                          // For weekly data, set range for the whole week
+                          const weekStart = new Date(day.date);
+                          const weekEnd = new Date(weekStart);
+                          weekEnd.setDate(weekEnd.getDate() + 6);
+                          setCustomStartDate(day.date);
+                          setCustomEndDate(weekEnd.toISOString().split('T')[0]);
+                        } else {
+                          // For daily data, set both dates to the same day
+                          setCustomStartDate(day.date);
+                          setCustomEndDate(day.date);
+                        }
+                        setSelectedPeriod('custom');
+                      };
+                      
                       return (
                         <div key={index} className="flex-1 flex flex-col items-center justify-end h-full group relative" style={{ minWidth: '4px' }}>
                           <motion.div
                             initial={{ height: 0 }}
                             animate={{ height: heightPx }}
                             transition={{ delay: index * 0.02, duration: 0.4 }}
+                            onClick={handleBarClick}
                             className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t cursor-pointer hover:from-emerald-500 hover:to-emerald-300"
                           />
                           <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg z-10 min-w-[140px]">
