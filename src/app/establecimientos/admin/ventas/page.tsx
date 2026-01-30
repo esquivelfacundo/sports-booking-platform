@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   ShoppingCart, 
   Plus, 
@@ -102,6 +103,8 @@ interface OrderStats {
 
 const VentasPage = () => {
   const { establishment } = useEstablishment();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<OrderStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,6 +128,34 @@ const VentasPage = () => {
   const [total, setTotal] = useState(0);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Read filters from URL on mount
+  useEffect(() => {
+    const startParam = searchParams.get('startDate');
+    const endParam = searchParams.get('endDate');
+    const statusParam = searchParams.get('status');
+    const paymentParam = searchParams.get('paymentStatus');
+    const typeParam = searchParams.get('orderType');
+    
+    if (startParam || endParam) {
+      setDateRange({ start: startParam || '', end: endParam || '' });
+    }
+    if (statusParam) setStatusFilter(statusParam);
+    if (paymentParam) setPaymentStatusFilter(paymentParam);
+    if (typeParam) setOrderTypeFilter(typeParam);
+  }, []);
+
+  // Update URL when filters change
+  const updateURL = useCallback((start: string, end: string, status: string, payment: string, type: string) => {
+    const params = new URLSearchParams();
+    if (start) params.set('startDate', start);
+    if (end) params.set('endDate', end);
+    if (status) params.set('status', status);
+    if (payment) params.set('paymentStatus', payment);
+    if (type) params.set('orderType', type);
+    const queryString = params.toString();
+    router.push(`/establecimientos/admin/ventas${queryString ? '?' + queryString : ''}`, { scroll: false });
+  }, [router]);
 
   // Get the header portal container on mount
   useEffect(() => {
@@ -352,14 +383,22 @@ const VentasPage = () => {
         <input
           type="date"
           value={dateRange.start}
-          onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+          onChange={(e) => {
+            const newStart = e.target.value;
+            setDateRange(prev => ({ ...prev, start: newStart }));
+            updateURL(newStart, dateRange.end, statusFilter, paymentStatusFilter, orderTypeFilter);
+          }}
           className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
         />
         <span className="text-gray-500">-</span>
         <input
           type="date"
           value={dateRange.end}
-          onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+          onChange={(e) => {
+            const newEnd = e.target.value;
+            setDateRange(prev => ({ ...prev, end: newEnd }));
+            updateURL(dateRange.start, newEnd, statusFilter, paymentStatusFilter, orderTypeFilter);
+          }}
           className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
         />
       </div>
