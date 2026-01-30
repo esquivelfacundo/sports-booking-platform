@@ -1416,16 +1416,22 @@ class ApiClient {
   }
 
   // Finance endpoints
-  async getFinancialSummary(establishmentId: string, period: 'week' | 'month' | 'quarter' | 'year' = 'month') {
-    return this.request(`/api/finance/establishment/${establishmentId}?period=${period}`);
+  async getFinancialSummary(establishmentId: string, period: 'week' | 'month' | 'quarter' | 'year' | 'custom' = 'month', startDate?: string, endDate?: string) {
+    const params = new URLSearchParams({ period });
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return this.request(`/api/finance/establishment/${establishmentId}?${params.toString()}`);
   }
 
   async getPendingPayments(establishmentId: string) {
     return this.request(`/api/finance/establishment/${establishmentId}/pending`);
   }
 
-  async getSalesByProductAndPaymentMethod(establishmentId: string, period: 'week' | 'month' | 'quarter' | 'year' = 'month') {
-    return this.request(`/api/finance/establishment/${establishmentId}/sales-by-product?period=${period}`);
+  async getSalesByProductAndPaymentMethod(establishmentId: string, period: 'week' | 'month' | 'quarter' | 'year' | 'custom' = 'month', startDate?: string, endDate?: string) {
+    const params = new URLSearchParams({ period });
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return this.request(`/api/finance/establishment/${establishmentId}/sales-by-product?${params.toString()}`);
   }
 
   async getPurchasesByProduct(establishmentId: string, period: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'month') {

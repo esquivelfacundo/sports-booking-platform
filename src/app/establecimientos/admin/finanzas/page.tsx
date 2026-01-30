@@ -110,7 +110,9 @@ interface SalesByProductResponse {
 
 const FinancePage = () => {
   const { establishment, loading: establishmentLoading } = useEstablishment();
-  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year' | 'custom'>('month');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [finance, setFinance] = useState<FinanceResponse | null>(null);
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,9 +153,9 @@ const FinancePage = () => {
     
     try {
       const [financeRes, pendingRes, productSalesRes] = await Promise.all([
-        apiClient.getFinancialSummary(establishment.id, selectedPeriod),
+        apiClient.getFinancialSummary(establishment.id, selectedPeriod, customStartDate || undefined, customEndDate || undefined),
         apiClient.getPendingPayments(establishment.id),
-        apiClient.getSalesByProductAndPaymentMethod(establishment.id, selectedPeriod)
+        apiClient.getSalesByProductAndPaymentMethod(establishment.id, selectedPeriod, customStartDate || undefined, customEndDate || undefined)
       ]);
       
       setFinance(financeRes as FinanceResponse);
@@ -165,7 +167,7 @@ const FinancePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [establishment?.id, selectedPeriod]);
+  }, [establishment?.id, selectedPeriod, customStartDate, customEndDate]);
 
   useEffect(() => {
     fetchFinance();
@@ -283,11 +285,6 @@ const FinancePage = () => {
         </button>
       </div>
 
-      {/* Period info */}
-      <span className="text-sm text-gray-500 dark:text-gray-400">
-        {finance.period.start} - {finance.period.end}
-      </span>
-      
       {/* Spacer */}
       <div className="flex-1" />
       
@@ -296,16 +293,47 @@ const FinancePage = () => {
         <div className="relative">
           <select
             value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value as any)}
+            onChange={(e) => {
+              const value = e.target.value as any;
+              setSelectedPeriod(value);
+              if (value !== 'custom') {
+                setCustomStartDate('');
+                setCustomEndDate('');
+              }
+            }}
             className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-8"
           >
             <option value="week">Última semana</option>
             <option value="month">Último mes</option>
             <option value="quarter">Último trimestre</option>
             <option value="year">Último año</option>
+            <option value="custom">Personalizado</option>
           </select>
           <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
         </div>
+        
+        {/* Custom date inputs */}
+        <input
+          type="date"
+          value={customStartDate}
+          onChange={(e) => {
+            setCustomStartDate(e.target.value);
+            if (e.target.value) setSelectedPeriod('custom');
+          }}
+          className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+          title="Fecha desde"
+        />
+        <span className="text-gray-400">-</span>
+        <input
+          type="date"
+          value={customEndDate}
+          onChange={(e) => {
+            setCustomEndDate(e.target.value);
+            if (e.target.value) setSelectedPeriod('custom');
+          }}
+          className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+          title="Fecha hasta"
+        />
         
         <button 
           onClick={fetchFinance}
