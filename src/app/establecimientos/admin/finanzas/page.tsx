@@ -122,6 +122,8 @@ const FinancePage = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'pending' | 'products'>('overview');
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   const [productSales, setProductSales] = useState<SalesByProductResponse | null>(null);
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
 
   // Get header portal container on mount
   useEffect(() => {
@@ -161,6 +163,7 @@ const FinancePage = () => {
       setFinance(financeRes as FinanceResponse);
       setPendingPayments((pendingRes as any).payments || []);
       setProductSales(productSalesRes as SalesByProductResponse);
+      setTransactionsPage(1); // Reset pagination when filters change
     } catch (err: any) {
       console.error('Error fetching finance:', err);
       setError(err.message || 'Error al cargar datos financieros');
@@ -696,7 +699,10 @@ const FinancePage = () => {
           {/* Sales Table */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Ventas del Período</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Ventas del Período</h3>
+                <span className="text-sm text-gray-500">{transactions.length} registros</span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -704,7 +710,7 @@ const FinancePage = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Fecha</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cliente</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cancha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Tipo</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Método</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Seña</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Total</th>
@@ -712,7 +718,7 @@ const FinancePage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {transactions.map((tx) => (
+                  {transactions.slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map((tx) => (
                     <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-4 py-3">
                         <div className="text-gray-900 dark:text-white text-sm">{formatDate(tx.date)}</div>
@@ -722,7 +728,7 @@ const FinancePage = () => {
                         <div className="text-gray-900 dark:text-white text-sm">{tx.clientName || 'Cliente'}</div>
                         <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.clientPhone}</div>
                       </td>
-                      <td className="px-4 py-3 text-gray-900 dark:text-white text-sm">{tx.court}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-white text-sm">{tx.category || tx.court}</td>
                       <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.paymentMethod}</td>
                       <td className="px-4 py-3 text-right text-blue-600 dark:text-blue-400 text-sm font-medium">
                         {tx.depositAmount > 0 ? formatCurrency(tx.depositAmount) : '-'}
@@ -753,19 +759,48 @@ const FinancePage = () => {
                 </tbody>
               </table>
             </div>
+            {/* Pagination */}
+            {transactions.length > ITEMS_PER_PAGE && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <span className="text-sm text-gray-500">
+                  Mostrando {((transactionsPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(transactionsPage * ITEMS_PER_PAGE, transactions.length)} de {transactions.length}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setTransactionsPage(p => Math.max(1, p - 1))}
+                    disabled={transactionsPage === 1}
+                    className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50"
+                  >
+                    Anterior
+                  </button>
+                  <span className="px-3 py-1 text-sm">{transactionsPage} / {Math.ceil(transactions.length / ITEMS_PER_PAGE)}</span>
+                  <button
+                    onClick={() => setTransactionsPage(p => Math.min(Math.ceil(transactions.length / ITEMS_PER_PAGE), p + 1))}
+                    disabled={transactionsPage >= Math.ceil(transactions.length / ITEMS_PER_PAGE)}
+                    className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
 
       {activeTab === 'transactions' && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Transacciones</h3>
+            <span className="text-sm text-gray-500">{transactions.length} registros</span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-100 dark:bg-gray-700">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Fecha</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cliente</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cancha</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Tipo</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Método</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Seña</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Total</th>
@@ -773,7 +808,7 @@ const FinancePage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {transactions.map((tx) => (
+                {transactions.slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map((tx) => (
                   <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-4 py-3">
                       <div className="text-gray-900 dark:text-white text-sm">{formatDate(tx.date)}</div>
@@ -783,8 +818,8 @@ const FinancePage = () => {
                       <div className="text-gray-900 dark:text-white text-sm">{tx.clientName || 'Cliente'}</div>
                       <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.clientPhone}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.court}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm capitalize">{tx.paymentMethod}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.category || tx.court}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.paymentMethod}</td>
                     <td className="px-4 py-3 text-right text-yellow-400 text-sm">
                       {tx.depositAmount > 0 ? formatCurrency(tx.depositAmount) : '-'}
                     </td>
@@ -813,6 +848,31 @@ const FinancePage = () => {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {transactions.length > ITEMS_PER_PAGE && (
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <span className="text-sm text-gray-500">
+                Mostrando {((transactionsPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(transactionsPage * ITEMS_PER_PAGE, transactions.length)} de {transactions.length}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTransactionsPage(p => Math.max(1, p - 1))}
+                  disabled={transactionsPage === 1}
+                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                <span className="px-3 py-1 text-sm">{transactionsPage} / {Math.ceil(transactions.length / ITEMS_PER_PAGE)}</span>
+                <button
+                  onClick={() => setTransactionsPage(p => Math.min(Math.ceil(transactions.length / ITEMS_PER_PAGE), p + 1))}
+                  disabled={transactionsPage >= Math.ceil(transactions.length / ITEMS_PER_PAGE)}
+                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
