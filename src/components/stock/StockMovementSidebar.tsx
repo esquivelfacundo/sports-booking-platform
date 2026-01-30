@@ -25,6 +25,7 @@ interface Product {
   currentStock: number;
   unit: string;
   costPrice: number;
+  salePrice: number;
   category?: {
     name: string;
     color: string;
@@ -64,6 +65,8 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
     type: 'entrada',
     quantity: '',
     unitCost: '',
+    costPrice: '',
+    salePrice: '',
     notes: '',
     invoiceNumber: ''
   });
@@ -103,6 +106,8 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
       type: 'entrada',
       quantity: '',
       unitCost: '',
+      costPrice: '',
+      salePrice: '',
       notes: '',
       invoiceNumber: ''
     });
@@ -116,7 +121,9 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
     setFormData({
       ...formData,
       productId: product.id,
-      unitCost: product.costPrice.toString()
+      unitCost: product.costPrice.toString(),
+      costPrice: '',
+      salePrice: ''
     });
   };
 
@@ -131,7 +138,7 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
         throw new Error('La cantidad debe ser mayor a 0');
       }
 
-      const data = {
+      const data: any = {
         establishmentId,
         productId: formData.productId,
         type: formData.type,
@@ -140,6 +147,16 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
         notes: formData.notes || undefined,
         invoiceNumber: formData.invoiceNumber || undefined
       };
+
+      // Add price updates only for entrada type and if values are provided
+      if (formData.type === 'entrada') {
+        if (formData.costPrice && formData.costPrice.trim() !== '') {
+          data.updateCostPrice = parseFloat(formData.costPrice);
+        }
+        if (formData.salePrice && formData.salePrice.trim() !== '') {
+          data.updateSalePrice = parseFloat(formData.salePrice);
+        }
+      }
 
       await apiClient.createStockMovement(data);
       onSave();
@@ -384,6 +401,58 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
                               maximumFractionDigits: 2
                             })}
                           </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Update Product Prices - Only for entrada */}
+                    {formData.type === 'entrada' && (
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                          <span>Actualizar Precios del Producto</span>
+                          <span className="text-xs text-gray-500">(opcional)</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-400 mb-1">
+                              Precio de Compra
+                            </label>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={formData.costPrice}
+                                onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                                className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                                placeholder={selectedProduct?.costPrice?.toString() || '0.00'}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Actual: ${selectedProduct?.costPrice?.toLocaleString('es-AR') || '0'}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-400 mb-1">
+                              Precio de Venta
+                            </label>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={formData.salePrice}
+                                onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                                className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                                placeholder={selectedProduct?.salePrice?.toString() || '0.00'}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Actual: ${selectedProduct?.salePrice?.toLocaleString('es-AR') || '0'}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}
