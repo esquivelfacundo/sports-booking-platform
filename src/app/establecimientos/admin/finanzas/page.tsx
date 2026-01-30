@@ -337,10 +337,10 @@ const FinancePage = () => {
         
         <button 
           onClick={fetchFinance}
-          className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+          className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
+          title="Actualizar"
         >
           <RefreshCw className="h-4 w-4" />
-          <span>Actualizar</span>
         </button>
       </div>
     </div>
