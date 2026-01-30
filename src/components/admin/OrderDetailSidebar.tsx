@@ -174,6 +174,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
+  const [playerName, setPlayerName] = useState('');
   const [isAddingPayment, setIsAddingPayment] = useState(false);
   
   // Print state
@@ -224,18 +225,29 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
     
     setIsAddingPayment(true);
     try {
-      await apiClient.addOrderPayment(fullOrder.id, {
-        amount: parseFloat(paymentAmount),
-        paymentMethod
-      });
+      // If order has a booking, use the booking payments API so it syncs with /reservas
+      if (fullOrder.booking?.id) {
+        await apiClient.registerBookingPayment(fullOrder.booking.id, {
+          amount: parseFloat(paymentAmount),
+          method: paymentMethod,
+          playerName: playerName || fullOrder.booking.clientName || 'Pago'
+        });
+      } else {
+        // Direct sale - use order payments API
+        await apiClient.addOrderPayment(fullOrder.id, {
+          amount: parseFloat(paymentAmount),
+          paymentMethod
+        });
+      }
       
       setShowPaymentForm(false);
       setPaymentAmount('');
+      setPlayerName('');
       loadFullOrder();
       handleOrderUpdated();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding payment:', error);
-      alert('Error al registrar el pago');
+      alert(error.message || 'Error al registrar el pago');
     } finally {
       setIsAddingPayment(false);
     }
@@ -875,6 +887,19 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                     {/* Payment Form */}
                     {showPaymentForm && (
                       <div className="bg-gray-800 rounded-lg p-3 space-y-3">
+                        {/* Player name field - only for orders with booking */}
+                        {displayOrder.booking?.id && (
+                          <div>
+                            <label className="block text-xs text-gray-400 mb-1">Nombre del jugador</label>
+                            <input
+                              type="text"
+                              value={playerName}
+                              onChange={(e) => setPlayerName(e.target.value)}
+                              placeholder={displayOrder.booking?.clientName || 'Nombre'}
+                              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                            />
+                          </div>
+                        )}
                         <div>
                           <label className="block text-xs text-gray-400 mb-1">Monto</label>
                           <div className="relative">
