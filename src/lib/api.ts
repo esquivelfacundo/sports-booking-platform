@@ -655,6 +655,18 @@ class ApiClient {
     await this.downloadCSV(`/api/products/export?${queryParams.toString()}`, 'inventario.csv');
   }
 
+  // Product import methods
+  async downloadProductImportTemplate() {
+    await this.downloadCSV('/api/products/import/template', 'plantilla_productos.csv');
+  }
+
+  async importProducts(establishmentId: string, products: any[]) {
+    return this.request('/api/products/import', {
+      method: 'POST',
+      body: JSON.stringify({ establishmentId, products })
+    });
+  }
+
   // Phase 2 exports
   async exportCashMovementsToCSV(params: {
     establishmentId: string;

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Package, TrendingUp, DollarSign, Plus, Search, Filter, FileText, Truck, Download } from 'lucide-react';
+import { Package, TrendingUp, DollarSign, Plus, Search, Filter, FileText, Truck, Download, Upload } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductsTab from '@/components/stock/ProductsTab';
@@ -11,6 +11,7 @@ import MovementsTab from '@/components/stock/MovementsTab';
 import ReportsTab from '@/components/stock/ReportsTab';
 import SuppliersTab from '@/components/stock/SuppliersTab';
 import PurchasesTab from '@/components/stock/PurchasesTab';
+import ImportProductsSidebar from '@/components/stock/ImportProductsSidebar';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 
@@ -56,6 +57,10 @@ const StockPage = () => {
   
   // Suppliers tab state
   const [showSupplierSidebar, setShowSupplierSidebar] = useState(false);
+  
+  // Import sidebar state
+  const [showImportSidebar, setShowImportSidebar] = useState(false);
+  const [refreshProducts, setRefreshProducts] = useState(0);
   
   // Reports tab state
   const [reportDateRange, setReportDateRange] = useState({
@@ -205,6 +210,15 @@ const StockPage = () => {
             </div>
           </div>
 
+          {/* Import Button */}
+          <button
+            onClick={() => setShowImportSidebar(true)}
+            className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex-shrink-0"
+            title="Importar Productos"
+          >
+            <Upload className="h-4 w-4" />
+          </button>
+
           {/* New Product Button */}
           <button
             onClick={() => setShowProductSidebar(true)}
@@ -350,6 +364,14 @@ const StockPage = () => {
             )}
           </motion.div>
         </div>
+
+      {/* Import Products Sidebar */}
+      <ImportProductsSidebar
+        isOpen={showImportSidebar}
+        onClose={() => setShowImportSidebar(false)}
+        establishmentId={establishment.id}
+        onImportComplete={() => setRefreshProducts(prev => prev + 1)}
+      />
     </>
   );
 };
