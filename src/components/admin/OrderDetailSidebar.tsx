@@ -151,15 +151,19 @@ interface Order {
 interface OrderDetailSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  order: Order;
-  onOrderUpdated: () => void;
+  order?: Order;
+  orderId?: string;
+  onOrderUpdated?: () => void;
+  onUpdate?: () => void;
 }
 
 const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   isOpen,
   onClose,
   order,
-  onOrderUpdated
+  orderId,
+  onOrderUpdated,
+  onUpdate
 }) => {
   const [mounted, setMounted] = useState(false);
   const [fullOrder, setFullOrder] = useState<Order | null>(null);
@@ -181,25 +185,35 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   const [creditNoteAmount, setCreditNoteAmount] = useState('');
   const [creditNoteMotivo, setCreditNoteMotivo] = useState('');
   const [isEmittingCreditNote, setIsEmittingCreditNote] = useState(false);
+  
+  // Get the ID from either prop
+  const orderIdToLoad = orderId || order?.id;
+  
+  // Unified callback
+  const handleOrderUpdated = () => {
+    onOrderUpdated?.();
+    onUpdate?.();
+  };
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (isOpen && order?.id) {
+    if (isOpen && orderIdToLoad) {
       loadFullOrder();
     }
-  }, [isOpen, order?.id]);
+  }, [isOpen, orderIdToLoad]);
 
   const loadFullOrder = async () => {
+    if (!orderIdToLoad) return;
     setLoading(true);
     try {
-      const response = await apiClient.getOrder(order.id) as { order: Order };
+      const response = await apiClient.getOrder(orderIdToLoad) as { order: Order };
       setFullOrder(response.order);
     } catch (error) {
       console.error('Error loading order:', error);
-      setFullOrder(order);
+      if (order) setFullOrder(order);
     } finally {
       setLoading(false);
     }
@@ -218,7 +232,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
       setShowPaymentForm(false);
       setPaymentAmount('');
       loadFullOrder();
-      onOrderUpdated();
+      handleOrderUpdated();
     } catch (error) {
       console.error('Error adding payment:', error);
       alert('Error al registrar el pago');
@@ -258,7 +272,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
       setCreditNoteAmount('');
       setCreditNoteType('total');
       loadFullOrder();
-      onOrderUpdated();
+      handleOrderUpdated();
     } catch (error: any) {
       console.error('Error emitting credit note:', error);
       alert(error.message || 'Error al emitir nota de crédito');
@@ -966,7 +980,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
               defaultCustomerName={defaultCustomerName}
               onInvoiced={() => {
                 loadFullOrder();
-                onOrderUpdated();
+                handleOrderUpdated();
               }}
             />
 
