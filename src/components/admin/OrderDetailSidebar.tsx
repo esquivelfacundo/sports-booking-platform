@@ -695,7 +695,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                       {/* Pagos declarados (booking) */}
                       {bookingPaymentsTotal > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Pagos reserva</span>
+                          <span className="text-gray-400">Pagos declarados</span>
                           <span className="text-emerald-400">-${bookingPaymentsTotal.toLocaleString()}</span>
                         </div>
                       )}
