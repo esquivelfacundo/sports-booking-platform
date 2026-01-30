@@ -471,13 +471,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
         ? `https://miscanchas.com/reservar/${establishmentSlug}` 
         : undefined;
 
-      // Build review URL if booking has token (don't block printing for token generation)
-      let reviewUrl: string | undefined;
-      if (!isDirectSale && displayOrder.booking?.id) {
-        // Generate token in background for next print
-        apiClient.generateBookingReviewToken(displayOrder.booking.id).catch(() => {});
-      }
-
+      
       // Format date to Spanish format
       const formatDate = (dateStr: string) => {
         const date = new Date(dateStr + 'T00:00:00');
@@ -533,8 +527,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
         pendingAmount: pendingAmount,
         items: ticketItems,
         payments: ticketPayments,
-        establishmentUrl: establishmentUrl,
-        reviewUrl: reviewUrl
+        establishmentUrl: establishmentUrl
       };
 
       await printTicket(ticketData);

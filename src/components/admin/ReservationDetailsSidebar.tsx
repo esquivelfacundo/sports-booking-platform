@@ -702,14 +702,10 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
         ? `https://miscanchas.com/reservar/${estSlug}` 
         : 'https://miscanchas.com';
       
-      // Build review URL if token exists (token generation happens async, don't block printing)
-      let reviewUrl: string | undefined;
-      if (reservation?.reviewToken) {
-        reviewUrl = `${window.location.origin}/valorar/${reservation.reviewToken}`;
-      } else if (reservation?.id) {
-        // Generate token in background for next print, don't await
-        apiClient.generateBookingReviewToken(reservation.id).catch(() => {});
-      }
+      // Generate review URL if booking has a review token
+      const reviewUrl = reservation?.reviewToken 
+        ? `${window.location.origin}/valorar/${reservation.reviewToken}`
+        : undefined;
 
       // Debug: log data before creating ticket
       console.log('Ticket data debug:', {
