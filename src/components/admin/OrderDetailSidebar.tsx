@@ -347,6 +347,36 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
 
   const displayOrder = fullOrder || order;
   
+  // Early return if no order data yet (loading state)
+  if (!displayOrder) {
+    if (!mounted) return null;
+    return createPortal(
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={onClose}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed right-0 top-0 h-full w-full max-w-xl bg-gray-900 shadow-2xl z-50 flex items-center justify-center"
+            >
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>,
+      document.body
+    );
+  }
+  
   // Calculate totals including booking price and seña
   // Parse all values to numbers since they come as strings from Sequelize DECIMAL
   const bookingPrice = parseFloat(String(displayOrder.booking?.totalAmount || 0)) || 0;
