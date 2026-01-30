@@ -1577,12 +1577,16 @@ class ApiClient {
     categoryId?: string;
     search?: string;
     isActive?: boolean;
+    page?: number;
+    limit?: number;
   }) {
     const queryParams = new URLSearchParams();
     if (params?.establishmentId) queryParams.append('establishmentId', params.establishmentId);
     if (params?.categoryId) queryParams.append('categoryId', params.categoryId);
     if (params?.search) queryParams.append('search', params.search);
     if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
     
     const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
     return this.request(`/api/products${query}`);

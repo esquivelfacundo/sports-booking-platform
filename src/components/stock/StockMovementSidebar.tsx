@@ -90,7 +90,8 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
     try {
       const response = await apiClient.getProducts({
         establishmentId,
-        isActive: true
+        isActive: true,
+        limit: 10000
       }) as any;
       setProducts(response.products || []);
     } catch (err) {
