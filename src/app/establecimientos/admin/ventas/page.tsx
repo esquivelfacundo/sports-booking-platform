@@ -612,7 +612,7 @@ const VentasPage = () => {
                               )}
                             </div>
                             <div>
-                              <p className="text-gray-900 dark:text-white font-medium">{order.orderNumber}</p>
+                              <p className="text-gray-900 dark:text-white font-medium text-sm">{order.orderNumber}</p>
                               <p className="text-xs text-gray-400">
                                 {order.createdByUser?.name || 'Sistema'}
                               </p>
@@ -622,7 +622,7 @@ const VentasPage = () => {
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-2">
                             <User className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-900 dark:text-white">
+                            <span className="text-gray-900 dark:text-white text-sm">
                               {order.client?.name || order.customerName || 'Cliente anónimo'}
                             </span>
                           </div>
@@ -640,23 +640,23 @@ const VentasPage = () => {
                         <td className="px-4 py-4">
                           <div className="flex items-center space-x-2">
                             <Package className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-900 dark:text-white">{order.items?.length || 0}</span>
+                            <span className="text-gray-900 dark:text-white text-sm">{order.items?.length || 0}</span>
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-gray-900 dark:text-white font-medium">${parseFloat(order.total.toString()).toLocaleString()}</p>
+                          <p className="text-gray-900 dark:text-white font-medium text-sm">${parseFloat(order.total.toString()).toLocaleString()}</p>
                           {order.discount > 0 && (
                             <p className="text-xs text-gray-400">-${parseFloat(order.discount.toString()).toLocaleString()} desc.</p>
                           )}
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-emerald-400 font-medium">${parseFloat(order.paidAmount?.toString() || '0').toLocaleString()}</p>
+                          <p className="text-emerald-400 font-medium text-sm">${parseFloat(order.paidAmount?.toString() || '0').toLocaleString()}</p>
                         </td>
                         <td className="px-4 py-4">
                           {(() => {
                             const pending = Math.max(0, parseFloat(order.total.toString()) - parseFloat(order.paidAmount?.toString() || '0'));
                             return (
-                              <p className={`font-medium ${pending > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                              <p className={`font-medium text-sm ${pending > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
                                 ${pending.toLocaleString()}
                               </p>
                             );
