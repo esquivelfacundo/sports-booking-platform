@@ -689,6 +689,68 @@ const FinancePage = () => {
               </div>
             </div>
           </div>
+
+          {/* Sales Table */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Ventas del Período</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Fecha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cliente</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cancha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Método</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Seña</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Total</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-3">
+                        <div className="text-gray-900 dark:text-white text-sm">{formatDate(tx.date)}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.time?.substring(0, 5)}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-gray-900 dark:text-white text-sm">{tx.clientName || 'Cliente'}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.clientPhone}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-white text-sm">{tx.court}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.paymentMethod}</td>
+                      <td className="px-4 py-3 text-right text-blue-600 dark:text-blue-400 text-sm font-medium">
+                        {tx.depositAmount > 0 ? formatCurrency(tx.depositAmount) : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+                        {formatCurrency(tx.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          tx.status === 'completed' 
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                            : tx.status === 'confirmed'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                        }`}>
+                          {tx.status === 'completed' ? 'Completado' : tx.status === 'confirmed' ? 'Confirmado' : tx.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {transactions.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                        No hay ventas en este período
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </>
       )}
 
