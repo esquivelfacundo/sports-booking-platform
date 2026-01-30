@@ -76,6 +76,8 @@ const ProductsTab = ({
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -120,6 +122,44 @@ const ProductsTab = ({
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Error al eliminar el producto');
+    }
+  };
+
+  const handleToggleSelect = (productId: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === products.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(products.map(p => p.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    
+    if (!confirm(`¿Estás seguro de eliminar ${selectedIds.size} producto${selectedIds.size !== 1 ? 's' : ''}?`)) return;
+    
+    setIsDeleting(true);
+    try {
+      await apiClient.bulkDeleteProducts(establishmentId, Array.from(selectedIds));
+      setSelectedIds(new Set());
+      fetchProducts();
+    } catch (error) {
+      console.error('Error deleting products:', error);
+      alert('Error al eliminar los productos');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -259,10 +299,38 @@ const ProductsTab = ({
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
+          {/* Selection Actions Bar */}
+          {selectedIds.size > 0 && (
+            <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/30 border-b border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+              <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                {selectedIds.size} producto{selectedIds.size !== 1 ? 's' : ''} seleccionado{selectedIds.size !== 1 ? 's' : ''}
+              </span>
+              <button
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm rounded-lg transition-colors"
+              >
+                {isDeleting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Eliminar Seleccionados
+              </button>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-100 dark:bg-gray-900/50">
                 <tr>
+                  <th className="px-4 py-3 text-center w-12">
+                    <input
+                      type="checkbox"
+                      checked={products.length > 0 && selectedIds.size === products.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500 bg-white dark:bg-gray-700"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                     Producto
                   </th>
@@ -303,8 +371,16 @@ const ProductsTab = ({
                       key={product.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${selectedIds.has(product.id) ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}`}
                     >
+                      <td className="px-4 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(product.id)}
+                          onChange={() => handleToggleSelect(product.id)}
+                          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500 bg-white dark:bg-gray-700"
+                        />
+                      </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center flex-shrink-0">

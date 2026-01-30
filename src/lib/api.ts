@@ -667,6 +667,13 @@ class ApiClient {
     });
   }
 
+  async bulkDeleteProducts(establishmentId: string, productIds: string[]) {
+    return this.request('/api/products/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ establishmentId, productIds })
+    });
+  }
+
   // Phase 2 exports
   async exportCashMovementsToCSV(params: {
     establishmentId: string;
