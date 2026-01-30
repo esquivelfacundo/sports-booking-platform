@@ -54,7 +54,7 @@ interface FinanceResponse {
     byType: { type: string; count: number; amount: number; percentage: number }[];
   };
   charts: {
-    dailyRevenue: { date: string; revenue: number; deposits: number; bookings: number; orders?: number; byPaymentMethod?: { [key: string]: number } }[];
+    dailyRevenue: { date: string; revenue: number; deposits: number; bookings: number; orders?: number; byPaymentMethod?: { [key: string]: number }; isWeekly?: boolean }[];
     monthlyComparison: { month: string; revenue: number; deposits: number; bookings: number }[];
   };
   transactions: {
@@ -483,7 +483,9 @@ const FinancePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Daily Revenue Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ingresos Diarios</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {charts.dailyRevenue[0]?.isWeekly ? 'Ingresos Semanales' : 'Ingresos Diarios'}
+              </h3>
               {charts.dailyRevenue.length > 0 ? (
                 <div>
                   <div className="flex items-end justify-between space-x-1" style={{ height: '200px' }}>
@@ -500,7 +502,7 @@ const FinancePage = () => {
                           />
                           <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg z-10 min-w-[140px]">
                             <div className="font-medium border-b border-gray-700 pb-1 mb-1">
-                              {formatDate(day.date)}
+                              {day.isWeekly ? `Semana del ${formatDate(day.date)}` : formatDate(day.date)}
                             </div>
                             <div className="font-bold text-emerald-400 mb-1">
                               Total: {formatCurrency(day.revenue)}
