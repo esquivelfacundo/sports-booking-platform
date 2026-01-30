@@ -182,7 +182,10 @@ const FinancePage = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+    // Parse date string manually to avoid timezone issues
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
   };
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
