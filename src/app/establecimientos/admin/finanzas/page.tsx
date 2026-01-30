@@ -133,18 +133,37 @@ const FinancePage = () => {
     }
   }, []);
   
-  // Read tab from URL on mount
+  // Read filters from URL on mount
   useEffect(() => {
     const tabParam = searchParams.get('tab');
+    const periodParam = searchParams.get('period');
+    const startParam = searchParams.get('startDate');
+    const endParam = searchParams.get('endDate');
+    
     if (tabParam && ['overview', 'transactions', 'pending', 'products'].includes(tabParam)) {
       setActiveTab(tabParam as 'overview' | 'transactions' | 'pending' | 'products');
     }
-  }, [searchParams]);
+    if (periodParam && ['week', 'month', 'quarter', 'year', 'custom'].includes(periodParam)) {
+      setSelectedPeriod(periodParam as 'week' | 'month' | 'quarter' | 'year' | 'custom');
+    }
+    if (startParam) setCustomStartDate(startParam);
+    if (endParam) setCustomEndDate(endParam);
+  }, []);
+  
+  // Update URL when filters change
+  const updateURL = useCallback((tab: string, period: string, start: string, end: string) => {
+    const params = new URLSearchParams();
+    params.set('tab', tab);
+    params.set('period', period);
+    if (start) params.set('startDate', start);
+    if (end) params.set('endDate', end);
+    router.push(`/establecimientos/admin/finanzas?${params.toString()}`, { scroll: false });
+  }, [router]);
   
   // Update URL when tab changes
   const handleTabChange = (tab: 'overview' | 'transactions' | 'pending' | 'products') => {
     setActiveTab(tab);
-    router.push(`/establecimientos/admin/finanzas?tab=${tab}`, { scroll: false });
+    updateURL(tab, selectedPeriod, customStartDate, customEndDate);
   };
 
   const fetchFinance = useCallback(async () => {
@@ -300,11 +319,12 @@ const FinancePage = () => {
           <select
             value={selectedPeriod}
             onChange={(e) => {
-              const value = e.target.value as any;
+              const value = e.target.value as 'week' | 'month' | 'quarter' | 'year' | 'custom';
               setSelectedPeriod(value);
               if (value !== 'custom') {
                 setCustomStartDate('');
                 setCustomEndDate('');
+                updateURL(activeTab, value, '', '');
               }
             }}
             className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 pr-8"
@@ -323,8 +343,12 @@ const FinancePage = () => {
           type="date"
           value={customStartDate}
           onChange={(e) => {
-            setCustomStartDate(e.target.value);
-            if (e.target.value) setSelectedPeriod('custom');
+            const newStart = e.target.value;
+            setCustomStartDate(newStart);
+            if (newStart) {
+              setSelectedPeriod('custom');
+              updateURL(activeTab, 'custom', newStart, customEndDate);
+            }
           }}
           className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
           title="Fecha desde"
@@ -334,15 +358,22 @@ const FinancePage = () => {
           type="date"
           value={customEndDate}
           onChange={(e) => {
-            setCustomEndDate(e.target.value);
-            if (e.target.value) setSelectedPeriod('custom');
+            const newEnd = e.target.value;
+            setCustomEndDate(newEnd);
+            if (newEnd) {
+              setSelectedPeriod('custom');
+              updateURL(activeTab, 'custom', customStartDate, newEnd);
+            }
           }}
           className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
           title="Fecha hasta"
         />
         
         <button 
-          onClick={fetchFinance}
+          onClick={() => {
+            fetchFinance();
+            updateURL(activeTab, selectedPeriod, customStartDate, customEndDate);
+          }}
           className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
           title="Actualizar"
         >
