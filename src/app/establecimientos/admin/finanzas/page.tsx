@@ -54,7 +54,7 @@ interface FinanceResponse {
     byType: { type: string; count: number; amount: number; percentage: number }[];
   };
   charts: {
-    dailyRevenue: { date: string; revenue: number; deposits: number; bookings: number }[];
+    dailyRevenue: { date: string; revenue: number; deposits: number; bookings: number; orders?: number; byPaymentMethod?: { [key: string]: number } }[];
     monthlyComparison: { month: string; revenue: number; deposits: number; bookings: number }[];
   };
   transactions: {
@@ -487,28 +487,47 @@ const FinancePage = () => {
               {charts.dailyRevenue.length > 0 ? (
                 <div>
                   <div className="flex items-end justify-between space-x-1" style={{ height: '200px' }}>
-                    {charts.dailyRevenue.slice(-14).map((day, index) => {
-                      const maxRevenue = Math.max(...charts.dailyRevenue.slice(-14).map(d => d.revenue));
+                    {charts.dailyRevenue.map((day, index) => {
+                      const maxRevenue = Math.max(...charts.dailyRevenue.map(d => d.revenue));
                       const heightPx = maxRevenue > 0 ? Math.max(4, (day.revenue / maxRevenue) * 180) : 4;
                       return (
-                        <div key={index} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                        <div key={index} className="flex-1 flex flex-col items-center justify-end h-full group relative" style={{ minWidth: '4px' }}>
                           <motion.div
                             initial={{ height: 0 }}
                             animate={{ height: heightPx }}
-                            transition={{ delay: index * 0.03, duration: 0.5 }}
+                            transition={{ delay: index * 0.02, duration: 0.4 }}
                             className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t cursor-pointer hover:from-emerald-500 hover:to-emerald-300"
                           />
-                          <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                            {formatDate(day.date)}: {formatCurrency(day.revenue)}
+                          <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg z-10 min-w-[140px]">
+                            <div className="font-medium border-b border-gray-700 pb-1 mb-1">
+                              {formatDate(day.date)}
+                            </div>
+                            <div className="font-bold text-emerald-400 mb-1">
+                              Total: {formatCurrency(day.revenue)}
+                            </div>
+                            {day.byPaymentMethod && Object.entries(day.byPaymentMethod).length > 0 && (
+                              <div className="space-y-0.5 text-gray-300">
+                                {Object.entries(day.byPaymentMethod).map(([method, amount]) => (
+                                  <div key={method} className="flex justify-between gap-2">
+                                    <span>{method}:</span>
+                                    <span>{formatCurrency(amount as number)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
                   <div className="flex justify-between mt-3 text-xs text-gray-400">
-                    {charts.dailyRevenue.slice(-14).filter((_, i) => i % 3 === 0).map((day, index) => (
-                      <span key={index}>{formatDate(day.date)}</span>
-                    ))}
+                    {(() => {
+                      const days = charts.dailyRevenue;
+                      const showEvery = Math.max(1, Math.floor(days.length / 5));
+                      return days.filter((_, i) => i % showEvery === 0 || i === days.length - 1).map((day, index) => (
+                        <span key={index}>{formatDate(day.date)}</span>
+                      ));
+                    })()}
                   </div>
                 </div>
               ) : (
