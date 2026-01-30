@@ -471,18 +471,11 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
         ? `https://miscanchas.com/reservar/${establishmentSlug}` 
         : undefined;
 
-      // Generate review URL if booking exists
+      // Build review URL if booking has token (don't block printing for token generation)
       let reviewUrl: string | undefined;
       if (!isDirectSale && displayOrder.booking?.id) {
-        try {
-          const tokenResponse = await apiClient.generateBookingReviewToken(displayOrder.booking.id);
-          const reviewToken = tokenResponse?.data?.token;
-          if (reviewToken) {
-            reviewUrl = `${window.location.origin}/valorar/${reviewToken}`;
-          }
-        } catch (e) {
-          console.warn('Could not generate review token:', e);
-        }
+        // Generate token in background for next print
+        apiClient.generateBookingReviewToken(displayOrder.booking.id).catch(() => {});
       }
 
       // Format date to Spanish format
