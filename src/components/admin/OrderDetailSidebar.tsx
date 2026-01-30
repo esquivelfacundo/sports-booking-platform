@@ -392,6 +392,9 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   // Consumptions from booking
   const bookingConsumptionsTotal = (displayOrder.bookingConsumptions || []).reduce((sum, c) => sum + (parseFloat(String(c.totalPrice)) || 0), 0);
   
+  // Order payments (pagos registrados en la orden)
+  const orderPaymentsTotal = (displayOrder.payments || []).reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
+  
   // For direct sales, use order totals directly
   const isDirectSale = displayOrder.orderType === 'direct_sale';
   
@@ -400,10 +403,10 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
     ? parseFloat(String(displayOrder.total)) || 0
     : bookingPrice + bookingConsumptionsTotal;
   
-  // Total pagado = seña + pagos declarados del booking (for bookings) or paidAmount (for direct sales)
+  // Total pagado = seña + pagos del booking + pagos de la orden (for bookings) or paidAmount (for direct sales)
   const totalPaid = isDirectSale
     ? parseFloat(String(displayOrder.paidAmount)) || 0
-    : seña + bookingPaymentsTotal;
+    : seña + bookingPaymentsTotal + orderPaymentsTotal;
   
   // Pendiente
   const pendingAmount = Math.max(0, totalGeneral - totalPaid);
@@ -677,13 +680,27 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                         </div>
                       )}
                       
-                      {/* Pagos declarados */}
+                      {/* Pagos declarados (booking) */}
                       {bookingPaymentsTotal > 0 && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Pagos declarados</span>
+                          <span className="text-gray-400">Pagos reserva</span>
                           <span className="text-emerald-400">-${bookingPaymentsTotal.toLocaleString()}</span>
                         </div>
                       )}
+                      
+                      {/* Pagos de la orden */}
+                      {orderPaymentsTotal > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">Pagos declarados</span>
+                          <span className="text-emerald-400">-${orderPaymentsTotal.toLocaleString()}</span>
+                        </div>
+                      )}
+                      
+                      {/* Total pagado */}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Total pagado</span>
+                        <span className="text-emerald-400">${totalPaid.toLocaleString()}</span>
+                      </div>
                       
                       {/* Pendiente a pagar */}
                       <div className="flex justify-between text-sm pt-2 border-t border-gray-600">
@@ -693,14 +710,22 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                         </span>
                       </div>
                       
-                      {/* Detalle de pagos realizados */}
-                      {(displayOrder.bookingPayments || []).length > 0 && (
+                      {/* Historial de pagos */}
+                      {((displayOrder.bookingPayments || []).length > 0 || (displayOrder.payments || []).length > 0) && (
                         <div className="pt-3 border-t border-gray-600 space-y-2">
-                          <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos realizados</h5>
+                          <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Historial de pagos</h5>
                           {displayOrder.bookingPayments?.map((payment) => (
-                            <div key={payment.id} className="flex justify-between text-sm">
+                            <div key={`bp-${payment.id}`} className="flex justify-between text-sm">
                               <span className="text-gray-300">
-                                {payment.playerName || 'Pago'} ({getPaymentMethodLabel(payment.method)})
+                                {payment.playerName || 'Pago reserva'} ({getPaymentMethodLabel(payment.method)})
+                              </span>
+                              <span className="text-emerald-400">${(parseFloat(String(payment.amount)) || 0).toLocaleString()}</span>
+                            </div>
+                          ))}
+                          {displayOrder.payments?.map((payment) => (
+                            <div key={`op-${payment.id}`} className="flex justify-between text-sm">
+                              <span className="text-gray-300">
+                                {payment.registeredByUser ? `${payment.registeredByUser.firstName} ${payment.registeredByUser.lastName}`.trim() : 'Pago'} ({getPaymentMethodLabel(payment.paymentMethod)})
                               </span>
                               <span className="text-emerald-400">${(parseFloat(String(payment.amount)) || 0).toLocaleString()}</span>
                             </div>
