@@ -573,6 +573,12 @@ const VentasPage = () => {
                         Total
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Pagado
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Pendiente
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Estado
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -642,6 +648,19 @@ const VentasPage = () => {
                           {order.discount > 0 && (
                             <p className="text-xs text-gray-400">-${parseFloat(order.discount.toString()).toLocaleString()} desc.</p>
                           )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="text-emerald-400 font-medium">${parseFloat(order.paidAmount?.toString() || '0').toLocaleString()}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          {(() => {
+                            const pending = Math.max(0, parseFloat(order.total.toString()) - parseFloat(order.paidAmount?.toString() || '0'));
+                            return (
+                              <p className={`font-medium ${pending > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                                ${pending.toLocaleString()}
+                              </p>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-4">
                           {getStatusBadge(order.status)}
