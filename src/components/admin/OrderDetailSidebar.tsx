@@ -471,6 +471,20 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
         ? `https://miscanchas.com/reservar/${establishmentSlug}` 
         : undefined;
 
+      // Generate review URL if booking exists
+      let reviewUrl: string | undefined;
+      if (!isDirectSale && displayOrder.booking?.id) {
+        try {
+          const tokenResponse = await apiClient.generateBookingReviewToken(displayOrder.booking.id);
+          const reviewToken = tokenResponse?.data?.token;
+          if (reviewToken) {
+            reviewUrl = `${window.location.origin}/valorar/${reviewToken}`;
+          }
+        } catch (e) {
+          console.warn('Could not generate review token:', e);
+        }
+      }
+
       // Format date to Spanish format
       const formatDate = (dateStr: string) => {
         const date = new Date(dateStr + 'T00:00:00');
@@ -526,7 +540,8 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
         pendingAmount: pendingAmount,
         items: ticketItems,
         payments: ticketPayments,
-        establishmentUrl: establishmentUrl
+        establishmentUrl: establishmentUrl,
+        reviewUrl: reviewUrl
       };
 
       await printTicket(ticketData);

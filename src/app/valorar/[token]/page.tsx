@@ -37,19 +37,13 @@ interface BookingInfo {
 }
 
 interface AspectRating {
-  courtCondition: number;
-  cleanliness: number;
-  customerService: number;
-  valueForMoney: number;
-  punctuality: number;
+  facilities: number;
+  service: number;
 }
 
 const aspectLabels: Record<keyof AspectRating, string> = {
-  courtCondition: 'Estado de la cancha',
-  cleanliness: 'Limpieza',
-  customerService: 'Atención al cliente',
-  valueForMoney: 'Relación precio/calidad',
-  punctuality: 'Puntualidad'
+  facilities: 'Instalaciones',
+  service: 'Atención'
 };
 
 export default function ValorarPage() {
@@ -69,11 +63,8 @@ export default function ValorarPage() {
   const [comment, setComment] = useState('');
   const [npsScore, setNpsScore] = useState<number | null>(null);
   const [aspects, setAspects] = useState<AspectRating>({
-    courtCondition: 0,
-    cleanliness: 0,
-    customerService: 0,
-    valueForMoney: 0,
-    punctuality: 0
+    facilities: 0,
+    service: 0
   });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';

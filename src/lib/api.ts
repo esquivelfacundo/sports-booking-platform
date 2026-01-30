@@ -1019,6 +1019,12 @@ class ApiClient {
     return this.request(`/api/bookings/${bookingId}/payments`);
   }
 
+  async generateBookingReviewToken(bookingId: string) {
+    return this.request(`/api/reviews/booking/${bookingId}/generate-token`, {
+      method: 'POST',
+    });
+  }
+
   // Payments endpoints
   async createPayment(data: {
     bookingId: string;

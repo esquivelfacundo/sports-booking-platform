@@ -70,6 +70,9 @@ interface ReviewStats {
 }
 
 const aspectLabels: Record<string, string> = {
+  facilities: 'Instalaciones',
+  service: 'Atención',
+  // Legacy fields for backward compatibility
   courtCondition: 'Estado de la cancha',
   cleanliness: 'Limpieza',
   customerService: 'Atención al cliente',
