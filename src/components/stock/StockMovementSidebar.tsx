@@ -138,12 +138,17 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
         throw new Error('La cantidad debe ser mayor a 0');
       }
 
+      // For unitCost: use costPrice if provided, otherwise use product's current costPrice
+      const unitCost = formData.costPrice && formData.costPrice.trim() !== '' 
+        ? parseFloat(formData.costPrice) 
+        : (selectedProduct?.costPrice || 0);
+
       const data: any = {
         establishmentId,
         productId: formData.productId,
         type: formData.type,
         quantity,
-        unitCost: parseFloat(formData.unitCost) || 0,
+        unitCost,
         notes: formData.notes || undefined,
         invoiceNumber: formData.invoiceNumber || undefined
       };
@@ -329,7 +334,7 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
                       </div>
                     </>
                   ) : (
-                    <div className="bg-gray-800 border border-emerald-500 rounded-lg p-4">
+                    <div className="bg-gray-800 border border-emerald-500 rounded-lg p-4 space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-white font-medium">{selectedProduct.name}</div>
@@ -348,15 +353,8 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Quantity and Cost */}
-                {selectedProduct && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
+                      {/* Quantity inside product card */}
+                      <div className="border-t border-gray-700 pt-4">
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                           Cantidad *
                         </label>
@@ -366,44 +364,17 @@ export const StockMovementSidebar: React.FC<StockMovementSidebarProps> = ({
                           min="1"
                           value={formData.quantity}
                           onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                          className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-                          placeholder="0"
+                          className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                          placeholder="Ingrese cantidad"
                         />
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Costo Unitario
-                        </label>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={formData.unitCost}
-                            onChange={(e) => setFormData({ ...formData, unitCost: e.target.value })}
-                            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
                     </div>
+                  )}
+                </div>
 
-                    {/* Total Cost */}
-                    {formData.quantity && formData.unitCost && (
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-300">Costo Total</span>
-                          <span className="text-lg font-bold text-blue-400">
-                            ${(parseFloat(formData.quantity) * parseFloat(formData.unitCost)).toLocaleString('es-AR', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            })}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                {/* Additional fields when product is selected */}
+                {selectedProduct && (
+                  <>
 
                     {/* Update Product Prices - Only for entrada */}
                     {formData.type === 'entrada' && (
