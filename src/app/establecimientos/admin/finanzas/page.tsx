@@ -30,6 +30,7 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
+import OrderDetailSidebar from '@/components/admin/OrderDetailSidebar';
 
 interface FinanceResponse {
   success: boolean;
@@ -124,6 +125,8 @@ const FinancePage = () => {
   const [productSales, setProductSales] = useState<SalesByProductResponse | null>(null);
   const [transactionsPage, setTransactionsPage] = useState(1);
   const ITEMS_PER_PAGE = 50;
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
 
   // Get header portal container on mount
   useEffect(() => {
@@ -750,7 +753,14 @@ const FinancePage = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {transactions.slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <tr 
+                      key={tx.id} 
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
+                      onClick={() => {
+                        setSelectedOrderId(tx.id);
+                        setShowOrderDetail(true);
+                      }}
+                    >
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-3">
                           <div className={`p-2 rounded-lg ${tx.type === 'order' ? 'bg-emerald-500/20' : 'bg-blue-500/20'}`}>
@@ -874,7 +884,14 @@ const FinancePage = () => {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {transactions.slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                  <tr 
+                    key={tx.id} 
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
+                    onClick={() => {
+                      setSelectedOrderId(tx.id);
+                      setShowOrderDetail(true);
+                    }}
+                  >
                     <td className="px-4 py-4">
                       <div className="flex items-center space-x-3">
                         <div className={`p-2 rounded-lg ${tx.type === 'order' ? 'bg-emerald-500/20' : 'bg-blue-500/20'}`}>
@@ -1086,6 +1103,19 @@ const FinancePage = () => {
         </div>
       )}
     </div>
+
+      {/* Order Detail Sidebar */}
+      {selectedOrderId && (
+        <OrderDetailSidebar
+          orderId={selectedOrderId}
+          isOpen={showOrderDetail}
+          onClose={() => {
+            setShowOrderDetail(false);
+            setSelectedOrderId(null);
+          }}
+          onUpdate={fetchFinance}
+        />
+      )}
     </>
   );
 };
