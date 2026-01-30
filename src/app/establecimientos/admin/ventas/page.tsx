@@ -689,7 +689,12 @@ const VentasPage = () => {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <p className="text-gray-600 dark:text-gray-300 text-sm">{formatDate(order.createdAt)}</p>
+                          <p className="text-gray-600 dark:text-gray-300 text-sm">
+                            {new Date(order.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </p>
+                          <p className="text-gray-400 text-sm">
+                            {new Date(order.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </td>
                         <td className="px-4 py-4 text-right">
                           <button
