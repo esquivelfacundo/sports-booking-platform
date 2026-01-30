@@ -830,45 +830,58 @@ const FinancePage = () => {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-100 dark:bg-gray-700">
+              <thead className="bg-gray-100 dark:bg-gray-700/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Cliente</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Método</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Seña</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Total</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Estado</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pedido</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Cliente</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tipo</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pago</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {transactions.slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-4 py-3">
-                      <div className="text-gray-900 dark:text-white text-sm">{formatDate(tx.date)}</div>
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.time?.substring(0, 5)}</div>
+                  <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${tx.type === 'order' ? 'bg-emerald-500/20' : 'bg-blue-500/20'}`}>
+                          {tx.type === 'order' ? <ShoppingBag className="w-4 h-4 text-emerald-400" /> : <Calendar className="w-4 h-4 text-blue-400" />}
+                        </div>
+                        <p className="text-gray-900 dark:text-white font-medium">{tx.reference || tx.id.substring(0, 8)}</p>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="text-gray-900 dark:text-white text-sm">{tx.clientName || 'Cliente'}</div>
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">{tx.clientPhone}</div>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <span className="text-gray-900 dark:text-white">{tx.clientName || 'Cliente'}</span>
+                          {tx.clientPhone && <p className="text-xs text-gray-400">{tx.clientPhone}</p>}
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.category || tx.court}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-sm">{tx.paymentMethod}</td>
-                    <td className="px-4 py-3 text-right text-yellow-400 text-sm">
-                      {tx.depositAmount > 0 ? formatCurrency(tx.depositAmount) : '-'}
+                    <td className="px-4 py-4">
+                      <span className={`text-sm ${tx.type === 'order' ? 'text-emerald-400' : 'text-blue-400'}`}>{tx.category || (tx.type === 'order' ? 'Venta Directa' : 'Reserva')}</span>
+                      {tx.court && tx.type === 'booking' && <p className="text-xs text-gray-400 mt-1">{tx.court}</p>}
                     </td>
-                    <td className="px-4 py-3 text-right text-emerald-400 font-medium">
-                      {formatCurrency(tx.amount)}
+                    <td className="px-4 py-4 text-right">
+                      <p className="text-gray-900 dark:text-white font-medium">{formatCurrency(tx.amount)}</p>
+                      {tx.depositAmount > 0 && <p className="text-xs text-gray-400">Seña: {formatCurrency(tx.depositAmount)}</p>}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${getStatusColor(tx.status)}`}>
-                        {tx.status === 'completed' || tx.status === 'confirmed' ? (
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                        ) : (
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                        )}
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${tx.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : tx.status === 'confirmed' ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                        {tx.status === 'completed' ? 'Completado' : tx.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${tx.status === 'completed' || tx.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                         {tx.status === 'completed' || tx.status === 'confirmed' ? 'Pagado' : 'Pendiente'}
                       </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="text-gray-600 dark:text-gray-300 text-sm">{formatDate(tx.date)}</p>
+                      <p className="text-xs text-gray-400">{tx.time?.substring(0, 5)}</p>
                     </td>
                   </tr>
                 ))}
