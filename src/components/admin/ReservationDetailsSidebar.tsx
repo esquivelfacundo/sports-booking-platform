@@ -206,6 +206,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
   const [isRegisteringPayment, setIsRegisteringPayment] = useState(false);
   const [localDepositAmount, setLocalDepositAmount] = useState<number | null>(null);
   const [payments, setPayments] = useState<BookingPaymentRecord[]>([]);
+  const [orderPayments, setOrderPayments] = useState<any[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<{ id: string; name: string; code: string; icon: string | null }[]>([]);
   
@@ -261,6 +262,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
   useEffect(() => {
     setLocalDepositAmount(null);
     setPayments([]);
+    setOrderPayments([]);
     setConsumptions([]);
     setConsumptionsTotal(0);
     setOrderNumber(null);
@@ -371,8 +373,9 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
   const loadPayments = async (bookingId: string) => {
     setLoadingPayments(true);
     try {
-      const response = await apiClient.getBookingPayments(bookingId) as { payments: BookingPaymentRecord[] };
+      const response = await apiClient.getBookingPayments(bookingId) as { payments: BookingPaymentRecord[]; orderPayments?: any[] };
       setPayments(response.payments || []);
+      setOrderPayments(response.orderPayments || []);
     } catch (error) {
       console.error('Error loading payments:', error);
     } finally {
@@ -809,8 +812,10 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
 
   // Use local deposit if available, otherwise use reservation's deposit
   const effectiveDepositAmount = localDepositAmount ?? (reservation?.depositAmount || 0);
+  // Include order payments in the total paid amount
+  const orderPaymentsTotal = orderPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
   const totalAmount = reservation ? reservation.price + consumptionsTotal : 0;
-  const pendingAmount = reservation ? Math.max(0, totalAmount - effectiveDepositAmount) : 0;
+  const pendingAmount = reservation ? Math.max(0, totalAmount - effectiveDepositAmount - orderPaymentsTotal) : 0;
   
   // Calculate real payment status based on pending amount
   const calculatedPaymentStatus = (() => {
