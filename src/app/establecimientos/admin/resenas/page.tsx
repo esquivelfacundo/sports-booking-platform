@@ -25,6 +25,8 @@ import {
   MapPin
 } from 'lucide-react';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
+import { apiClient } from '@/lib/api';
+import OrderDetailSidebar from '@/components/admin/OrderDetailSidebar';
 
 interface Review {
   id: string;
@@ -37,6 +39,8 @@ interface Review {
     customerService?: number;
     valueForMoney?: number;
     punctuality?: number;
+    facilities?: number;
+    service?: number;
   };
   source: string;
   isVerified: boolean;
@@ -44,6 +48,7 @@ interface Review {
   establishmentResponse?: string;
   establishmentResponseAt?: string;
   createdAt: string;
+  bookingId?: string;
   user?: {
     id: string;
     firstName: string;
@@ -53,6 +58,29 @@ interface Review {
   court?: {
     id: string;
     name: string;
+  };
+  booking?: {
+    id: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    clientName?: string;
+    clientPhone?: string;
+    createdByUser?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    startedByUser?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    completedByUser?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
   };
 }
 
@@ -98,6 +126,10 @@ export default function ResenasPage() {
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [submittingResponse, setSubmittingResponse] = useState(false);
+
+  // Order sidebar state
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [showOrderSidebar, setShowOrderSidebar] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -247,6 +279,33 @@ export default function ResenasPage() {
     if (rating >= 4) return 'text-emerald-500';
     if (rating >= 3) return 'text-yellow-500';
     return 'text-red-500';
+  };
+
+  const formatTime = (time: string) => {
+    if (!time) return '';
+    return time.substring(0, 5);
+  };
+
+  const handleOpenOrderSidebar = async (review: Review) => {
+    if (!review.booking?.id) return;
+    
+    try {
+      // Find the order associated with this booking
+      const orders = await apiClient.getOrders(establishment?.id || '', { bookingId: review.booking.id });
+      if (orders && orders.length > 0) {
+        setSelectedOrderId(orders[0].id);
+        setShowOrderSidebar(true);
+      }
+    } catch (error) {
+      console.error('Error fetching order:', error);
+    }
+  };
+
+  const getCreatedByLabel = (review: Review) => {
+    if (review.booking?.createdByUser) {
+      return `${review.booking.createdByUser.firstName} ${review.booking.createdByUser.lastName}`;
+    }
+    return 'Autogestión';
   };
 
   return (
@@ -464,7 +523,11 @@ export default function ResenasPage() {
             </div>
           ) : (
             filteredReviews.map((review) => (
-              <div key={review.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div 
+                key={review.id} 
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
+                onClick={() => handleOpenOrderSidebar(review)}
+              >
                 <div className="flex gap-4">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
@@ -477,7 +540,7 @@ export default function ResenasPage() {
                     ) : (
                       <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                          {review.isAnonymous ? '?' : (review.user?.firstName?.[0] || 'U')}
+                          {review.booking?.clientName?.[0] || review.user?.firstName?.[0] || '?'}
                         </span>
                       </div>
                     )}
@@ -489,9 +552,10 @@ export default function ResenasPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-gray-900 dark:text-white">
-                            {review.isAnonymous 
-                              ? 'Anónimo' 
-                              : `${review.user?.firstName || ''} ${review.user?.lastName || ''}`.trim() || 'Usuario'
+                            {review.booking?.clientName || 
+                              (review.isAnonymous 
+                                ? 'Anónimo' 
+                                : `${review.user?.firstName || ''} ${review.user?.lastName || ''}`.trim() || 'Cliente')
                             }
                           </span>
                           {review.isVerified && (
@@ -501,7 +565,7 @@ export default function ResenasPage() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
@@ -523,12 +587,38 @@ export default function ResenasPage() {
                             </span>
                           )}
                         </div>
+                        
+                        {/* Booking info */}
+                        {review.booking && (
+                          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg text-xs space-y-1">
+                            <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {formatDate(review.booking.date)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatTime(review.booking.startTime)} - {formatTime(review.booking.endTime)}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400">
+                              <span><strong>Creado por:</strong> {getCreatedByLabel(review)}</span>
+                              {review.booking.startedByUser && (
+                                <span><strong>Iniciado por:</strong> {review.booking.startedByUser.firstName} {review.booking.startedByUser.lastName}</span>
+                              )}
+                              {review.booking.completedByUser && (
+                                <span><strong>Completado por:</strong> {review.booking.completedByUser.firstName} {review.booking.completedByUser.lastName}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Respond button */}
                       {!review.establishmentResponse && (
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedReview(review);
                             setShowResponseModal(true);
                           }}
@@ -690,6 +780,20 @@ export default function ResenasPage() {
           </motion.div>
         </AnimatePresence>,
         document.body
+      )}
+
+      {/* Order Detail Sidebar */}
+      {showOrderSidebar && selectedOrderId && (
+        <OrderDetailSidebar
+          orderId={selectedOrderId}
+          onClose={() => {
+            setShowOrderSidebar(false);
+            setSelectedOrderId(null);
+          }}
+          onUpdate={() => {
+            fetchReviews();
+          }}
+        />
       )}
     </div>
   );

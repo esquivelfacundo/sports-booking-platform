@@ -321,18 +321,18 @@ export default function ValorarPage() {
           {/* NPS Score */}
           <div className="bg-gray-800 rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-white mb-2">¿Recomendarías este lugar?</h3>
-            <p className="text-gray-400 text-sm mb-4">Del 0 al 10, ¿qué tan probable es que recomiendes este establecimiento?</p>
-            <div className="flex justify-between gap-1">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+            <p className="text-gray-400 text-sm mb-4">Del 1 al 5, ¿qué tan probable es que recomiendes este establecimiento?</p>
+            <div className="flex justify-center gap-3">
+              {[1, 2, 3, 4, 5].map((score) => (
                 <button
                   key={score}
                   type="button"
                   onClick={() => setNpsScore(score)}
-                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-12 h-12 rounded-xl text-lg font-semibold transition-colors ${
                     npsScore === score
-                      ? score >= 9
+                      ? score >= 4
                         ? 'bg-emerald-500 text-white'
-                        : score >= 7
+                        : score >= 3
                         ? 'bg-yellow-500 text-white'
                         : 'bg-red-500 text-white'
                       : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
@@ -342,7 +342,7 @@ export default function ValorarPage() {
                 </button>
               ))}
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-2">
+            <div className="flex justify-between text-xs text-gray-500 mt-2 px-2">
               <span>Nada probable</span>
               <span>Muy probable</span>
             </div>
