@@ -793,18 +793,17 @@ export default function ResenasPage() {
       )}
 
       {/* Order Detail Sidebar */}
-      {showOrderSidebar && selectedOrderId && (
-        <OrderDetailSidebar
-          orderId={selectedOrderId}
-          onClose={() => {
-            setShowOrderSidebar(false);
-            setSelectedOrderId(null);
-          }}
-          onUpdate={() => {
-            fetchReviews();
-          }}
-        />
-      )}
+      <OrderDetailSidebar
+        isOpen={showOrderSidebar && !!selectedOrderId}
+        orderId={selectedOrderId || undefined}
+        onClose={() => {
+          setShowOrderSidebar(false);
+          setSelectedOrderId(null);
+        }}
+        onUpdate={() => {
+          fetchReviews();
+        }}
+      />
     </div>
   );
 }
