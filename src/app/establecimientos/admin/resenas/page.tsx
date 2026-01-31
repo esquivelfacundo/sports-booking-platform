@@ -287,24 +287,15 @@ export default function ResenasPage() {
   };
 
   const handleOpenOrderSidebar = async (review: Review) => {
-    console.log('handleOpenOrderSidebar called', { bookingId: review.booking?.id });
-    if (!review.booking?.id) {
-      console.log('No booking id, returning');
-      return;
-    }
+    if (!review.booking?.id) return;
     
     try {
       // Find the order associated with this booking
-      const response = await apiClient.getOrderByBookingId(review.booking.id);
-      console.log('getOrderByBookingId response:', response);
+      const response = await apiClient.getOrderByBookingId(review.booking.id) as { order?: { id: string }; id?: string };
       const orderId = response?.order?.id || response?.id;
-      console.log('orderId extracted:', orderId);
       if (orderId) {
-        console.log('Setting selectedOrderId and showOrderSidebar');
         setSelectedOrderId(orderId);
         setShowOrderSidebar(true);
-      } else {
-        console.log('No orderId found');
       }
     } catch (error) {
       console.error('Error fetching order:', error);

@@ -36,6 +36,8 @@ export interface AdminReservation {
     id: string;
     orderNumber: string;
   }>;
+  reviewToken?: string;
+  reviewedAt?: string;
 }
 
 export interface AdminCourt {

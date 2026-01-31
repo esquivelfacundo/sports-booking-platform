@@ -55,6 +55,7 @@ export default function ValorarPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null);
 
   // Form state
@@ -76,7 +77,11 @@ export default function ValorarPage() {
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.message || 'Link inválido o expirado');
+          if (data.error === 'Already reviewed') {
+            setAlreadyReviewed(true);
+          } else {
+            setError(data.message || 'Link inválido o expirado');
+          }
           return;
         }
 
@@ -154,7 +159,12 @@ export default function ValorarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center">
+        <img 
+          src="/assets/logos/logo-dark.svg" 
+          alt="Mis Canchas" 
+          className="h-10 mb-8"
+        />
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mx-auto mb-4" />
           <p className="text-gray-400">Cargando...</p>
@@ -163,9 +173,42 @@ export default function ValorarPage() {
     );
   }
 
+  if (alreadyReviewed) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
+        <img 
+          src="/assets/logos/logo-dark.svg" 
+          alt="Mis Canchas" 
+          className="h-10 mb-8"
+        />
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-gray-800 rounded-2xl p-8 max-w-md w-full text-center"
+        >
+          <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-emerald-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">¡Gracias por tu valoración!</h1>
+          <p className="text-gray-400 mb-6">
+            Tu opinión nos ayuda a mejorar la experiencia para todos los jugadores.
+          </p>
+          <p className="text-sm text-gray-500">
+            Puedes cerrar esta página
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (error && !bookingInfo) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
+        <img 
+          src="/assets/logos/logo-dark.svg" 
+          alt="Mis Canchas" 
+          className="h-10 mb-8"
+        />
         <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-white mb-2">Link Inválido</h1>
@@ -177,7 +220,12 @@ export default function ValorarPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
+        <img 
+          src="/assets/logos/logo-dark.svg" 
+          alt="Mis Canchas" 
+          className="h-10 mb-8"
+        />
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -209,6 +257,15 @@ export default function ValorarPage() {
   return (
     <div className="min-h-screen bg-gray-900 py-8 px-4">
       <div className="max-w-lg mx-auto">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <img 
+            src="/assets/logos/logo-dark.svg" 
+            alt="Mis Canchas" 
+            className="h-10"
+          />
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white mb-2">¿Cómo estuvo tu partido?</h1>

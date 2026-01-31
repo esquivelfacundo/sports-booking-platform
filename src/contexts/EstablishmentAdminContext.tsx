@@ -266,7 +266,9 @@ export const EstablishmentAdminProvider: React.FC<{ children: ReactNode }> = ({ 
           mpPaymentId: booking.mpPaymentId || undefined,
           paidAt: booking.paidAt || undefined,
           establishment: booking.establishment || undefined,
-          orders: booking.orders || undefined
+          orders: booking.orders || undefined,
+          reviewToken: booking.reviewToken || undefined,
+          reviewedAt: booking.reviewedAt || undefined
         };
       });
       

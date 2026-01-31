@@ -23,6 +23,7 @@ const ClientLayout = ({ children }: ClientLayoutProps) => {
   const isRegistrationRoute = pathname === '/establecimientos/registro';
   const isBookingRoute = pathname?.startsWith('/reservar/');
   const isDashboardRoute = pathname?.startsWith('/dashboard');
+  const isReviewRoute = pathname?.startsWith('/valorar/');
   
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -43,7 +44,7 @@ const ClientLayout = ({ children }: ClientLayoutProps) => {
         <BookingProvider>
           <NotificationProvider>
             <RatingProvider>
-              {!isAdminRoute && !isControlRoute && !isLoginRoute && !isRegistrationRoute && !isBookingRoute && !isDashboardRoute && (
+              {!isAdminRoute && !isControlRoute && !isLoginRoute && !isRegistrationRoute && !isBookingRoute && !isDashboardRoute && !isReviewRoute && (
                 <Header 
                   onLoginClick={() => setShowLoginModal(true)}
                 />
