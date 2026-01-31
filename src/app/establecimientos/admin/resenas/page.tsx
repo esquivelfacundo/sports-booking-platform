@@ -291,9 +291,9 @@ export default function ResenasPage() {
     
     try {
       // Find the order associated with this booking
-      const orders = await apiClient.getOrders(establishment?.id || '', { bookingId: review.booking.id });
-      if (orders && orders.length > 0) {
-        setSelectedOrderId(orders[0].id);
+      const response = await apiClient.getOrderByBookingId(review.booking.id);
+      if (response && response.id) {
+        setSelectedOrderId(response.id);
         setShowOrderSidebar(true);
       }
     } catch (error) {
