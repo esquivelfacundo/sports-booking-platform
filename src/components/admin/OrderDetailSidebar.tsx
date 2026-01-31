@@ -111,6 +111,7 @@ interface Order {
     initialDeposit?: number;
     clientName?: string;
     clientPhone?: string;
+    reviewToken?: string;
     court?: {
       id: string;
       name: string;
@@ -470,6 +471,11 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
       const establishmentUrl = establishmentSlug 
         ? `https://miscanchas.com/reservar/${establishmentSlug}` 
         : undefined;
+      
+      // Generate review URL if booking has a review token
+      const reviewUrl = displayOrder.booking?.reviewToken
+        ? `${window.location.origin}/valorar/${displayOrder.booking.reviewToken}`
+        : undefined;
 
       
       // Format date to Spanish format
@@ -527,7 +533,8 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
         pendingAmount: pendingAmount,
         items: ticketItems,
         payments: ticketPayments,
-        establishmentUrl: establishmentUrl
+        establishmentUrl: establishmentUrl,
+        reviewUrl: reviewUrl
       };
 
       await printTicket(ticketData);

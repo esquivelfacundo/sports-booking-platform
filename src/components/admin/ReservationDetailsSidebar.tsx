@@ -703,11 +703,9 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
         : 'https://miscanchas.com';
       
       // Generate review URL if booking has a review token
-      console.log('DEBUG reviewToken:', reservation?.reviewToken);
       const reviewUrl = reservation?.reviewToken 
         ? `${window.location.origin}/valorar/${reservation.reviewToken}`
         : undefined;
-      console.log('DEBUG reviewUrl:', reviewUrl);
 
       // Debug: log data before creating ticket
       console.log('Ticket data debug:', {
