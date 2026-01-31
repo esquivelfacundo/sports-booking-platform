@@ -88,6 +88,8 @@ interface Reservation {
   serviceFee?: number;
   mpPaymentId?: string;
   paidAt?: string;
+  reviewToken?: string;
+  reviewedAt?: string;
 }
 
 const ReservationsPage = () => {
@@ -249,7 +251,9 @@ const ReservationsPage = () => {
     depositMethod: r.depositMethod || undefined,
     serviceFee: r.serviceFee,
     mpPaymentId: r.mpPaymentId,
-    paidAt: r.paidAt
+    paidAt: r.paidAt,
+    reviewToken: r.reviewToken,
+    reviewedAt: r.reviewedAt
   }));
 
   // Helper to get month date range
