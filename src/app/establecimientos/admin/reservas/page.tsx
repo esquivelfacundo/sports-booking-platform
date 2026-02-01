@@ -318,16 +318,16 @@ const ReservationsPage = () => {
         const endOfQuarter = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
         filters.startDate = formatDate(startOfQuarter);
         filters.endDate = formatDate(endOfQuarter);
-        filters.limit = 2000;
+        filters.limit = 1000;
       } else if (listPeriodFilter === 'year') {
         const startOfYear = new Date(now.getFullYear(), 0, 1);
         const endOfYear = new Date(now.getFullYear(), 11, 31);
         filters.startDate = formatDate(startOfYear);
         filters.endDate = formatDate(endOfYear);
-        filters.limit = 5000;
+        filters.limit = 1000;
       } else {
-        // 'all' - no date filter, get all reservations
-        filters.limit = 10000;
+        // 'all' - no date filter, get all reservations (max 1000)
+        filters.limit = 1000;
       }
     }
     
@@ -977,28 +977,18 @@ const ReservationsPage = () => {
 
       {/* Period Filter - Only for List view */}
       {viewMode === 'list' && (
-        <div className="flex items-center space-x-1">
-          {[
-            { value: 'all', label: 'Todas' },
-            { value: 'year', label: 'Año' },
-            { value: 'quarter', label: 'Trimestre' },
-            { value: 'month', label: 'Mes' },
-            { value: 'week', label: 'Semana' },
-            { value: 'today', label: 'Hoy' }
-          ].map(option => (
-            <button
-              key={option.value}
-              onClick={() => setListPeriodFilter(option.value as typeof listPeriodFilter)}
-              className={`px-2.5 py-1.5 rounded-lg text-sm transition-colors ${
-                listPeriodFilter === option.value
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <select
+          value={listPeriodFilter}
+          onChange={(e) => setListPeriodFilter(e.target.value as typeof listPeriodFilter)}
+          className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        >
+          <option value="all">Todas las reservas</option>
+          <option value="year">Este año</option>
+          <option value="quarter">Este trimestre</option>
+          <option value="month">Este mes</option>
+          <option value="week">Esta semana</option>
+          <option value="today">Hoy</option>
+        </select>
       )}
 
       {/* Refresh Button */}
