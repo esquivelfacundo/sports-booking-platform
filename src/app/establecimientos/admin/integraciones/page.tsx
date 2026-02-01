@@ -490,25 +490,15 @@ export default function IntegrationsPage() {
   };
 
   const handleDeleteArca = async () => {
-    if (!establishment?.id || !confirm('¿Desconectar AFIP? Se eliminarán la configuración y todos los puntos de venta.')) return;
+    if (!establishment?.id || !confirm('¿Desconectar AFIP? Se eliminarán los certificados y podrás configurar una nueva cuenta.')) return;
     try {
       setArcaSaving(true);
       await apiClient.deleteArcaConfig(establishment.id);
-      showSuccess('Configuración AFIP eliminada');
-      setArcaConfig(null);
-      setArcaForm({
-        cuit: '',
-        razonSocial: '',
-        domicilioFiscal: '',
-        condicionFiscal: 'monotributista',
-        inicioActividades: '',
-        certificado: '',
-        clavePrivada: ''
-      });
-      setPuntosVenta([]);
-      closeSidebar();
+      showSuccess('AFIP desconectado. Podés configurar una nueva cuenta.');
+      await loadArcaConfig();
+      await loadArcaPuntosVenta();
     } catch (error: any) {
-      showError(error?.message || 'Error al eliminar configuración');
+      showError(error?.message || 'Error al desconectar');
     } finally {
       setArcaSaving(false);
     }
