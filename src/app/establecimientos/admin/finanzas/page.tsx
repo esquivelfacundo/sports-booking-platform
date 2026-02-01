@@ -27,7 +27,10 @@ import {
   MapPin,
   FileCheck,
   FileX,
-  ShoppingBag
+  ShoppingBag,
+  ShoppingCart,
+  Package,
+  Eye
 } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import OrderDetailSidebar from '@/components/admin/OrderDetailSidebar';
@@ -753,13 +756,18 @@ const FinancePage = () => {
               <table className="w-full">
                 <thead className="bg-gray-100 dark:bg-gray-700/50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pedido</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Pedido</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Cliente</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tipo</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Items</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pagado</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pendiente</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pago</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">ARCA</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -776,38 +784,52 @@ const FinancePage = () => {
                         <div className="flex items-center space-x-3">
                           <div className={`p-2 rounded-lg ${tx.type === 'order' ? 'bg-emerald-500/20' : 'bg-blue-500/20'}`}>
                             {tx.type === 'order' ? (
-                              <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                              <ShoppingCart className="w-4 h-4 text-emerald-400" />
                             ) : (
                               <Calendar className="w-4 h-4 text-blue-400" />
                             )}
                           </div>
                           <div>
-                            <p className="text-gray-900 dark:text-white font-medium">{tx.reference || tx.id.substring(0, 8)}</p>
+                            <p className="text-gray-900 dark:text-white font-medium text-sm">{tx.reference || tx.id.substring(0, 8)}</p>
+                            <p className="text-xs text-gray-400">{tx.createdByUser || 'Sistema'}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center space-x-2">
                           <User className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <span className="text-gray-900 dark:text-white">{tx.clientName || 'Cliente'}</span>
-                            {tx.clientPhone && <p className="text-xs text-gray-400">{tx.clientPhone}</p>}
-                          </div>
+                          <span className="text-gray-900 dark:text-white text-sm">{tx.clientName || 'Cliente anónimo'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <span className={`text-sm ${tx.type === 'order' ? 'text-emerald-400' : 'text-blue-400'}`}>
-                          {tx.category || (tx.type === 'order' ? 'Venta Directa' : 'Reserva')}
+                          {tx.category || (tx.type === 'order' ? 'Venta directa' : 'Consumo en reserva')}
                         </span>
-                        {tx.court && tx.type === 'booking' && (
-                          <p className="text-xs text-gray-400 mt-1">{tx.court}</p>
+                        {tx.bookingDate && (
+                          <p className="text-xs text-gray-400 mt-1">{tx.bookingDate} {tx.bookingTime}</p>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-right">
-                        <p className="text-gray-900 dark:text-white font-medium">{formatCurrency(tx.amount)}</p>
-                        {tx.depositAmount > 0 && (
-                          <p className="text-xs text-gray-400">Seña: {formatCurrency(tx.depositAmount)}</p>
-                        )}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center space-x-2">
+                          <Package className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-900 dark:text-white text-sm">{tx.itemsCount || 0}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-gray-900 dark:text-white font-medium text-sm">{formatCurrency(tx.amount)}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-emerald-400 font-medium text-sm">{formatCurrency(tx.paidAmount || 0)}</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        {(() => {
+                          const pending = Math.max(0, (tx.amount || 0) - (tx.paidAmount || 0));
+                          return (
+                            <p className={`font-medium text-sm ${pending > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                              {formatCurrency(pending)}
+                            </p>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -822,22 +844,56 @@ const FinancePage = () => {
                       </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          tx.status === 'completed' || tx.status === 'confirmed'
+                          tx.paymentStatus === 'paid' || tx.status === 'completed'
                             ? 'bg-emerald-500/20 text-emerald-400'
+                            : tx.paymentStatus === 'partial'
+                            ? 'bg-blue-500/20 text-blue-400'
                             : 'bg-yellow-500/20 text-yellow-400'
                         }`}>
-                          {tx.status === 'completed' || tx.status === 'confirmed' ? 'Pagado' : 'Pendiente'}
+                          {tx.paymentStatus === 'paid' || tx.status === 'completed' ? 'Pagado' : tx.paymentStatus === 'partial' ? 'Pago parcial' : 'Pendiente'}
                         </span>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <div className="flex justify-center">
+                          <div 
+                            className={`w-3 h-3 rounded-full ${
+                              tx.billingStatus === 'invoiced' 
+                                ? 'bg-emerald-500' 
+                                : tx.billingStatus === 'credit_note'
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
+                            }`}
+                            title={
+                              tx.billingStatus === 'invoiced' 
+                                ? 'Facturado' 
+                                : tx.billingStatus === 'credit_note'
+                                  ? 'Nota de Crédito emitida'
+                                  : 'Sin facturar'
+                            }
+                          />
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <p className="text-gray-600 dark:text-gray-300 text-sm">{formatDate(tx.date)}</p>
                         <p className="text-xs text-gray-400">{tx.time?.substring(0, 5)}</p>
                       </td>
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrderId(tx.id);
+                            setShowOrderDetail(true);
+                          }}
+                          className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {transactions.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                      <td colSpan={12} className="px-4 py-8 text-center text-gray-400">
                         No hay ventas en este período
                       </td>
                     </tr>
