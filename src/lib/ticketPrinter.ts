@@ -117,11 +117,14 @@ export interface TicketData {
   // Footer
   cashierName?: string;
   
-  // QR Code URL (for establishment profile)
+  // QR Code URL (for establishment profile / reservation)
   establishmentUrl?: string;
   
   // Review URL (unique per booking - for rating QR)
   reviewUrl?: string;
+  
+  // Flag to indicate if this is a direct sale (no booking)
+  isDirectSale?: boolean;
 }
 
 function getPaymentMethodLabel(method: string): string {
@@ -342,23 +345,36 @@ export function generateTicketData(data: TicketData): Uint8Array {
     }
   }
   
-  // Footer
+  // Footer - different content for direct sales vs bookings
   txt += NL + NL;
   txt += CENTER;
-  txt += BOLD_ON + 'Como estuvo tu partido?' + BOLD_OFF + NL;
-  txt += NL;
-  txt += 'Tu opinion nos ayuda a crecer' + NL;
-  txt += 'y darte una mejor atencion,' + NL;
-  txt += 'escanea el QR y contanos' + NL;
-  txt += 'como fue tu experiencia :)' + NL;
-  txt += NL;
+  
+  if (data.isDirectSale) {
+    // Direct sale: invite to book a court
+    txt += BOLD_ON + 'Reserva tu proximo partido!' + BOLD_OFF + NL;
+    txt += NL;
+    txt += 'Escanea el QR y reserva' + NL;
+    txt += 'tu cancha en segundos' + NL;
+    txt += NL;
+  } else {
+    // Booking: ask for review
+    txt += BOLD_ON + 'Como estuvo tu partido?' + BOLD_OFF + NL;
+    txt += NL;
+    txt += 'Tu opinion nos ayuda a crecer' + NL;
+    txt += 'y darte una mejor atencion,' + NL;
+    txt += 'escanea el QR y contanos' + NL;
+    txt += 'como fue tu experiencia :)' + NL;
+    txt += NL;
+  }
   
   // Convert text to Uint8Array
   const encoder = new TextEncoder();
   const textData = encoder.encode(txt);
   
-  // Generate QR code - use reviewUrl if available (unique per booking), otherwise establishment URL
-  const qrUrl = data.reviewUrl || data.establishmentUrl || 'https://miscanchas.com';
+  // Generate QR code - for direct sales use establishment URL, for bookings use review URL
+  const qrUrl = data.isDirectSale 
+    ? (data.establishmentUrl || 'https://miscanchas.com')
+    : (data.reviewUrl || data.establishmentUrl || 'https://miscanchas.com');
   const qrCode = generateQRCodeCommands(qrUrl);
   const qrSpacing = encoder.encode(NL + NL);
   const qrData = new Uint8Array(qrCode.length + qrSpacing.length);

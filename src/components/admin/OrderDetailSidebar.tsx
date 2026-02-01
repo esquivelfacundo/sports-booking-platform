@@ -534,7 +534,8 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
         items: ticketItems,
         payments: ticketPayments,
         establishmentUrl: establishmentUrl,
-        reviewUrl: reviewUrl
+        reviewUrl: reviewUrl,
+        isDirectSale: isDirectSale
       };
 
       await printTicket(ticketData);

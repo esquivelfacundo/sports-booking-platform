@@ -400,7 +400,8 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
           method: getPaymentMethodName(paymentMethod),
           amount: paid
         }] : [],
-        establishmentUrl
+        establishmentUrl,
+        isDirectSale: true
       };
 
       await printTicket(ticketData);
