@@ -86,8 +86,8 @@ interface ActiveBooking {
     name: string;
     phone?: string;
   };
-  playerName?: string;
-  playerPhone?: string;
+  clientName?: string;
+  clientPhone?: string;
 }
 
 interface DirectSaleSidebarProps {
@@ -857,7 +857,7 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                           ) : (
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {activeBookings.map((booking) => {
-                                const playerName = booking.client?.name || booking.playerName || 'Sin nombre';
+                                const playerName = booking.client?.name || booking.clientName || 'Sin nombre';
                                 return (
                                   <button
                                     key={booking.id}
