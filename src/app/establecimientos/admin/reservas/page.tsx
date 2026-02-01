@@ -135,7 +135,8 @@ const ReservationsPage = () => {
   const [editingNotes, setEditingNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const [listPeriodFilter, setListPeriodFilter] = useState<'all' | 'year' | 'quarter' | 'month' | 'week' | 'today'>('all');
+  const itemsPerPage = viewMode === 'list' ? 50 : 15;
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   
   // Amenities state
@@ -284,13 +285,54 @@ const ReservationsPage = () => {
     
     if (selectedStatus !== 'all') filters.status = selectedStatus;
     
-    // Both views use the selected date
-    const dateStr = `${gridSelectedDate.getFullYear()}-${String(gridSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(gridSelectedDate.getDate()).padStart(2, '0')}`;
-    filters.date = dateStr;
-    filters.limit = 200; // Max bookings per day
+    if (viewMode === 'grid') {
+      // Grid view uses the selected date
+      const dateStr = `${gridSelectedDate.getFullYear()}-${String(gridSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(gridSelectedDate.getDate()).padStart(2, '0')}`;
+      filters.date = dateStr;
+      filters.limit = 200; // Max bookings per day
+    } else {
+      // List view uses period filter
+      const now = new Date();
+      const formatDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      
+      if (listPeriodFilter === 'today') {
+        filters.date = formatDate(now);
+        filters.limit = 200;
+      } else if (listPeriodFilter === 'week') {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
+        filters.startDate = formatDate(startOfWeek);
+        filters.endDate = formatDate(endOfWeek);
+        filters.limit = 500;
+      } else if (listPeriodFilter === 'month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        filters.startDate = formatDate(startOfMonth);
+        filters.endDate = formatDate(endOfMonth);
+        filters.limit = 1000;
+      } else if (listPeriodFilter === 'quarter') {
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        const startOfQuarter = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        const endOfQuarter = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
+        filters.startDate = formatDate(startOfQuarter);
+        filters.endDate = formatDate(endOfQuarter);
+        filters.limit = 2000;
+      } else if (listPeriodFilter === 'year') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const endOfYear = new Date(now.getFullYear(), 11, 31);
+        filters.startDate = formatDate(startOfYear);
+        filters.endDate = formatDate(endOfYear);
+        filters.limit = 5000;
+      } else {
+        // 'all' - no date filter, get all reservations
+        filters.limit = 10000;
+      }
+    }
     
     loadReservations(filters);
-  }, [selectedStatus, viewMode, gridSelectedDate, loadReservations, establishmentId]);
+  }, [selectedStatus, viewMode, gridSelectedDate, listPeriodFilter, loadReservations, establishmentId]);
 
   // Handlers for reservation management - using API with PIN validation
   const handleConfirmReservation = (reservationId: string) => {
@@ -592,7 +634,7 @@ const ReservationsPage = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStatus, searchTerm, viewMode]);
+  }, [selectedStatus, searchTerm, viewMode, listPeriodFilter]);
 
   const stats = {
     total: reservations.length,
@@ -819,8 +861,9 @@ const ReservationsPage = () => {
         </button>
       </div>
 
-      {/* Date Navigation - For both Grid and List views */}
-      <div className="flex items-center space-x-1 relative">
+      {/* Date Navigation - Only for Grid view */}
+      {viewMode === 'grid' && (
+        <div className="flex items-center space-x-1 relative">
           <button
             onClick={() => {
               const newDate = new Date(gridSelectedDate);
@@ -930,6 +973,33 @@ const ReservationsPage = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Period Filter - Only for List view */}
+      {viewMode === 'list' && (
+        <div className="flex items-center space-x-1">
+          {[
+            { value: 'all', label: 'Todas' },
+            { value: 'year', label: 'Año' },
+            { value: 'quarter', label: 'Trimestre' },
+            { value: 'month', label: 'Mes' },
+            { value: 'week', label: 'Semana' },
+            { value: 'today', label: 'Hoy' }
+          ].map(option => (
+            <button
+              key={option.value}
+              onClick={() => setListPeriodFilter(option.value as typeof listPeriodFilter)}
+              className={`px-2.5 py-1.5 rounded-lg text-sm transition-colors ${
+                listPeriodFilter === option.value
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Refresh Button */}
       <button 
