@@ -44,6 +44,7 @@ import {
   RepeatIcon
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { apiClient } from '@/lib/api';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
@@ -113,6 +114,8 @@ const ReservationsPage = () => {
   const { openCashRegisterAction } = useCommandMenu();
   const { showSuccess, showError, showWarning, showBookingNotification } = useToast();
   const { requestPin, PinModal } = usePinConfirmation();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -124,7 +127,21 @@ const ReservationsPage = () => {
   const [showCreateSidebar, setShowCreateSidebar] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+  
+  // Read viewMode from URL params, default to 'grid'
+  const urlView = searchParams.get('vista');
+  const [viewMode, setViewModeState] = useState<'list' | 'grid'>(() => {
+    if (urlView === 'lista') return 'list';
+    if (urlView === 'grilla') return 'grid';
+    return 'grid';
+  });
+  
+  // Update URL when viewMode changes
+  const setViewMode = (mode: 'list' | 'grid') => {
+    setViewModeState(mode);
+    const newUrl = mode === 'list' ? '?vista=lista' : '?vista=grilla';
+    router.replace(newUrl, { scroll: false });
+  };
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [gridSelectedDate, setGridSelectedDate] = useState(new Date());
   const [showGridBookingSidebar, setShowGridBookingSidebar] = useState(false);
@@ -617,11 +634,19 @@ const ReservationsPage = () => {
       
       return matchesSearch;
     })
-    // Sort by date and time ascending (upcoming first)
+    // Sort: list view shows newest first, grid view shows upcoming first
     .sort((a, b) => {
-      const dateCompare = a.date.localeCompare(b.date);
-      if (dateCompare !== 0) return dateCompare;
-      return a.time.localeCompare(b.time);
+      if (viewMode === 'list') {
+        // List view: descending (newest first)
+        const dateCompare = b.date.localeCompare(a.date);
+        if (dateCompare !== 0) return dateCompare;
+        return b.time.localeCompare(a.time);
+      } else {
+        // Grid view: ascending (upcoming first)
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return a.time.localeCompare(b.time);
+      }
     });
 
   // Pagination logic
@@ -1246,8 +1271,8 @@ const ReservationsPage = () => {
         </div>
       ) : (
         /* List View - Reservations Table */
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="flex flex-col h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="flex-1 overflow-auto">
             <table className="w-full">
               <thead className="bg-gray-100 dark:bg-gray-700">
                 <tr>
