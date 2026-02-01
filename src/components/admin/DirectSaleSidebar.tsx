@@ -25,7 +25,8 @@ import {
   Printer,
   AlertTriangle,
   UserPlus,
-  Check
+  Check,
+  PlayCircle
 } from 'lucide-react';
 import { printTicket, isWebUSBSupported, TicketData } from '@/lib/ticketPrinter';
 import { apiClient } from '@/lib/api';
@@ -70,6 +71,25 @@ interface Client {
   email?: string;
 }
 
+interface ActiveBooking {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  court: {
+    id: string;
+    name: string;
+  };
+  client?: {
+    id: string;
+    name: string;
+    phone?: string;
+  };
+  playerName?: string;
+  playerPhone?: string;
+}
+
 interface DirectSaleSidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -93,8 +113,13 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   
-  // Tabs: new-client, search-client, or current-account
-  const [activeTab, setActiveTab] = useState<'search-client' | 'new-client' | 'current-account'>('new-client');
+  // Tabs: turnos, new-client, search-client, or current-account
+  const [activeTab, setActiveTab] = useState<'turnos' | 'search-client' | 'new-client' | 'current-account'>('turnos');
+  
+  // Active bookings (in_progress)
+  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<ActiveBooking | null>(null);
+  const [loadingBookings, setLoadingBookings] = useState(false);
   
   // Current accounts
   const [currentAccounts, setCurrentAccounts] = useState<CurrentAccount[]>([]);
@@ -138,8 +163,26 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
       loadClients();
       loadPaymentMethods();
       loadCurrentAccounts();
+      loadActiveBookings();
     }
   }, [isOpen, establishmentId]);
+
+  const loadActiveBookings = async () => {
+    setLoadingBookings(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await apiClient.getEstablishmentBookings(establishmentId, {
+        status: 'in_progress',
+        date: today,
+        limit: 50
+      }) as { bookings: ActiveBooking[] };
+      setActiveBookings(response.bookings || []);
+    } catch (error) {
+      console.error('Error loading active bookings:', error);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
 
   const loadCurrentAccounts = async () => {
     setLoadingAccounts(true);
@@ -188,11 +231,12 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
       setPaidAmount('');
       setDiscount('');
       setSearchTerm('');
-      setActiveTab('new-client');
+      setActiveTab('turnos');
       setSelectedClient(null);
       setClientSearchTerm('');
       setSelectedCurrentAccount(null);
       setAccountSearchTerm('');
+      setSelectedBooking(null);
       setShowPrintDialog(false);
       setShowPendingWarning(false);
     }
@@ -418,14 +462,44 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
     
     setIsSubmitting(true);
     try {
-      // Include unit price for current account sales (cost price or discounted)
+      // If a booking is selected, add consumptions and payment to that booking
+      if (selectedBooking) {
+        // Add each product as a booking consumption
+        for (const { product, quantity } of cart.values()) {
+          await apiClient.addBookingConsumption({
+            bookingId: selectedBooking.id,
+            productId: product.id,
+            quantity
+          });
+        }
+
+        // Register payment if there's an amount
+        if (paid > 0) {
+          await apiClient.registerBookingPayment(selectedBooking.id, {
+            amount: paid,
+            method: paymentMethod as 'cash' | 'transfer' | 'card' | 'other',
+            notes: `Consumos: ${Array.from(cart.values()).map(c => `${c.quantity}x ${c.product.name}`).join(', ')}`
+          });
+        }
+
+        const courtName = selectedBooking.court?.name || 'Cancha';
+        const playerName = selectedBooking.client?.name || selectedBooking.playerName || 'Jugador';
+        showSuccess('Consumos agregados', `${courtName} - ${playerName}`);
+        
+        // Reload active bookings to update the list
+        loadActiveBookings();
+        onOrderCreated();
+        setShowPrintDialog(false);
+        return;
+      }
+
+      // Regular direct sale flow (no booking selected)
       const items = Array.from(cart.values()).map(item => ({
         productId: item.product.id,
         quantity: item.quantity,
-        unitPrice: getItemPrice(item.product) // Send the calculated price
+        unitPrice: getItemPrice(item.product)
       }));
 
-      // Determine customer info based on selection type
       const isCurrentAccountSale = !!selectedCurrentAccount;
       const effectiveCustomerName = isCurrentAccountSale 
         ? selectedCurrentAccount.holderName 
@@ -434,7 +508,6 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
         ? selectedCurrentAccount.holderPhone
         : (selectedClient?.phone || customerPhone || undefined);
 
-      // Create a direct sale order
       await apiClient.createOrder({
         establishmentId,
         clientId: selectedClient?.id || undefined,
@@ -698,9 +771,28 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                       <div className="flex border-b border-gray-700 mb-4">
                         <button
                           onClick={() => {
+                            setActiveTab('turnos');
+                            setSelectedClient(null);
+                            setSelectedCurrentAccount(null);
+                            setCustomerName('');
+                            setCustomerPhone('');
+                            setCustomerEmail('');
+                          }}
+                          className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                            activeTab === 'turnos'
+                              ? 'text-emerald-400 border-b-2 border-emerald-500'
+                              : 'text-gray-400 hover:text-gray-300'
+                          }`}
+                        >
+                          <PlayCircle className="w-3 h-3 inline mr-1" />
+                          Turnos
+                        </button>
+                        <button
+                          onClick={() => {
                             setActiveTab('new-client');
                             setSelectedClient(null);
                             setSelectedCurrentAccount(null);
+                            setSelectedBooking(null);
                           }}
                           className={`flex-1 py-2 text-xs font-medium transition-colors ${
                             activeTab === 'new-client'
@@ -718,6 +810,7 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                             setCustomerPhone('');
                             setCustomerEmail('');
                             setSelectedCurrentAccount(null);
+                            setSelectedBooking(null);
                           }}
                           className={`flex-1 py-2 text-xs font-medium transition-colors ${
                             activeTab === 'search-client'
@@ -734,6 +827,7 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                             setCustomerName('');
                             setCustomerPhone('');
                             setCustomerEmail('');
+                            setSelectedBooking(null);
                           }}
                           className={`flex-1 py-2 text-xs font-medium transition-colors ${
                             activeTab === 'current-account'
@@ -747,7 +841,57 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                       </div>
 
                       {/* Tab Content */}
-                      {activeTab === 'new-client' ? (
+                      {activeTab === 'turnos' ? (
+                        /* Active Bookings (Turnos) */
+                        <div className="space-y-3">
+                          {loadingBookings ? (
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+                            </div>
+                          ) : activeBookings.length === 0 ? (
+                            <div className="text-center py-6">
+                              <PlayCircle className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                              <p className="text-gray-500 text-sm">No hay turnos en curso</p>
+                              <p className="text-gray-600 text-xs mt-1">Los turnos iniciados aparecerán aquí</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {activeBookings.map((booking) => {
+                                const playerName = booking.client?.name || booking.playerName || 'Sin nombre';
+                                return (
+                                  <button
+                                    key={booking.id}
+                                    onClick={() => setSelectedBooking(booking)}
+                                    className={`w-full p-3 rounded-lg text-left transition-colors ${
+                                      selectedBooking?.id === booking.id
+                                        ? 'bg-emerald-600/20 border border-emerald-500'
+                                        : 'bg-gray-800 hover:bg-gray-750 border border-transparent'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-white text-sm font-medium">{booking.court?.name}</span>
+                                          <span className="px-1.5 py-0.5 text-xs bg-green-500/20 text-green-400 rounded">
+                                            En curso
+                                          </span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1">{playerName}</p>
+                                        <p className="text-xs text-gray-500">
+                                          {booking.startTime} - {booking.endTime}
+                                        </p>
+                                      </div>
+                                      {selectedBooking?.id === booking.id && (
+                                        <Check className="w-4 h-4 text-emerald-400" />
+                                      )}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      ) : activeTab === 'new-client' ? (
                         /* New Client Form */
                         <div className="space-y-3">
                           <div className="relative">
@@ -1106,6 +1250,16 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                           <>
                             <Loader2 className="w-5 h-5 animate-spin" />
                             <span>Procesando...</span>
+                          </>
+                        ) : selectedBooking ? (
+                          <>
+                            <PlayCircle className="w-5 h-5" />
+                            <span>
+                              {paid > 0 
+                                ? `Agregar Consumos + Pago` 
+                                : 'Agregar Consumos al Turno'
+                              }
+                            </span>
                           </>
                         ) : (
                           <>
