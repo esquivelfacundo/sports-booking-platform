@@ -2168,6 +2168,12 @@ class ApiClient {
     });
   }
 
+  async deleteArcaConfig(establishmentId: string) {
+    return this.request(`/api/arca/config/${establishmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getArcaPuntosVenta(establishmentId: string) {
     return this.request(`/api/arca/puntos-venta/${establishmentId}`);
   }

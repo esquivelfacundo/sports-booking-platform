@@ -489,6 +489,31 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleDeleteArca = async () => {
+    if (!establishment?.id || !confirm('¿Desconectar AFIP? Se eliminarán la configuración y todos los puntos de venta.')) return;
+    try {
+      setArcaSaving(true);
+      await apiClient.deleteArcaConfig(establishment.id);
+      showSuccess('Configuración AFIP eliminada');
+      setArcaConfig(null);
+      setArcaForm({
+        cuit: '',
+        razonSocial: '',
+        domicilioFiscal: '',
+        condicionFiscal: 'monotributista',
+        inicioActividades: '',
+        certificado: '',
+        clavePrivada: ''
+      });
+      setPuntosVenta([]);
+      closeSidebar();
+    } catch (error: any) {
+      showError(error?.message || 'Error al eliminar configuración');
+    } finally {
+      setArcaSaving(false);
+    }
+  };
+
   const handleCreatePuntoVenta = async () => {
     if (!establishment?.id) return;
     const numero = parseInt(nuevoPuntoVenta.numero, 10);
@@ -1000,6 +1025,19 @@ export default function IntegrationsPage() {
                       )}
                     </div>
                   </div>
+
+                  {arcaConfig && (
+                    <div className="pt-4 border-t border-gray-700">
+                      <button
+                        onClick={handleDeleteArca}
+                        disabled={arcaSaving}
+                        className="w-full px-4 py-3 bg-red-500/20 text-red-400 rounded-xl font-medium hover:bg-red-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {arcaSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        Desconectar AFIP
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
