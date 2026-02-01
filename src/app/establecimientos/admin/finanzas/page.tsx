@@ -46,6 +46,9 @@ interface FinanceResponse {
     totalNotInvoiced: number;
     totalBookings: number;
     totalOrders: number;
+    totalSales: number;
+    totalPaid: number;
+    totalPending: number;
     averageTicket: number;
     growth: { revenue: number; trend: 'up' | 'down' | 'stable' };
   };
@@ -394,6 +397,7 @@ const FinancePage = () => {
       <div className="p-6 space-y-6">
       {/* Key Metrics - Row 1 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 1. Cantidad de ventas */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -401,16 +405,17 @@ const FinancePage = () => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Reservas</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.totalBookings}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Cantidad de Ventas</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{summary.totalSales || (summary.totalBookings + summary.totalOrders)}</p>
               <p className="text-xs text-gray-500 mt-1">
-                En el período
+                {summary.totalBookings} reservas · {summary.totalOrders} ventas
               </p>
             </div>
-            <Calendar className="h-7 w-7 text-blue-400" />
+            <Receipt className="h-7 w-7 text-blue-400" />
           </div>
         </motion.div>
 
+        {/* 2. Ingresos Totales */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -433,10 +438,90 @@ const FinancePage = () => {
           </div>
         </motion.div>
 
+        {/* 3. Cobrado */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Cobrado</p>
+              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(summary.totalPaid || 0)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {summary.totalRevenue > 0 ? Math.round(((summary.totalPaid || 0) / summary.totalRevenue) * 100) : 0}% del total
+              </p>
+            </div>
+            <CreditCard className="h-7 w-7 text-emerald-400" />
+          </div>
+        </motion.div>
+
+        {/* 4. Pendiente */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Pendiente</p>
+              <p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">{formatCurrency(summary.totalPending || 0)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {summary.totalRevenue > 0 ? Math.round(((summary.totalPending || 0) / summary.totalRevenue) * 100) : 0}% del total
+              </p>
+            </div>
+            <Clock className="h-7 w-7 text-yellow-400" />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Key Metrics - Row 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 5. Ingresos Kiosco */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Kiosco</p>
+              <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(summary.orderRevenue || 0)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {summary.totalOrders || 0} ventas directas
+              </p>
+            </div>
+            <ShoppingBag className="h-7 w-7 text-purple-400" />
+          </div>
+        </motion.div>
+
+        {/* 6. Ticket Promedio */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Ticket Promedio</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.averageTicket)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Por venta
+              </p>
+            </div>
+            <Wallet className="h-7 w-7 text-blue-400" />
+          </div>
+        </motion.div>
+
+        {/* 7. Total Facturado */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
           className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
@@ -451,10 +536,11 @@ const FinancePage = () => {
           </div>
         </motion.div>
 
+        {/* 8. Total No Facturado */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.7 }}
           className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between">
@@ -466,81 +552,6 @@ const FinancePage = () => {
               </p>
             </div>
             <FileX className="h-7 w-7 text-red-400" />
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Key Metrics - Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Señas Cobradas</p>
-              <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(summary.totalDeposits)}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                {(summary.bookingRevenue || summary.totalRevenue) > 0 ? Math.round((summary.totalDeposits / (summary.bookingRevenue || summary.totalRevenue)) * 100) : 0}% de reservas
-              </p>
-            </div>
-            <PiggyBank className="h-7 w-7 text-emerald-400" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Pendiente a Cobrar</p>
-              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(summary.pendingBalance)}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Reservas - Señas
-              </p>
-            </div>
-            <Wallet className="h-7 w-7 text-orange-400" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Ingresos Kiosco</p>
-              <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{formatCurrency(summary.orderRevenue || 0)}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                {summary.totalOrders || 0} ventas
-              </p>
-            </div>
-            <ShoppingBag className="h-7 w-7 text-purple-400" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Ticket Promedio</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(summary.averageTicket)}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Por reserva
-              </p>
-            </div>
-            <Receipt className="h-7 w-7 text-blue-400" />
           </div>
         </motion.div>
       </div>
