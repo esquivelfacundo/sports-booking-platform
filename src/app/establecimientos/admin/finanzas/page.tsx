@@ -70,15 +70,22 @@ interface FinanceResponse {
     category: string;
     description: string;
     amount: number;
+    paidAmount: number;
     depositAmount: number;
     date: string;
     time: string;
     status: string;
+    paymentStatus: string;
     paymentMethod: string;
     reference: string;
     clientName: string;
     clientPhone: string;
     court: string;
+    itemsCount: number;
+    createdByUser: string;
+    billingStatus: string;
+    bookingDate: string | null;
+    bookingTime: string | null;
   }[];
 }
 
