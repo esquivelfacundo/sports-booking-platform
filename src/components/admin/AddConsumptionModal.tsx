@@ -67,7 +67,8 @@ export const AddConsumptionModal: React.FC<AddConsumptionModalProps> = ({
     try {
       const response = await apiClient.getProducts({
         establishmentId,
-        isActive: true
+        isActive: true,
+        limit: 1000 // Load all products for consumption selection
       }) as any;
       setProducts(response.products || []);
     } catch (error) {
