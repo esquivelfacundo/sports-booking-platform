@@ -247,7 +247,8 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
     try {
       const response = await apiClient.getProducts({ 
         establishmentId,
-        isActive: true 
+        isActive: true,
+        limit: 1000 // Load all products for the sidebar (no pagination)
       }) as { products: Product[] };
       setProducts(response.products || []);
     } catch (error) {

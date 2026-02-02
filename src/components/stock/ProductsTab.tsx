@@ -220,7 +220,7 @@ const ProductsTab = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 dark:text-gray-400 text-sm">Total Productos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{products.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{totalProducts}</p>
             </div>
             <Package className="w-8 h-8 text-emerald-500" />
           </div>
