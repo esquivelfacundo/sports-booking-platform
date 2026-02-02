@@ -28,8 +28,9 @@ export interface User {
   
   // Staff-specific fields
   isStaff?: boolean;
-  staffRole?: 'admin' | 'manager' | 'receptionist' | 'staff';
+  staffRole?: 'admin' | 'employee';
   establishmentId?: string;
+  allowedSections?: string[];
   permissions?: Record<string, boolean>;
   
   // Computed fields for compatibility

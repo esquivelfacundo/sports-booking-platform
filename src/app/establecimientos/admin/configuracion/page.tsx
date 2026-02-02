@@ -131,7 +131,8 @@ const ConfigurationPage = () => {
     email: '',
     phone: '',
     password: '',
-    role: 'receptionist' as 'admin' | 'manager' | 'receptionist' | 'staff',
+    role: 'employee' as 'admin' | 'employee',
+    allowedSections: ['reservas', 'canchas', 'clientes', 'resenas', 'marketing', 'cupones', 'ventas', 'gastos', 'stock', 'cuentas', 'analytics', 'finanzas', 'integraciones', 'caja', 'configuracion'] as string[],
   });
   
   // Closed date state
@@ -1481,7 +1482,7 @@ const ConfigurationPage = () => {
           <button
             onClick={() => {
               setEditingStaff(null);
-              setNewStaff({ name: '', email: '', phone: '', password: '', role: 'receptionist' });
+              setNewStaff({ name: '', email: '', phone: '', password: '', role: 'employee', allowedSections: ['reservas', 'canchas', 'clientes', 'resenas', 'marketing', 'cupones', 'ventas', 'gastos', 'stock', 'cuentas', 'analytics', 'finanzas', 'integraciones', 'caja', 'configuracion'] });
               setShowStaffModal(true);
             }}
             className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors"
@@ -1550,7 +1551,8 @@ const ConfigurationPage = () => {
                           email: staff.email,
                           phone: staff.phone || '',
                           password: '',
-                          role: staff.role,
+                          role: staff.role || 'employee',
+                          allowedSections: staff.allowedSections || ['reservas', 'canchas', 'clientes', 'resenas', 'marketing', 'cupones', 'ventas', 'gastos', 'stock', 'cuentas', 'analytics', 'finanzas', 'integraciones', 'caja', 'configuracion'],
                         });
                         setShowStaffModal(true);
                       }}
@@ -1718,11 +1720,47 @@ const ConfigurationPage = () => {
                   onChange={(e) => setNewStaff(prev => ({ ...prev, role: e.target.value as any }))}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="admin">Administrador - Acceso total</option>
-                  <option value="manager">Gerente - Gestión completa, sin configuración</option>
-                  <option value="receptionist">Recepcionista - Reservas y clientes</option>
-                  <option value="staff">Personal - Solo lectura</option>
+                  <option value="admin">Administrador</option>
+                  <option value="employee">Empleado</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Secciones permitidas</label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-gray-700/50 rounded-lg text-sm">
+                  {[
+                    { id: 'reservas', label: 'Reservas' },
+                    { id: 'canchas', label: 'Canchas' },
+                    { id: 'clientes', label: 'Clientes' },
+                    { id: 'resenas', label: 'Reseñas' },
+                    { id: 'marketing', label: 'Marketing' },
+                    { id: 'cupones', label: 'Cupones' },
+                    { id: 'ventas', label: 'Ventas' },
+                    { id: 'gastos', label: 'Gastos' },
+                    { id: 'stock', label: 'Stock' },
+                    { id: 'cuentas', label: 'Cuentas' },
+                    { id: 'analytics', label: 'Análisis' },
+                    { id: 'finanzas', label: 'Finanzas' },
+                    { id: 'integraciones', label: 'Integraciones' },
+                    { id: 'caja', label: 'Caja' },
+                    { id: 'configuracion', label: 'Configuración' },
+                  ].map(section => (
+                    <label key={section.id} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newStaff.allowedSections.includes(section.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStaff(prev => ({ ...prev, allowedSections: [...prev.allowedSections, section.id] }));
+                          } else {
+                            setNewStaff(prev => ({ ...prev, allowedSections: prev.allowedSections.filter(s => s !== section.id) }));
+                          }
+                        }}
+                        className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded"
+                      />
+                      <span className="text-gray-300">{section.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1731,7 +1769,7 @@ const ConfigurationPage = () => {
                 onClick={() => {
                   setShowStaffModal(false);
                   setEditingStaff(null);
-                  setNewStaff({ name: '', email: '', phone: '', password: '', role: 'receptionist' });
+                  setNewStaff({ name: '', email: '', phone: '', password: '', role: 'employee', allowedSections: ['reservas', 'canchas', 'clientes', 'resenas', 'marketing', 'cupones', 'ventas', 'gastos', 'stock', 'cuentas', 'analytics', 'finanzas', 'integraciones', 'caja', 'configuracion'] });
                 }}
                 className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
                 disabled={staffSaving}
@@ -1760,7 +1798,8 @@ const ConfigurationPage = () => {
                         name: newStaff.name,
                         email: newStaff.email,
                         phone: newStaff.phone,
-                        role: newStaff.role
+                        role: newStaff.role,
+                        allowedSections: newStaff.allowedSections
                       };
                       if (newStaff.password) {
                         updateData.password = newStaff.password;
@@ -1773,7 +1812,8 @@ const ConfigurationPage = () => {
                         email: newStaff.email,
                         phone: newStaff.phone,
                         password: newStaff.password,
-                        role: newStaff.role
+                        role: newStaff.role,
+                        allowedSections: newStaff.allowedSections
                       });
                     }
                     
@@ -1781,7 +1821,7 @@ const ConfigurationPage = () => {
                     await loadStaff();
                     setShowStaffModal(false);
                     setEditingStaff(null);
-                    setNewStaff({ name: '', email: '', phone: '', password: '', role: 'receptionist' });
+                    setNewStaff({ name: '', email: '', phone: '', password: '', role: 'employee', allowedSections: ['reservas', 'canchas', 'clientes', 'resenas', 'marketing', 'cupones', 'ventas', 'gastos', 'stock', 'cuentas', 'analytics', 'finanzas', 'integraciones', 'caja', 'configuracion'] });
                   } catch (error: any) {
                     console.error('Error saving staff:', error);
                     alert(error.message || 'Error al guardar usuario');

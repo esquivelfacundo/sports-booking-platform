@@ -65,11 +65,23 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Check if user is staff-only (role: 'staff')
-  const isStaffOnly = user?.isStaff && user?.staffRole === 'staff';
-  
   // Check if user is staff (has isStaff flag)
   const isStaff = user?.isStaff === true;
+  
+  // Get user's allowed sections (owners have all sections, staff has configurable)
+  const userAllowedSections = isStaff 
+    ? (user?.allowedSections || ['reservas', 'canchas', 'clientes', 'resenas', 'marketing', 'cupones', 'ventas', 'gastos', 'stock', 'cuentas', 'analytics', 'finanzas', 'integraciones', 'caja', 'configuracion'])
+    : null; // null means all sections allowed (owner)
+  
+  // Always visible sections
+  const alwaysVisibleSections = ['dashboard'];
+  
+  // Check if a section is allowed for the current user
+  const isSectionAllowed = (sectionId: string) => {
+    if (!isStaff) return true; // Owners see everything
+    if (alwaysVisibleSections.includes(sectionId)) return true;
+    return userAllowedSections?.includes(sectionId) ?? true;
+  };
 
   // Check if user is a player (not allowed in establishment admin)
   const isPlayerOnly = user?.userType === 'player' && !user?.isStaff;
@@ -89,17 +101,30 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
       return;
     }
 
-    // Redirect staff-only users to reservas page if they're on a different page
-    if (!isLoading && isAuthenticated && isStaffOnly) {
-      const allowedPaths = ['/establecimientos/admin/reservas'];
-      const isAllowedPath = allowedPaths.some(path => pathname.startsWith(path));
-      
-      if (!isAllowedPath) {
-        console.log('AdminLayout: Staff-only user, redirecting to reservas');
-        router.push('/establecimientos/admin/reservas');
+    // Redirect staff users to dashboard if they're on a restricted section
+    if (!isLoading && isAuthenticated && isStaff && userAllowedSections) {
+      const pathToSection: Record<string, string> = {
+        '/establecimientos/admin/reservas': 'reservas',
+        '/establecimientos/admin/canchas': 'canchas',
+        '/establecimientos/admin/clientes': 'clientes',
+        '/establecimientos/admin/resenas': 'resenas',
+        '/establecimientos/admin/marketing': 'marketing',
+        '/establecimientos/admin/cupones': 'cupones',
+        '/establecimientos/admin/ventas': 'ventas',
+        '/establecimientos/admin/gastos': 'gastos',
+        '/establecimientos/admin/stock': 'stock',
+        '/establecimientos/admin/cuentas-corrientes': 'cuentas',
+        '/establecimientos/admin/analytics': 'analytics',
+        '/establecimientos/admin/finanzas': 'finanzas',
+        '/establecimientos/admin/integraciones': 'integraciones',
+        '/establecimientos/admin/configuracion': 'configuracion',
+      };
+      const currentSection = Object.entries(pathToSection).find(([path]) => pathname.startsWith(path))?.[1];
+      if (currentSection && !isSectionAllowed(currentSection)) {
+        router.push('/establecimientos/admin');
       }
     }
-  }, [isAuthenticated, isLoading, router, isStaffOnly, isPlayerOnly, pathname]);
+  }, [isAuthenticated, isLoading, router, isStaff, isPlayerOnly, pathname, userAllowedSections]);
 
   // Check if user has PIN configured
   useEffect(() => {
@@ -194,118 +219,82 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
   // Sidebar collapsed state - collapsed by default
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
-  // Navigation items grouped with separators
-  const navigationGroups = [
+  // Navigation items grouped with separators (with sectionId for filtering)
+  const allNavigationGroups = [
     {
       items: [
         {
-          name: 'Dashboard',
-          href: '/establecimientos/admin',
-          icon: LayoutDashboard,
-          current: pathname === '/establecimientos/admin'
+          sectionId: 'dashboard', name: 'Dashboard', href: '/establecimientos/admin', icon: LayoutDashboard, current: pathname === '/establecimientos/admin'
         }
       ]
     },
     {
       items: [
         {
-          name: 'Reservas',
-          href: '/establecimientos/admin/reservas',
-          icon: Calendar,
-          current: pathname.startsWith('/establecimientos/admin/reservas'),
-          badge: stats.pendingBookings > 0 ? stats.pendingBookings.toString() : undefined
+          sectionId: 'reservas', name: 'Reservas', href: '/establecimientos/admin/reservas', icon: Calendar, current: pathname.startsWith('/establecimientos/admin/reservas'), badge: stats.pendingBookings > 0 ? stats.pendingBookings.toString() : undefined
         },
         {
-          name: 'Canchas',
-          href: '/establecimientos/admin/canchas',
-          icon: MapPin,
-          current: pathname.startsWith('/establecimientos/admin/canchas')
+          sectionId: 'canchas', name: 'Canchas', href: '/establecimientos/admin/canchas', icon: MapPin, current: pathname.startsWith('/establecimientos/admin/canchas')
         },
         {
-          name: 'Clientes',
-          href: '/establecimientos/admin/clientes',
-          icon: Users,
-          current: pathname.startsWith('/establecimientos/admin/clientes')
+          sectionId: 'clientes', name: 'Clientes', href: '/establecimientos/admin/clientes', icon: Users, current: pathname.startsWith('/establecimientos/admin/clientes')
         },
         {
-          name: 'Reseñas',
-          href: '/establecimientos/admin/resenas',
-          icon: Star,
-          current: pathname.startsWith('/establecimientos/admin/resenas')
+          sectionId: 'resenas', name: 'Reseñas', href: '/establecimientos/admin/resenas', icon: Star, current: pathname.startsWith('/establecimientos/admin/resenas')
         }
       ]
     },
     {
       items: [
         {
-          name: 'Marketing',
-          href: '/establecimientos/admin/marketing',
-          icon: Megaphone,
-          current: pathname.startsWith('/establecimientos/admin/marketing')
+          sectionId: 'marketing', name: 'Marketing', href: '/establecimientos/admin/marketing', icon: Megaphone, current: pathname.startsWith('/establecimientos/admin/marketing')
         },
         {
-          name: 'Cupones',
-          href: '/establecimientos/admin/cupones',
-          icon: Ticket,
-          current: pathname.startsWith('/establecimientos/admin/cupones')
+          sectionId: 'cupones', name: 'Cupones', href: '/establecimientos/admin/cupones', icon: Ticket, current: pathname.startsWith('/establecimientos/admin/cupones')
         }
       ]
     },
     {
       items: [
         {
-          name: 'Ventas',
-          href: '/establecimientos/admin/ventas',
-          icon: ShoppingCart,
-          current: pathname.startsWith('/establecimientos/admin/ventas')
+          sectionId: 'ventas', name: 'Ventas', href: '/establecimientos/admin/ventas', icon: ShoppingCart, current: pathname.startsWith('/establecimientos/admin/ventas')
         },
         {
-          name: 'Gastos',
-          href: '/establecimientos/admin/gastos',
-          icon: DollarSign,
-          current: pathname.startsWith('/establecimientos/admin/gastos')
+          sectionId: 'gastos', name: 'Gastos', href: '/establecimientos/admin/gastos', icon: DollarSign, current: pathname.startsWith('/establecimientos/admin/gastos')
         },
         {
-          name: 'Stock',
-          href: '/establecimientos/admin/stock',
-          icon: Package,
-          current: pathname.startsWith('/establecimientos/admin/stock')
+          sectionId: 'stock', name: 'Stock', href: '/establecimientos/admin/stock', icon: Package, current: pathname.startsWith('/establecimientos/admin/stock')
         },
         {
-          name: 'Cuentas',
-          href: '/establecimientos/admin/cuentas-corrientes',
-          icon: CreditCard,
-          current: pathname.startsWith('/establecimientos/admin/cuentas-corrientes')
+          sectionId: 'cuentas', name: 'Cuentas', href: '/establecimientos/admin/cuentas-corrientes', icon: CreditCard, current: pathname.startsWith('/establecimientos/admin/cuentas-corrientes')
         }
       ]
     },
     {
       items: [
         {
-          name: 'Análisis',
-          href: '/establecimientos/admin/analytics',
-          icon: BarChart3,
-          current: pathname.startsWith('/establecimientos/admin/analytics')
+          sectionId: 'analytics', name: 'Análisis', href: '/establecimientos/admin/analytics', icon: BarChart3, current: pathname.startsWith('/establecimientos/admin/analytics')
         },
         {
-          name: 'Finanzas',
-          href: '/establecimientos/admin/finanzas',
-          icon: DollarSign,
-          current: pathname.startsWith('/establecimientos/admin/finanzas')
+          sectionId: 'finanzas', name: 'Finanzas', href: '/establecimientos/admin/finanzas', icon: DollarSign, current: pathname.startsWith('/establecimientos/admin/finanzas')
         }
       ]
     },
     {
       items: [
         {
-          name: 'Integraciones',
-          href: '/establecimientos/admin/integraciones',
-          icon: Plug,
-          current: pathname.startsWith('/establecimientos/admin/integraciones')
+          sectionId: 'integraciones', name: 'Integraciones', href: '/establecimientos/admin/integraciones', icon: Plug, current: pathname.startsWith('/establecimientos/admin/integraciones')
         }
       ]
     }
   ];
+
+
+  // Filter navigation groups based on user's allowed sections
+  const navigationGroups = allNavigationGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => isSectionAllowed(item.sectionId))
+  })).filter(group => group.items.length > 0);
 
   // Flat navigation for mobile
   const navigation = navigationGroups.flatMap(group => group.items);
@@ -698,8 +687,10 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                 {/* Theme Toggle */}
                 <ThemeToggle />
 
-                {/* Cash Register */}
-                <CashRegisterTopbar establishmentId={establishment?.id || null} />
+                {/* Cash Register - only show if user has access to 'caja' section */}
+                {isSectionAllowed('caja') && (
+                  <CashRegisterTopbar establishmentId={establishment?.id || null} />
+                )}
 
                 {/* Notifications */}
                 <div className="relative">
@@ -781,18 +772,20 @@ const AdminLayoutContent = ({ children }: AdminLayoutProps) => {
                   )}
                 </div>
 
-                {/* Configuration */}
-                <button
-                  onClick={handleOpenConfiguration}
-                  className={`p-2 rounded-lg transition-all duration-200 ${
-                    pathname.startsWith('/establecimientos/admin/configuracion')
-                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                  title="Configuración"
-                >
-                  <Settings className="h-5 w-5" />
-                </button>
+                {/* Configuration - only show if user has access to 'configuracion' section */}
+                {isSectionAllowed('configuracion') && (
+                  <button
+                    onClick={handleOpenConfiguration}
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      pathname.startsWith('/establecimientos/admin/configuracion')
+                        ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                    title="Configuración"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </button>
+                )}
 
                 {/* Logout */}
                 <button
