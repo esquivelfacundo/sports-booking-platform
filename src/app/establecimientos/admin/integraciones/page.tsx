@@ -228,6 +228,7 @@ export default function IntegrationsPage() {
     loadMPStatus();
     loadBotApiKey();
     loadCourts();
+    loadArcaConfigStatus();
   }, [establishment?.id]);
 
   useEffect(() => {
@@ -236,6 +237,17 @@ export default function IntegrationsPage() {
       loadArcaPuntosVenta();
     }
   }, [activeIntegration, establishment?.id]);
+
+  const loadArcaConfigStatus = async () => {
+    if (!establishment?.id) return;
+    try {
+      const response = await apiClient.getArcaConfig(establishment.id) as any;
+      const config: ArcaConfig | null = response?.config || null;
+      setArcaConfig(config);
+    } catch (error: any) {
+      console.error('Error loading ARCA config status:', error);
+    }
+  };
 
   const loadIntegrations = async () => {
     try {
