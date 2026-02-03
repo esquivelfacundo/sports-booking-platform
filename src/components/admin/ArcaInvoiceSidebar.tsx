@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Receipt, Download, CheckCircle, FileText } from 'lucide-react';
+import { X, Loader2, Receipt, Download, CheckCircle, FileText, CheckCircle2, Building2, User } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -48,6 +48,15 @@ export default function ArcaInvoiceSidebar({
   const [clienteNombre, setClienteNombre] = useState(defaultCustomerName || '');
   const [docTipo, setDocTipo] = useState<DocTipo>(99);
   const [docNro, setDocNro] = useState('');
+  const [condicionIva, setCondicionIva] = useState<string>('consumidor_final');
+  
+  // CUIT lookup state
+  const [lookingUpCuit, setLookingUpCuit] = useState(false);
+  const [contribuyenteInfo, setContribuyenteInfo] = useState<{
+    razonSocial: string;
+    condicionIva: { code: number; name: string; shortName: string };
+    tipoPersona: string;
+  } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [invoiceData, setInvoiceData] = useState<{
@@ -77,6 +86,8 @@ export default function ArcaInvoiceSidebar({
     setClienteNombre(defaultCustomerName || '');
     setDocTipo(99);
     setDocNro('');
+    setCondicionIva('consumidor_final');
+    setContribuyenteInfo(null);
 
     const load = async () => {
       try {
@@ -95,6 +106,50 @@ export default function ArcaInvoiceSidebar({
 
     load();
   }, [isOpen, establishmentId, defaultCustomerName, showError]);
+
+  // Auto-lookup CUIT when 11 digits are entered
+  const lookupCuit = useCallback(async (cuit: string) => {
+    const cleanCuit = cuit.replace(/\D/g, '');
+    if (cleanCuit.length !== 11) {
+      setContribuyenteInfo(null);
+      return;
+    }
+
+    try {
+      setLookingUpCuit(true);
+      const resp = await apiClient.consultarCuitAfip(establishmentId, cleanCuit) as any;
+      
+      if (resp?.contribuyente) {
+        const info = resp.contribuyente;
+        setContribuyenteInfo({
+          razonSocial: info.razonSocial,
+          condicionIva: info.condicionIva,
+          tipoPersona: info.tipoPersona
+        });
+        // Auto-fill name and IVA condition
+        setClienteNombre(info.razonSocial);
+        setCondicionIva(info.condicionIva.shortName);
+      }
+    } catch (e: any) {
+      console.error('Error looking up CUIT:', e);
+      setContribuyenteInfo(null);
+    } finally {
+      setLookingUpCuit(false);
+    }
+  }, [establishmentId]);
+
+  // Determine invoice type based on conditions
+  const invoiceType = useMemo(() => {
+    if (docTipo === 99) return { type: 'B', label: 'Factura B', color: 'text-blue-400' };
+    if (docTipo === 96) return { type: 'B', label: 'Factura B', color: 'text-blue-400' };
+    if (docTipo === 80) {
+      if (condicionIva === 'responsable_inscripto') {
+        return { type: 'A', label: 'Factura A', color: 'text-amber-400' };
+      }
+      return { type: 'B', label: 'Factura B', color: 'text-blue-400' };
+    }
+    return { type: 'B', label: 'Factura B', color: 'text-blue-400' };
+  }, [docTipo, condicionIva]);
 
   const handleEmit = async () => {
     if (!puntoVentaId) {
@@ -116,6 +171,8 @@ export default function ArcaInvoiceSidebar({
           nombre: clienteNombre || undefined,
           docTipo,
           docNro: docTipo === 99 ? '0' : docNro,
+          condicionIva: condicionIva === 'responsable_inscripto' ? 1 : 
+                        condicionIva === 'monotributista' ? 6 : 5,
         },
         orderId,
         bookingId,
@@ -250,23 +307,102 @@ export default function ArcaInvoiceSidebar({
 
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">Nro</label>
-                  <input
-                    value={docNro}
-                    onChange={(e) => setDocNro(e.target.value)}
-                    disabled={isSubmitting || docTipo === 99 || !!invoiceData}
-                    placeholder={docTipo === 96 ? '12345678' : docTipo === 80 ? '20123456789' : '0'}
-                    className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 disabled:opacity-50 font-mono"
-                  />
+                  <div className="relative">
+                    <input
+                      value={docNro}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDocNro(val);
+                        // Auto-lookup for CUIT
+                        if (docTipo === 80) {
+                          const clean = val.replace(/\D/g, '');
+                          if (clean.length === 11) {
+                            lookupCuit(clean);
+                          } else {
+                            setContribuyenteInfo(null);
+                          }
+                        }
+                      }}
+                      disabled={isSubmitting || docTipo === 99 || !!invoiceData}
+                      placeholder={docTipo === 96 ? '12345678' : docTipo === 80 ? '20123456789' : '0'}
+                      className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500 disabled:opacity-50 font-mono pr-10"
+                    />
+                    {docTipo === 80 && lookingUpCuit && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                      </div>
+                    )}
+                    {docTipo === 80 && contribuyenteInfo && !lookingUpCuit && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Contribuyente info from AFIP */}
+              {docTipo === 80 && contribuyenteInfo && (
+                <div className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2">
+                    {contribuyenteInfo.tipoPersona === 'JURIDICA' ? (
+                      <Building2 className="w-4 h-4 text-blue-400" />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-400" />
+                    )}
+                    <span className="text-sm text-white font-medium">{contribuyenteInfo.razonSocial}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">{contribuyenteInfo.condicionIva.name}</span>
+                    <span className={`text-xs font-semibold ${invoiceType.color}`}>
+                      → {invoiceType.label}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Manual IVA condition selector when AFIP lookup fails */}
+              {docTipo === 80 && !contribuyenteInfo && !lookingUpCuit && docNro.replace(/\D/g, '').length === 11 && (
+                <div className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl">
+                  <p className="text-xs text-gray-400 mb-2">Condición IVA del cliente:</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCondicionIva('responsable_inscripto')}
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        condicionIva === 'responsable_inscripto'
+                          ? 'bg-amber-500/20 border border-amber-500 text-amber-400'
+                          : 'bg-gray-700 border border-gray-600 text-gray-400 hover:border-gray-500'
+                      }`}
+                    >
+                      Resp. Inscripto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCondicionIva('monotributista')}
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        condicionIva === 'monotributista'
+                          ? 'bg-blue-500/20 border border-blue-500 text-blue-400'
+                          : 'bg-gray-700 border border-gray-600 text-gray-400 hover:border-gray-500'
+                      }`}
+                    >
+                      Monotributista
+                    </button>
+                  </div>
+                  <p className={`text-xs font-semibold mt-2 ${invoiceType.color}`}>
+                    Se emitirá: {invoiceType.label}
+                  </p>
+                </div>
+              )}
+
               {/* Nombre */}
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Nombre / Razón social (opcional)</label>
+                <label className="block text-xs text-gray-400 mb-1">Nombre / Razón social</label>
                 <input
                   value={clienteNombre}
                   onChange={(e) => setClienteNombre(e.target.value)}
                   disabled={isSubmitting || !!invoiceData}
+                  placeholder={contribuyenteInfo ? '' : 'Ingresá el nombre (opcional)'}
                   className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
