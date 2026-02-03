@@ -129,6 +129,7 @@ interface ReservationDetailsSidebarProps {
   onFinalize?: (reservationId: string) => Promise<void>;
   onPaymentRegistered?: (bookingId: string, newDepositAmount: number) => void;
   onStatusChanged?: (reservationId: string, newStatus: string) => void;
+  onConsumptionChanged?: (bookingId: string) => void;
   establishmentName?: string;
   establishmentSlug?: string;
   onOpenCashRegister?: () => void;
@@ -190,6 +191,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
   onFinalize,
   onPaymentRegistered,
   onStatusChanged,
+  onConsumptionChanged,
   establishmentName,
   establishmentSlug,
   onOpenCashRegister
@@ -433,7 +435,8 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     try {
       await apiClient.updateBookingConsumption(consumptionId, { quantity: newQuantity });
       if (reservation?.id) {
-        loadConsumptions(reservation.id);
+        await loadConsumptions(reservation.id);
+        onConsumptionChanged?.(reservation.id);
       }
     } catch (error) {
       console.error('Error updating consumption:', error);
@@ -447,7 +450,8 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     try {
       await apiClient.deleteBookingConsumption(consumptionId);
       if (reservation?.id) {
-        loadConsumptions(reservation.id);
+        await loadConsumptions(reservation.id);
+        onConsumptionChanged?.(reservation.id);
       }
     } catch (error) {
       console.error('Error deleting consumption:', error);
@@ -519,6 +523,9 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
 
       await Promise.all(promises);
       await loadConsumptions(reservation.id);
+      
+      // Notify parent to refresh grid
+      onConsumptionChanged?.(reservation.id);
       
       // Return to details view
       setShowProductSearch(false);

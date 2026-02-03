@@ -1600,6 +1600,10 @@ const ReservationsPage = () => {
           // Refresh reservations list
           loadReservations({ date: gridSelectedDate.toISOString().split('T')[0] });
         }}
+        onConsumptionChanged={(bookingId) => {
+          // Refresh reservations list to update grid payment status
+          loadReservations({ date: gridSelectedDate.toISOString().split('T')[0] });
+        }}
         onFinalize={async (id) => {
           return new Promise<void>((resolve) => {
             requestPin(async () => {
