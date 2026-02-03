@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { X, Truck, Save, Loader2, Trash2 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
@@ -45,6 +46,11 @@ export default function SupplierSidebar({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isEditing = !!supplier;
 
@@ -129,9 +135,9 @@ export default function SupplierSidebar({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <motion.div
@@ -148,7 +154,7 @@ export default function SupplierSidebar({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed right-0 top-0 h-full w-full max-w-md bg-gray-800 border-l border-gray-700 z-[101] shadow-2xl flex flex-col"
+        className="fixed inset-y-0 right-0 w-full max-w-md bg-gray-800 border-l border-gray-700 z-[101] shadow-2xl flex flex-col"
       >
         {/* Header */}
         <div className="p-6 border-b border-gray-700">
@@ -327,6 +333,7 @@ export default function SupplierSidebar({
           </button>
         </div>
       </motion.div>
-    </>
+    </>,
+    document.body
   );
 }
