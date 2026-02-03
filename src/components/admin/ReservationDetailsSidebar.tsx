@@ -466,7 +466,8 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     try {
       const response = await apiClient.getProducts({
         establishmentId,
-        isActive: true
+        isActive: true,
+        limit: 1000 // Load all products for consumption selection
       }) as any;
       console.log('Products loaded:', response);
       setProducts(response.products || []);
