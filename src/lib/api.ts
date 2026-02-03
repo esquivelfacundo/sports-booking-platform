@@ -2182,6 +2182,10 @@ class ApiClient {
     return this.request(`/api/arca/puntos-venta/${establishmentId}/afip`);
   }
 
+  async consultarCuitAfip(establishmentId: string, cuit: string) {
+    return this.request(`/api/arca/consultar-cuit/${establishmentId}/${cuit}`);
+  }
+
   async createArcaPuntoVenta(establishmentId: string, data: {
     numero: number;
     descripcion?: string;
