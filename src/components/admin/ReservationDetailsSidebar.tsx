@@ -689,7 +689,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     try {
       // Separar seña (deposit) de pagos declarados usando paymentType
       const depositPayments = payments.filter(p => p.paymentType === 'deposit');
-      const declaredPayments = payments.filter(p => p.paymentType === 'declared');
+      const declaredPayments = payments.filter(p => p.paymentType !== 'deposit');
       const seña = depositPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0) || (reservation?.initialDeposit || 0);
       const paymentsTotal = declaredPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
       const total = (reservation?.price || 0) + consumptionsTotal;
@@ -1701,7 +1701,7 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   })()}
                   {/* Pagos declarados - suma de pagos realizados después de la seña */}
                   {(() => {
-                    const declaredPayments = payments.filter(p => p.paymentType === 'declared');
+                    const declaredPayments = payments.filter(p => p.paymentType !== 'deposit');
                     const paymentsTotal = declaredPayments.reduce((sum, p) => sum + p.amount, 0);
                     
                     return paymentsTotal > 0 ? (
@@ -1721,12 +1721,12 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   </div>
                   
                   {/* Payment history - pagos declarados */}
-                  {payments.filter(p => p.paymentType === 'declared').length > 0 && (
+                  {payments.filter(p => p.paymentType !== 'deposit').length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-600 space-y-2">
                       <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos declarados</h5>
                       
                       {/* Lista de pagos declarados */}
-                      {payments.filter(p => p.paymentType === 'declared').map((payment) => (
+                      {payments.filter(p => p.paymentType !== 'deposit').map((payment) => (
                         <div key={payment.id} className="flex items-center justify-between text-sm py-1">
                           <span className="text-gray-300">
                             {payment.playerName || 'Pago'} ({getPaymentMethodName(payment.method)})

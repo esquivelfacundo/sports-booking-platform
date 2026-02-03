@@ -397,7 +397,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   
   // Calculate seña: use initialDeposit if exists, otherwise depositAmount - bookingPayments
   const depositPayments = (displayOrder.bookingPayments || []).filter(p => p.paymentType === 'deposit');
-  const declaredPayments = (displayOrder.bookingPayments || []).filter(p => p.paymentType === 'declared');
+  const declaredPayments = (displayOrder.bookingPayments || []).filter(p => p.paymentType !== 'deposit');
   const bookingPaymentsTotal = declaredPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
   const depositFromPayments = depositPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
   const seña = depositFromPayments > 0 
