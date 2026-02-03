@@ -47,8 +47,18 @@ import {
   User,
   MoreVertical,
   Pencil,
-  Power
+  Power,
+  BarChart3,
+  Wallet,
+  Package,
+  TrendingUp,
+  Megaphone,
+  Ticket,
+  Receipt,
+  ShoppingCart,
+  Link2
 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import PhoneInput from '@/components/ui/PhoneInput';
 import GooglePlacesAutocomplete from '@/components/ui/GooglePlacesAutocomplete';
 import { ARGENTINA_PROVINCES } from '@/constants/argentina';
@@ -1650,56 +1660,38 @@ const ConfigurationPage = () => {
         )}
       </div>
 
-      {/* Permissions Info */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-none">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Permisos por Rol</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <Shield className="h-4 w-4 text-red-400" />
-              <span className="text-gray-900 dark:text-white font-medium">Administrador</span>
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Acceso total al sistema, configuración y reportes</p>
-          </div>
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <UserCog className="h-4 w-4 text-purple-400" />
-              <span className="text-gray-900 dark:text-white font-medium">Gerente</span>
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Gestión de reservas, canchas, clientes y reportes</p>
-          </div>
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <UserCheck className="h-4 w-4 text-blue-400" />
-              <span className="text-gray-900 dark:text-white font-medium">Recepcionista</span>
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Crear reservas, cobros y gestión de clientes</p>
-          </div>
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <User className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 dark:text-white font-medium">Personal</span>
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Solo ver agenda y reservas del día</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Staff Modal */}
-      {showStaffModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl p-6 w-full max-w-md border border-gray-700"
-          >
-            <h3 className="text-xl font-bold text-white mb-4">
-              {editingStaff ? 'Editar Usuario' : 'Nuevo Usuario'}
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Nombre completo *</label>
+      {/* Staff Sidebar */}
+      <AnimatePresence>
+        {showStaffModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setShowStaffModal(false); setEditingStaff(null); }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 w-full max-w-md bg-gray-800 border-l border-gray-700 z-[101] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                <h3 className="text-xl font-bold text-white">
+                  {editingStaff ? 'Editar Usuario' : 'Nuevo Usuario'}
+                </h3>
+                <button
+                  onClick={() => { setShowStaffModal(false); setEditingStaff(null); }}
+                  className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Nombre completo *</label>
                 <input
                   type="text"
                   value={newStaff.name}
@@ -1762,40 +1754,48 @@ const ConfigurationPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Secciones permitidas</label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-gray-700/50 rounded-lg text-sm">
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'reservas', label: 'Reservas' },
-                    { id: 'canchas', label: 'Canchas' },
-                    { id: 'clientes', label: 'Clientes' },
-                    { id: 'resenas', label: 'Reseñas' },
-                    { id: 'marketing', label: 'Marketing' },
-                    { id: 'cupones', label: 'Cupones' },
-                    { id: 'ventas', label: 'Ventas' },
-                    { id: 'gastos', label: 'Gastos' },
-                    { id: 'stock', label: 'Stock' },
-                    { id: 'cuentas', label: 'Cuentas' },
-                    { id: 'analytics', label: 'Análisis' },
-                    { id: 'finanzas', label: 'Finanzas' },
-                    { id: 'integraciones', label: 'Integraciones' },
-                    { id: 'caja', label: 'Caja' },
-                    { id: 'configuracion', label: 'Configuración' },
-                  ].map(section => (
-                    <label key={section.id} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newStaff.allowedSections.includes(section.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewStaff(prev => ({ ...prev, allowedSections: [...prev.allowedSections, section.id] }));
-                          } else {
+                    { id: 'reservas', label: 'Reservas', icon: Calendar },
+                    { id: 'canchas', label: 'Canchas', icon: Building2 },
+                    { id: 'clientes', label: 'Clientes', icon: Users },
+                    { id: 'resenas', label: 'Reseñas', icon: Star },
+                    { id: 'marketing', label: 'Marketing', icon: Megaphone },
+                    { id: 'cupones', label: 'Cupones', icon: Ticket },
+                    { id: 'ventas', label: 'Ventas', icon: ShoppingCart },
+                    { id: 'gastos', label: 'Gastos', icon: Receipt },
+                    { id: 'stock', label: 'Stock', icon: Package },
+                    { id: 'cuentas', label: 'Cuentas', icon: Wallet },
+                    { id: 'analytics', label: 'Análisis', icon: BarChart3 },
+                    { id: 'finanzas', label: 'Finanzas', icon: TrendingUp },
+                    { id: 'integraciones', label: 'Integrac.', icon: Link2 },
+                    { id: 'caja', label: 'Caja', icon: DollarSign },
+                    { id: 'configuracion', label: 'Config.', icon: Settings },
+                  ].map(section => {
+                    const isSelected = newStaff.allowedSections.includes(section.id);
+                    const Icon = section.icon;
+                    return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
                             setNewStaff(prev => ({ ...prev, allowedSections: prev.allowedSections.filter(s => s !== section.id) }));
+                          } else {
+                            setNewStaff(prev => ({ ...prev, allowedSections: [...prev.allowedSections, section.id] }));
                           }
                         }}
-                        className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded"
-                      />
-                      <span className="text-gray-300">{section.label}</span>
-                    </label>
-                  ))}
+                        className={`p-2 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                          isSelected
+                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                            : 'bg-gray-700/50 border-gray-600 text-gray-400 hover:border-gray-500'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-xs">{section.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1872,9 +1872,10 @@ const ConfigurationPage = () => {
                 <span>{editingStaff ? 'Guardar Cambios' : 'Crear Usuario'}</span>
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 
