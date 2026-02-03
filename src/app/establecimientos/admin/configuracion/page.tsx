@@ -1669,14 +1669,14 @@ const ConfigurationPage = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => { setShowStaffModal(false); setEditingStaff(null); }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-full max-w-md bg-gray-800 border-l border-gray-700 z-[101] flex flex-col"
+              className="fixed top-0 bottom-0 right-0 w-full max-w-md bg-gray-800 border-l border-gray-700 z-[9999] flex flex-col"
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-700">
                 <h3 className="text-xl font-bold text-white">
