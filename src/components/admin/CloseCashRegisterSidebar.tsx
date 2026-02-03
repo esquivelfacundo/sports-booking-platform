@@ -185,36 +185,43 @@ export default function CloseCashRegisterSidebar({
                   <h3 className="text-sm font-medium text-gray-300 mb-3">Resumen de Caja</h3>
                   
                   {/* Ventas por método de pago */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className="bg-gray-700/50 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <Banknote className="w-4 h-4 text-green-400" />
                         <span className="text-xs text-gray-400">Efectivo</span>
                       </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalCash)}</p>
+                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalCash || 0)}</p>
                     </div>
                     <div className="bg-gray-700/50 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <CreditCard className="w-4 h-4 text-blue-400" />
-                        <span className="text-xs text-gray-400">Tarjetas</span>
+                        <span className="text-xs text-gray-400">Crédito</span>
                       </div>
                       <p className="text-lg font-bold text-white">
-                        {formatCurrency(cashRegister.totalCard + cashRegister.totalCreditCard + cashRegister.totalDebitCard)}
+                        {formatCurrency((cashRegister.totalCreditCard || 0) + (cashRegister.totalCard || 0))}
                       </p>
+                    </div>
+                    <div className="bg-gray-700/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CreditCard className="w-4 h-4 text-orange-400" />
+                        <span className="text-xs text-gray-400">Débito</span>
+                      </div>
+                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalDebitCard || 0)}</p>
                     </div>
                     <div className="bg-gray-700/50 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <ArrowRightLeft className="w-4 h-4 text-purple-400" />
                         <span className="text-xs text-gray-400">Transferencia</span>
                       </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalTransfer)}</p>
+                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalTransfer || 0)}</p>
                     </div>
                     <div className="bg-gray-700/50 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <DollarSign className="w-4 h-4 text-cyan-400" />
                         <span className="text-xs text-gray-400">MercadoPago</span>
                       </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalMercadoPago)}</p>
+                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalMercadoPago || 0)}</p>
                     </div>
                   </div>
 
