@@ -53,9 +53,14 @@ export default function ArcaInvoiceSidebar({
   // CUIT lookup state
   const [lookingUpCuit, setLookingUpCuit] = useState(false);
   const [contribuyenteInfo, setContribuyenteInfo] = useState<{
+    cuit: string;
     razonSocial: string;
     condicionIva: { code: number; name: string; shortName: string };
     tipoPersona: string;
+    domicilioFiscal?: string | null;
+    estadoCuit?: string;
+    actividadPrincipal?: { codigo: string; descripcion: string } | null;
+    fechaInscripcion?: string | null;
   } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,19 +124,29 @@ export default function ArcaInvoiceSidebar({
       setLookingUpCuit(true);
       const resp = await apiClient.consultarCuitAfip(establishmentId, cleanCuit) as any;
       
+      console.log('[SIDEBAR] API Response:', resp);
+      
       if (resp?.contribuyente) {
         const info = resp.contribuyente;
+        console.log('[SIDEBAR] Contribuyente info:', info);
+        
         setContribuyenteInfo({
+          cuit: info.cuit,
           razonSocial: info.razonSocial,
           condicionIva: info.condicionIva,
-          tipoPersona: info.tipoPersona
+          tipoPersona: info.tipoPersona,
+          domicilioFiscal: info.domicilioFiscal,
+          estadoCuit: info.estadoCuit,
+          actividadPrincipal: info.actividadPrincipal,
+          fechaInscripcion: info.fechaInscripcion
         });
         // Auto-fill name and IVA condition
         setClienteNombre(info.razonSocial);
         setCondicionIva(info.condicionIva.shortName);
+        console.log('[SIDEBAR] Set condicionIva to:', info.condicionIva.shortName);
       }
     } catch (e: any) {
-      console.error('Error looking up CUIT:', e);
+      console.error('[SIDEBAR] Error looking up CUIT:', e);
       setContribuyenteInfo(null);
     } finally {
       setLookingUpCuit(false);
@@ -343,20 +358,52 @@ export default function ArcaInvoiceSidebar({
 
               {/* Contribuyente info from AFIP */}
               {docTipo === 80 && contribuyenteInfo && (
-                <div className="p-3 bg-gray-800/50 border border-gray-700 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2">
+                <div className="p-3 bg-emerald-900/30 border border-emerald-700/50 rounded-xl space-y-3">
+                  {/* Header con razón social */}
+                  <div className="flex items-start gap-2">
                     {contribuyenteInfo.tipoPersona === 'JURIDICA' ? (
-                      <Building2 className="w-4 h-4 text-blue-400" />
+                      <Building2 className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                     ) : (
-                      <User className="w-4 h-4 text-gray-400" />
+                      <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                     )}
-                    <span className="text-sm text-white font-medium">{contribuyenteInfo.razonSocial}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-white font-medium leading-tight">{contribuyenteInfo.razonSocial}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        CUIT: {contribuyenteInfo.cuit} • {contribuyenteInfo.tipoPersona === 'JURIDICA' ? 'Persona Jurídica' : 'Persona Física'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">{contribuyenteInfo.condicionIva.name}</span>
-                    <span className={`text-xs font-semibold ${invoiceType.color}`}>
+                  
+                  {/* Condición IVA y tipo de factura */}
+                  <div className="flex items-center justify-between bg-gray-900/50 rounded-lg px-3 py-2">
+                    <span className="text-xs text-emerald-400 font-medium">{contribuyenteInfo.condicionIva.name}</span>
+                    <span className={`text-xs font-bold ${invoiceType.color}`}>
                       → {invoiceType.label}
                     </span>
+                  </div>
+                  
+                  {/* Datos adicionales */}
+                  <div className="space-y-1.5 text-xs">
+                    {contribuyenteInfo.domicilioFiscal && (
+                      <div className="flex gap-2">
+                        <span className="text-gray-500 flex-shrink-0">Domicilio:</span>
+                        <span className="text-gray-300 truncate">{contribuyenteInfo.domicilioFiscal}</span>
+                      </div>
+                    )}
+                    {contribuyenteInfo.actividadPrincipal && (
+                      <div className="flex gap-2">
+                        <span className="text-gray-500 flex-shrink-0">Actividad:</span>
+                        <span className="text-gray-300 truncate">{contribuyenteInfo.actividadPrincipal.descripcion}</span>
+                      </div>
+                    )}
+                    {contribuyenteInfo.estadoCuit && (
+                      <div className="flex gap-2">
+                        <span className="text-gray-500">Estado:</span>
+                        <span className={contribuyenteInfo.estadoCuit === 'ACTIVO' ? 'text-emerald-400' : 'text-red-400'}>
+                          {contribuyenteInfo.estadoCuit}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
