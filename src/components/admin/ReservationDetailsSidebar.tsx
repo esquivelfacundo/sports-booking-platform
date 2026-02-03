@@ -687,9 +687,15 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
 
     setIsPrinting(true);
     try {
-      // Separar seña (deposit) de pagos declarados usando paymentType
-      const depositPayments = payments.filter(p => p.paymentType === 'deposit');
-      const declaredPayments = payments.filter(p => p.paymentType !== 'deposit');
+      // Helper: identificar si un pago es seña
+      const isDepositPayment = (p: BookingPaymentRecord) => {
+        if (p.paymentType === 'deposit') return true;
+        if (p.paymentType === 'declared') return false;
+        const notes = (p as any).notes || '';
+        return notes.toLowerCase().includes('seña') || notes.toLowerCase().includes('inicial');
+      };
+      const depositPayments = payments.filter(isDepositPayment);
+      const declaredPayments = payments.filter(p => !isDepositPayment(p));
       const seña = depositPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0) || (reservation?.initialDeposit || 0);
       const paymentsTotal = declaredPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
       const total = (reservation?.price || 0) + consumptionsTotal;
@@ -1683,8 +1689,16 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   )}
                   {/* Seña pagada - pago inicial al reservar */}
                   {(() => {
-                    // Obtener seña de payments con paymentType='deposit', o de initialDeposit
-                    const depositPayments = payments.filter(p => p.paymentType === 'deposit');
+                    // Helper: identificar si un pago es seña (por paymentType o por notes/monto)
+                    const isDepositPayment = (p: BookingPaymentRecord) => {
+                      if (p.paymentType === 'deposit') return true;
+                      if (p.paymentType === 'declared') return false;
+                      // Fallback para pagos sin paymentType: verificar notes o si es el primer pago con monto igual a depositAmount
+                      const notes = (p as any).notes || '';
+                      return notes.toLowerCase().includes('seña') || notes.toLowerCase().includes('inicial');
+                    };
+                    
+                    const depositPayments = payments.filter(isDepositPayment);
                     const depositFromPayments = depositPayments.reduce((sum, p) => sum + p.amount, 0);
                     const initialDep = depositFromPayments > 0 
                       ? depositFromPayments 
@@ -1701,7 +1715,13 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   })()}
                   {/* Pagos declarados - suma de pagos realizados después de la seña */}
                   {(() => {
-                    const declaredPayments = payments.filter(p => p.paymentType !== 'deposit');
+                    const isDepositPayment = (p: BookingPaymentRecord) => {
+                      if (p.paymentType === 'deposit') return true;
+                      if (p.paymentType === 'declared') return false;
+                      const notes = (p as any).notes || '';
+                      return notes.toLowerCase().includes('seña') || notes.toLowerCase().includes('inicial');
+                    };
+                    const declaredPayments = payments.filter(p => !isDepositPayment(p));
                     const paymentsTotal = declaredPayments.reduce((sum, p) => sum + p.amount, 0);
                     
                     return paymentsTotal > 0 ? (
@@ -1721,12 +1741,20 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   </div>
                   
                   {/* Payment history - pagos declarados */}
-                  {payments.filter(p => p.paymentType !== 'deposit').length > 0 && (
+                  {(() => {
+                    const isDepositPayment = (p: BookingPaymentRecord) => {
+                      if (p.paymentType === 'deposit') return true;
+                      if (p.paymentType === 'declared') return false;
+                      const notes = (p as any).notes || '';
+                      return notes.toLowerCase().includes('seña') || notes.toLowerCase().includes('inicial');
+                    };
+                    const declaredPayments = payments.filter(p => !isDepositPayment(p));
+                    return declaredPayments.length > 0 ? (
                     <div className="mt-3 pt-3 border-t border-gray-600 space-y-2">
                       <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos declarados</h5>
                       
                       {/* Lista de pagos declarados */}
-                      {payments.filter(p => p.paymentType !== 'deposit').map((payment) => (
+                      {declaredPayments.map((payment) => (
                         <div key={payment.id} className="flex items-center justify-between text-sm py-1">
                           <span className="text-gray-300">
                             {payment.playerName || 'Pago'} ({getPaymentMethodName(payment.method)})
@@ -1743,7 +1771,8 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                         </div>
                       )}
                     </div>
-                  )}
+                    ) : null;
+                  })()}
                   
                   {/* MP Transaction ID if exists */}
                   {reservation.mpPaymentId && (
