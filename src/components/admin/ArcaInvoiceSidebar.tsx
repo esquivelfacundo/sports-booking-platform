@@ -189,6 +189,8 @@ export default function ArcaInvoiceSidebar({
           condicionIva: condicionIva === 'responsable_inscripto' ? 1 : 
                         condicionIva === 'monotributista' ? 6 : 5,
         },
+        // Backend uses this to determine invoice type (A, B, or C)
+        receptorCondicion: condicionIva,
         orderId,
         bookingId,
         puntoVentaId,
