@@ -1808,14 +1808,14 @@ const ConfigurationPage = () => {
             </div>
 
               {/* Footer */}
-              <div className="p-4 border-t border-gray-700 grid grid-cols-2 gap-3">
+              <div className="p-4 border-t border-gray-700 flex items-center justify-between">
                 <button
                   onClick={() => {
                     setShowStaffModal(false);
                     setEditingStaff(null);
                     setNewStaff({ name: '', email: '', phone: '', password: '', role: 'employee', allowedSections: ['reservas', 'canchas', 'clientes', 'resenas', 'marketing', 'cupones', 'ventas', 'gastos', 'stock', 'cuentas', 'analytics', 'finanzas', 'integraciones', 'caja', 'configuracion'] });
                   }}
-                  className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-medium"
+                  className="text-gray-300 hover:text-white transition-colors"
                   disabled={staffSaving}
                 >
                   Cancelar
@@ -1874,10 +1874,14 @@ const ConfigurationPage = () => {
                   }
                 }}
                 disabled={!newStaff.name || !newStaff.email || (!editingStaff && !newStaff.password) || staffSaving}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium flex items-center justify-center gap-2"
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium flex items-center justify-center gap-2"
                 >
-                  {staffSaving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                  <span>{editingStaff ? 'Guardar Cambios' : 'Crear Usuario'}</span>
+                  {staffSaving ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  <span>{editingStaff ? 'Guardar' : 'Crear'}</span>
                 </button>
               </div>
               </motion.div>
