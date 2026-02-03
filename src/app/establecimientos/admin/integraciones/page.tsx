@@ -95,7 +95,7 @@ const INTEGRATION_CARDS: IntegrationCardData[] = [
     id: 'WHATSAPP_BOT',
     name: 'Neural Bot (Momento IA)',
     description: 'API para automatizar tus reservas por WhatsApp',
-    logo: '/assets/logos-empresas/momento-logo.svg',
+    logo: '/assets/logos-empresas/momento.png',
     logoSize: 36,
     color: 'text-gray-300',
     gradient: 'from-gray-600 to-gray-800',
