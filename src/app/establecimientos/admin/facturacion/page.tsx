@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
-import { Download, FileText, Search } from 'lucide-react';
+import { Download, Search, Loader2 } from 'lucide-react';
 
 interface ArcaInvoice {
   id: string;
@@ -46,12 +47,23 @@ export default function FacturacionPage() {
   const [fechaHasta, setFechaHasta] = useState<string>('');
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(15);
+  const [limit] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const [invoices, setInvoices] = useState<ArcaInvoice[]>([]);
+  const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
 
   const establishmentId = establishment?.id;
+
+  // Get the header portal container on mount
+  useEffect(() => {
+    const container = document.getElementById('header-page-controls');
+    if (container) {
+      setHeaderPortalContainer(container);
+    }
+  }, []);
 
   const parseListResponse = (resp: any) => {
     const list = resp?.invoices || resp?.data || resp?.facturas || resp?.rows || resp?.items || resp;
@@ -63,6 +75,7 @@ export default function FacturacionPage() {
     return {
       list: normalizedList as ArcaInvoice[],
       pages: typeof pages === 'number' && pages > 0 ? pages : 1,
+      total: pagination?.total || normalizedList.length,
     };
   };
 
@@ -82,13 +95,15 @@ export default function FacturacionPage() {
         fechaHasta: fechaHasta || undefined,
       });
 
-      const { list, pages } = parseListResponse(resp);
+      const { list, pages, total: totalCount } = parseListResponse(resp);
       setInvoices(list);
       setTotalPages(pages);
+      setTotal(totalCount);
     } catch (e: any) {
       setError(e?.message || 'Error al cargar comprobantes');
       setInvoices([]);
       setTotalPages(1);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -102,9 +117,29 @@ export default function FacturacionPage() {
     setPage(1);
   }, [search, tipo, status, fechaDesde, fechaHasta]);
 
-  const filteredInvoices = useMemo(() => {
-    return invoices;
-  }, [invoices]);
+  // Download PDF with auth token
+  const handleDownloadPdf = async (invoiceId: string, invoice?: ArcaInvoice) => {
+    if (!establishmentId) return;
+    setDownloadingPdf(invoiceId);
+    try {
+      const blob = await apiClient.downloadArcaInvoicePdf(establishmentId, invoiceId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const pvNro = invoice?.puntoVenta && invoice?.numeroComprobante 
+        ? `${invoice.puntoVenta.toString().padStart(4, '0')}-${invoice.numeroComprobante.toString().padStart(8, '0')}` 
+        : invoiceId;
+      a.download = `factura-${pvNro}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      console.error('Error downloading PDF:', e);
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
@@ -144,162 +179,153 @@ export default function FacturacionPage() {
     }
   };
 
+  // Header controls to be rendered via portal
+  const headerControls = (
+    <div className="flex items-center w-full space-x-2 overflow-x-auto">
+      {/* Search */}
+      <div className="relative flex-shrink-0">
+        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar..."
+          className="pl-8 pr-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36"
+        />
+      </div>
+
+      {/* Tipo Filter */}
+      <select
+        value={tipo}
+        onChange={(e) => setTipo(e.target.value)}
+        className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+      >
+        <option value="">Tipo</option>
+        <option value="1">Factura A</option>
+        <option value="6">Factura B</option>
+        <option value="11">Factura C</option>
+        <option value="3">NC A</option>
+        <option value="8">NC B</option>
+        <option value="13">NC C</option>
+      </select>
+
+      {/* Status Filter */}
+      <select
+        value={status}
+        onChange={(e) => setStatus(e.target.value)}
+        className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 flex-shrink-0"
+      >
+        <option value="">Estado</option>
+        <option value="emitido">Emitido</option>
+        <option value="anulado">Anulado</option>
+      </select>
+
+      {/* Date Range */}
+      <div className="flex items-center space-x-1 flex-shrink-0">
+        <input
+          type="date"
+          value={fechaDesde}
+          onChange={(e) => setFechaDesde(e.target.value)}
+          className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
+        />
+        <span className="text-gray-500">-</span>
+        <input
+          type="date"
+          value={fechaHasta}
+          onChange={(e) => setFechaHasta(e.target.value)}
+          className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 w-32"
+        />
+      </div>
+    </div>
+  );
+
   if (establishmentLoading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center h-full">
         <UnifiedLoader size="md" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Facturación</h1>
-          <p className="text-sm text-gray-400">Comprobantes emitidos (AFIP / ARCA)</p>
-        </div>
-      </div>
+    <>
+      {/* Render controls in header via portal */}
+      {headerPortalContainer && createPortal(headerControls, headerPortalContainer)}
 
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
-          <div className="xl:col-span-2">
-            <label className="block text-xs text-gray-400 mb-1">Buscar</label>
-            <div className="relative">
-              <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="CAE, cliente, nro comprobante..."
-                className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Tipo</label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-            >
-              <option value="">Todos</option>
-              <option value="1">Factura A</option>
-              <option value="6">Factura B</option>
-              <option value="11">Factura C</option>
-              <option value="3">NC A</option>
-              <option value="8">NC B</option>
-              <option value="13">NC C</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Estado</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-            >
-              <option value="">Todos</option>
-              <option value="authorized">Autorizado</option>
-              <option value="pending">Pendiente</option>
-              <option value="rejected">Rechazado</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 xl:col-span-1">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Desde</label>
-              <input
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => setFechaDesde(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Hasta</label>
-              <input
-                type="date"
-                value={fechaHasta}
-                onChange={(e) => setFechaHasta(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-          </div>
-        </div>
-
+      <div className="flex flex-col h-full">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-300 rounded-xl px-4 py-3 text-sm">
+          <div className="mx-4 mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-xl px-4 py-3 text-sm">
             {error}
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-auto">
           <table className="w-full">
-            <thead>
-              <tr className="text-left text-xs text-gray-400">
-                <th className="py-3 pr-4">Fecha</th>
-                <th className="py-3 pr-4">Tipo</th>
-                <th className="py-3 pr-4">PV/Nro</th>
-                <th className="py-3 pr-4">Cliente</th>
-                <th className="py-3 pr-4">Total</th>
-                <th className="py-3 pr-4">Estado</th>
-                <th className="py-3">Acciones</th>
+            <thead className="sticky top-0 bg-gray-50 dark:bg-gray-900 z-10">
+              <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                <th className="py-3 px-4 font-medium">Fecha</th>
+                <th className="py-3 px-4 font-medium">Tipo</th>
+                <th className="py-3 px-4 font-medium">PV/Nro</th>
+                <th className="py-3 px-4 font-medium">Cliente</th>
+                <th className="py-3 px-4 font-medium">Total</th>
+                <th className="py-3 px-4 font-medium">Estado</th>
+                <th className="py-3 px-4 font-medium">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-10">
+                  <td colSpan={7} className="py-20">
                     <div className="flex items-center justify-center">
                       <UnifiedLoader size="sm" />
                     </div>
                   </td>
                 </tr>
-              ) : filteredInvoices.length === 0 ? (
+              ) : invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-sm text-gray-400">
+                  <td colSpan={7} className="py-20 text-center text-sm text-gray-400">
                     No hay comprobantes para los filtros seleccionados.
                   </td>
                 </tr>
               ) : (
-                filteredInvoices.map((inv) => {
+                invoices.map((inv) => {
                   const pvNro = inv.puntoVenta && inv.numeroComprobante ? `${inv.puntoVenta.toString().padStart(4, '0')}-${inv.numeroComprobante.toString().padStart(8, '0')}` : '-';
-                  const pdfUrl = establishmentId ? apiClient.getArcaInvoicePdfUrl(establishmentId, inv.id) : '#';
 
                   return (
-                    <tr key={inv.id} className="text-sm">
-                      <td className="py-3 pr-4 text-gray-300 whitespace-nowrap">{formatDate(inv.fechaEmision)}</td>
-                      <td className="py-3 pr-4 text-gray-200 whitespace-nowrap">{getTipoLabel(inv.tipoComprobante, inv.tipoComprobanteNombre)}</td>
-                      <td className="py-3 pr-4 text-gray-200 font-mono whitespace-nowrap">{pvNro}</td>
-                      <td className="py-3 pr-4 text-gray-300 min-w-[220px]">
+                    <tr key={inv.id} className="text-sm hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">{formatDate(inv.fechaEmision)}</td>
+                      <td className="py-3 px-4 text-gray-900 dark:text-gray-200 whitespace-nowrap">{getTipoLabel(inv.tipoComprobante, inv.tipoComprobanteNombre)}</td>
+                      <td className="py-3 px-4 text-gray-900 dark:text-gray-200 font-mono whitespace-nowrap">{pvNro}</td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300 min-w-[200px]">
                         <div className="flex flex-col">
-                          <span className="text-gray-200">{inv.clienteNombre || '-'}</span>
+                          <span className="text-gray-900 dark:text-gray-200">{inv.clienteNombre || '-'}</span>
                           {(inv.clienteDocTipo || inv.clienteDocNro) && (
-                            <span className="text-xs text-gray-500 font-mono">{inv.clienteDocTipo || ''} {inv.clienteDocNro || ''}</span>
+                            <span className="text-xs text-gray-500 font-mono">{inv.clienteDocNro || ''}</span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 pr-4 text-emerald-400 font-mono whitespace-nowrap">${Number(inv.importeTotal || 0).toFixed(2)}</td>
-                      <td className="py-3 pr-4 whitespace-nowrap">
+                      <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">${Number(inv.importeTotal || 0).toFixed(2)}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getStatusColor(inv.status)}`}>
                           {getStatusLabel(inv.status)}
                         </span>
                       </td>
-                      <td className="py-3 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <a
-                            href={pdfUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+                          <button
+                            onClick={() => handleDownloadPdf(inv.id, inv)}
+                            disabled={downloadingPdf === inv.id}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg text-xs transition-colors disabled:opacity-50"
                             title="Descargar PDF"
                           >
-                            <Download className="w-4 h-4" />
+                            {downloadingPdf === inv.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
                             PDF
-                          </a>
-                          <span className="text-xs text-gray-500 font-mono truncate max-w-[140px]">{inv.cae ? `CAE ${inv.cae}` : ''}</span>
+                          </button>
+                          <span className="text-xs text-gray-500 font-mono truncate max-w-[120px]">{inv.cae ? `CAE ${inv.cae}` : ''}</span>
                         </div>
                       </td>
                     </tr>
@@ -310,31 +336,30 @@ export default function FacturacionPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-xs text-gray-500">Página {page} de {totalPages}</div>
+        {/* Footer with pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <div className="text-xs text-gray-500">
+            {total > 0 ? `${(page - 1) * limit + 1}-${Math.min(page * limit, total)} de ${total}` : '0 resultados'}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1 || loading}
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg disabled:opacity-50"
+              className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white rounded-lg text-sm disabled:opacity-50 transition-colors"
             >
               Anterior
             </button>
+            <span className="text-sm text-gray-500">{page} / {totalPages}</span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages || loading}
-              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg disabled:opacity-50"
+              className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white rounded-lg text-sm disabled:opacity-50 transition-colors"
             >
               Siguiente
             </button>
           </div>
         </div>
       </div>
-
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <FileText className="w-4 h-4" />
-        <span>Para emitir comprobantes usá el botón de facturación desde una venta o reserva.</span>
-      </div>
-    </div>
+    </>
   );
 }
