@@ -614,7 +614,7 @@ export default function IntegrationsPage() {
     const card = INTEGRATION_CARDS.find(c => c.id === activeIntegration);
     if (!card) return null;
 
-    const logoClassName = card.id === 'AFIP' ? '' : 'brightness-0 invert';
+    const logoClassName = (card.id === 'AFIP' || card.id === 'WHATSAPP_BOT') ? '' : 'brightness-0 invert';
 
     return (
       <div className="h-full flex flex-col">
@@ -1084,7 +1084,7 @@ export default function IntegrationsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {INTEGRATION_CARDS.map((card, index) => {
             const connected = isConnected(card.id);
-            const logoClassName = card.id === 'AFIP' ? '' : 'brightness-0 invert';
+            const logoClassName = (card.id === 'AFIP' || card.id === 'WHATSAPP_BOT') ? '' : 'brightness-0 invert';
             const connectButtonClassName = card.id === 'AFIP'
               ? `bg-gradient-to-r ${card.gradient} text-sky-900 hover:opacity-90`
               : `bg-gradient-to-r ${card.gradient} text-white hover:opacity-90`;
