@@ -8,17 +8,18 @@ import { Download, FileText, Search } from 'lucide-react';
 
 interface ArcaInvoice {
   id: string;
-  tipo?: number;
+  tipoComprobante?: number;
+  tipoComprobanteNombre?: string;
   status?: string;
-  total?: number;
-  createdAt?: string;
+  importeTotal?: number;
+  fechaEmision?: string;
   puntoVenta?: number;
-  numero?: number;
+  numeroComprobante?: number;
   cae?: string;
-  caeVto?: string;
-  receptorNombre?: string;
-  receptorDocTipo?: number;
-  receptorDocNro?: string;
+  caeVencimiento?: string;
+  clienteNombre?: string;
+  clienteDocTipo?: number;
+  clienteDocNro?: string;
   orderId?: string | null;
   bookingId?: string | null;
 }
@@ -112,7 +113,8 @@ export default function FacturacionPage() {
     return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  const getTipoLabel = (t?: number) => {
+  const getTipoLabel = (t?: number, nombre?: string) => {
+    if (nombre) return nombre;
     if (!t) return '-';
     return TIPO_LABELS[t] || `Tipo ${t}`;
   };
@@ -263,23 +265,23 @@ export default function FacturacionPage() {
                 </tr>
               ) : (
                 filteredInvoices.map((inv) => {
-                  const pvNro = inv.puntoVenta && inv.numero ? `${inv.puntoVenta.toString().padStart(4, '0')}-${inv.numero.toString().padStart(8, '0')}` : '-';
+                  const pvNro = inv.puntoVenta && inv.numeroComprobante ? `${inv.puntoVenta.toString().padStart(4, '0')}-${inv.numeroComprobante.toString().padStart(8, '0')}` : '-';
                   const pdfUrl = establishmentId ? apiClient.getArcaInvoicePdfUrl(establishmentId, inv.id) : '#';
 
                   return (
                     <tr key={inv.id} className="text-sm">
-                      <td className="py-3 pr-4 text-gray-300 whitespace-nowrap">{formatDate(inv.createdAt)}</td>
-                      <td className="py-3 pr-4 text-gray-200 whitespace-nowrap">{getTipoLabel(inv.tipo)}</td>
+                      <td className="py-3 pr-4 text-gray-300 whitespace-nowrap">{formatDate(inv.fechaEmision)}</td>
+                      <td className="py-3 pr-4 text-gray-200 whitespace-nowrap">{getTipoLabel(inv.tipoComprobante, inv.tipoComprobanteNombre)}</td>
                       <td className="py-3 pr-4 text-gray-200 font-mono whitespace-nowrap">{pvNro}</td>
                       <td className="py-3 pr-4 text-gray-300 min-w-[220px]">
                         <div className="flex flex-col">
-                          <span className="text-gray-200">{inv.receptorNombre || '-'}</span>
-                          {(inv.receptorDocTipo || inv.receptorDocNro) && (
-                            <span className="text-xs text-gray-500 font-mono">{inv.receptorDocTipo || ''} {inv.receptorDocNro || ''}</span>
+                          <span className="text-gray-200">{inv.clienteNombre || '-'}</span>
+                          {(inv.clienteDocTipo || inv.clienteDocNro) && (
+                            <span className="text-xs text-gray-500 font-mono">{inv.clienteDocTipo || ''} {inv.clienteDocNro || ''}</span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 pr-4 text-emerald-400 font-mono whitespace-nowrap">${Number(inv.total || 0).toFixed(2)}</td>
+                      <td className="py-3 pr-4 text-emerald-400 font-mono whitespace-nowrap">${Number(inv.importeTotal || 0).toFixed(2)}</td>
                       <td className="py-3 pr-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getStatusColor(inv.status)}`}>
                           {getStatusLabel(inv.status)}
