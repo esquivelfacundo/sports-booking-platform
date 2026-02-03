@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEstablishment } from '@/contexts/EstablishmentContext';
 import { apiClient } from '@/lib/api';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
-import { Download, Search, Loader2 } from 'lucide-react';
+import OrderDetailSidebar from '@/components/admin/OrderDetailSidebar';
+import { Download, Search, Loader2, Eye } from 'lucide-react';
 
 interface ArcaInvoice {
   id: string;
@@ -54,6 +55,9 @@ export default function FacturacionPage() {
   const [invoices, setInvoices] = useState<ArcaInvoice[]>([]);
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [loadingOrder, setLoadingOrder] = useState<string | null>(null);
 
   const establishmentId = establishment?.id;
 
@@ -138,6 +142,21 @@ export default function FacturacionPage() {
       console.error('Error downloading PDF:', e);
     } finally {
       setDownloadingPdf(null);
+    }
+  };
+
+  // Load order and open detail sidebar
+  const handleViewDetails = async (invoice: ArcaInvoice) => {
+    if (!invoice.orderId) return;
+    setLoadingOrder(invoice.id);
+    try {
+      const response = await apiClient.getOrder(invoice.orderId) as { order: any };
+      setSelectedOrder(response.order || response);
+      setShowOrderDetail(true);
+    } catch (e: any) {
+      console.error('Error loading order:', e);
+    } finally {
+      setLoadingOrder(null);
     }
   };
 
@@ -268,6 +287,7 @@ export default function FacturacionPage() {
                 <th className="py-3 px-4 font-medium">PV/Nro</th>
                 <th className="py-3 px-4 font-medium">Cliente</th>
                 <th className="py-3 px-4 font-medium">Total</th>
+                <th className="py-3 px-4 font-medium">CAE</th>
                 <th className="py-3 px-4 font-medium">Estado</th>
                 <th className="py-3 px-4 font-medium">Acciones</th>
               </tr>
@@ -275,7 +295,7 @@ export default function FacturacionPage() {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-20">
+                  <td colSpan={8} className="py-20">
                     <div className="flex items-center justify-center">
                       <UnifiedLoader size="sm" />
                     </div>
@@ -283,7 +303,7 @@ export default function FacturacionPage() {
                 </tr>
               ) : invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-20 text-center text-sm text-gray-400">
+                  <td colSpan={8} className="py-20 text-center text-sm text-gray-400">
                     No hay comprobantes para los filtros seleccionados.
                   </td>
                 </tr>
@@ -305,6 +325,7 @@ export default function FacturacionPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">${Number(inv.importeTotal || 0).toFixed(2)}</td>
+                      <td className="py-3 px-4 text-gray-500 font-mono text-xs whitespace-nowrap">{inv.cae || '-'}</td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getStatusColor(inv.status)}`}>
                           {getStatusLabel(inv.status)}
@@ -325,7 +346,21 @@ export default function FacturacionPage() {
                             )}
                             PDF
                           </button>
-                          <span className="text-xs text-gray-500 font-mono truncate max-w-[120px]">{inv.cae ? `CAE ${inv.cae}` : ''}</span>
+                          {inv.orderId && (
+                            <button
+                              onClick={() => handleViewDetails(inv)}
+                              disabled={loadingOrder === inv.id}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg text-xs transition-colors disabled:opacity-50"
+                              title="Ver detalles"
+                            >
+                              {loadingOrder === inv.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Eye className="w-3.5 h-3.5" />
+                              )}
+                              Detalles
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -360,6 +395,19 @@ export default function FacturacionPage() {
           </div>
         </div>
       </div>
+
+      {/* Order Detail Sidebar */}
+      {selectedOrder && (
+        <OrderDetailSidebar
+          isOpen={showOrderDetail}
+          onClose={() => {
+            setShowOrderDetail(false);
+            setSelectedOrder(null);
+          }}
+          order={selectedOrder}
+          onOrderUpdated={fetchInvoices}
+        />
+      )}
     </>
   );
 }
