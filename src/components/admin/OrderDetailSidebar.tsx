@@ -123,6 +123,7 @@ interface Order {
     method: string;
     playerName?: string;
     createdAt: string;
+    paymentType?: 'deposit' | 'declared';
   }[];
   bookingConsumptions?: {
     id: string;
@@ -395,12 +396,13 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
   const bookingPrice = parseFloat(String(displayOrder.booking?.totalAmount || 0)) || 0;
   
   // Calculate seña: use initialDeposit if exists, otherwise depositAmount - bookingPayments
-  const bookingPaymentsTotal = (displayOrder.bookingPayments || []).reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
-  const initialDeposit = parseFloat(String(displayOrder.booking?.initialDeposit || 0)) || 0;
-  const depositAmount = parseFloat(String(displayOrder.booking?.depositAmount || 0)) || 0;
-  const seña = initialDeposit > 0
-    ? initialDeposit
-    : Math.max(0, depositAmount - bookingPaymentsTotal);
+  const depositPayments = (displayOrder.bookingPayments || []).filter(p => p.paymentType === 'deposit');
+  const declaredPayments = (displayOrder.bookingPayments || []).filter(p => p.paymentType === 'declared');
+  const bookingPaymentsTotal = declaredPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
+  const depositFromPayments = depositPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
+  const seña = depositFromPayments > 0 
+    ? depositFromPayments 
+    : parseFloat(String(displayOrder.booking?.initialDeposit || 0)) || 0;
   
   // Consumptions from booking
   const bookingConsumptionsTotal = (displayOrder.bookingConsumptions || []).reduce((sum, c) => sum + (parseFloat(String(c.totalPrice)) || 0), 0);
@@ -511,7 +513,7 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
             method: p.paymentMethod,
             amount: parseFloat(String(p.amount)) || 0
           }))
-        : (displayOrder.bookingPayments || []).map(p => ({
+        : declaredPayments.map(p => ({
             playerName: p.playerName,
             method: p.method,
             amount: parseFloat(String(p.amount)) || 0
@@ -731,11 +733,11 @@ const OrderDetailSidebar: React.FC<OrderDetailSidebarProps> = ({
                         </span>
                       </div>
                       
-                      {/* Historial de pagos */}
-                      {((displayOrder.bookingPayments || []).length > 0 || (displayOrder.payments || []).length > 0) && (
+                      {/* Historial de pagos - solo declarados, no seña */}
+                      {(declaredPayments.length > 0 || (displayOrder.payments || []).length > 0) && (
                         <div className="pt-3 border-t border-gray-600 space-y-2">
-                          <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Historial de pagos</h5>
-                          {displayOrder.bookingPayments?.map((payment) => (
+                          <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos declarados</h5>
+                          {declaredPayments.map((payment) => (
                             <div key={`bp-${payment.id}`} className="flex justify-between text-sm">
                               <span className="text-gray-300">
                                 {payment.playerName || 'Pago reserva'} ({getPaymentMethodLabel(payment.method)})

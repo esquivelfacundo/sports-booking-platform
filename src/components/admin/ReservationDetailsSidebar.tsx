@@ -47,6 +47,7 @@ interface BookingPaymentRecord {
   playerName?: string;
   paidAt: string;
   mpPaymentId?: string;
+  paymentType?: 'deposit' | 'declared';
 }
 
 interface BookingConsumption {
@@ -584,7 +585,6 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
     // If completing, check for pending balance first
     if (newStatus === 'completed') {
       const effectiveDeposit = localDepositAmount ?? (reservation.depositAmount || 0);
-      const paymentsTotal = payments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
       const total = reservation.price + consumptionsTotal;
       const pending = total - effectiveDeposit;
       
@@ -687,10 +687,11 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
 
     setIsPrinting(true);
     try {
-      const effectiveDeposit = localDepositAmount ?? (reservation?.depositAmount || 0);
-      const initialDep = reservation?.initialDeposit || 0;
-      const paymentsTotal = payments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
-      const seña = initialDep > 0 ? initialDep : Math.max(0, effectiveDeposit - paymentsTotal);
+      // Separar seña (deposit) de pagos declarados usando paymentType
+      const depositPayments = payments.filter(p => p.paymentType === 'deposit');
+      const declaredPayments = payments.filter(p => p.paymentType === 'declared');
+      const seña = depositPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0) || (reservation?.initialDeposit || 0);
+      const paymentsTotal = declaredPayments.reduce((sum, p) => sum + (parseFloat(String(p.amount)) || 0), 0);
       const total = (reservation?.price || 0) + consumptionsTotal;
       const paid = seña + paymentsTotal;
 
@@ -1682,13 +1683,12 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   )}
                   {/* Seña pagada - pago inicial al reservar */}
                   {(() => {
-                    // initialDeposit es la seña inicial.
-                    // Si no existe, calcular como depositAmount - pagos declarados
-                    // (porque depositAmount se actualiza sumando los pagos declarados)
-                    const paymentsTotal = payments.reduce((sum, p) => sum + p.amount, 0);
-                    const initialDep = reservation.initialDeposit !== undefined && reservation.initialDeposit !== null && reservation.initialDeposit > 0
-                      ? reservation.initialDeposit
-                      : Math.max(0, (reservation.depositAmount || 0) - paymentsTotal);
+                    // Obtener seña de payments con paymentType='deposit', o de initialDeposit
+                    const depositPayments = payments.filter(p => p.paymentType === 'deposit');
+                    const depositFromPayments = depositPayments.reduce((sum, p) => sum + p.amount, 0);
+                    const initialDep = depositFromPayments > 0 
+                      ? depositFromPayments 
+                      : (reservation.initialDeposit || 0);
                     
                     return initialDep > 0 ? (
                       <div className="flex items-center justify-between text-sm">
@@ -1701,7 +1701,8 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   })()}
                   {/* Pagos declarados - suma de pagos realizados después de la seña */}
                   {(() => {
-                    const paymentsTotal = payments.reduce((sum, p) => sum + p.amount, 0);
+                    const declaredPayments = payments.filter(p => p.paymentType === 'declared');
+                    const paymentsTotal = declaredPayments.reduce((sum, p) => sum + p.amount, 0);
                     
                     return paymentsTotal > 0 ? (
                       <div className="flex items-center justify-between text-sm">
@@ -1720,12 +1721,12 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                   </div>
                   
                   {/* Payment history - pagos declarados */}
-                  {payments.length > 0 && (
+                  {payments.filter(p => p.paymentType === 'declared').length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-600 space-y-2">
-                      <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos realizados</h5>
+                      <h5 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos declarados</h5>
                       
                       {/* Lista de pagos declarados */}
-                      {payments.map((payment) => (
+                      {payments.filter(p => p.paymentType === 'declared').map((payment) => (
                         <div key={payment.id} className="flex items-center justify-between text-sm py-1">
                           <span className="text-gray-300">
                             {payment.playerName || 'Pago'} ({getPaymentMethodName(payment.method)})
