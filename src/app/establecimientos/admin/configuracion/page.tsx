@@ -138,6 +138,12 @@ const ConfigurationPage = () => {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('general');
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+  
+  // Set mounted for portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Get header portal container on mount
   useEffect(() => {
@@ -1660,24 +1666,25 @@ const ConfigurationPage = () => {
         )}
       </div>
 
-      {/* Staff Sidebar */}
-      <AnimatePresence>
-        {showStaffModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => { setShowStaffModal(false); setEditingStaff(null); }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 bottom-0 right-0 w-full max-w-md bg-gray-800 border-l border-gray-700 z-[9999] flex flex-col"
-            >
+      {/* Staff Sidebar - rendered via portal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showStaffModal && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => { setShowStaffModal(false); setEditingStaff(null); }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+              />
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed inset-y-0 right-0 w-full max-w-md bg-gray-800 border-l border-gray-700 z-[101] flex flex-col"
+              >
               <div className="flex items-center justify-between p-4 border-b border-gray-700">
                 <h3 className="text-xl font-bold text-white">
                   {editingStaff ? 'Editar Usuario' : 'Nuevo Usuario'}
@@ -1872,10 +1879,12 @@ const ConfigurationPage = () => {
                 <span>{editingStaff ? 'Guardar Cambios' : 'Crear Usuario'}</span>
               </button>
             </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 
