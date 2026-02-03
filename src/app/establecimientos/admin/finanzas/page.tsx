@@ -30,7 +30,10 @@ import {
   ShoppingBag,
   ShoppingCart,
   Package,
-  Eye
+  Eye,
+  Download,
+  Search,
+  Loader2
 } from 'lucide-react';
 import UnifiedLoader from '@/components/ui/UnifiedLoader';
 import OrderDetailSidebar from '@/components/admin/OrderDetailSidebar';
@@ -122,6 +125,33 @@ interface SalesByProductResponse {
   products: ProductSales[];
 }
 
+interface ArcaInvoice {
+  id: string;
+  tipoComprobante?: number;
+  tipoComprobanteNombre?: string;
+  status?: string;
+  importeTotal?: number;
+  fechaEmision?: string;
+  puntoVenta?: number;
+  numeroComprobante?: number;
+  cae?: string;
+  caeVencimiento?: string;
+  clienteNombre?: string;
+  clienteDocTipo?: number;
+  clienteDocNro?: string;
+  orderId?: string | null;
+  bookingId?: string | null;
+}
+
+const TIPO_LABELS: Record<number, string> = {
+  1: 'Factura A',
+  6: 'Factura B',
+  11: 'Factura C',
+  3: 'Nota de Crédito A',
+  8: 'Nota de Crédito B',
+  13: 'Nota de Crédito C',
+};
+
 const FinancePage = () => {
   const { establishment, loading: establishmentLoading } = useEstablishment();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year' | 'custom'>('month');
@@ -133,13 +163,30 @@ const FinancePage = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'pending' | 'products'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'invoices' | 'pending' | 'products'>('overview');
   const [headerPortalContainer, setHeaderPortalContainer] = useState<HTMLElement | null>(null);
   const [productSales, setProductSales] = useState<SalesByProductResponse | null>(null);
   const [transactionsPage, setTransactionsPage] = useState(1);
   const ITEMS_PER_PAGE = 50;
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
+  
+  // Invoices (ARCA) state
+  const [invoices, setInvoices] = useState<ArcaInvoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [invoicesError, setInvoicesError] = useState<string | null>(null);
+  const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [invoiceTipo, setInvoiceTipo] = useState<string>('');
+  const [invoiceStatus, setInvoiceStatus] = useState<string>('');
+  const [invoiceFechaDesde, setInvoiceFechaDesde] = useState<string>('');
+  const [invoiceFechaHasta, setInvoiceFechaHasta] = useState<string>('');
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoiceTotalPages, setInvoiceTotalPages] = useState(1);
+  const [invoiceTotal, setInvoiceTotal] = useState(0);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<any | null>(null);
+  const [showInvoiceOrderDetail, setShowInvoiceOrderDetail] = useState(false);
+  const [loadingInvoiceOrder, setLoadingInvoiceOrder] = useState<string | null>(null);
 
   // Get header portal container on mount
   useEffect(() => {
@@ -156,8 +203,8 @@ const FinancePage = () => {
     const startParam = searchParams.get('startDate');
     const endParam = searchParams.get('endDate');
     
-    if (tabParam && ['overview', 'transactions', 'pending', 'products'].includes(tabParam)) {
-      setActiveTab(tabParam as 'overview' | 'transactions' | 'pending' | 'products');
+    if (tabParam && ['overview', 'invoices', 'pending', 'products'].includes(tabParam)) {
+      setActiveTab(tabParam as 'overview' | 'invoices' | 'pending' | 'products');
     }
     if (periodParam && ['week', 'month', 'quarter', 'year', 'custom'].includes(periodParam)) {
       setSelectedPeriod(periodParam as 'week' | 'month' | 'quarter' | 'year' | 'custom');
@@ -177,7 +224,7 @@ const FinancePage = () => {
   }, [router]);
   
   // Update URL when tab changes
-  const handleTabChange = (tab: 'overview' | 'transactions' | 'pending' | 'products') => {
+  const handleTabChange = (tab: 'overview' | 'invoices' | 'pending' | 'products') => {
     setActiveTab(tab);
     updateURL(tab, selectedPeriod, customStartDate, customEndDate);
   };
@@ -210,6 +257,109 @@ const FinancePage = () => {
   useEffect(() => {
     fetchFinance();
   }, [fetchFinance]);
+
+  // Fetch ARCA invoices
+  const fetchInvoices = useCallback(async () => {
+    if (!establishment?.id) return;
+    setInvoicesLoading(true);
+    setInvoicesError(null);
+    try {
+      const resp = await apiClient.getArcaInvoices(establishment.id, {
+        page: invoicePage,
+        limit: ITEMS_PER_PAGE,
+        search: invoiceSearch || undefined,
+        tipo: invoiceTipo ? Number(invoiceTipo) : undefined,
+        status: invoiceStatus || undefined,
+        fechaDesde: invoiceFechaDesde || undefined,
+        fechaHasta: invoiceFechaHasta || undefined,
+      });
+      const list = resp?.invoices || resp?.data || [];
+      const pagination = resp?.pagination;
+      setInvoices(Array.isArray(list) ? list : []);
+      setInvoiceTotalPages(pagination?.totalPages || 1);
+      setInvoiceTotal(pagination?.total || list.length);
+    } catch (e: any) {
+      setInvoicesError(e?.message || 'Error al cargar comprobantes');
+      setInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  }, [establishment?.id, invoicePage, invoiceSearch, invoiceTipo, invoiceStatus, invoiceFechaDesde, invoiceFechaHasta]);
+
+  useEffect(() => {
+    if (activeTab === 'invoices') fetchInvoices();
+  }, [activeTab, fetchInvoices]);
+
+  useEffect(() => {
+    setInvoicePage(1);
+  }, [invoiceSearch, invoiceTipo, invoiceStatus, invoiceFechaDesde, invoiceFechaHasta]);
+
+  // Download PDF with auth
+  const handleDownloadPdf = async (invoiceId: string, invoice?: ArcaInvoice) => {
+    if (!establishment?.id) return;
+    setDownloadingPdf(invoiceId);
+    try {
+      const blob = await apiClient.downloadArcaInvoicePdf(establishment.id, invoiceId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const pvNro = invoice?.puntoVenta && invoice?.numeroComprobante 
+        ? `${invoice.puntoVenta.toString().padStart(4, '0')}-${invoice.numeroComprobante.toString().padStart(8, '0')}` 
+        : invoiceId;
+      a.download = `factura-${pvNro}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      console.error('Error downloading PDF:', e);
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
+
+  // Load order and open detail sidebar for invoice
+  const handleViewInvoiceDetails = async (invoice: ArcaInvoice) => {
+    if (!invoice.orderId) return;
+    setLoadingInvoiceOrder(invoice.id);
+    try {
+      const response = await apiClient.getOrder(invoice.orderId) as { order: any };
+      setSelectedInvoiceOrder(response.order || response);
+      setShowInvoiceOrderDetail(true);
+    } catch (e: any) {
+      console.error('Error loading order:', e);
+    } finally {
+      setLoadingInvoiceOrder(null);
+    }
+  };
+
+  // Invoice helper functions
+  const getTipoLabel = (t?: number, nombre?: string) => {
+    if (nombre) return nombre;
+    if (!t) return '-';
+    return TIPO_LABELS[t] || `Tipo ${t}`;
+  };
+
+  const getInvoiceStatusLabel = (s?: string) => {
+    const map: Record<string, string> = { emitted: 'Emitido', authorized: 'Autorizado', rejected: 'Rechazado', pending: 'Pendiente', emitido: 'Emitido', anulado: 'Anulado' };
+    return map[s || ''] || s || '-';
+  };
+
+  const getInvoiceStatusColor = (s?: string) => {
+    switch (s) {
+      case 'authorized': case 'emitted': case 'emitido': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+      case 'pending': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
+      case 'rejected': case 'anulado': return 'text-red-400 bg-red-400/10 border-red-400/20';
+      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+    }
+  };
+
+  const formatInvoiceDate = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -305,14 +455,14 @@ const FinancePage = () => {
           Por Producto ({productSales?.products.length || 0})
         </button>
         <button
-          onClick={() => handleTabChange('transactions')}
+          onClick={() => handleTabChange('invoices')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'transactions'
+            activeTab === 'invoices'
               ? 'bg-emerald-600 text-white'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Transacciones ({transactions.length})
+          Facturación ({invoiceTotal})
         </button>
         <button
           onClick={() => handleTabChange('pending')}
@@ -937,111 +1087,170 @@ const FinancePage = () => {
         </>
       )}
 
-      {activeTab === 'transactions' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm dark:shadow-none">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Transacciones</h3>
-            <span className="text-sm text-gray-500">{transactions.length} registros</span>
+      {activeTab === 'invoices' && (
+        <div className="flex flex-col h-full">
+          {/* Filters */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 overflow-x-auto">
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                value={invoiceSearch}
+                onChange={(e) => setInvoiceSearch(e.target.value)}
+                placeholder="Buscar..."
+                className="pl-8 pr-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm w-36"
+              />
+            </div>
+            <select
+              value={invoiceTipo}
+              onChange={(e) => setInvoiceTipo(e.target.value)}
+              className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm flex-shrink-0"
+            >
+              <option value="">Tipo</option>
+              <option value="1">Factura A</option>
+              <option value="6">Factura B</option>
+              <option value="11">Factura C</option>
+              <option value="3">NC A</option>
+              <option value="8">NC B</option>
+              <option value="13">NC C</option>
+            </select>
+            <select
+              value={invoiceStatus}
+              onChange={(e) => setInvoiceStatus(e.target.value)}
+              className="px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm flex-shrink-0"
+            >
+              <option value="">Estado</option>
+              <option value="emitido">Emitido</option>
+              <option value="anulado">Anulado</option>
+            </select>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <input
+                type="date"
+                value={invoiceFechaDesde}
+                onChange={(e) => setInvoiceFechaDesde(e.target.value)}
+                className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm w-32"
+              />
+              <span className="text-gray-500">-</span>
+              <input
+                type="date"
+                value={invoiceFechaHasta}
+                onChange={(e) => setInvoiceFechaHasta(e.target.value)}
+                className="px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm w-32"
+              />
+            </div>
           </div>
-          <div className="overflow-x-auto">
+
+          {invoicesError && (
+            <div className="mx-4 mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-xl px-4 py-3 text-sm">
+              {invoicesError}
+            </div>
+          )}
+
+          <div className="flex-1 overflow-auto">
             <table className="w-full">
-              <thead className="bg-gray-100 dark:bg-gray-700/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pedido</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Cliente</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tipo</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Pago</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha</th>
+              <thead className="sticky top-0 bg-gray-50 dark:bg-gray-900 z-10">
+                <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  <th className="py-3 px-4 font-medium">Fecha</th>
+                  <th className="py-3 px-4 font-medium">Tipo</th>
+                  <th className="py-3 px-4 font-medium">PV/Nro</th>
+                  <th className="py-3 px-4 font-medium">Cliente</th>
+                  <th className="py-3 px-4 font-medium">Total</th>
+                  <th className="py-3 px-4 font-medium">CAE</th>
+                  <th className="py-3 px-4 font-medium">Estado</th>
+                  <th className="py-3 px-4 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {transactions.slice((transactionsPage - 1) * ITEMS_PER_PAGE, transactionsPage * ITEMS_PER_PAGE).map((tx) => (
-                  <tr 
-                    key={tx.id} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
-                    onClick={() => {
-                      setSelectedOrderId(tx.id);
-                      setShowOrderDetail(true);
-                    }}
-                  >
-                    <td className="px-4 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${tx.type === 'order' ? 'bg-emerald-500/20' : 'bg-blue-500/20'}`}>
-                          {tx.type === 'order' ? <ShoppingBag className="w-4 h-4 text-emerald-400" /> : <Calendar className="w-4 h-4 text-blue-400" />}
-                        </div>
-                        <p className="text-gray-900 dark:text-white font-medium">{tx.reference || tx.id.substring(0, 8)}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center space-x-2">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <span className="text-gray-900 dark:text-white">{tx.clientName || 'Cliente'}</span>
-                          {tx.clientPhone && <p className="text-xs text-gray-400">{tx.clientPhone}</p>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`text-sm ${tx.type === 'order' ? 'text-emerald-400' : 'text-blue-400'}`}>{tx.category || (tx.type === 'order' ? 'Venta Directa' : 'Reserva')}</span>
-                      {tx.court && tx.type === 'booking' && <p className="text-xs text-gray-400 mt-1">{tx.court}</p>}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <p className="text-gray-900 dark:text-white font-medium">{formatCurrency(tx.amount)}</p>
-                      {tx.depositAmount > 0 && <p className="text-xs text-gray-400">Seña: {formatCurrency(tx.depositAmount)}</p>}
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${tx.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : tx.status === 'confirmed' ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                        {tx.status === 'completed' ? 'Completado' : tx.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${tx.status === 'completed' || tx.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                        {tx.status === 'completed' || tx.status === 'confirmed' ? 'Pagado' : 'Pendiente'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <p className="text-gray-600 dark:text-gray-300 text-sm">{formatDate(tx.date)}</p>
-                      <p className="text-xs text-gray-400">{tx.time?.substring(0, 5)}</p>
-                    </td>
-                  </tr>
-                ))}
-                {transactions.length === 0 && (
+                {invoicesLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                      No hay transacciones en este período
+                    <td colSpan={8} className="py-20">
+                      <div className="flex items-center justify-center">
+                        <UnifiedLoader size="sm" />
+                      </div>
                     </td>
                   </tr>
+                ) : invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-20 text-center text-sm text-gray-400">
+                      No hay comprobantes para los filtros seleccionados.
+                    </td>
+                  </tr>
+                ) : (
+                  invoices.map((inv) => {
+                    const pvNro = inv.puntoVenta && inv.numeroComprobante ? `${inv.puntoVenta.toString().padStart(4, '0')}-${inv.numeroComprobante.toString().padStart(8, '0')}` : '-';
+                    return (
+                      <tr key={inv.id} className="text-sm hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td className="py-3 px-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">{formatInvoiceDate(inv.fechaEmision)}</td>
+                        <td className="py-3 px-4 text-gray-900 dark:text-gray-200 whitespace-nowrap">{getTipoLabel(inv.tipoComprobante, inv.tipoComprobanteNombre)}</td>
+                        <td className="py-3 px-4 text-gray-900 dark:text-gray-200 font-mono whitespace-nowrap">{pvNro}</td>
+                        <td className="py-3 px-4 text-gray-600 dark:text-gray-300 min-w-[200px]">
+                          <div className="flex flex-col">
+                            <span className="text-gray-900 dark:text-gray-200">{inv.clienteNombre || '-'}</span>
+                            {inv.clienteDocNro && <span className="text-xs text-gray-500 font-mono">{inv.clienteDocNro}</span>}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">${Number(inv.importeTotal || 0).toFixed(2)}</td>
+                        <td className="py-3 px-4 text-gray-500 font-mono text-xs whitespace-nowrap">{inv.cae || '-'}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${getInvoiceStatusColor(inv.status)}`}>
+                            {getInvoiceStatusLabel(inv.status)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDownloadPdf(inv.id, inv)}
+                              disabled={downloadingPdf === inv.id}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg text-xs transition-colors disabled:opacity-50"
+                              title="Descargar PDF"
+                            >
+                              {downloadingPdf === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                              PDF
+                            </button>
+                            {inv.orderId && (
+                              <button
+                                onClick={() => handleViewInvoiceDetails(inv)}
+                                disabled={loadingInvoiceOrder === inv.id}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg text-xs transition-colors disabled:opacity-50"
+                                title="Ver detalles"
+                              >
+                                {loadingInvoiceOrder === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                                Detalles
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
+
           {/* Pagination */}
-          {transactions.length > ITEMS_PER_PAGE && (
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <span className="text-sm text-gray-500">
-                Mostrando {((transactionsPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(transactionsPage * ITEMS_PER_PAGE, transactions.length)} de {transactions.length}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setTransactionsPage(p => Math.max(1, p - 1))}
-                  disabled={transactionsPage === 1}
-                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50"
-                >
-                  Anterior
-                </button>
-                <span className="px-3 py-1 text-sm">{transactionsPage} / {Math.ceil(transactions.length / ITEMS_PER_PAGE)}</span>
-                <button
-                  onClick={() => setTransactionsPage(p => Math.min(Math.ceil(transactions.length / ITEMS_PER_PAGE), p + 1))}
-                  disabled={transactionsPage >= Math.ceil(transactions.length / ITEMS_PER_PAGE)}
-                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded disabled:opacity-50"
-                >
-                  Siguiente
-                </button>
-              </div>
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+            <div className="text-xs text-gray-500">
+              {invoiceTotal > 0 ? `${(invoicePage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(invoicePage * ITEMS_PER_PAGE, invoiceTotal)} de ${invoiceTotal}` : '0 resultados'}
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setInvoicePage((p) => Math.max(1, p - 1))}
+                disabled={invoicePage <= 1 || invoicesLoading}
+                className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white rounded-lg text-sm disabled:opacity-50 transition-colors"
+              >
+                Anterior
+              </button>
+              <span className="text-sm text-gray-500">{invoicePage} / {invoiceTotalPages}</span>
+              <button
+                onClick={() => setInvoicePage((p) => Math.min(invoiceTotalPages, p + 1))}
+                disabled={invoicePage >= invoiceTotalPages || invoicesLoading}
+                className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-white rounded-lg text-sm disabled:opacity-50 transition-colors"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1188,6 +1397,19 @@ const FinancePage = () => {
             setSelectedOrderId(null);
           }}
           onUpdate={fetchFinance}
+        />
+      )}
+
+      {/* Invoice Order Detail Sidebar */}
+      {selectedInvoiceOrder && (
+        <OrderDetailSidebar
+          isOpen={showInvoiceOrderDetail}
+          onClose={() => {
+            setShowInvoiceOrderDetail(false);
+            setSelectedInvoiceOrder(null);
+          }}
+          order={selectedInvoiceOrder}
+          onOrderUpdated={fetchInvoices}
         />
       )}
     </>
