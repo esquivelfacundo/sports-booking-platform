@@ -57,9 +57,11 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// Argentine National Holidays 2024-2025
+// Argentine National Holidays 2024-2027
 const NATIONAL_HOLIDAYS = [
+  // 2024
   { date: '2024-12-25', name: 'Navidad' },
+  // 2025
   { date: '2025-01-01', name: 'Año Nuevo' },
   { date: '2025-02-24', name: 'Carnaval' },
   { date: '2025-02-25', name: 'Carnaval' },
@@ -76,6 +78,40 @@ const NATIONAL_HOLIDAYS = [
   { date: '2025-11-24', name: 'Soberanía Nacional' },
   { date: '2025-12-08', name: 'Inmaculada Concepción' },
   { date: '2025-12-25', name: 'Navidad' },
+  // 2026
+  { date: '2026-01-01', name: 'Año Nuevo' },
+  { date: '2026-02-16', name: 'Carnaval' },
+  { date: '2026-02-17', name: 'Carnaval' },
+  { date: '2026-03-24', name: 'Día de la Memoria' },
+  { date: '2026-04-02', name: 'Día del Veterano' },
+  { date: '2026-04-03', name: 'Viernes Santo' },
+  { date: '2026-05-01', name: 'Día del Trabajador' },
+  { date: '2026-05-25', name: 'Revolución de Mayo' },
+  { date: '2026-06-15', name: 'Güemes' },
+  { date: '2026-06-20', name: 'Día de la Bandera' },
+  { date: '2026-07-09', name: 'Día de la Independencia' },
+  { date: '2026-08-17', name: 'San Martín' },
+  { date: '2026-10-12', name: 'Diversidad Cultural' },
+  { date: '2026-11-23', name: 'Soberanía Nacional' },
+  { date: '2026-12-08', name: 'Inmaculada Concepción' },
+  { date: '2026-12-25', name: 'Navidad' },
+  // 2027
+  { date: '2027-01-01', name: 'Año Nuevo' },
+  { date: '2027-02-15', name: 'Carnaval' },
+  { date: '2027-02-16', name: 'Carnaval' },
+  { date: '2027-03-24', name: 'Día de la Memoria' },
+  { date: '2027-03-26', name: 'Viernes Santo' },
+  { date: '2027-04-02', name: 'Día del Veterano' },
+  { date: '2027-05-01', name: 'Día del Trabajador' },
+  { date: '2027-05-25', name: 'Revolución de Mayo' },
+  { date: '2027-06-20', name: 'Día de la Bandera' },
+  { date: '2027-06-21', name: 'Güemes' },
+  { date: '2027-07-09', name: 'Día de la Independencia' },
+  { date: '2027-08-16', name: 'San Martín' },
+  { date: '2027-10-11', name: 'Diversidad Cultural' },
+  { date: '2027-11-22', name: 'Soberanía Nacional' },
+  { date: '2027-12-08', name: 'Inmaculada Concepción' },
+  { date: '2027-12-25', name: 'Navidad' },
 ];
 
 const ROLE_LABELS: Record<string, { label: string; color: string; icon: any }> = {
