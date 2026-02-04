@@ -1694,6 +1694,13 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
                       </span>
                     </div>
                   )}
+                  {/* Total a pagar (cancha + consumos) */}
+                  <div className="flex items-center justify-between text-sm pt-1 border-t border-gray-700 mt-1">
+                    <span className="text-gray-400 font-medium">Total a pagar:</span>
+                    <span className="font-bold text-white">
+                      ${(reservation.price + consumptionsTotal).toLocaleString()}
+                    </span>
+                  </div>
                   {/* Seña pagada - pago inicial al reservar */}
                   {(() => {
                     // Helper: identificar si un pago es seña (por paymentType o por notes/monto)
