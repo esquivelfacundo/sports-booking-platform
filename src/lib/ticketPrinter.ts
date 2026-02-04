@@ -441,6 +441,12 @@ export interface CashRegisterTicketExpense {
   amount: number;
 }
 
+export interface CashRegisterTicketProduct {
+  productName: string;
+  quantity: number;
+  totalAmount: number;
+}
+
 export interface CashRegisterTicketData {
   establishmentName: string;
   cashierName: string;
@@ -459,6 +465,9 @@ export interface CashRegisterTicketData {
   
   // By payment method
   paymentMethods: CashRegisterTicketPaymentMethod[];
+  
+  // Products sold
+  products?: CashRegisterTicketProduct[];
   
   // Expenses
   expenses: CashRegisterTicketExpense[];
@@ -500,6 +509,22 @@ export function generateCashRegisterTicketData(data: CashRegisterTicketData): Ui
     }
   }
   txt += NL;
+  
+  // Products sold
+  if (data.products && data.products.length > 0) {
+    txt += DOUBLE_HEIGHT + BOLD_ON + 'PRODUCTOS VENDIDOS' + NORMAL_TEXT + BOLD_OFF + NL;
+    txt += separator + NL;
+    
+    for (const product of data.products) {
+      const name = sanitizeText(product.productName);
+      const qty = 'x' + product.quantity;
+      const value = formatPrice(product.totalAmount);
+      // Format: ProductName (truncated) x5  $1,234.00
+      const maxNameLen = LINE_WIDTH - qty.length - value.length - 2;
+      txt += padRight(name.substring(0, maxNameLen), maxNameLen) + ' ' + qty + ' ' + value + NL;
+    }
+    txt += NL;
+  }
   
   // Expenses
   if (data.expenses.length > 0) {

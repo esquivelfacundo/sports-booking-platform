@@ -5,6 +5,7 @@ import { X, DollarSign, FileText, TrendingUp, TrendingDown, CreditCard, Banknote
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/contexts/ToastContext';
 import { printCashRegisterTicket, isWebUSBSupported, CashRegisterTicketData } from '@/lib/ticketPrinter';
+import { apiClient } from '@/lib/api';
 
 interface CashRegister {
   id: string;
@@ -98,6 +99,9 @@ export default function CloseCashRegisterSidebar({
   const [showPrintConfirm, setShowPrintConfirm] = useState(false);
   const [pendingCloseData, setPendingCloseData] = useState<{ amount: number; notes?: string } | null>(null);
   
+  // Products sold state
+  const [productsSold, setProductsSold] = useState<Array<{ productId: string; productName: string; quantity: number; totalAmount: number }>>([]);
+  
   const billDenominations = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20, 10];
   
   const calculateTotalFromBills = () => {
@@ -114,8 +118,20 @@ export default function CloseCashRegisterSidebar({
   useEffect(() => {
     if (isOpen && cashRegister) {
       setActualCash(cashRegister.expectedCash.toString());
+      // Load products sold
+      loadProductsSold(cashRegister.id);
     }
   }, [isOpen, cashRegister]);
+
+  const loadProductsSold = async (cashRegisterId: string) => {
+    try {
+      const response = await apiClient.getProductsSold(cashRegisterId);
+      setProductsSold(response.products || []);
+    } catch (error) {
+      console.error('Error loading products sold:', error);
+      setProductsSold([]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,6 +230,13 @@ export default function CloseCashRegisterSidebar({
       amount: m.amount
     }));
     
+    // Build products data
+    const ticketProducts = productsSold.map(p => ({
+      productName: p.productName,
+      quantity: p.quantity,
+      totalAmount: p.totalAmount
+    }));
+    
     const ticketData: CashRegisterTicketData = {
       establishmentName: establishment?.name || 'Establecimiento',
       cashierName: userName || 'Cajero',
@@ -228,6 +251,7 @@ export default function CloseCashRegisterSidebar({
       cashDifference: difference,
       totalOrders: cashRegister.totalOrders || 0,
       paymentMethods: ticketPaymentMethods,
+      products: ticketProducts,
       expenses,
       establishmentUrl: establishment?.slug ? `https://miscanchas.com/${establishment.slug}` : undefined
     };

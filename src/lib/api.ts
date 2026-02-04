@@ -2029,6 +2029,10 @@ class ApiClient {
     return this.request(`/api/cash-register-movements/report/${cashRegisterId}`);
   }
 
+  async getProductsSold(cashRegisterId: string) {
+    return this.request(`/api/cash-register-movements/products-sold?cashRegisterId=${cashRegisterId}`);
+  }
+
   // ==================== AMENITIES ====================
   async getAmenities(establishmentId: string, options?: { includeInactive?: boolean; publicOnly?: boolean }) {
     const query = new URLSearchParams();
