@@ -237,6 +237,12 @@ export default function CloseCashRegisterSidebar({
       totalAmount: p.totalAmount
     }));
     
+    // Build bill counts data
+    const ticketBillCounts = billDenominations.map(denom => ({
+      denomination: denom,
+      count: billCounts[denom] || 0
+    }));
+    
     const ticketData: CashRegisterTicketData = {
       establishmentName: establishment?.name || 'Establecimiento',
       cashierName: userName || 'Cajero',
@@ -253,6 +259,7 @@ export default function CloseCashRegisterSidebar({
       paymentMethods: ticketPaymentMethods,
       products: ticketProducts,
       expenses,
+      billCounts: ticketBillCounts,
       establishmentUrl: establishment?.slug ? `https://miscanchas.com/${establishment.slug}` : undefined
     };
     

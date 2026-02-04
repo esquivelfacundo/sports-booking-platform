@@ -326,7 +326,7 @@ export default function CuentasCorrientesPage() {
       );
       const data = await response.json();
       if (data.success) {
-        setStaff(data.data || []);
+        setStaff(data.staff || data.data || []);
       }
     } catch (error) {
       console.error('Error loading staff:', error);

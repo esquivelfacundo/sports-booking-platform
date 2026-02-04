@@ -472,6 +472,9 @@ export interface CashRegisterTicketData {
   // Expenses
   expenses: CashRegisterTicketExpense[];
   
+  // Bill counts
+  billCounts?: { denomination: number; count: number }[];
+  
   // QR
   establishmentUrl?: string;
 }
@@ -575,6 +578,23 @@ export function generateCashRegisterTicketData(data: CashRegisterTicketData): Ui
   const diffLabel = 'Diferencia:';
   const diffValue = (data.cashDifference >= 0 ? '+' : '') + formatPrice(data.cashDifference);
   txt += BOLD_ON + padRight(diffLabel, LINE_WIDTH - diffValue.length) + diffValue + BOLD_OFF + NL;
+  
+  // Bill counts
+  if (data.billCounts && data.billCounts.length > 0) {
+    const billsWithCount = data.billCounts.filter(b => b.count > 0);
+    if (billsWithCount.length > 0) {
+      txt += NL;
+      txt += DOUBLE_HEIGHT + BOLD_ON + 'CONTEO DE BILLETES' + NORMAL_TEXT + BOLD_OFF + NL;
+      txt += separator + NL;
+      
+      for (const bill of billsWithCount) {
+        const label = '$' + bill.denomination.toLocaleString('es-AR');
+        const qty = 'x' + bill.count;
+        const total = formatPrice(bill.denomination * bill.count);
+        txt += padRight(label, 10) + padRight(qty, 6) + padLeft(total, LINE_WIDTH - 16) + NL;
+      }
+    }
+  }
   
   txt += doubleSeparator + NL;
   
