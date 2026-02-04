@@ -1587,7 +1587,8 @@ const ReservationsPage = () => {
             setSelectedReservation(updatedReservation);
           }
           // Refresh reservations list to update grid/table
-          loadReservations({ date: gridSelectedDate.toISOString().split('T')[0] });
+          const dateStr = `${gridSelectedDate.getFullYear()}-${String(gridSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(gridSelectedDate.getDate()).padStart(2, '0')}`;
+          loadReservations({ date: dateStr });
         }}
         onStatusChanged={(reservationId, newStatus) => {
           // Update selected reservation status for immediate UI feedback
@@ -1598,11 +1599,13 @@ const ReservationsPage = () => {
             });
           }
           // Refresh reservations list
-          loadReservations({ date: gridSelectedDate.toISOString().split('T')[0] });
+          const dateStr = `${gridSelectedDate.getFullYear()}-${String(gridSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(gridSelectedDate.getDate()).padStart(2, '0')}`;
+          loadReservations({ date: dateStr });
         }}
         onConsumptionChanged={(bookingId) => {
           // Refresh reservations list to update grid payment status
-          loadReservations({ date: gridSelectedDate.toISOString().split('T')[0] });
+          const dateStr = `${gridSelectedDate.getFullYear()}-${String(gridSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(gridSelectedDate.getDate()).padStart(2, '0')}`;
+          loadReservations({ date: dateStr });
         }}
         onFinalize={async (id) => {
           return new Promise<void>((resolve) => {
@@ -1618,7 +1621,8 @@ const ReservationsPage = () => {
                 });
                 if (response.ok) {
                   showSuccess('Turno completado', 'El turno ha sido finalizado');
-                  loadReservations({ date: gridSelectedDate.toISOString().split('T')[0] });
+                  const dateStr = `${gridSelectedDate.getFullYear()}-${String(gridSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(gridSelectedDate.getDate()).padStart(2, '0')}`;
+          loadReservations({ date: dateStr });
                   if (selectedReservation?.id === id) {
                     setSelectedReservation({ ...selectedReservation, status: 'completed' } as any);
                   }
