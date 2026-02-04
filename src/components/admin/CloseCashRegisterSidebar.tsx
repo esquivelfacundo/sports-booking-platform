@@ -43,6 +43,35 @@ export default function CloseCashRegisterSidebar({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showSuccess, showError } = useToast();
+  
+  // Bill counting state
+  const [billCounts, setBillCounts] = useState<Record<number, number>>({
+    20000: 0,
+    10000: 0,
+    5000: 0,
+    2000: 0,
+    1000: 0,
+    500: 0,
+    200: 0,
+    100: 0,
+    50: 0,
+    20: 0,
+    10: 0
+  });
+  const [showBillCounter, setShowBillCounter] = useState(false);
+  
+  const billDenominations = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+  
+  const calculateTotalFromBills = () => {
+    return Object.entries(billCounts).reduce((sum, [denom, count]) => sum + (parseInt(denom) * count), 0);
+  };
+  
+  const handleBillCountChange = (denomination: number, count: number) => {
+    const newCounts = { ...billCounts, [denomination]: Math.max(0, count) };
+    setBillCounts(newCounts);
+    const total = Object.entries(newCounts).reduce((sum, [denom, c]) => sum + (parseInt(denom) * c), 0);
+    setActualCash(total.toString());
+  };
 
   useEffect(() => {
     if (isOpen && cashRegister) {
@@ -185,13 +214,20 @@ export default function CloseCashRegisterSidebar({
                   <h3 className="text-sm font-medium text-gray-300 mb-3">Resumen de Caja</h3>
                   
                   {/* Ventas por método de pago */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="grid grid-cols-2 gap-2 mb-4">
                     <div className="bg-gray-700/50 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <Banknote className="w-4 h-4 text-green-400" />
                         <span className="text-xs text-gray-400">Efectivo</span>
                       </div>
                       <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalCash || 0)}</p>
+                    </div>
+                    <div className="bg-gray-700/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <ArrowRightLeft className="w-4 h-4 text-purple-400" />
+                        <span className="text-xs text-gray-400">Transferencia</span>
+                      </div>
+                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalTransfer || 0)}</p>
                     </div>
                     <div className="bg-gray-700/50 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
@@ -208,20 +244,6 @@ export default function CloseCashRegisterSidebar({
                         <span className="text-xs text-gray-400">Débito</span>
                       </div>
                       <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalDebitCard || 0)}</p>
-                    </div>
-                    <div className="bg-gray-700/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <ArrowRightLeft className="w-4 h-4 text-purple-400" />
-                        <span className="text-xs text-gray-400">Transferencia</span>
-                      </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalTransfer || 0)}</p>
-                    </div>
-                    <div className="bg-gray-700/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="w-4 h-4 text-cyan-400" />
-                        <span className="text-xs text-gray-400">MercadoPago</span>
-                      </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalMercadoPago || 0)}</p>
                     </div>
                   </div>
 
@@ -263,7 +285,46 @@ export default function CloseCashRegisterSidebar({
                   </p>
                 </div>
 
-                {/* Conteo de efectivo */}
+                {/* Conteo de billetes */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-300">
+                      Conteo de Billetes
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowBillCounter(!showBillCounter)}
+                      className="text-xs text-blue-400 hover:text-blue-300"
+                    >
+                      {showBillCounter ? 'Ocultar' : 'Mostrar contador'}
+                    </button>
+                  </div>
+                  
+                  {showBillCounter && (
+                    <div className="bg-gray-800 rounded-lg p-3 mb-3 space-y-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        {billDenominations.map((denom) => (
+                          <div key={denom} className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 w-14">${denom.toLocaleString()}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={billCounts[denom] || 0}
+                              onChange={(e) => handleBillCountChange(denom, parseInt(e.target.value) || 0)}
+                              className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pt-2 border-t border-gray-700 flex justify-between items-center">
+                        <span className="text-sm text-gray-400">Total contado:</span>
+                        <span className="text-lg font-bold text-emerald-400">{formatCurrency(calculateTotalFromBills())}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Efectivo Real en Caja */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Efectivo Real en Caja *
@@ -273,10 +334,16 @@ export default function CloseCashRegisterSidebar({
                     <input
                       type="number"
                       value={actualCash}
-                      onChange={(e) => setActualCash(e.target.value)}
-                      step="0.01"
+                      onChange={(e) => {
+                        setActualCash(e.target.value);
+                        // Reset bill counts when manually editing
+                        if (!showBillCounter) {
+                          setBillCounts({20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0});
+                        }
+                      }}
+                      step="1"
                       min="0"
-                      placeholder="0.00"
+                      placeholder="0"
                       required
                       disabled={loading}
                       className="w-full pl-8 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent disabled:opacity-50"
