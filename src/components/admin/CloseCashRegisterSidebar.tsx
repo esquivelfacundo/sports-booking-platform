@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, DollarSign, FileText, TrendingUp, TrendingDown, CreditCard, Banknote, ArrowRightLeft, Printer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/contexts/ToastContext';
+import { printCashRegisterTicket, isWebUSBSupported, CashRegisterTicketData } from '@/lib/ticketPrinter';
 
 interface CashRegister {
   id: string;
@@ -37,12 +38,28 @@ interface CashRegisterMovement {
   registeredByUser?: { id: string; name: string } | null;
 }
 
+interface PaymentMethod {
+  id: string;
+  name: string;
+  code: string;
+  icon: string | null;
+}
+
+interface Establishment {
+  id: string;
+  name: string;
+  slug?: string;
+}
+
 interface CloseCashRegisterSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onCloseCashRegister: (actualCash: number, notes?: string) => Promise<void>;
   cashRegister: CashRegister | null;
   movements?: CashRegisterMovement[];
+  paymentMethods?: PaymentMethod[];
+  establishment?: Establishment | null;
+  userName?: string;
   requestPin?: (action: () => void, options?: { title?: string; description?: string }) => void;
 }
 
@@ -52,6 +69,9 @@ export default function CloseCashRegisterSidebar({
   onCloseCashRegister, 
   cashRegister,
   movements = [],
+  paymentMethods = [],
+  establishment,
+  userName,
   requestPin
 }: CloseCashRegisterSidebarProps) {
   const [actualCash, setActualCash] = useState('');
@@ -150,114 +170,74 @@ export default function CloseCashRegisterSidebar({
     }
   };
 
-  const printClosingTicket = () => {
-    if (!cashRegister) return;
+  // Helper to get total by payment method code from cash register
+  const getPaymentMethodTotal = (code: string): number => {
+    if (!cashRegister) return 0;
+    switch (code) {
+      case 'cash': return parseFloat(String(cashRegister.totalCash)) || 0;
+      case 'transfer': return parseFloat(String(cashRegister.totalTransfer)) || 0;
+      case 'credit_card': return (parseFloat(String(cashRegister.totalCreditCard)) || 0) + (parseFloat(String(cashRegister.totalCard)) || 0);
+      case 'debit_card': return parseFloat(String(cashRegister.totalDebitCard)) || 0;
+      case 'mercadopago': return parseFloat(String(cashRegister.totalMercadoPago)) || 0;
+      default: return parseFloat(String(cashRegister.totalOther)) || 0;
+    }
+  };
+
+  // Count movements per payment method
+  const getPaymentMethodCount = (code: string): number => {
+    return movements.filter(m => m.type === 'sale' && m.paymentMethod === code).length;
+  };
+
+  const printClosingTicket = async () => {
+    if (!cashRegister || !isWebUSBSupported()) {
+      showError('Error', 'Impresora no disponible');
+      return;
+    }
     
     const actualAmount = pendingCloseData?.amount || 0;
     const difference = actualAmount - (cashRegister.expectedCash || 0);
     
-    // Build bill counts string
-    const billCountsStr = billDenominations
-      .filter(denom => billCounts[denom] > 0)
-      .map(denom => `$${denom.toLocaleString()} x ${billCounts[denom]} = $${(denom * billCounts[denom]).toLocaleString()}`)
-      .join('\n');
+    // Build payment methods data from establishment config
+    const ticketPaymentMethods = paymentMethods.map(pm => ({
+      name: pm.name,
+      code: pm.code,
+      amount: getPaymentMethodTotal(pm.code),
+      count: getPaymentMethodCount(pm.code)
+    }));
     
-    // Build products sold section from movements
-    const salesMovements = movements.filter(m => m.type === 'sale');
+    // Build expenses data
     const expenseMovements = movements.filter(m => m.type === 'expense');
+    const expenses = expenseMovements.map(m => ({
+      description: m.description || '',
+      category: m.expenseCategory?.name,
+      method: m.paymentMethod,
+      amount: m.amount
+    }));
     
-    // Group sales by description for summary
-    const productSales: Record<string, { qty: number; total: number }> = {};
-    salesMovements.forEach(m => {
-      const desc = m.description || m.order?.orderNumber || m.booking?.guestName || 'Venta';
-      if (!productSales[desc]) {
-        productSales[desc] = { qty: 0, total: 0 };
-      }
-      productSales[desc].qty += 1;
-      productSales[desc].total += m.amount;
-    });
+    const ticketData: CashRegisterTicketData = {
+      establishmentName: establishment?.name || 'Establecimiento',
+      cashierName: userName || 'Cajero',
+      cashRegisterId: cashRegister.id,
+      openedAt: formatDateTime(cashRegister.openedAt),
+      closedAt: new Date().toLocaleString('es-AR'),
+      initialCash: parseFloat(String(cashRegister.initialCash)) || 0,
+      totalSales: parseFloat(String(cashRegister.totalSales)) || 0,
+      totalExpenses: parseFloat(String(cashRegister.totalExpenses)) || 0,
+      expectedCash: parseFloat(String(cashRegister.expectedCash)) || 0,
+      actualCash: actualAmount,
+      cashDifference: difference,
+      totalOrders: cashRegister.totalOrders || 0,
+      paymentMethods: ticketPaymentMethods,
+      expenses,
+      establishmentUrl: establishment?.slug ? `https://miscanchas.com/${establishment.slug}` : undefined
+    };
     
-    const salesStr = Object.entries(productSales)
-      .map(([desc, data]) => `${desc.substring(0, 20).padEnd(20)} x${data.qty} ${formatCurrency(data.total)}`)
-      .join('\n');
-    
-    const expensesStr = expenseMovements
-      .map(m => `${(m.expenseCategory?.name || m.description || 'Gasto').substring(0, 25).padEnd(25)} ${formatCurrency(m.amount)}`)
-      .join('\n');
-    
-    const ticketContent = `
-================================
-      CIERRE DE CAJA
-================================
-Fecha: ${new Date().toLocaleDateString('es-AR')}
-Hora: ${new Date().toLocaleTimeString('es-AR')}
-Abierta: ${formatDateTime(cashRegister.openedAt)}
-Duración: ${getDuration(cashRegister.openedAt)}
---------------------------------
-VENTAS POR MÉTODO DE PAGO
---------------------------------
-Efectivo:      ${formatCurrency(cashRegister.totalCash)}
-Transferencia: ${formatCurrency(cashRegister.totalTransfer)}
-Crédito:       ${formatCurrency((parseFloat(String(cashRegister.totalCreditCard)) || 0) + (parseFloat(String(cashRegister.totalCard)) || 0))}
-Débito:        ${formatCurrency(cashRegister.totalDebitCard)}
---------------------------------
-TOTALES
---------------------------------
-Total Ventas:    ${formatCurrency(cashRegister.totalSales)}
-Total Gastos:    ${formatCurrency(cashRegister.totalExpenses)}
-Movimientos:     ${cashRegister.totalMovements}
-${salesStr ? `
---------------------------------
-DETALLE DE VENTAS (${salesMovements.length})
---------------------------------
-${salesStr}` : ''}
-${expensesStr ? `
---------------------------------
-DETALLE DE GASTOS (${expenseMovements.length})
---------------------------------
-${expensesStr}` : ''}
---------------------------------
-EFECTIVO
---------------------------------
-Caja Inicial:    ${formatCurrency(cashRegister.initialCash)}
-Efectivo Esperado: ${formatCurrency(cashRegister.expectedCash)}
-Efectivo Real:   ${formatCurrency(actualAmount)}
-Diferencia:      ${difference >= 0 ? '+' : ''}${formatCurrency(difference)}
-${billCountsStr ? `
---------------------------------
-CONTEO DE BILLETES
---------------------------------
-${billCountsStr}
-Total Contado:   ${formatCurrency(calculateTotalFromBills())}` : ''}
-${notes ? `
---------------------------------
-OBSERVACIONES
---------------------------------
-${notes}` : ''}
-================================
-    `;
-    
-    // Create print window
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Ticket de Cierre de Caja</title>
-            <style>
-              body { font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; }
-              pre { white-space: pre-wrap; word-wrap: break-word; }
-            </style>
-          </head>
-          <body>
-            <pre>${ticketContent}</pre>
-            <script>
-              window.onload = function() { window.print(); window.close(); }
-            </script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+    try {
+      await printCashRegisterTicket(ticketData);
+      showSuccess('Ticket impreso', 'El ticket de cierre se imprimió correctamente');
+    } catch (error) {
+      console.error('Error printing ticket:', error);
+      showError('Error al imprimir', 'No se pudo imprimir el ticket');
     }
   };
 
@@ -360,38 +340,30 @@ ${notes}` : ''}
                 <div className="bg-gray-800 rounded-lg p-4">
                   <h3 className="text-sm font-medium text-gray-300 mb-3">Resumen de Caja</h3>
                   
-                  {/* Ventas por método de pago */}
+                  {/* Ventas por método de pago - Dinámico del establecimiento */}
                   <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="bg-gray-700/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Banknote className="w-4 h-4 text-green-400" />
-                        <span className="text-xs text-gray-400">Efectivo</span>
-                      </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalCash || 0)}</p>
-                    </div>
-                    <div className="bg-gray-700/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <ArrowRightLeft className="w-4 h-4 text-purple-400" />
-                        <span className="text-xs text-gray-400">Transferencia</span>
-                      </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalTransfer || 0)}</p>
-                    </div>
-                    <div className="bg-gray-700/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <CreditCard className="w-4 h-4 text-blue-400" />
-                        <span className="text-xs text-gray-400">Crédito</span>
-                      </div>
-                      <p className="text-lg font-bold text-white">
-                        {formatCurrency((cashRegister.totalCreditCard || 0) + (cashRegister.totalCard || 0))}
-                      </p>
-                    </div>
-                    <div className="bg-gray-700/50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <CreditCard className="w-4 h-4 text-orange-400" />
-                        <span className="text-xs text-gray-400">Débito</span>
-                      </div>
-                      <p className="text-lg font-bold text-white">{formatCurrency(cashRegister.totalDebitCard || 0)}</p>
-                    </div>
+                    {paymentMethods.map((pm) => {
+                      const IconComponent = pm.code === 'cash' ? Banknote 
+                        : pm.code === 'transfer' ? ArrowRightLeft 
+                        : CreditCard;
+                      const iconColor = pm.code === 'cash' ? 'text-green-400'
+                        : pm.code === 'transfer' ? 'text-purple-400'
+                        : pm.code === 'credit_card' ? 'text-blue-400'
+                        : pm.code === 'debit_card' ? 'text-orange-400'
+                        : 'text-gray-400';
+                      
+                      return (
+                        <div key={pm.id} className="bg-gray-700/50 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <IconComponent className={`w-4 h-4 ${iconColor}`} />
+                            <span className="text-xs text-gray-400">{pm.name}</span>
+                          </div>
+                          <p className="text-lg font-bold text-white">
+                            {formatCurrency(getPaymentMethodTotal(pm.code))}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Totales */}

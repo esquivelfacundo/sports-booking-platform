@@ -920,6 +920,9 @@ export default function CashRegisterPage() {
         }}
         cashRegister={cashRegister}
         movements={movements}
+        paymentMethods={paymentMethods}
+        establishment={establishment}
+        userName={user?.name}
         requestPin={requestPin}
       />
 
