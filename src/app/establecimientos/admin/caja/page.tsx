@@ -919,6 +919,7 @@ export default function CashRegisterPage() {
           }
         }}
         cashRegister={cashRegister}
+        movements={movements}
         requestPin={requestPin}
       />
 

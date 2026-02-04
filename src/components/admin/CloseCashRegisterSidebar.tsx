@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, DollarSign, FileText, TrendingUp, TrendingDown, CreditCard, Banknote, ArrowRightLeft } from 'lucide-react';
+import { X, DollarSign, FileText, TrendingUp, TrendingDown, CreditCard, Banknote, ArrowRightLeft, Printer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -23,11 +23,26 @@ interface CashRegister {
   totalMovements: number;
 }
 
+interface CashRegisterMovement {
+  id: string;
+  type: 'sale' | 'expense' | 'withdrawal' | 'deposit' | 'adjustment';
+  amount: number;
+  paymentMethod: string;
+  description: string | null;
+  notes: string | null;
+  registeredAt: string;
+  order?: { id: string; orderNumber: string } | null;
+  booking?: { id: string; guestName: string } | null;
+  expenseCategory?: { id: string; name: string; color: string } | null;
+  registeredByUser?: { id: string; name: string } | null;
+}
+
 interface CloseCashRegisterSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onCloseCashRegister: (actualCash: number, notes?: string) => Promise<void>;
   cashRegister: CashRegister | null;
+  movements?: CashRegisterMovement[];
   requestPin?: (action: () => void, options?: { title?: string; description?: string }) => void;
 }
 
@@ -36,6 +51,7 @@ export default function CloseCashRegisterSidebar({
   onClose, 
   onCloseCashRegister, 
   cashRegister,
+  movements = [],
   requestPin
 }: CloseCashRegisterSidebarProps) {
   const [actualCash, setActualCash] = useState('');
@@ -48,7 +64,6 @@ export default function CloseCashRegisterSidebar({
   const [billCounts, setBillCounts] = useState<Record<number, number>>({
     20000: 0,
     10000: 0,
-    5000: 0,
     2000: 0,
     1000: 0,
     500: 0,
@@ -58,9 +73,12 @@ export default function CloseCashRegisterSidebar({
     20: 0,
     10: 0
   });
-  const [showBillCounter, setShowBillCounter] = useState(false);
   
-  const billDenominations = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
+  // Print confirmation state
+  const [showPrintConfirm, setShowPrintConfirm] = useState(false);
+  const [pendingCloseData, setPendingCloseData] = useState<{ amount: number; notes?: string } | null>(null);
+  
+  const billDenominations = [20000, 10000, 2000, 1000, 500, 200, 100, 50, 20, 10];
   
   const calculateTotalFromBills = () => {
     return Object.entries(billCounts).reduce((sum, [denom, count]) => sum + (parseInt(denom) * count), 0);
@@ -88,15 +106,31 @@ export default function CloseCashRegisterSidebar({
       return;
     }
 
+    // Store data and show print confirmation
+    setPendingCloseData({ amount, notes: notes || undefined });
+    setShowPrintConfirm(true);
+  };
+
+  const executeCloseWithPrint = async (shouldPrint: boolean) => {
+    if (!pendingCloseData) return;
+    
     const executeClose = async () => {
       setLoading(true);
       setError(null);
+      setShowPrintConfirm(false);
 
       try {
-        await onCloseCashRegister(amount, notes || undefined);
+        // Print ticket if requested
+        if (shouldPrint && cashRegister) {
+          printClosingTicket();
+        }
+        
+        await onCloseCashRegister(pendingCloseData.amount, pendingCloseData.notes);
         setActualCash('');
         setNotes('');
-        const diff = cashRegister ? amount - cashRegister.expectedCash : 0;
+        setBillCounts({20000: 0, 10000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0});
+        setPendingCloseData(null);
+        const diff = cashRegister ? pendingCloseData.amount - cashRegister.expectedCash : 0;
         const diffText = diff === 0 ? 'sin diferencia' : diff > 0 ? `+$${diff.toLocaleString('es-AR')} sobrante` : `-$${Math.abs(diff).toLocaleString('es-AR')} faltante`;
         showSuccess('Caja cerrada', `Total ventas: $${cashRegister?.totalSales.toLocaleString('es-AR') || 0} (${diffText})`);
         onClose();
@@ -116,6 +150,117 @@ export default function CloseCashRegisterSidebar({
     }
   };
 
+  const printClosingTicket = () => {
+    if (!cashRegister) return;
+    
+    const actualAmount = pendingCloseData?.amount || 0;
+    const difference = actualAmount - (cashRegister.expectedCash || 0);
+    
+    // Build bill counts string
+    const billCountsStr = billDenominations
+      .filter(denom => billCounts[denom] > 0)
+      .map(denom => `$${denom.toLocaleString()} x ${billCounts[denom]} = $${(denom * billCounts[denom]).toLocaleString()}`)
+      .join('\n');
+    
+    // Build products sold section from movements
+    const salesMovements = movements.filter(m => m.type === 'sale');
+    const expenseMovements = movements.filter(m => m.type === 'expense');
+    
+    // Group sales by description for summary
+    const productSales: Record<string, { qty: number; total: number }> = {};
+    salesMovements.forEach(m => {
+      const desc = m.description || m.order?.orderNumber || m.booking?.guestName || 'Venta';
+      if (!productSales[desc]) {
+        productSales[desc] = { qty: 0, total: 0 };
+      }
+      productSales[desc].qty += 1;
+      productSales[desc].total += m.amount;
+    });
+    
+    const salesStr = Object.entries(productSales)
+      .map(([desc, data]) => `${desc.substring(0, 20).padEnd(20)} x${data.qty} ${formatCurrency(data.total)}`)
+      .join('\n');
+    
+    const expensesStr = expenseMovements
+      .map(m => `${(m.expenseCategory?.name || m.description || 'Gasto').substring(0, 25).padEnd(25)} ${formatCurrency(m.amount)}`)
+      .join('\n');
+    
+    const ticketContent = `
+================================
+      CIERRE DE CAJA
+================================
+Fecha: ${new Date().toLocaleDateString('es-AR')}
+Hora: ${new Date().toLocaleTimeString('es-AR')}
+Abierta: ${formatDateTime(cashRegister.openedAt)}
+Duración: ${getDuration(cashRegister.openedAt)}
+--------------------------------
+VENTAS POR MÉTODO DE PAGO
+--------------------------------
+Efectivo:      ${formatCurrency(cashRegister.totalCash)}
+Transferencia: ${formatCurrency(cashRegister.totalTransfer)}
+Crédito:       ${formatCurrency((parseFloat(String(cashRegister.totalCreditCard)) || 0) + (parseFloat(String(cashRegister.totalCard)) || 0))}
+Débito:        ${formatCurrency(cashRegister.totalDebitCard)}
+--------------------------------
+TOTALES
+--------------------------------
+Total Ventas:    ${formatCurrency(cashRegister.totalSales)}
+Total Gastos:    ${formatCurrency(cashRegister.totalExpenses)}
+Movimientos:     ${cashRegister.totalMovements}
+${salesStr ? `
+--------------------------------
+DETALLE DE VENTAS (${salesMovements.length})
+--------------------------------
+${salesStr}` : ''}
+${expensesStr ? `
+--------------------------------
+DETALLE DE GASTOS (${expenseMovements.length})
+--------------------------------
+${expensesStr}` : ''}
+--------------------------------
+EFECTIVO
+--------------------------------
+Caja Inicial:    ${formatCurrency(cashRegister.initialCash)}
+Efectivo Esperado: ${formatCurrency(cashRegister.expectedCash)}
+Efectivo Real:   ${formatCurrency(actualAmount)}
+Diferencia:      ${difference >= 0 ? '+' : ''}${formatCurrency(difference)}
+${billCountsStr ? `
+--------------------------------
+CONTEO DE BILLETES
+--------------------------------
+${billCountsStr}
+Total Contado:   ${formatCurrency(calculateTotalFromBills())}` : ''}
+${notes ? `
+--------------------------------
+OBSERVACIONES
+--------------------------------
+${notes}` : ''}
+================================
+    `;
+    
+    // Create print window
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Ticket de Cierre de Caja</title>
+            <style>
+              body { font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; }
+              pre { white-space: pre-wrap; word-wrap: break-word; }
+            </style>
+          </head>
+          <body>
+            <pre>${ticketContent}</pre>
+            <script>
+              window.onload = function() { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   const handleClose = () => {
     if (!loading) {
       setActualCash('');
@@ -125,13 +270,15 @@ export default function CloseCashRegisterSidebar({
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : (amount ?? 0);
+    if (isNaN(numAmount)) return '$0';
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(numAmount);
   };
 
   const formatDateTime = (dateString: string) => {
@@ -285,43 +432,29 @@ export default function CloseCashRegisterSidebar({
                   </p>
                 </div>
 
-                {/* Conteo de billetes */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-300">
-                      Conteo de Billetes
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowBillCounter(!showBillCounter)}
-                      className="text-xs text-blue-400 hover:text-blue-300"
-                    >
-                      {showBillCounter ? 'Ocultar' : 'Mostrar contador'}
-                    </button>
+                {/* Conteo de billetes - Siempre visible */}
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <label className="text-sm font-medium text-gray-300 mb-3 block">
+                    Conteo de Billetes
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {billDenominations.map((denom) => (
+                      <div key={denom} className="flex items-center justify-between bg-gray-700/50 rounded-lg px-3 py-2">
+                        <span className="text-sm text-gray-300 font-medium">${denom.toLocaleString()}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={billCounts[denom] || 0}
+                          onChange={(e) => handleBillCountChange(denom, parseInt(e.target.value) || 0)}
+                          className="w-16 px-2 py-1 bg-gray-600 border border-gray-500 rounded text-white text-center text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+                      </div>
+                    ))}
                   </div>
-                  
-                  {showBillCounter && (
-                    <div className="bg-gray-800 rounded-lg p-3 mb-3 space-y-2">
-                      <div className="grid grid-cols-3 gap-2">
-                        {billDenominations.map((denom) => (
-                          <div key={denom} className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400 w-14">${denom.toLocaleString()}</span>
-                            <input
-                              type="number"
-                              min="0"
-                              value={billCounts[denom] || 0}
-                              onChange={(e) => handleBillCountChange(denom, parseInt(e.target.value) || 0)}
-                              className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="pt-2 border-t border-gray-700 flex justify-between items-center">
-                        <span className="text-sm text-gray-400">Total contado:</span>
-                        <span className="text-lg font-bold text-emerald-400">{formatCurrency(calculateTotalFromBills())}</span>
-                      </div>
-                    </div>
-                  )}
+                  <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between items-center">
+                    <span className="text-sm text-gray-400">Total contado:</span>
+                    <span className="text-xl font-bold text-emerald-400">{formatCurrency(calculateTotalFromBills())}</span>
+                  </div>
                 </div>
 
                 {/* Efectivo Real en Caja */}
@@ -337,9 +470,7 @@ export default function CloseCashRegisterSidebar({
                       onChange={(e) => {
                         setActualCash(e.target.value);
                         // Reset bill counts when manually editing
-                        if (!showBillCounter) {
-                          setBillCounts({20000: 0, 10000: 0, 5000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0});
-                        }
+                        setBillCounts({20000: 0, 10000: 0, 2000: 0, 1000: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0});
                       }}
                       step="1"
                       min="0"
@@ -428,6 +559,50 @@ export default function CloseCashRegisterSidebar({
             </form>
           </motion.div>
         </>
+      )}
+      
+      {/* Print Confirmation Modal */}
+      {showPrintConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-gray-800 rounded-xl p-6 max-w-sm mx-4 shadow-2xl border border-gray-700"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <Printer className="w-6 h-6 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">¿Imprimir ticket?</h3>
+                <p className="text-sm text-gray-400">Ticket de cierre de caja</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-300 text-sm mb-6">
+              ¿Deseas imprimir el ticket de cierre con el resumen de ventas, métodos de pago y conteo de billetes?
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => executeCloseWithPrint(false)}
+                disabled={loading}
+                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                No imprimir
+              </button>
+              <button
+                onClick={() => executeCloseWithPrint(true)}
+                disabled={loading}
+                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Printer className="w-4 h-4" />
+                Imprimir
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );
