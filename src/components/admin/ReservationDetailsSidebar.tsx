@@ -955,9 +955,9 @@ export const ReservationDetailsSidebar: React.FC<ReservationDetailsSidebarProps>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setIsInvoiceModalOpen(true)}
-                  disabled={!reservation || !establishmentId || !!reservation.invoiceId}
+                  disabled={!reservation || !establishmentId || !!reservation.invoiceId || pendingAmount > 0}
                   className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
-                  title={reservation?.invoiceId ? 'Ya facturado' : 'Facturar'}
+                  title={reservation?.invoiceId ? 'Ya facturado' : pendingAmount > 0 ? 'Debe estar pagado para facturar' : 'Facturar'}
                 >
                   <FileText className="h-5 w-5" />
                 </button>
