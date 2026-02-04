@@ -144,6 +144,14 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isCreatingClient, setIsCreatingClient] = useState(false);
   
+  // Payment methods from establishment
+  const [paymentMethods, setPaymentMethods] = useState<{ id: string; name: string; code: string; icon: string | null }[]>([
+    { id: '1', name: 'Efectivo', code: 'cash', icon: 'Banknote' },
+    { id: '2', name: 'Transferencia', code: 'transfer', icon: 'Building2' },
+    { id: '3', name: 'Crédito', code: 'credit_card', icon: 'CreditCard' },
+    { id: '4', name: 'Débito', code: 'debit_card', icon: 'CreditCard' },
+  ]);
+  
   const [formData, setFormData] = useState({
     clientName: '',
     clientPhone: '',
@@ -152,7 +160,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     bookingType: 'normal',
     isRecurring: false,
     depositAmount: 0,
-    depositMethod: 'efectivo',
+    depositMethod: 'cash',
     notes: '',
     selectedAmenityIds: [] as string[],
   });
@@ -175,6 +183,29 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Load payment methods from establishment configuration
+  useEffect(() => {
+    if (isOpen && establishment?.id) {
+      const loadPaymentMethods = async () => {
+        try {
+          const response = await apiClient.getPaymentMethods(establishment.id) as { paymentMethods: { id: string; name: string; code: string; icon: string | null }[] };
+          if (response.paymentMethods?.length > 0) {
+            setPaymentMethods(response.paymentMethods);
+            // Set default payment method if current is not in list
+            const currentMethod = response.paymentMethods.find(m => m.code === formData.depositMethod);
+            if (!currentMethod) {
+              const defaultMethod = response.paymentMethods.find(m => m.code === 'cash') || response.paymentMethods[0];
+              setFormData(prev => ({ ...prev, depositMethod: defaultMethod.code }));
+            }
+          }
+        } catch (error) {
+          console.error('Error loading payment methods:', error);
+        }
+      };
+      loadPaymentMethods();
+    }
+  }, [isOpen, establishment?.id]);
 
   // Calculate maximum available duration from selected time
   const maxAvailableDuration = React.useMemo(() => {
@@ -1097,10 +1128,9 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
                       onChange={(e) => setFormData(prev => ({ ...prev, depositMethod: e.target.value }))}
                       className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     >
-                      <option value="efectivo">Efectivo</option>
-                      <option value="transferencia">Transferencia</option>
-                      <option value="tarjeta">Tarjeta</option>
-                      <option value="mercadopago">MercadoPago</option>
+                      {paymentMethods.map((method) => (
+                        <option key={method.id} value={method.code}>{method.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
