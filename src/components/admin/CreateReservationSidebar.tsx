@@ -95,11 +95,11 @@ const STEPS: { key: Step; label: string; icon: React.ElementType }[] = [
   { key: 'confirmation', label: 'Confirmación', icon: CheckCircle },
 ];
 
-const PAYMENT_METHODS = [
-  { id: 'cash', label: 'Efectivo', icon: '💵' },
-  { id: 'card', label: 'Tarjeta', icon: '💳' },
-  { id: 'transfer', label: 'Transferencia', icon: '🏦' },
-  { id: 'mercadopago', label: 'Mercado Pago', icon: '📱' },
+// Payment methods loaded from establishment configuration
+const DEFAULT_PAYMENT_METHODS = [
+  { id: 'cash', name: 'Efectivo', code: 'cash', icon: 'Banknote' },
+  { id: 'transfer', name: 'Transferencia', code: 'transfer', icon: 'Building2' },
+  { id: 'card', name: 'Tarjeta', code: 'card', icon: 'CreditCard' },
 ];
 
 export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> = ({
@@ -116,6 +116,9 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
   // Internal courts state (fallback if props are empty)
   const [internalCourts, setInternalCourts] = useState<Court[]>([]);
   const [loadingCourts, setLoadingCourts] = useState(false);
+  
+  // Payment methods from establishment
+  const [paymentMethods, setPaymentMethods] = useState<{ id: string; name: string; code: string; icon: string | null }[]>(DEFAULT_PAYMENT_METHODS);
   
   // Use prop courts if available, otherwise use internal
   const courts = propCourts.length > 0 ? propCourts : internalCourts;
@@ -188,6 +191,27 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
       loadCourts();
     }
   }, [isOpen, establishmentId, propCourts.length]);
+
+  // Load payment methods from establishment configuration
+  useEffect(() => {
+    if (isOpen && establishmentId) {
+      const loadPaymentMethods = async () => {
+        try {
+          const response = await apiClient.getPaymentMethods(establishmentId) as { paymentMethods: { id: string; name: string; code: string; icon: string | null }[] };
+          if (response.paymentMethods?.length > 0) {
+            setPaymentMethods(response.paymentMethods);
+            // Set default payment method
+            const defaultMethod = response.paymentMethods.find(m => m.code === 'cash') || response.paymentMethods[0];
+            setPaymentMethod(defaultMethod.code);
+          }
+        } catch (error) {
+          console.error('Error loading payment methods:', error);
+          // Keep default methods on error
+        }
+      };
+      loadPaymentMethods();
+    }
+  }, [isOpen, establishmentId]);
 
   // Get unique sports from courts + amenities
   const availableSports = useMemo(() => {
@@ -662,7 +686,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
           bookingType: 'normal',
           totalWeeks: recurringCount,
           pricePerBooking,
-          notes: `Turno fijo - ${PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label || paymentMethod}`,
+          notes: `Turno fijo - ${paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod}`,
           dateConfigurations,
           initialPayment: depositAmount > 0 ? {
             amount: depositAmount,
@@ -721,7 +745,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
               paymentType: 'full',
               depositAmount: depositAmount,
               depositMethod: depositAmount > 0 ? paymentMethod : undefined,
-              notes: `Método de pago: ${PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label || paymentMethod}`,
+              notes: `Método de pago: ${paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod}`,
             };
             
             if (isAmenityBooking) {
@@ -1328,18 +1352,17 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
                 Método de pago
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {PAYMENT_METHODS.map((method) => (
+                {paymentMethods.map((method) => (
                   <button
                     key={method.id}
-                    onClick={() => setPaymentMethod(method.id)}
+                    onClick={() => setPaymentMethod(method.code)}
                     className={`p-3 rounded-xl border-2 transition-all ${
-                      paymentMethod === method.id
+                      paymentMethod === method.code
                         ? 'border-emerald-500 bg-emerald-500/20'
                         : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'
                     }`}
                   >
-                    <span className="text-2xl">{method.icon}</span>
-                    <span className="block text-sm text-gray-300 mt-1">{method.label}</span>
+                    <span className="block text-sm text-gray-300">{method.name}</span>
                   </button>
                 ))}
               </div>
@@ -1562,7 +1585,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
               <div className="flex items-center justify-between">
                 <span className="text-gray-400">Método de pago</span>
                 <span className="text-white font-medium">
-                  {PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label}
+                  {paymentMethods.find(m => m.code === paymentMethod)?.name}
                 </span>
               </div>
               
