@@ -660,18 +660,9 @@ const VentasPage = () => {
                             const pending = Math.max(0, parseFloat(order.total.toString()) - parseFloat(order.paidAmount?.toString() || '0'));
                             const isCancelled = order.status === 'cancelled';
                             return (
-                              <div className="flex flex-col">
-                                {isCancelled && pending > 0 ? (
-                                  <>
-                                    <span className="text-gray-500 line-through text-xs">${pending.toLocaleString()}</span>
-                                    <span className="text-gray-400 font-medium text-sm">$0</span>
-                                  </>
-                                ) : (
-                                  <p className={`font-medium text-sm ${pending > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                                    ${pending.toLocaleString()}
-                                  </p>
-                                )}
-                              </div>
+                              <p className={`font-medium text-sm ${isCancelled ? 'text-emerald-400' : pending > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                                ${isCancelled ? '0' : pending.toLocaleString()}
+                              </p>
                             );
                           })()}
                         </td>
