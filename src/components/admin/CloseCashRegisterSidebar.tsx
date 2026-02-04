@@ -199,9 +199,19 @@ export default function CloseCashRegisterSidebar({
     }
   };
 
-  // Count movements per payment method
+  // Count movements per payment method (considering synonyms)
   const getPaymentMethodCount = (code: string): number => {
-    return movements.filter(m => m.type === 'sale' && m.paymentMethod === code).length;
+    const codeMap: Record<string, string[]> = {
+      'cash': ['cash', 'efectivo'],
+      'transfer': ['transfer', 'transferencia'],
+      'credit_card': ['credit_card', 'credito', 'card', 'tarjeta'],
+      'debit_card': ['debit_card', 'debito'],
+      'mercadopago': ['mercadopago', 'mercado_pago']
+    };
+    const validCodes = codeMap[code] || [code];
+    return movements.filter(m => 
+      m.type === 'sale' && validCodes.includes(m.paymentMethod?.toLowerCase() || '')
+    ).length;
   };
 
   const printClosingTicket = async () => {
