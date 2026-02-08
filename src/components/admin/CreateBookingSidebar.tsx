@@ -165,8 +165,8 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     selectedAmenityIds: [] as string[],
   });
   
-  // Recurring booking (Turno Fijo) state
-  const [recurringWeeks, setRecurringWeeks] = useState(8);
+  // Recurring booking (Turno Fijo) - always 52 weeks (1 year)
+  const RECURRING_WEEKS = 52;
   
   // State for editable date and time (only used in edit mode)
   const [editDate, setEditDate] = useState<string>('');
@@ -548,7 +548,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
             duration: formData.duration,
             sport: court.sport,
             bookingType: formData.bookingType,
-            totalWeeks: recurringWeeks,
+            totalWeeks: RECURRING_WEEKS,
             pricePerBooking: calculatePrice(),
             notes: formData.notes || `Turno fijo - ${formData.depositMethod}`,
             initialPayment: formData.depositAmount > 0 ? {
@@ -558,7 +558,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
           }) as any;
           
           if (response.success) {
-            alert(`Turno fijo creado con ${response.bookings?.length || recurringWeeks} reservas`);
+            alert(`Turno fijo creado con ${response.bookings?.length || RECURRING_WEEKS} reservas`);
             // Just close - the recurring booking was already created via API
             // Don't call onSuccess as it would try to create another booking
             onClose();
@@ -909,52 +909,27 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
                     </label>
                   </div>
                   
-                  {/* Recurring weeks selector */}
+                  {/* Recurring info */}
                   {formData.isRecurring && (
                     <div className="ml-7 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-3">
-                      <label className="block text-sm font-medium text-blue-300">
-                        Cantidad de semanas
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="number"
-                          min="1"
-                          value={recurringWeeks}
-                          onChange={(e) => setRecurringWeeks(Math.max(1, Number(e.target.value) || 1))}
-                          className="w-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Semanas"
-                        />
-                        <span className="text-gray-400 text-sm">semanas</span>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-blue-400" />
+                        <span className="text-sm font-medium text-blue-300">
+                          Se crearán {RECURRING_WEEKS} reservas (1 año)
+                        </span>
                       </div>
-                      
-                      {/* Upcoming dates preview */}
-                      <div className="bg-gray-800/50 rounded-lg p-2 max-h-40 overflow-y-auto">
-                        <p className="text-xs text-gray-400 mb-2 sticky top-0 bg-gray-800/90 py-1">
-                          📅 Fechas del turno fijo:
-                        </p>
-                        <div className="space-y-1">
-                          {Array.from({ length: recurringWeeks }).map((_, idx) => {
-                            const bookingDate = new Date(selectedDate);
-                            bookingDate.setDate(bookingDate.getDate() + (idx * 7));
-                            const isFirst = idx === 0;
-                            return (
-                              <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-gray-700/50 last:border-0">
-                                <span className={isFirst ? 'text-blue-400 font-medium' : 'text-gray-300'}>
-                                  {idx + 1}. {bookingDate.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                                </span>
-                                <span className="text-gray-400">
-                                  {selectedTime}hs
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                      <div className="text-xs text-gray-400">
+                        Desde {formatDate(selectedDate)} hasta{' '}
+                        {(() => {
+                          const endDate = new Date(selectedDate);
+                          endDate.setDate(endDate.getDate() + ((RECURRING_WEEKS - 1) * 7));
+                          return formatDate(endDate);
+                        })()}
                       </div>
-                      
                       <div className="flex justify-between text-xs pt-2 border-t border-blue-500/30">
-                        <span className="text-gray-400">Total:</span>
+                        <span className="text-gray-400">Precio por turno:</span>
                         <span className="text-blue-300 font-medium">
-                          {recurringWeeks} turnos = ${(calculatePrice() * recurringWeeks).toLocaleString()}
+                          {formatCurrency(calculatePrice())}
                         </span>
                       </div>
                     </div>

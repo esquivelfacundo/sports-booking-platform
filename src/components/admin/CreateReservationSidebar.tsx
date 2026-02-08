@@ -147,10 +147,9 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
   const [showCreateClientForm, setShowCreateClientForm] = useState(false);
   const [isCreatingClient, setIsCreatingClient] = useState(false);
   
-  // Recurring reservation
+  // Recurring reservation - always 52 weeks (1 year)
   const [isRecurring, setIsRecurring] = useState(false);
-  const [recurringType, setRecurringType] = useState<'weekly' | 'biweekly' | 'monthly'>('weekly');
-  const [recurringCount, setRecurringCount] = useState(4); // Number of occurrences
+  const RECURRING_WEEKS = 52;
   
   // Availability check for recurring
   const [availabilityResults, setAvailabilityResults] = useState<any[]>([]);
@@ -460,28 +459,16 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     }
   };
 
-  // Calculate recurring dates
+  // Calculate recurring dates (always weekly)
   const getRecurringDates = () => {
     if (!isRecurring || !selectedDate) return [selectedDate];
     
     const dates: string[] = [selectedDate];
     const baseDate = new Date(selectedDate + 'T00:00:00');
     
-    for (let i = 1; i < recurringCount; i++) {
+    for (let i = 1; i < RECURRING_WEEKS; i++) {
       const newDate = new Date(baseDate);
-      
-      switch (recurringType) {
-        case 'weekly':
-          newDate.setDate(baseDate.getDate() + (7 * i));
-          break;
-        case 'biweekly':
-          newDate.setDate(baseDate.getDate() + (14 * i));
-          break;
-        case 'monthly':
-          newDate.setMonth(baseDate.getMonth() + i);
-          break;
-      }
-      
+      newDate.setDate(baseDate.getDate() + (7 * i));
       dates.push(newDate.toISOString().split('T')[0]);
     }
     
@@ -555,7 +542,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
         startDate: selectedDate,
         startTime: selectedTime,
         duration: selectedDuration,
-        totalWeeks: recurringCount,
+        totalWeeks: RECURRING_WEEKS,
         sport: selectedSport !== 'amenity' ? selectedSport : undefined
       }) as any;
       
@@ -684,7 +671,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
           duration: selectedDuration,
           sport: selectedSport,
           bookingType: 'normal',
-          totalWeeks: recurringCount,
+          totalWeeks: RECURRING_WEEKS,
           pricePerBooking,
           notes: `Turno fijo - ${paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod}`,
           dateConfigurations,
@@ -695,7 +682,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
         }) as any;
         
         if (response.success) {
-          alert(`Turno fijo creado exitosamente con ${response.bookings?.length || recurringCount} reservas`);
+          alert(`Turno fijo creado exitosamente con ${response.bookings?.length || RECURRING_WEEKS} reservas`);
         } else {
           throw new Error(response.error || 'Error al crear turno fijo');
         }
@@ -834,8 +821,6 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     setSearchResults([]);
     setShowCreateClientForm(false);
     setIsRecurring(false);
-    setRecurringType('weekly');
-    setRecurringCount(4);
     setAvailabilityResults([]);
     setHasConflicts(false);
     setDateOverrides(new Map());
@@ -1059,71 +1044,27 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
                   animate={{ opacity: 1, height: 'auto' }}
                   className="space-y-3"
                 >
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Frecuencia</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { value: 'weekly', label: 'Semanal' },
-                        { value: 'biweekly', label: 'Quincenal' },
-                        { value: 'monthly', label: 'Mensual' },
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => setRecurringType(option.value as any)}
-                          className={`py-2 px-3 rounded-lg text-sm transition-all ${
-                            recurringType === option.value
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Cantidad de semanas</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min="4"
-                        max="24"
-                        value={recurringCount}
-                        onChange={(e) => setRecurringCount(Number(e.target.value))}
-                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                      />
-                      <span className="text-blue-300 font-medium min-w-[60px] text-right">
-                        {recurringCount} sem.
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <CalendarRange className="h-4 w-4 text-blue-400" />
+                      <span className="text-blue-300 text-sm font-medium">
+                        Se crear\u00e1n {RECURRING_WEEKS} reservas semanales (1 a\u00f1o)
                       </span>
                     </div>
-                  </div>
-
-                  {/* Preview of recurring dates */}
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <CalendarRange className="h-4 w-4 text-blue-400" />
-                      <span className="text-blue-400 text-sm font-medium">Fechas del turno fijo:</span>
-                    </div>
-                    <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
-                      {getRecurringDates().map((date, index) => {
-                        const isFirst = index === 0;
-                        return (
-                          <div key={date} className="flex justify-between items-center py-1 border-b border-gray-700/50 last:border-0">
-                            <span className={isFirst ? 'text-blue-400 font-medium' : 'text-gray-300'}>
-                              {index + 1}. {formatDate(date)}
-                            </span>
-                            <span className="text-gray-400">
-                              {selectedTime || '--:--'}hs
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex justify-between text-xs pt-2 mt-2 border-t border-blue-500/30">
-                      <span className="text-gray-400">Total:</span>
+                    {selectedDate && (
+                      <div className="text-xs text-gray-400">
+                        Desde {formatDate(selectedDate)} hasta{' '}
+                        {(() => {
+                          const baseDate = new Date(selectedDate + 'T00:00:00');
+                          baseDate.setDate(baseDate.getDate() + ((RECURRING_WEEKS - 1) * 7));
+                          return formatDate(baseDate.toISOString().split('T')[0]);
+                        })()}
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs pt-2 border-t border-blue-500/30">
+                      <span className="text-gray-400">Precio por turno:</span>
                       <span className="text-blue-300 font-medium">
-                        {recurringCount} turnos = ${(calculatePrice() * recurringCount).toLocaleString()}
+                        ${calculatePrice().toLocaleString()}
                       </span>
                     </div>
                   </div>
