@@ -201,7 +201,11 @@ const ReservationsPage = () => {
     }
     
     const startHour = parseInt(daySchedule.open?.split(':')[0] || '8');
-    const endHour = parseInt(daySchedule.close?.split(':')[0] || '23');
+    let endHour = parseInt(daySchedule.close?.split(':')[0] || '23');
+    // If close is before or equal to open, it crosses midnight (e.g. 08:00 - 01:30)
+    if (endHour <= startHour) {
+      endHour += 24;
+    }
     
     return { startHour, endHour, isClosed: false };
   };
@@ -1267,6 +1271,7 @@ const ReservationsPage = () => {
               }))}
             requestPin={requestPin}
             amenities={amenities}
+            endHour={gridHours.endHour}
           />
         </div>
       ) : (
@@ -1963,6 +1968,7 @@ const ReservationsPage = () => {
         }))}
         amenities={amenities}
         onReservationCreated={handleReservationCreated}
+        openingHours={establishment?.schedule || establishment?.openingHours}
       />
 
       {/* Move Reservation Sidebar */}

@@ -101,6 +101,7 @@ interface CreateBookingSidebarProps {
   existingBookings?: ExistingBooking[];
   requestPin?: (action: () => void, options?: { title?: string; description?: string }) => void;
   amenities?: Amenity[];
+  endHour?: number;
 }
 
 const DURATION_OPTIONS = [
@@ -129,7 +130,8 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
   onUpdate,
   existingBookings = [],
   requestPin,
-  amenities = []
+  amenities = [],
+  endHour = 23
 }) => {
   const isEditMode = !!editingReservation;
   const { establishment } = useEstablishment();
@@ -212,7 +214,12 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     if (!court || !selectedTime) return 480; // Default 8 hours max
     
     const [startHours, startMinutes] = selectedTime.split(':').map(Number);
-    const startTotalMinutes = startHours * 60 + startMinutes;
+    let startTotalMinutes = startHours * 60 + startMinutes;
+    
+    // If schedule crosses midnight and selected time is in post-midnight range, adjust
+    if (endHour > 24 && startTotalMinutes < (endHour - 24) * 60) {
+      startTotalMinutes += 1440;
+    }
     
     // Find the next booking on this court after the selected time
     const courtBookingsForThisCourt = existingBookings.filter(b => 
@@ -222,13 +229,18 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     const courtBookings = courtBookingsForThisCourt
       .map(b => {
         const [h, m] = b.startTime.split(':').map(Number);
-        return h * 60 + m;
+        let bMinutes = h * 60 + m;
+        // Adjust post-midnight bookings
+        if (endHour > 24 && bMinutes < (endHour - 24) * 60) {
+          bMinutes += 1440;
+        }
+        return bMinutes;
       })
       .filter(bookingStart => bookingStart > startTotalMinutes)
       .sort((a, b) => a - b);
     
-    // Also consider end of day (23:00 = 1380 minutes)
-    const endOfDay = 23 * 60;
+    // Also consider end of day (uses endHour prop, supports midnight-crossing schedules)
+    const endOfDay = endHour * 60;
     const nextBlocker = courtBookings.length > 0 ? courtBookings[0] : endOfDay;
     
     const maxDuration = nextBlocker - startTotalMinutes;
@@ -412,7 +424,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
         const [hours, minutes] = selectedTime.split(':').map(Number);
         const totalMinutes = hours * 60 + minutes + formData.duration;
-        const endHours = Math.floor(totalMinutes / 60);
+        const endHours = Math.floor(totalMinutes / 60) % 24;
         const endMinutes = totalMinutes % 60;
         const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
         
@@ -473,7 +485,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
   const calculateEndTime = (): string => {
     const [hours, minutes] = selectedTime.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes + formData.duration;
-    const endHours = Math.floor(totalMinutes / 60);
+    const endHours = Math.floor(totalMinutes / 60) % 24;
     const endMinutes = totalMinutes % 60;
     return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
   };
@@ -529,7 +541,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
         const calculateFinalEndTime = (): string => {
           const [hours, minutes] = finalTime.split(':').map(Number);
           const totalMinutes = hours * 60 + minutes + formData.duration;
-          const endHours = Math.floor(totalMinutes / 60);
+          const endHours = Math.floor(totalMinutes / 60) % 24;
           const endMinutes = totalMinutes % 60;
           return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
         };

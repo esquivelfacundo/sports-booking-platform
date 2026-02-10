@@ -83,6 +83,7 @@ interface CreateReservationSidebarProps {
   courts: Court[];
   onReservationCreated: () => void;
   amenities?: Amenity[];
+  openingHours?: Record<string, { open: string; close: string; closed?: boolean }>;
 }
 
 type Step = 'sport' | 'datetime' | 'court' | 'player' | 'confirmation';
@@ -109,6 +110,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
   courts: propCourts,
   onReservationCreated,
   amenities = [],
+  openingHours,
 }) => {
   // Current step
   const [currentStep, setCurrentStep] = useState<Step>('sport');
@@ -286,6 +288,23 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     }
   }, [selectedDate, selectedSport]);
 
+  // Get opening/closing hours for a given date
+  const getSlotHoursForDate = (dateStr: string): { startH: number; endH: number } => {
+    const dayOfWeek = new Date(dateStr + 'T00:00:00').getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    const daySchedule = openingHours?.[dayName];
+    
+    let startH = 8;
+    let endH = 23;
+    if (daySchedule && !daySchedule.closed) {
+      startH = parseInt(daySchedule.open?.split(':')[0] || '8');
+      endH = parseInt(daySchedule.close?.split(':')[0] || '23');
+      if (endH <= startH) endH += 24;
+    }
+    return { startH, endH };
+  };
+
   const loadAvailability = async () => {
     if (!selectedDate || !selectedSport) return;
     
@@ -293,12 +312,12 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     try {
       const slots: Map<string, string[]> = new Map();
       
-      // Generate time slots from 8:00 to 23:00 every 30 minutes
-      for (let hour = 8; hour <= 23; hour++) {
-        slots.set(`${hour.toString().padStart(2, '0')}:00`, []);
-        if (hour < 23) {
-          slots.set(`${hour.toString().padStart(2, '0')}:30`, []);
-        }
+      // Generate time slots based on establishment opening hours
+      const { startH, endH } = getSlotHoursForDate(selectedDate);
+      for (let hour = startH; hour < endH; hour++) {
+        const displayHour = hour % 24;
+        slots.set(`${displayHour.toString().padStart(2, '0')}:00`, []);
+        slots.set(`${displayHour.toString().padStart(2, '0')}:30`, []);
       }
       
       // For amenities, generate default slots (no availability API yet)
@@ -314,8 +333,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
             time,
             available: itemIds.length > 0,
             courts: itemIds,
-          }))
-          .sort((a, b) => a.time.localeCompare(b.time));
+          }));
         
         setAvailableSlots(slotsArray);
         setLoadingSlots(false);
@@ -347,33 +365,32 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
         }
       }
       
-      // Convert to array and sort by time
+      // Convert to array - preserve insertion order (follows opening hours)
       const slotsArray: TimeSlot[] = Array.from(slots.entries())
         .map(([time, courtIds]) => ({
           time,
           available: courtIds.length > 0,
           courts: courtIds,
-        }))
-        .sort((a, b) => a.time.localeCompare(b.time));
+        }));
       
       setAvailableSlots(slotsArray);
     } catch (err) {
       console.error('Error loading availability:', err);
-      // Generate default slots every 30 minutes
+      // Generate default slots based on opening hours
+      const { startH, endH } = getSlotHoursForDate(selectedDate);
       const defaultSlots: TimeSlot[] = [];
-      for (let hour = 8; hour <= 23; hour++) {
+      for (let hour = startH; hour < endH; hour++) {
+        const displayHour = hour % 24;
         defaultSlots.push({
-          time: `${hour.toString().padStart(2, '0')}:00`,
+          time: `${displayHour.toString().padStart(2, '0')}:00`,
           available: true,
           courts: courtsForSport.map(c => c.id),
         });
-        if (hour < 23) {
-          defaultSlots.push({
-            time: `${hour.toString().padStart(2, '0')}:30`,
-            available: true,
-            courts: courtsForSport.map(c => c.id),
-          });
-        }
+        defaultSlots.push({
+          time: `${displayHour.toString().padStart(2, '0')}:30`,
+          available: true,
+          courts: courtsForSport.map(c => c.id),
+        });
       }
       setAvailableSlots(defaultSlots);
     } finally {

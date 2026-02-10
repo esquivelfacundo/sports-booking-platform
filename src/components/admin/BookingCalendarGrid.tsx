@@ -67,12 +67,13 @@ const parseTimeToMinutes = (time: string): number => {
   return parseInt(parts[0]) * 60 + parseInt(parts[1]);
 };
 
-// Generate time slots for the day
+// Generate time slots for the day (supports endHour > 24 for midnight-crossing schedules)
 const generateTimeSlots = (startHour: number, endHour: number): string[] => {
   const slots: string[] = [];
   for (let hour = startHour; hour < endHour; hour++) {
-    slots.push(`${hour.toString().padStart(2, '0')}:00`);
-    slots.push(`${hour.toString().padStart(2, '0')}:30`);
+    const displayHour = hour % 24;
+    slots.push(`${displayHour.toString().padStart(2, '0')}:00`);
+    slots.push(`${displayHour.toString().padStart(2, '0')}:30`);
   }
   return slots;
 };
@@ -194,8 +195,13 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
       // Calculate position based on current time
       const currentHours = now.getHours();
       const currentMinutes = now.getMinutes();
-      const currentTotalMinutes = currentHours * 60 + currentMinutes;
+      let currentTotalMinutes = currentHours * 60 + currentMinutes;
       const startTotalMinutes = startHour * 60;
+      
+      // If schedule crosses midnight and current time is post-midnight, add 1440
+      if (endHour > 24 && currentTotalMinutes < startTotalMinutes) {
+        currentTotalMinutes += 1440;
+      }
       
       // Only show if current time is within grid range
       if (currentTotalMinutes < startTotalMinutes || currentTotalMinutes >= endHour * 60) {
@@ -457,8 +463,12 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
 
   // Render booking card (shared between mobile and desktop)
   const renderBookingCard = (booking: Booking, courtIndex: number, totalCourts: number) => {
-    const startMinutes = parseTimeToMinutes(booking.startTime);
+    let startMinutes = parseTimeToMinutes(booking.startTime);
     const slotStartMinutes = startHour * 60;
+    // If schedule crosses midnight and booking is post-midnight, adjust
+    if (endHour > 24 && startMinutes < slotStartMinutes) {
+      startMinutes += 1440;
+    }
     const topSlots = (startMinutes - slotStartMinutes) / 30;
     const heightSlots = Math.ceil(booking.duration / 30);
     const isBeingDragged = draggedBooking?.id === booking.id;
@@ -468,7 +478,8 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     
     const calculateEndTime = () => {
       const endMinutes = startMinutes + booking.duration;
-      return `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
+      const displayHour = Math.floor(endMinutes / 60) % 24;
+      return `${displayHour.toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
     };
 
     const handleCancelClick = (e: React.MouseEvent) => {

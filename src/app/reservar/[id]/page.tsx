@@ -509,13 +509,25 @@ const BookingPage = () => {
         return;
       }
 
-      // Generate all possible time slots from 8:00 to 23:00 every 30 minutes
+      // Generate time slots based on establishment opening hours
+      const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = dayNames[dayOfWeek];
+      const daySchedule = establishment?.openingHours?.[dayName];
+      
+      let openHour = 8;
+      let closeHour = 23;
+      if (daySchedule && !daySchedule.closed) {
+        openHour = parseInt(daySchedule.open?.split(':')[0] || '8');
+        closeHour = parseInt(daySchedule.close?.split(':')[0] || '23');
+        if (closeHour <= openHour) closeHour += 24;
+      }
+      
       const slots: Map<string, string[]> = new Map();
-      for (let hour = 8; hour <= 23; hour++) {
-        slots.set(`${hour.toString().padStart(2, '0')}:00`, []);
-        if (hour < 23) {
-          slots.set(`${hour.toString().padStart(2, '0')}:30`, []);
-        }
+      for (let hour = openHour; hour < closeHour; hour++) {
+        const displayHour = hour % 24;
+        slots.set(`${displayHour.toString().padStart(2, '0')}:00`, []);
+        slots.set(`${displayHour.toString().padStart(2, '0')}:30`, []);
       }
       
       // Check availability for each court
@@ -538,7 +550,7 @@ const BookingPage = () => {
         }
       }
       
-      // Convert to array - only slots with at least one available court AND bookable time are available
+      // Convert to array - preserve insertion order (which follows opening hours)
       const slotsArray: TimeSlot[] = Array.from(slots.entries())
         .map(([time, courtIds]) => ({
           time,
@@ -546,8 +558,7 @@ const BookingPage = () => {
           available: courtIds.length > 0 && isSlotBookable(time, selectedDate),
           price: courtsToCheck[0]?.pricePerHour || 2500,
           availableCourtIds: courtIds // Store which courts are available at this time
-        }))
-        .sort((a, b) => a.time.localeCompare(b.time));
+        }));
       
       setAvailableSlots(slotsArray);
     } catch (error) {
@@ -573,6 +584,8 @@ const BookingPage = () => {
       if (!daySchedule.closed) {
         startHour = parseInt(daySchedule.open?.split(':')[0] || '8');
         endHour = parseInt(daySchedule.close?.split(':')[0] || '23');
+        // If close is before or equal to open, it crosses midnight
+        if (endHour <= startHour) endHour += 24;
       }
     }
     
@@ -583,7 +596,8 @@ const BookingPage = () => {
         const slotEndHour = hour + (minute + selectedDuration) / 60;
         if (slotEndHour > endHour) continue;
         
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const displayHour = hour % 24;
+        const time = `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push({
           time,
           // Apply time restrictions in fallback too
