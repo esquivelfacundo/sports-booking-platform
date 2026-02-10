@@ -192,7 +192,10 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   // Current time indicator state (only for today)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null);
   
+  // Fixed slot height used for both row rendering and booking card positioning
+  const SLOT_HEIGHT = 33;
   
+
   // Detect mobile screen
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -231,10 +234,9 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
         return;
       }
       
-      // Calculate position: each slot is 30 minutes and 33px (slotHeight)
+      // Calculate position: each slot is 30 minutes
       const minutesFromStart = currentTotalMinutes - startTotalMinutes;
-      const slotHeight = 33;
-      let position = (minutesFromStart / 30) * slotHeight;
+      let position = (minutesFromStart / 30) * SLOT_HEIGHT;
       
       setCurrentTimePosition(position);
     };
@@ -508,7 +510,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     const heightSlots = Math.ceil(booking.duration / 30);
     const isBeingDragged = draggedBooking?.id === booking.id;
     
-    const slotHeight = 33;
+    const slotHeight = SLOT_HEIGHT;
     const topPosition = topSlots * slotHeight;
     
     const calculateEndTime = () => {
@@ -674,12 +676,12 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                 <React.Fragment key={time}>
                 <div 
                   className={`grid border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0 ${showDaySeparator ? 'border-t-2 border-t-orange-400 dark:border-t-orange-500' : ''}`}
-                  style={{ gridTemplateColumns: isMobile ? '50px 1fr' : `80px repeat(${courts.length + amenities.length}, 1fr)` }}
+                  style={{ gridTemplateColumns: isMobile ? '50px 1fr' : `80px repeat(${courts.length + amenities.length}, 1fr)`, height: `${SLOT_HEIGHT}px` }}
                 >
                   {/* Time Label */}
-                  <div className={`p-2 text-xs text-right pr-2 border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 h-8 ${isMobile ? 'pr-1' : 'pr-3'} ${showDaySeparator ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {showDaySeparator && <div className="text-[9px] leading-none -mt-0.5">{getNextDay(selectedDate).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric' })}</div>}
-                    {time}
+                  <div className={`px-2 py-1 text-xs text-right border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 h-8 overflow-hidden flex flex-col items-end justify-center ${isMobile ? 'pr-1' : 'pr-3'} ${showDaySeparator ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {showDaySeparator && <div className="text-[9px] leading-none">{getNextDay(selectedDate).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric' })}</div>}
+                    <span>{time}</span>
                   </div>
 
                   {/* Court Slots */}
