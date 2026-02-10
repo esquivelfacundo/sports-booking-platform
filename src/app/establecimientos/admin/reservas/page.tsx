@@ -202,13 +202,20 @@ const ReservationsPage = () => {
     }
     
     const startHour = parseInt(daySchedule.open?.split(':')[0] || '8');
+    const closeMin = parseInt(daySchedule.close?.split(':')[1] || '0');
     let endHour = parseInt(daySchedule.close?.split(':')[0] || '23');
-    // If close is before or equal to open, it crosses midnight (e.g. 08:00 - 01:30)
     if (endHour <= startHour) {
       endHour += 24;
     }
+    // If closing has minutes (e.g. 01:30), add 1 so grid shows that last hour's slots
+    if (closeMin > 0) {
+      endHour += 1;
+    }
+    // Only set closingTimeMinutes when we added extra slots due to closing minutes
+    // This is used to block/grey out slots where minimum booking doesn't fit
+    const closingTimeMinutes = closeMin > 0 ? endHour * 60 - (60 - closeMin) : undefined;
     
-    return { startHour, endHour, isClosed: false };
+    return { startHour, endHour, closingTimeMinutes, isClosed: false };
   };
 
   // Check if a date is closed (specific closed dates or national holidays)
@@ -1207,6 +1214,7 @@ const ReservationsPage = () => {
             }}
             startHour={gridHours.startHour}
             endHour={gridHours.endHour}
+            closingTimeMinutes={gridHours.closingTimeMinutes}
           />
           
           <CreateBookingSidebar

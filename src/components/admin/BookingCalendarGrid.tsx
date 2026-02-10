@@ -57,6 +57,7 @@ interface BookingCalendarGridProps {
   onBookingCancel?: (bookingId: string) => void;
   startHour?: number;
   endHour?: number;
+  closingTimeMinutes?: number;
   amenities?: Amenity[];
 }
 
@@ -88,6 +89,49 @@ const getSlotDate = (time: string, selectedDate: Date, startHour: number, endHou
     return getNextDay(selectedDate);
   }
   return selectedDate;
+};
+
+// Check if a slot is past the actual closing time (should be blocked/greyed out)
+// closingTimeMinutes is the total minutes from the start of the schedule day
+const isSlotPastClosing = (time: string, startHour: number, endHour: number, closingTimeMinutes?: number): boolean => {
+  if (!closingTimeMinutes) return false;
+  const [hours, minutes] = time.split(':').map(Number);
+  let slotMinutes = hours * 60 + minutes;
+  // If this is a post-midnight slot, add 1440 to compare with the extended closing time
+  if (endHour > 24 && hours < (endHour - 24)) {
+    slotMinutes += 1440;
+  }
+  // Block if minimum booking (60 min) doesn't fit before closing
+  const MIN_BOOKING_MINUTES = 60;
+  return (slotMinutes + MIN_BOOKING_MINUTES) > closingTimeMinutes;
+};
+
+// Check if a booking belongs to this grid view
+// For cross-midnight schedules, a booking at 00:00 with date=Feb11 should only show
+// on Feb10's grid (where the post-midnight slots represent Feb11), NOT on Feb11's grid
+// (where the post-midnight slots represent Feb12).
+const bookingBelongsToGrid = (
+  booking: { startTime: string; date: string },
+  selectedDateStr: string,
+  nextDateStr: string,
+  startHour: number,
+  endHour: number
+): boolean => {
+  if (endHour <= 24) {
+    // No midnight crossing — just match by selected date
+    return booking.date === selectedDateStr;
+  }
+  // Midnight-crossing schedule: determine if booking's startTime is pre or post midnight
+  const bookingHour = parseInt(booking.startTime.split(':')[0]);
+  const isBookingPostMidnight = bookingHour < (endHour - 24);
+  
+  if (isBookingPostMidnight) {
+    // Post-midnight booking (e.g. 00:00) should only show if its date matches the NEXT day
+    return booking.date === nextDateStr;
+  } else {
+    // Pre-midnight booking (e.g. 23:30) should only show if its date matches the selected day
+    return booking.date === selectedDateStr;
+  }
 };
 
 // Generate time slots for the day (supports endHour > 24 for midnight-crossing schedules)
@@ -173,6 +217,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   onBookingCancel,
   startHour = 8,
   endHour = 23,
+  closingTimeMinutes,
   amenities = []
 }) => {
   const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
@@ -693,7 +738,9 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                     const isDropTarget = dropTarget?.courtId === court.id && dropTarget?.time === time;
                     const canDrop = draggedBooking && canDropOnSlot(court.id, time);
                     const isPast = isSlotInPast(time);
-                    const isClickable = !hasBooking && !draggedBooking && !isPast;
+                    const isPastClose = isSlotPastClosing(time, startHour, endHour, closingTimeMinutes);
+                    const isBlocked = isPast || isPastClose;
+                    const isClickable = !hasBooking && !draggedBooking && !isBlocked;
                     
                     return (
                       <div
@@ -701,7 +748,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                         className={`relative border-r border-gray-200 dark:border-gray-600 last:border-r-0 h-8 transition-colors ${
                           hasBooking 
                             ? '' 
-                            : isPast
+                            : isBlocked
                               ? 'bg-gray-200 dark:bg-gray-700/80'
                               : draggedBooking 
                                 ? canDrop 
@@ -712,9 +759,9 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                                 : 'hover:bg-emerald-100 dark:hover:bg-emerald-500/20 cursor-pointer group'
                         }`}
                         onClick={() => isClickable && onSlotClick(court.id, time, getSlotDate(time, selectedDate, startHour, endHour))}
-                        onDragOver={(e) => !isPast && !isMobile && handleDragOver(e, court.id, time)}
+                        onDragOver={(e) => !isBlocked && !isMobile && handleDragOver(e, court.id, time)}
                         onDragLeave={!isMobile ? handleDragLeave : undefined}
-                        onDrop={(e) => !isPast && !isMobile && handleDrop(e, court.id, time)}
+                        onDrop={(e) => !isBlocked && !isMobile && handleDrop(e, court.id, time)}
                       >
                         {isClickable && !isMobile && (
                           <span className="opacity-0 group-hover:opacity-100 text-xs text-emerald-400 transition-opacity absolute inset-0 flex items-center justify-center">
@@ -736,7 +783,9 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                     const slot = slotData[key];
                     const hasBooking = slot?.booking;
                     const isPast = isSlotInPast(time);
-                    const isClickable = !hasBooking && !isPast;
+                    const isPastClose = isSlotPastClosing(time, startHour, endHour, closingTimeMinutes);
+                    const isBlocked = isPast || isPastClose;
+                    const isClickable = !hasBooking && !isBlocked;
                     
                     return (
                       <div
@@ -744,7 +793,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                         className={`relative border-r border-gray-200 dark:border-gray-600 last:border-r-0 h-8 transition-colors bg-purple-50 dark:bg-purple-900/10 ${
                           hasBooking
                             ? ''
-                            : isPast
+                            : isBlocked
                               ? 'bg-gray-200 dark:bg-gray-700/80'
                               : 'hover:bg-purple-100 dark:hover:bg-purple-500/20 cursor-pointer group'
                         }`}
@@ -783,10 +832,10 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                 // Mobile: show only current court's bookings
                 mobileCurrentCourt && (() => {
                   const dateStr = formatDateForComparison(selectedDate);
-                  const nextDateStr = endHour > 24 ? formatDateForComparison(getNextDay(selectedDate)) : null;
+                  const nextDateStr = formatDateForComparison(getNextDay(selectedDate));
                   const courtBookings = bookings.filter(b => 
                     b.courtId === mobileCurrentCourt.id && 
-                    (b.date === dateStr || (nextDateStr && b.date === nextDateStr)) && 
+                    bookingBelongsToGrid(b, dateStr, nextDateStr, startHour, endHour) && 
                     b.status !== 'cancelled'
                   );
                   return courtBookings.map(booking => renderBookingCard(booking, 0, 1));
@@ -797,10 +846,10 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                   {/* Court bookings */}
                   {courts.map((court, courtIndex) => {
                     const dateStr = formatDateForComparison(selectedDate);
-                    const nextDateStr = endHour > 24 ? formatDateForComparison(getNextDay(selectedDate)) : null;
+                    const nextDateStr = formatDateForComparison(getNextDay(selectedDate));
                     const courtBookings = bookings.filter(b => 
                       b.courtId === court.id && 
-                      (b.date === dateStr || (nextDateStr && b.date === nextDateStr)) && 
+                      bookingBelongsToGrid(b, dateStr, nextDateStr, startHour, endHour) && 
                       b.status !== 'cancelled'
                     );
                     // Total columns = courts + amenities
@@ -810,15 +859,12 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                   {/* Amenity bookings */}
                   {amenities.map((amenity, amenityIndex) => {
                     const dateStr = formatDateForComparison(selectedDate);
-                    const nextDateStrAmenity = endHour > 24 ? formatDateForComparison(getNextDay(selectedDate)) : null;
-                    // Match by amenityId OR by courtId being null/undefined (amenity bookings don't have courtId)
+                    const nextDateStr2 = formatDateForComparison(getNextDay(selectedDate));
                     const amenityBookings = bookings.filter(b => {
-                      if ((b.date !== dateStr && (!nextDateStrAmenity || b.date !== nextDateStrAmenity)) || b.status === 'cancelled') return false;
+                      if (b.status === 'cancelled') return false;
+                      if (!bookingBelongsToGrid(b, dateStr, nextDateStr2, startHour, endHour)) return false;
                       // Match by amenityId if available
                       if (b.amenityId === amenity.id) return true;
-                      // Fallback: match bookings without courtId (these are amenity bookings)
-                      // We need to check if this booking belongs to this amenity somehow
-                      // For now, we can't match without amenityId, so skip
                       return false;
                     });
                     // Total columns = courts + amenities
