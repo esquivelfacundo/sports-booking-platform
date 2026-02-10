@@ -147,6 +147,7 @@ const ReservationsPage = () => {
   const [showGridBookingSidebar, setShowGridBookingSidebar] = useState(false);
   const [gridSelectedCourt, setGridSelectedCourt] = useState<any>(null);
   const [gridSelectedTime, setGridSelectedTime] = useState('');
+  const [sidebarBookingDate, setSidebarBookingDate] = useState(new Date()); // Actual date for the booking (may differ from gridSelectedDate for post-midnight slots)
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editingNotes, setEditingNotes] = useState('');
@@ -309,7 +310,17 @@ const ReservationsPage = () => {
     if (viewMode === 'grid') {
       // Grid view uses the selected date
       const dateStr = `${gridSelectedDate.getFullYear()}-${String(gridSelectedDate.getMonth() + 1).padStart(2, '0')}-${String(gridSelectedDate.getDate()).padStart(2, '0')}`;
-      filters.date = dateStr;
+      
+      // If schedule crosses midnight, also fetch next day's bookings
+      if (gridHours.endHour > 24) {
+        const nextDay = new Date(gridSelectedDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const nextDateStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+        filters.startDate = dateStr;
+        filters.endDate = nextDateStr;
+      } else {
+        filters.date = dateStr;
+      }
       filters.limit = 200; // Max bookings per day
     } else {
       // List view uses period filter
@@ -1157,7 +1168,7 @@ const ReservationsPage = () => {
                   pricePerHour120: court.pricePerHour120
                 });
                 setGridSelectedTime(time);
-                setGridSelectedDate(date);
+                setSidebarBookingDate(date);
                 setShowGridBookingSidebar(true);
               } else if (amenity) {
                 // For amenities, create a court-like object
@@ -1170,7 +1181,7 @@ const ReservationsPage = () => {
                   pricePerHour120: amenity.pricePerHour120
                 });
                 setGridSelectedTime(time);
-                setGridSelectedDate(date);
+                setSidebarBookingDate(date);
                 setShowGridBookingSidebar(true);
               }
             }}
@@ -1254,12 +1265,12 @@ const ReservationsPage = () => {
             }}
             court={gridSelectedCourt}
             selectedTime={gridSelectedTime}
-            selectedDate={gridSelectedDate}
+            selectedDate={sidebarBookingDate}
             existingBookings={reservations
               .filter(r => {
-                // Only include reservations for the selected date
-                const selectedDateStr = gridSelectedDate.toISOString().split('T')[0];
-                return r.date === selectedDateStr;
+                // Only include reservations for the sidebar's booking date
+                const bookingDateStr = `${sidebarBookingDate.getFullYear()}-${String(sidebarBookingDate.getMonth() + 1).padStart(2, '0')}-${String(sidebarBookingDate.getDate()).padStart(2, '0')}`;
+                return r.date === bookingDateStr;
               })
               .map(r => ({
                 id: r.id,

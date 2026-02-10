@@ -476,6 +476,22 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
     }
   };
 
+  // Get the actual booking date for a time slot
+  // If the time is in the post-midnight range, the booking belongs to the next day
+  const getActualBookingDate = (dateStr: string, time: string): string => {
+    if (!dateStr || !time) return dateStr;
+    const { startH, endH } = getSlotHoursForDate(dateStr);
+    if (endH <= 24) return dateStr; // No midnight crossing
+    const [hours] = time.split(':').map(Number);
+    if (hours < (endH - 24)) {
+      // Post-midnight slot — belongs to next day
+      const nextDay = new Date(dateStr + 'T00:00:00');
+      nextDay.setDate(nextDay.getDate() + 1);
+      return nextDay.toISOString().split('T')[0];
+    }
+    return dateStr;
+  };
+
   // Calculate recurring dates (always weekly)
   const getRecurringDates = () => {
     if (!isRecurring || !selectedDate) return [selectedDate];
@@ -683,7 +699,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
           clientName: playerName,
           clientPhone: playerPhone,
           clientEmail: playerEmail || undefined,
-          startDate: selectedDate,
+          startDate: getActualBookingDate(selectedDate, selectedTime),
           startTime: selectedTime,
           duration: selectedDuration,
           sport: selectedSport,
@@ -715,6 +731,8 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
             const bookingItemId = override?.courtId || selectedCourt;
             const bookingTime = override?.time || selectedTime;
             const bookingEndTime = calculateEndTime(bookingTime, selectedDuration);
+            // Adjust date for post-midnight slots (e.g., 00:30 belongs to next day)
+            const actualDate = getActualBookingDate(date, bookingTime);
             
             let totalAmount = 0;
             if (isAmenityBooking) {
@@ -738,7 +756,7 @@ export const CreateReservationSidebar: React.FC<CreateReservationSidebarProps> =
             }
             
             const bookingData: any = {
-              date: date,
+              date: actualDate,
               startTime: bookingTime,
               endTime: bookingEndTime,
               duration: selectedDuration,

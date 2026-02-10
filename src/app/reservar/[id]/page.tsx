@@ -523,6 +523,22 @@ const BookingPage = () => {
         if (closeHour <= openHour) closeHour += 24;
       }
       
+      // Compute next day date string for post-midnight slots
+      const crossesMidnight = closeHour > 24;
+      let nextDateStr = selectedDate;
+      if (crossesMidnight) {
+        const nextDay = new Date(selectedDate + 'T00:00:00');
+        nextDay.setDate(nextDay.getDate() + 1);
+        nextDateStr = nextDay.toISOString().split('T')[0];
+      }
+      
+      // Helper to get the actual date for a slot
+      const getSlotActualDate = (time: string): string => {
+        if (!crossesMidnight) return selectedDate;
+        const [h] = time.split(':').map(Number);
+        return h < (closeHour - 24) ? nextDateStr : selectedDate;
+      };
+      
       const slots: Map<string, string[]> = new Map();
       for (let hour = openHour; hour < closeHour; hour++) {
         const displayHour = hour % 24;
@@ -555,7 +571,8 @@ const BookingPage = () => {
         .map(([time, courtIds]) => ({
           time,
           // Slot is available only if: has courts AND is bookable (not in past, respects min advance)
-          available: courtIds.length > 0 && isSlotBookable(time, selectedDate),
+          // Use the actual date for the slot (next day for post-midnight slots)
+          available: courtIds.length > 0 && isSlotBookable(time, getSlotActualDate(time)),
           price: courtsToCheck[0]?.pricePerHour || 2500,
           availableCourtIds: courtIds // Store which courts are available at this time
         }));
@@ -591,6 +608,15 @@ const BookingPage = () => {
     
     const durationHours = selectedDuration / 60;
     
+    // Compute next day date string for post-midnight slots
+    const fbCrossesMidnight = endHour > 24;
+    let fbNextDateStr = selectedDate;
+    if (fbCrossesMidnight) {
+      const nextDay = new Date(selectedDate + 'T00:00:00');
+      nextDay.setDate(nextDay.getDate() + 1);
+      fbNextDateStr = nextDay.toISOString().split('T')[0];
+    }
+    
     for (let hour = startHour; hour <= endHour - durationHours; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const slotEndHour = hour + (minute + selectedDuration) / 60;
@@ -598,10 +624,10 @@ const BookingPage = () => {
         
         const displayHour = hour % 24;
         const time = `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const fbSlotDate = (fbCrossesMidnight && displayHour < (endHour - 24)) ? fbNextDateStr : selectedDate;
         slots.push({
           time,
-          // Apply time restrictions in fallback too
-          available: isSlotBookable(time, selectedDate),
+          available: isSlotBookable(time, fbSlotDate),
           price: 2500
         });
       }
@@ -663,7 +689,7 @@ const BookingPage = () => {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
       const endTime = getEndTime();
       const response = await fetch(
-        `${API_URL}/api/courts/${selectedCourt.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${selectedDate}`
+        `${API_URL}/api/courts/${selectedCourt.id}/calculate-price?startTime=${selectedTime}&endTime=${endTime}&date=${getActualBookingDate()}`
       );
       
       if (response.ok) {
@@ -682,7 +708,7 @@ const BookingPage = () => {
     } finally {
       setIsCalculatingPrice(false);
     }
-  }, [selectedCourt, selectedDate, selectedTime, getEndTime]);
+  }, [selectedCourt, selectedDate, selectedTime, getEndTime, getActualBookingDate]);
 
   // Fetch price when court, date, time or duration changes
   useEffect(() => {
@@ -812,6 +838,31 @@ const BookingPage = () => {
     fetchFeeAndDeposit();
   }, [currentStep, selectedCourt, establishment?.id, user?.email, calculatedPrice]);
 
+  // Get the actual booking date (adjusts for post-midnight slots)
+  const getActualBookingDate = useCallback((): string => {
+    if (!selectedDate || !selectedTime || !establishment?.openingHours) return selectedDate;
+    const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    const daySchedule = establishment.openingHours[dayName];
+    if (!daySchedule || daySchedule.closed) return selectedDate;
+    
+    const openH = parseInt(daySchedule.open?.split(':')[0] || '8');
+    let closeH = parseInt(daySchedule.close?.split(':')[0] || '23');
+    if (closeH <= openH) closeH += 24;
+    
+    if (closeH <= 24) return selectedDate; // No midnight crossing
+    
+    const [slotH] = selectedTime.split(':').map(Number);
+    if (slotH < (closeH - 24)) {
+      // Post-midnight slot — actual date is next day
+      const nextDay = new Date(selectedDate + 'T00:00:00');
+      nextDay.setDate(nextDay.getDate() + 1);
+      return nextDay.toISOString().split('T')[0];
+    }
+    return selectedDate;
+  }, [selectedDate, selectedTime, establishment?.openingHours]);
+
   // Handle payment - redirect to Mercado Pago
   const handlePayment = async () => {
     if (!isAuthenticated) {
@@ -880,7 +931,7 @@ const BookingPage = () => {
           metadata: {
             courtId: selectedCourt.id,
             establishmentId: establishment.id,
-            date: selectedDate,
+            date: getActualBookingDate(),
             startTime: selectedTime,
             endTime,
             duration: selectedDuration,
