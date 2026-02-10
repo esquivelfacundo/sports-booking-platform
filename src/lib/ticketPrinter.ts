@@ -237,7 +237,6 @@ export function generateTicketData(data: TicketData): Uint8Array {
   
   if (data.orderNumber) {
     txt += BOLD_ON + 'Pedido: ' + BOLD_OFF + sanitizeText(data.orderNumber) + NL;
-    txt += BOLD_ON + 'No valido como factura' + BOLD_OFF + NL;
   }
   
   txt += NL;

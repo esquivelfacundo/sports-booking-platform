@@ -421,6 +421,12 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
         return;
       }
 
+      // Amenities don't have court price schedules — use fallback (pricePerHour)
+      if (court.sport === 'amenity') {
+        setCalculatedPrice(null);
+        return;
+      }
+
       setIsCalculatingPrice(true);
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
