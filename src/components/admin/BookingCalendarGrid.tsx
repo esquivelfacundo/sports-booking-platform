@@ -192,16 +192,29 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   // Current time indicator state (only for today)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null);
   
-  // Detect mobile screen
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+  // Measure the day separator height dynamically via callback ref
+  const separatorElRef = useRef<HTMLDivElement | null>(null);
+  const [separatorHeight, setSeparatorHeight] = useState(0);
+  const separatorRef = useCallback((node: HTMLDivElement | null) => {
+    separatorElRef.current = node;
+    if (node) {
+      setSeparatorHeight(node.offsetHeight);
+    }
   }, []);
   
+  // Detect mobile screen and re-measure separator on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (separatorElRef.current) {
+        setSeparatorHeight(separatorElRef.current.offsetHeight);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Calculate current time position (only for today)
   useEffect(() => {
     const updateCurrentTimePosition = () => {
@@ -238,7 +251,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
       let position = (minutesFromStart / 30) * slotHeight;
       // Add separator height offset if current time is in the post-midnight range
       if (endHour > 24 && currentHours * 60 + currentMinutes < startTotalMinutes) {
-        position += 26; // DAY_SEPARATOR_HEIGHT
+        position += separatorElRef.current?.offsetHeight || separatorHeight;
       }
       
       setCurrentTimePosition(position);
@@ -500,9 +513,6 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   const displayCourts = isMobile ? [courts[mobileCourtIndex]].filter(Boolean) : courts;
   const mobileCurrentCourt = courts[mobileCourtIndex];
 
-  // Height of the day separator row (used to offset post-midnight overlays)
-  const DAY_SEPARATOR_HEIGHT = endHour > 24 ? 26 : 0;
-
   // Render booking card (shared between mobile and desktop)
   const renderBookingCard = (booking: Booking, courtIndex: number, totalCourts: number) => {
     let startMinutes = parseTimeToMinutes(booking.startTime);
@@ -517,8 +527,8 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     const isBeingDragged = draggedBooking?.id === booking.id;
     
     const slotHeight = 33;
-    // Add separator height offset for post-midnight bookings
-    const topPosition = topSlots * slotHeight + (isPostMidnightBooking ? DAY_SEPARATOR_HEIGHT : 0);
+    // Add measured separator height offset for post-midnight bookings
+    const topPosition = topSlots * slotHeight + (isPostMidnightBooking ? separatorHeight : 0);
     
     const calculateEndTime = () => {
       const endMinutes = startMinutes + booking.duration;
@@ -684,6 +694,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                 {/* Day separator when crossing midnight */}
                 {showDaySeparator && (
                   <div 
+                    ref={separatorRef}
                     className="grid border-b-2 border-orange-400 dark:border-orange-500"
                     style={{ gridTemplateColumns: isMobile ? '50px 1fr' : `80px repeat(${courts.length + amenities.length}, 1fr)` }}
                   >
