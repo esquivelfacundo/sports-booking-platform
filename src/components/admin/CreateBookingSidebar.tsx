@@ -241,9 +241,9 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     
     // Also consider end of day (uses endHour prop, supports midnight-crossing schedules)
     const endOfDay = endHour * 60;
-    const nextBlocker = courtBookings.length > 0 ? courtBookings[0] : endOfDay;
+    const nextBlocker = courtBookings.length > 0 ? Math.min(courtBookings[0], endOfDay) : endOfDay;
     
-    const maxDuration = nextBlocker - startTotalMinutes;
+    const maxDuration = Math.max(0, nextBlocker - startTotalMinutes);
     
     // Debug log
     console.log('Duration calculation:', {
@@ -251,6 +251,8 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
       courtId: court.id,
       selectedTime,
       startTotalMinutes,
+      endHour,
+      endOfDay,
       existingBookingsCount: existingBookings.length,
       courtBookingsCount: courtBookingsForThisCourt.length,
       nextBlocker,
@@ -258,7 +260,7 @@ export const CreateBookingSidebar: React.FC<CreateBookingSidebarProps> = ({
     });
     
     return maxDuration;
-  }, [court, selectedTime, existingBookings]);
+  }, [court, selectedTime, existingBookings, endHour]);
 
   // Reset form when sidebar opens or load existing reservation data
   useEffect(() => {

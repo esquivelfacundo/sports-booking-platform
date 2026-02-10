@@ -192,8 +192,6 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   // Current time indicator state (only for today)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null);
   
-  // Fixed height for the day separator row (set via inline style on the element)
-  const DAY_SEPARATOR_HEIGHT = 28;
   
   // Detect mobile screen
   useEffect(() => {
@@ -237,10 +235,6 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
       const minutesFromStart = currentTotalMinutes - startTotalMinutes;
       const slotHeight = 33;
       let position = (minutesFromStart / 30) * slotHeight;
-      // Add separator height offset if current time is in the post-midnight range
-      if (endHour > 24 && currentHours * 60 + currentMinutes < startTotalMinutes) {
-        position += DAY_SEPARATOR_HEIGHT;
-      }
       
       setCurrentTimePosition(position);
     };
@@ -515,8 +509,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     const isBeingDragged = draggedBooking?.id === booking.id;
     
     const slotHeight = 33;
-    // Add separator height offset for post-midnight bookings
-    const topPosition = topSlots * slotHeight + (isPostMidnightBooking ? DAY_SEPARATOR_HEIGHT : 0);
+    const topPosition = topSlots * slotHeight;
     
     const calculateEndTime = () => {
       const endMinutes = startMinutes + booking.duration;
@@ -679,26 +672,13 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                 
                 return (
                 <React.Fragment key={time}>
-                {/* Day separator when crossing midnight */}
-                {showDaySeparator && (
-                  <div 
-                    className="grid border-b-2 border-orange-400 dark:border-orange-500 overflow-hidden"
-                    style={{ gridTemplateColumns: isMobile ? '50px 1fr' : `80px repeat(${courts.length + amenities.length}, 1fr)`, height: `${DAY_SEPARATOR_HEIGHT}px` }}
-                  >
-                    <div className={`px-2 text-xs font-bold text-orange-600 dark:text-orange-400 text-right border-r border-gray-200 dark:border-gray-600 bg-orange-50 dark:bg-orange-900/20 flex items-center justify-end ${isMobile ? 'pr-1' : 'pr-3'}`}>
-                      {getNextDay(selectedDate).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                    </div>
-                    <div className={`bg-orange-50 dark:bg-orange-900/20 px-3 text-xs font-medium text-orange-600 dark:text-orange-400 flex items-center`} style={{ gridColumn: `2 / -1` }}>
-                      Día siguiente
-                    </div>
-                  </div>
-                )}
                 <div 
-                  className={`grid border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0`}
+                  className={`grid border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0 ${showDaySeparator ? 'border-t-2 border-t-orange-400 dark:border-t-orange-500' : ''}`}
                   style={{ gridTemplateColumns: isMobile ? '50px 1fr' : `80px repeat(${courts.length + amenities.length}, 1fr)` }}
                 >
                   {/* Time Label */}
-                  <div className={`p-2 text-xs text-gray-500 dark:text-gray-400 text-right pr-2 border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 h-8 ${isMobile ? 'pr-1' : 'pr-3'}`}>
+                  <div className={`p-2 text-xs text-right pr-2 border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 h-8 ${isMobile ? 'pr-1' : 'pr-3'} ${showDaySeparator ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {showDaySeparator && <div className="text-[9px] leading-none -mt-0.5">{getNextDay(selectedDate).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric' })}</div>}
                     {time}
                   </div>
 
