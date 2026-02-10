@@ -235,7 +235,11 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
       // Calculate position: each slot is 30 minutes and 33px (slotHeight)
       const minutesFromStart = currentTotalMinutes - startTotalMinutes;
       const slotHeight = 33;
-      const position = (minutesFromStart / 30) * slotHeight;
+      let position = (minutesFromStart / 30) * slotHeight;
+      // Add separator height offset if current time is in the post-midnight range
+      if (endHour > 24 && currentHours * 60 + currentMinutes < startTotalMinutes) {
+        position += 26; // DAY_SEPARATOR_HEIGHT
+      }
       
       setCurrentTimePosition(position);
     };
@@ -496,12 +500,16 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   const displayCourts = isMobile ? [courts[mobileCourtIndex]].filter(Boolean) : courts;
   const mobileCurrentCourt = courts[mobileCourtIndex];
 
+  // Height of the day separator row (used to offset post-midnight overlays)
+  const DAY_SEPARATOR_HEIGHT = endHour > 24 ? 26 : 0;
+
   // Render booking card (shared between mobile and desktop)
   const renderBookingCard = (booking: Booking, courtIndex: number, totalCourts: number) => {
     let startMinutes = parseTimeToMinutes(booking.startTime);
     const slotStartMinutes = startHour * 60;
+    const isPostMidnightBooking = endHour > 24 && startMinutes < slotStartMinutes;
     // If schedule crosses midnight and booking is post-midnight, adjust
-    if (endHour > 24 && startMinutes < slotStartMinutes) {
+    if (isPostMidnightBooking) {
       startMinutes += 1440;
     }
     const topSlots = (startMinutes - slotStartMinutes) / 30;
@@ -509,7 +517,8 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
     const isBeingDragged = draggedBooking?.id === booking.id;
     
     const slotHeight = 33;
-    const topPosition = topSlots * slotHeight;
+    // Add separator height offset for post-midnight bookings
+    const topPosition = topSlots * slotHeight + (isPostMidnightBooking ? DAY_SEPARATOR_HEIGHT : 0);
     
     const calculateEndTime = () => {
       const endMinutes = startMinutes + booking.duration;
