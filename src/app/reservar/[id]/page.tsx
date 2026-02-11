@@ -676,6 +676,31 @@ const BookingPage = () => {
     return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
   }, [selectedTime, selectedDuration]);
 
+  // Get the actual booking date (adjusts for post-midnight slots)
+  const getActualBookingDate = useCallback((): string => {
+    if (!selectedDate || !selectedTime || !establishment?.openingHours) return selectedDate;
+    const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    const daySchedule = establishment.openingHours[dayName];
+    if (!daySchedule || daySchedule.closed) return selectedDate;
+    
+    const openH = parseInt(daySchedule.open?.split(':')[0] || '8');
+    let closeH = parseInt(daySchedule.close?.split(':')[0] || '23');
+    if (closeH <= openH) closeH += 24;
+    
+    if (closeH <= 24) return selectedDate; // No midnight crossing
+    
+    const [slotH] = selectedTime.split(':').map(Number);
+    if (slotH < (closeH - 24)) {
+      // Post-midnight slot — actual date is next day
+      const nextDay = new Date(selectedDate + 'T00:00:00');
+      nextDay.setDate(nextDay.getDate() + 1);
+      return nextDay.toISOString().split('T')[0];
+    }
+    return selectedDate;
+  }, [selectedDate, selectedTime, establishment?.openingHours]);
+
   // Fetch dynamic price from backend based on time schedules
   const fetchDynamicPrice = useCallback(async () => {
     if (!selectedCourt || !selectedDate || !selectedTime) {
@@ -837,31 +862,6 @@ const BookingPage = () => {
     
     fetchFeeAndDeposit();
   }, [currentStep, selectedCourt, establishment?.id, user?.email, calculatedPrice]);
-
-  // Get the actual booking date (adjusts for post-midnight slots)
-  const getActualBookingDate = useCallback((): string => {
-    if (!selectedDate || !selectedTime || !establishment?.openingHours) return selectedDate;
-    const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay();
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = dayNames[dayOfWeek];
-    const daySchedule = establishment.openingHours[dayName];
-    if (!daySchedule || daySchedule.closed) return selectedDate;
-    
-    const openH = parseInt(daySchedule.open?.split(':')[0] || '8');
-    let closeH = parseInt(daySchedule.close?.split(':')[0] || '23');
-    if (closeH <= openH) closeH += 24;
-    
-    if (closeH <= 24) return selectedDate; // No midnight crossing
-    
-    const [slotH] = selectedTime.split(':').map(Number);
-    if (slotH < (closeH - 24)) {
-      // Post-midnight slot — actual date is next day
-      const nextDay = new Date(selectedDate + 'T00:00:00');
-      nextDay.setDate(nextDay.getDate() + 1);
-      return nextDay.toISOString().split('T')[0];
-    }
-    return selectedDate;
-  }, [selectedDate, selectedTime, establishment?.openingHours]);
 
   // Handle payment - redirect to Mercado Pago
   const handlePayment = async () => {
