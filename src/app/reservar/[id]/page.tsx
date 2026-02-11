@@ -1059,8 +1059,8 @@ const BookingPage = () => {
     );
   }
 
-  // Shared booking form component for all designs
-  const BookingForm = ({ compact = false }: { compact?: boolean }) => (
+  // Shared booking form render function (NOT a component — avoids remount on every state change)
+  const renderBookingForm = (compact = false) => (
     <div className="bg-white dark:bg-gray-900 flex flex-col h-full min-h-[calc(100vh-56px)] lg:min-h-0 lg:h-auto lg:relative">
       {/* Booking Header with Progress */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 flex-shrink-0">
@@ -1730,7 +1730,7 @@ const BookingPage = () => {
 
       {/* Mobile content - fullscreen */}
       <div className="lg:hidden flex-1 bg-gray-50 dark:bg-gray-900">
-        <BookingForm />
+        {renderBookingForm()}
       </div>
 
       {/* DESKTOP LAYOUT - Same structure as admin dashboard */}
