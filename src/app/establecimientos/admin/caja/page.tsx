@@ -44,13 +44,13 @@ interface PaymentMethod {
 // Map payment method codes to their totals in cash register
 const getPaymentMethodTotal = (cr: any, code: string): number => {
   switch (code) {
-    case 'cash': return cr.totalCash || 0;
-    case 'card': return (cr.totalCard || 0) + (cr.totalCreditCard || 0) + (cr.totalDebitCard || 0);
-    case 'credit_card': return cr.totalCreditCard || 0;
-    case 'debit_card': return cr.totalDebitCard || 0;
-    case 'transfer': return cr.totalTransfer || 0;
-    case 'mercadopago': return cr.totalMercadoPago || 0;
-    default: return cr.totalOther || 0;
+    case 'cash': return parseFloat(String(cr.totalCash)) || 0;
+    case 'card': return (parseFloat(String(cr.totalCard)) || 0) + (parseFloat(String(cr.totalCreditCard)) || 0) + (parseFloat(String(cr.totalDebitCard)) || 0);
+    case 'credit_card': return parseFloat(String(cr.totalCreditCard)) || 0;
+    case 'debit_card': return parseFloat(String(cr.totalDebitCard)) || 0;
+    case 'transfer': return parseFloat(String(cr.totalTransfer)) || 0;
+    case 'mercadopago': return parseFloat(String(cr.totalMercadoPago)) || 0;
+    default: return parseFloat(String(cr.totalOther)) || 0;
   }
 };
 
@@ -350,18 +350,18 @@ export default function CashRegisterPage() {
         cashRegisterId: cr.id,
         openedAt: formatDateTime(cr.openedAt),
         closedAt: cr.closedAt ? formatDateTime(cr.closedAt) : formatDateTime(new Date().toISOString()),
-        initialCash: cr.initialCash,
-        totalSales: cr.totalSales,
-        totalExpenses: cr.totalExpenses,
-        expectedCash: cr.expectedCash,
-        actualCash: cr.actualCash || cr.expectedCash,
-        cashDifference: cr.cashDifference || 0,
-        totalOrders: cr.totalOrders,
+        initialCash: parseFloat(String(cr.initialCash)) || 0,
+        totalSales: parseFloat(String(cr.totalSales)) || 0,
+        totalExpenses: parseFloat(String(cr.totalExpenses)) || 0,
+        expectedCash: parseFloat(String(cr.expectedCash)) || 0,
+        actualCash: parseFloat(String(cr.actualCash || cr.expectedCash)) || 0,
+        cashDifference: parseFloat(String(cr.cashDifference)) || 0,
+        totalOrders: cr.totalOrders || 0,
         paymentMethods: paymentMethods.map(pm => ({
           name: pm.name,
           code: pm.code,
           amount: getPaymentMethodTotal(cr, pm.code),
-          count: 0 // TODO: count from movements
+          count: movements.filter(m => m.type === 'sale' && (['cash', 'efectivo'].includes(pm.code) ? ['cash', 'efectivo'].includes(m.paymentMethod?.toLowerCase()) : m.paymentMethod?.toLowerCase() === pm.code)).length
         })),
         expenses: expenseMovements.map(e => ({
           description: e.description || 'Gasto',

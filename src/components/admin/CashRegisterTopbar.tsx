@@ -23,13 +23,13 @@ interface CashRegisterTopbarProps {
 // Map payment method codes to their totals in cash register
 const getPaymentMethodTotal = (cashRegister: any, code: string): number => {
   switch (code) {
-    case 'cash': return cashRegister.totalCash || 0;
-    case 'card': return (cashRegister.totalCard || 0) + (cashRegister.totalCreditCard || 0) + (cashRegister.totalDebitCard || 0);
-    case 'credit_card': return cashRegister.totalCreditCard || 0;
-    case 'debit_card': return cashRegister.totalDebitCard || 0;
-    case 'transfer': return cashRegister.totalTransfer || 0;
-    case 'mercadopago': return cashRegister.totalMercadoPago || 0;
-    default: return cashRegister.totalOther || 0;
+    case 'cash': return parseFloat(String(cashRegister.totalCash)) || 0;
+    case 'card': return (parseFloat(String(cashRegister.totalCard)) || 0) + (parseFloat(String(cashRegister.totalCreditCard)) || 0) + (parseFloat(String(cashRegister.totalDebitCard)) || 0);
+    case 'credit_card': return parseFloat(String(cashRegister.totalCreditCard)) || 0;
+    case 'debit_card': return parseFloat(String(cashRegister.totalDebitCard)) || 0;
+    case 'transfer': return parseFloat(String(cashRegister.totalTransfer)) || 0;
+    case 'mercadopago': return parseFloat(String(cashRegister.totalMercadoPago)) || 0;
+    default: return parseFloat(String(cashRegister.totalOther)) || 0;
   }
 };
 

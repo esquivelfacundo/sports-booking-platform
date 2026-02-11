@@ -92,13 +92,13 @@ const getPaymentMethodColor = (code: string) => {
 
 const getPaymentMethodTotal = (cr: CashRegisterHistory, code: string): number => {
   switch (code) {
-    case 'cash': return cr.totalCash || 0;
-    case 'card': return (cr.totalCard || 0) + (cr.totalCreditCard || 0) + (cr.totalDebitCard || 0);
-    case 'credit_card': return cr.totalCreditCard || 0;
-    case 'debit_card': return cr.totalDebitCard || 0;
-    case 'transfer': return cr.totalTransfer || 0;
-    case 'mercadopago': return cr.totalMercadoPago || 0;
-    default: return cr.totalOther || 0;
+    case 'cash': return parseFloat(String(cr.totalCash)) || 0;
+    case 'card': return (parseFloat(String(cr.totalCard)) || 0) + (parseFloat(String(cr.totalCreditCard)) || 0) + (parseFloat(String(cr.totalDebitCard)) || 0);
+    case 'credit_card': return parseFloat(String(cr.totalCreditCard)) || 0;
+    case 'debit_card': return parseFloat(String(cr.totalDebitCard)) || 0;
+    case 'transfer': return parseFloat(String(cr.totalTransfer)) || 0;
+    case 'mercadopago': return parseFloat(String(cr.totalMercadoPago)) || 0;
+    default: return parseFloat(String(cr.totalOther)) || 0;
   }
 };
 
@@ -177,17 +177,18 @@ export default function CashRegisterDetailSidebar({
         openedAt: cashRegister.openedAt,
         closedAt: cashRegister.closedAt || new Date().toISOString(),
         cashierName: cashRegister.user?.name || 'Usuario',
-        initialCash: cashRegister.initialCash,
-        totalSales: cashRegister.totalSales,
-        totalExpenses: cashRegister.totalExpenses,
-        expectedCash: cashRegister.expectedCash,
-        actualCash: cashRegister.actualCash || cashRegister.expectedCash,
-        cashDifference: cashRegister.cashDifference || 0,
-        totalOrders: cashRegister.totalOrders,
+        initialCash: parseFloat(String(cashRegister.initialCash)) || 0,
+        totalSales: parseFloat(String(cashRegister.totalSales)) || 0,
+        totalExpenses: parseFloat(String(cashRegister.totalExpenses)) || 0,
+        expectedCash: parseFloat(String(cashRegister.expectedCash)) || 0,
+        actualCash: parseFloat(String(cashRegister.actualCash || cashRegister.expectedCash)) || 0,
+        cashDifference: parseFloat(String(cashRegister.cashDifference)) || 0,
+        totalOrders: cashRegister.totalOrders || 0,
         paymentMethods: paymentMethods.map(pm => ({
           name: pm.name,
+          code: pm.code,
           amount: getPaymentMethodTotal(cashRegister, pm.code),
-          count: 0
+          count: movements.filter(m => m.type === 'sale' && (['cash', 'efectivo'].includes(pm.code) ? ['cash', 'efectivo'].includes(m.paymentMethod?.toLowerCase()) : m.paymentMethod?.toLowerCase() === pm.code)).length
         })),
         expenses: egresos.map(e => ({
           description: e.description || 'Gasto',
