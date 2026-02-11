@@ -213,6 +213,7 @@ const BookingPage = () => {
   // Payment state (for step 5)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [isLoadingFee, setIsLoadingFee] = useState(false);
   const [paymentType, setPaymentType] = useState<'deposit' | 'full'>('deposit');
   const [depositInfo, setDepositInfo] = useState({
@@ -946,7 +947,7 @@ const BookingPage = () => {
             debtIds: pendingDebt.debts.map(d => d.id),
             clientName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (user?.firstName || user?.email || ''),
             clientEmail: user?.email || '',
-            clientPhone: user?.phone || '',
+            clientPhone: whatsappNumber ? `+54${whatsappNumber}` : (user?.phone || ''),
             userId: user?.id || ''
           },
           back_urls: {
@@ -1418,6 +1419,26 @@ const BookingPage = () => {
                     )}
                   </div>
 
+                  {/* WhatsApp number input */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      <Phone className="w-4 h-4 inline mr-1.5 text-emerald-500" />
+                      Número de WhatsApp *
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-lg">+54</span>
+                      <input
+                        type="tel"
+                        value={whatsappNumber}
+                        onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Ej: 3795061706"
+                        className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                        maxLength={12}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">Te enviaremos la confirmación y el QR por WhatsApp</p>
+                  </div>
+
                   {/* Mercado Pago info */}
                   <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 mb-2">
@@ -1464,7 +1485,7 @@ const BookingPage = () => {
           {currentStep === 5 && selectedCourt ? (
             <button 
               onClick={handlePayment} 
-              disabled={isProcessingPayment || isLoadingFee}
+              disabled={isProcessingPayment || isLoadingFee || (isAuthenticated && !whatsappNumber)}
               className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
               {isProcessingPayment ? (
                 <>
@@ -1473,6 +1494,8 @@ const BookingPage = () => {
                 </>
               ) : !isAuthenticated ? (
                 'Iniciar sesión para pagar'
+              ) : !whatsappNumber ? (
+                'Ingresá tu WhatsApp para pagar'
               ) : (
                 <>
                   <Lock className="w-4 h-4" />
@@ -2316,6 +2339,26 @@ const BookingPage = () => {
                           </div>
                         </div>
 
+                        {/* WhatsApp number input */}
+                        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+                          <label className="block text-sm font-semibold text-gray-900 mb-3">
+                            <Phone className="w-4 h-4 inline mr-1.5 text-emerald-500" />
+                            Número de WhatsApp *
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-2.5 rounded-xl">+54</span>
+                            <input
+                              type="tel"
+                              value={whatsappNumber}
+                              onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))}
+                              placeholder="Ej: 3795061706"
+                              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                              maxLength={12}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">Te enviaremos la confirmación y el QR por WhatsApp</p>
+                        </div>
+
                         {/* Mercado Pago Info */}
                         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 mb-6">
                           <div className="flex items-center gap-3 mb-2">
@@ -2522,7 +2565,7 @@ const BookingPage = () => {
               {currentStep === 5 && selectedCourt ? (
                 <button 
                   onClick={handlePayment}
-                  disabled={isProcessingPayment || isLoadingFee}
+                  disabled={isProcessingPayment || isLoadingFee || (isAuthenticated && !whatsappNumber)}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                   {isProcessingPayment ? (
                     <>
@@ -2531,6 +2574,8 @@ const BookingPage = () => {
                     </>
                   ) : !isAuthenticated ? (
                     'Iniciar sesión para pagar'
+                  ) : !whatsappNumber ? (
+                    'Ingresá tu WhatsApp para pagar'
                   ) : (
                     <>
                       <Lock className="w-5 h-5" />
