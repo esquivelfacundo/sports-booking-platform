@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -214,6 +214,19 @@ const BookingPage = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  
+  // Pre-fill WhatsApp number from user's phone if available
+  useEffect(() => {
+    if (user?.phone && !whatsappNumber) {
+      let phone = user.phone.replace(/[^\d]/g, '');
+      // Strip leading 54 (country code)
+      if (phone.startsWith('54')) phone = phone.substring(2);
+      // Strip leading 9 (mobile prefix)
+      if (phone.startsWith('9') && phone.length > 10) phone = phone.substring(1);
+      setWhatsappNumber(phone);
+    }
+  }, [user?.phone]);
+  
   const [isLoadingFee, setIsLoadingFee] = useState(false);
   const [paymentType, setPaymentType] = useState<'deposit' | 'full'>('deposit');
   const [depositInfo, setDepositInfo] = useState({
@@ -300,12 +313,14 @@ const BookingPage = () => {
     : [];
 
   // Filter courts by selected sport
-  const filteredCourts = establishment?.courts?.filter(court => 
-    selectedSport === 'all' || court.sport === selectedSport
-  ) || [];
+  const filteredCourts = useMemo(() => 
+    establishment?.courts?.filter(court => 
+      selectedSport === 'all' || court.sport === selectedSport
+    ) || []
+  , [establishment?.courts, selectedSport]);
 
-  // Get courts available at the selected time
-  const getAvailableCourtsAtTime = () => {
+  // Get courts available at the selected time (memoized to avoid infinite render loops)
+  const availableCourtsAtTime = useMemo(() => {
     if (!selectedTime) return [];
     const selectedSlot = availableSlots.find(slot => slot.time === selectedTime);
     if (!selectedSlot?.availableCourtIds?.length) return [];
@@ -314,9 +329,7 @@ const BookingPage = () => {
     return filteredCourts.filter(court => 
       selectedSlot.availableCourtIds?.includes(court.id)
     );
-  };
-  
-  const availableCourtsAtTime = getAvailableCourtsAtTime();
+  }, [selectedTime, availableSlots, filteredCourts]);
 
   // Generate dates respecting maxAdvanceBookingDays, with proper calendar alignment
   const generateDates = () => {
