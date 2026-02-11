@@ -1813,6 +1813,7 @@ class ApiClient {
     items: Array<{ productId: string; quantity: number; notes?: string; unitPrice?: number }>;
     paymentMethod?: string;
     paidAmount?: number;
+    payments?: Array<{ amount: number; paymentMethod: string; playerName?: string }>;
     discount?: number;
     notes?: string;
   }) {

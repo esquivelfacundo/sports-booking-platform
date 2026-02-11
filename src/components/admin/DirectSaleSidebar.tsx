@@ -64,6 +64,12 @@ interface CartItem {
   quantity: number;
 }
 
+interface PendingPayment {
+  amount: number;
+  method: string;
+  playerName?: string;
+}
+
 interface Client {
   id: string;
   name: string;
@@ -140,7 +146,9 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
   
   // Payment
   const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [paidAmount, setPaidAmount] = useState('');
+  const [paymentInputAmount, setPaymentInputAmount] = useState('');
+  const [paymentPlayerName, setPaymentPlayerName] = useState('');
+  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [discount, setDiscount] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<{ id: string; name: string; code: string; icon: string | null }[]>([]);
   
@@ -228,7 +236,9 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
       setCustomerPhone('');
       setCustomerEmail('');
       setPaymentMethod('cash');
-      setPaidAmount('');
+      setPaymentInputAmount('');
+      setPaymentPlayerName('');
+      setPendingPayments([]);
       setDiscount('');
       setSearchTerm('');
       setActiveTab('turnos');
@@ -358,8 +368,34 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
   const manualDiscountAmount = parseFloat(discount) || 0;
   const totalDiscountAmount = accountDiscountAmount + manualDiscountAmount;
   const total = subtotal - totalDiscountAmount;
-  const paid = parseFloat(paidAmount) || 0;
-  const change = paid - total;
+  const paid = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+  const remaining = total - paid;
+
+  const handleAddPayment = () => {
+    const amt = parseFloat(paymentInputAmount) || 0;
+    if (amt <= 0) return;
+    setPendingPayments(prev => [...prev, {
+      amount: amt, method: paymentMethod,
+      playerName: paymentPlayerName.trim() || undefined
+    }]);
+    setPaymentInputAmount('');
+    setPaymentPlayerName('');
+  };
+
+  const handleRemovePayment = (idx: number) => {
+    setPendingPayments(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const getPaymentMethodName = (code: string) => {
+    const m = paymentMethods.find(pm => pm.code === code);
+    if (m) return m.name;
+    const fb: Record<string, string> = {
+      cash: 'Efectivo', transfer: 'Transferencia',
+      card: 'Tarjeta', credit_card: 'Crédito',
+      debit_card: 'Débito'
+    };
+    return fb[code] || code;
+  };
 
   const handleSubmitClick = () => {
     if (cart.size === 0) return;
@@ -414,20 +450,6 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
         ? `https://miscanchas.com/reservar/${establishmentSlug}` 
         : 'https://miscanchas.com';
 
-      // Get payment method name
-      const getPaymentMethodName = (code: string) => {
-        const method = paymentMethods.find(m => m.code === code);
-        if (method) return method.name;
-        const fallbacks: Record<string, string> = {
-          cash: 'Efectivo',
-          transfer: 'Transferencia',
-          card: 'Tarjeta',
-          credit_card: 'Credito',
-          debit_card: 'Debito'
-        };
-        return fallbacks[code] || code;
-      };
-
       const ticketData: TicketData = {
         establishmentName: establishmentName || 'Sports Booking',
         date: formatDate(today),
@@ -441,10 +463,11 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
           unitPrice: product.salePrice,
           totalPrice: product.salePrice * quantity
         })),
-        payments: paid > 0 ? [{
-          method: getPaymentMethodName(paymentMethod),
-          amount: paid
-        }] : [],
+        payments: pendingPayments.map(p => ({
+          method: getPaymentMethodName(p.method),
+          amount: p.amount,
+          playerName: p.playerName
+        })),
         establishmentUrl,
         isDirectSale: true
       };
@@ -474,11 +497,12 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
           });
         }
 
-        // Register payment if there's an amount
-        if (paid > 0) {
+        // Register each pending payment
+        for (const p of pendingPayments) {
           await apiClient.registerBookingPayment(selectedBooking.id, {
-            amount: paid,
-            method: paymentMethod as 'cash' | 'transfer' | 'card' | 'other',
+            amount: p.amount,
+            method: p.method as 'cash' | 'transfer' | 'card' | 'other',
+            playerName: p.playerName,
             notes: `Consumos: ${Array.from(cart.values()).map(c => `${c.quantity}x ${c.product.name}`).join(', ')}`
           });
         }
@@ -517,15 +541,20 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
         customerEmail: selectedClient?.email || customerEmail || undefined,
         currentAccountId: selectedCurrentAccount?.id || undefined,
         items,
-        paymentMethod: paid > 0 ? paymentMethod : undefined,
-        paidAmount: paid > 0 ? paid : 0,
+        payments: pendingPayments.length > 0 ? pendingPayments.map(p => ({
+          amount: p.amount,
+          paymentMethod: p.method,
+          playerName: p.playerName
+        })) : undefined,
         discount: totalDiscountAmount,
         notes: isCurrentAccountSale ? `Cuenta Corriente: ${selectedCurrentAccount.holderName}` : undefined
       });
 
       const displayName = effectiveCustomerName || 'Cliente';
-      const methodName = paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod;
-      showSuccess('Venta registrada', `$${total.toLocaleString('es-AR')} - ${displayName} (${methodName})`);
+      const methodSummary = pendingPayments.length > 0
+        ? pendingPayments.map(p => getPaymentMethodName(p.method)).join(', ')
+        : 'Fiado';
+      showSuccess('Venta registrada', `$${total.toLocaleString('es-AR')} - ${displayName} (${methodSummary})`);
       
       onOrderCreated();
       setShowPrintDialog(false);
@@ -1069,73 +1098,75 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                   {/* Payment */}
                   {cart.size > 0 && (
                     <div className="mt-6">
-                      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
-                        Pago
-                      </h3>
-                      
-                      {/* Payment Method */}
-                      <div className={`grid gap-2 mb-4 ${paymentMethods.length <= 3 ? 'grid-cols-3' : paymentMethods.length <= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                        {paymentMethods.map((method) => (
-                          <button
-                            key={method.id}
-                            onClick={() => setPaymentMethod(method.code)}
-                            className={`flex flex-col items-center p-2 rounded-lg border transition-colors ${
-                              paymentMethod === method.code
-                                ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400'
-                                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
-                            }`}
-                          >
-                            {method.code === 'cash' && <Banknote className="w-5 h-5 mb-1" />}
-                            {method.code === 'transfer' && <Building2 className="w-5 h-5 mb-1" />}
-                            {(method.code === 'credit_card' || method.code === 'debit_card' || method.code === 'card') && <CreditCard className="w-5 h-5 mb-1" />}
-                            {!['cash', 'transfer', 'credit_card', 'debit_card', 'card'].includes(method.code) && <DollarSign className="w-5 h-5 mb-1" />}
-                            <span className="text-xs truncate max-w-full">{method.name}</span>
-                          </button>
-                        ))}
-                      </div>
+                      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">Pago</h3>
 
                       {/* Discount */}
                       <div className="mb-3">
                         <label className="block text-xs text-gray-400 mb-1">Descuento</label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                          <input
-                            type="number"
-                            value={discount}
-                            onChange={(e) => setDiscount(e.target.value)}
-                            placeholder="0"
-                            className="w-full pl-8 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
-                          />
+                          <input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} placeholder="0" className="w-full pl-8 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500" />
                         </div>
                       </div>
 
-                      {/* Amount Paid */}
-                      <div>
-                        <label className="block text-xs text-gray-400 mb-1">Monto recibido</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                          <input
-                            type="number"
-                            value={paidAmount}
-                            onChange={(e) => setPaidAmount(e.target.value)}
-                            placeholder={total.toString()}
-                            className="w-full pl-8 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500"
-                          />
+                      {/* Declared payments list */}
+                      {pendingPayments.length > 0 && (
+                        <div className="mb-3 space-y-1">
+                          <label className="block text-xs text-gray-400 mb-1">Pagos declarados</label>
+                          {pendingPayments.map((p, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-gray-800 rounded-lg px-3 py-2 border border-gray-700">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-emerald-400 text-sm font-medium">${p.amount.toLocaleString('es-AR')}</span>
+                                <span className="text-gray-500 text-xs">·</span>
+                                <span className="text-gray-300 text-xs truncate">{getPaymentMethodName(p.method)}</span>
+                                {p.playerName && (<><span className="text-gray-500 text-xs">·</span><span className="text-gray-400 text-xs truncate">{p.playerName}</span></>)}
+                              </div>
+                              <button onClick={() => handleRemovePayment(idx)} className="text-gray-500 hover:text-red-400 ml-2 flex-shrink-0"><X className="w-4 h-4" /></button>
+                            </div>
+                          ))}
+                          <div className="flex justify-between text-xs px-1 mt-1">
+                            <span className="text-gray-400">Total pagado</span>
+                            <span className="text-emerald-400 font-medium">${paid.toLocaleString('es-AR')}</span>
+                          </div>
+                          {remaining > 0 && (
+                            <div className="flex justify-between text-xs px-1">
+                              <span className="text-gray-400">Pendiente</span>
+                              <span className="text-yellow-400 font-medium">${remaining.toLocaleString('es-AR')}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => setPaidAmount(total.toString())}
-                            className="flex-1 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
-                          >
-                            Exacto
-                          </button>
-                          <button
-                            onClick={() => setPaidAmount('')}
-                            className="flex-1 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition-colors"
-                          >
-                            Fiado
-                          </button>
+                      )}
+
+                      {/* Add payment form */}
+                      <div className="space-y-2 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                        <label className="block text-xs text-gray-400">Agregar pago</label>
+                        {/* Player name (optional) */}
+                        <input type="text" value={paymentPlayerName} onChange={(e) => setPaymentPlayerName(e.target.value)} placeholder="Nombre (opcional)" className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500" />
+                        {/* Amount + quick buttons */}
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                            <input type="number" value={paymentInputAmount} onChange={(e) => setPaymentInputAmount(e.target.value)} placeholder={remaining > 0 ? remaining.toString() : total.toString()} className="w-full pl-8 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-emerald-500" />
+                          </div>
+                          <button onClick={() => setPaymentInputAmount(remaining > 0 ? remaining.toString() : total.toString())} className="px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors whitespace-nowrap">Total</button>
+                          <button onClick={() => setPaymentInputAmount(Math.ceil((remaining > 0 ? remaining : total) / 2).toString())} className="px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors whitespace-nowrap">Mitad</button>
                         </div>
+                        {/* Payment method grid */}
+                        <div className={`grid gap-1.5 ${paymentMethods.length <= 3 ? 'grid-cols-3' : paymentMethods.length <= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                          {paymentMethods.map((method) => (
+                            <button key={method.id} onClick={() => setPaymentMethod(method.code)} className={`flex flex-col items-center p-1.5 rounded-lg border transition-colors ${paymentMethod === method.code ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'}`}>
+                              {method.code === 'cash' && <Banknote className="w-4 h-4 mb-0.5" />}
+                              {method.code === 'transfer' && <Building2 className="w-4 h-4 mb-0.5" />}
+                              {(method.code === 'credit_card' || method.code === 'debit_card' || method.code === 'card') && <CreditCard className="w-4 h-4 mb-0.5" />}
+                              {!['cash', 'transfer', 'credit_card', 'debit_card', 'card'].includes(method.code) && <DollarSign className="w-4 h-4 mb-0.5" />}
+                              <span className="text-[10px] truncate max-w-full">{method.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                        {/* Add payment button */}
+                        <button onClick={handleAddPayment} disabled={!paymentInputAmount || parseFloat(paymentInputAmount) <= 0} className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1">
+                          <Plus className="w-4 h-4" /> Agregar Pago
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1228,16 +1259,16 @@ const DirectSaleSidebar: React.FC<DirectSaleSidebarProps> = ({
                           <span className="text-white">Total</span>
                           <span className="text-emerald-400">${total.toLocaleString()}</span>
                         </div>
-                        {paid > 0 && change > 0 && (
+                        {paid > 0 && remaining < 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-400">Vuelto</span>
-                            <span className="text-yellow-400">${change.toLocaleString()}</span>
+                            <span className="text-yellow-400">${Math.abs(remaining).toLocaleString()}</span>
                           </div>
                         )}
-                        {paid > 0 && paid < total && (
+                        {paid > 0 && remaining > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-400">Pendiente</span>
-                            <span className="text-orange-400">${(total - paid).toLocaleString()}</span>
+                            <span className="text-orange-400">${remaining.toLocaleString()}</span>
                           </div>
                         )}
                       </div>
