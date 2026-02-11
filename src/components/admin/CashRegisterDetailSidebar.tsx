@@ -123,11 +123,13 @@ export default function CashRegisterDetailSidebar({
   const [movements, setMovements] = useState<CashRegisterMovement[]>([]);
   const [movementsLoading, setMovementsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [productsSold, setProductsSold] = useState<Array<{ productName: string; quantity: number; totalAmount: number }>>([]);
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     if (isOpen && cashRegister?.id) {
       loadMovements();
+      loadProductsSold(cashRegister.id);
     }
   }, [isOpen, cashRegister?.id]);
 
@@ -144,6 +146,16 @@ export default function CashRegisterDetailSidebar({
       console.error('Error loading movements:', error);
     } finally {
       setMovementsLoading(false);
+    }
+  };
+
+  const loadProductsSold = async (cashRegisterId: string) => {
+    try {
+      const response: any = await apiClient.getProductsSold(cashRegisterId);
+      setProductsSold(response.products || []);
+    } catch (error) {
+      console.error('Error loading products sold:', error);
+      setProductsSold([]);
     }
   };
 
@@ -189,6 +201,11 @@ export default function CashRegisterDetailSidebar({
           code: pm.code,
           amount: getPaymentMethodTotal(cashRegister, pm.code),
           count: movements.filter(m => m.type === 'sale' && (['cash', 'efectivo'].includes(pm.code) ? ['cash', 'efectivo'].includes(m.paymentMethod?.toLowerCase()) : m.paymentMethod?.toLowerCase() === pm.code)).length
+        })),
+        products: productsSold.map(p => ({
+          productName: p.productName,
+          quantity: p.quantity,
+          totalAmount: p.totalAmount
         })),
         expenses: egresos.map(e => ({
           description: e.description || 'Gasto',

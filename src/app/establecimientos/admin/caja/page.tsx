@@ -341,8 +341,21 @@ export default function CashRegisterPage() {
 
     setIsPrinting(true);
     try {
+      // Load movements for this specific cash register
+      const movResponse: any = await apiClient.getCashRegisterMovements({ cashRegisterId: cr.id });
+      const crMovements = movResponse.movements || [];
+      
+      // Load products sold for this cash register
+      let crProducts: Array<{ productName: string; quantity: number; totalAmount: number }> = [];
+      try {
+        const prodResponse: any = await apiClient.getProductsSold(cr.id);
+        crProducts = prodResponse.products || [];
+      } catch (e) {
+        console.error('Error loading products for ticket:', e);
+      }
+      
       // Get expenses from movements
-      const expenseMovements = movements.filter(m => m.type === 'expense');
+      const expenseMovements = crMovements.filter((m: any) => m.type === 'expense');
       
       const ticketData: CashRegisterTicketData = {
         establishmentName: establishment?.name || 'Establecimiento',
@@ -361,9 +374,14 @@ export default function CashRegisterPage() {
           name: pm.name,
           code: pm.code,
           amount: getPaymentMethodTotal(cr, pm.code),
-          count: movements.filter(m => m.type === 'sale' && (['cash', 'efectivo'].includes(pm.code) ? ['cash', 'efectivo'].includes(m.paymentMethod?.toLowerCase()) : m.paymentMethod?.toLowerCase() === pm.code)).length
+          count: crMovements.filter((m: any) => m.type === 'sale' && (['cash', 'efectivo'].includes(pm.code) ? ['cash', 'efectivo'].includes(m.paymentMethod?.toLowerCase()) : m.paymentMethod?.toLowerCase() === pm.code)).length
         })),
-        expenses: expenseMovements.map(e => ({
+        products: crProducts.map(p => ({
+          productName: p.productName,
+          quantity: p.quantity,
+          totalAmount: p.totalAmount
+        })),
+        expenses: expenseMovements.map((e: any) => ({
           description: e.description || 'Gasto',
           category: e.expenseCategory?.name,
           method: e.paymentMethod,
